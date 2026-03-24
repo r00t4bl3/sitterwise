@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitterwise Availability System — UX Redesign Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== SITTERWISE BRAND TOKENS ===== */
+  :root {
+    --coral: #F48A91;
+    --coral-hover: #e6747c;
+    --navy: #1B3A5C;
+    --navy-light: #2a5080;
+    --gray: #5A6B73;
+    --gray-light: #8a9aa2;
+    --teal-bg: #E8F5F5;
+    --blush: #FDF5F2;
+    --border-teal: #C6E7E7;
+    --logo-teal: #84D0D2;
+    --white: #FFFFFF;
+    --off-white: #FAFBFC;
+    --shadow-sm: 0 1px 3px rgba(27,58,92,0.08);
+    --shadow-md: 0 4px 12px rgba(27,58,92,0.10);
+    --shadow-lg: 0 8px 24px rgba(27,58,92,0.12);
+    --radius: 0; /* square buttons per brand */
+    --radius-card: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--navy);
+    background: var(--off-white);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ===== TOP NAV ===== */
+  .top-nav {
+    background: linear-gradient(135deg, var(--teal-bg) 0%, var(--white) 100%);
+    border-bottom: 2px solid var(--border-teal);
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .top-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .logo .sitter { color: var(--logo-teal); }
+  .logo .wise { color: var(--gray-light); font-weight: 300; }
+
+  .nav-links {
+    display: flex;
+    gap: 6px;
+  }
+  .nav-link {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .nav-link:hover {
+    background: var(--teal-bg);
+    color: var(--navy);
+  }
+  .nav-link.active {
+    background: var(--navy);
+    color: var(--white);
+  }
+  .nav-link .arrow {
+    font-size: 10px;
+    margin-left: 4px;
+    opacity: 0.6;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--white);
+    border: 1px solid var(--border-teal);
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-card);
+    padding: 6px 0;
+    min-width: 140px;
+    display: none;
+    z-index: 100;
+  }
+  .nav-link:hover .dropdown-menu { display: block; }
+  .dropdown-item {
+    display: block;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--navy);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .dropdown-item:hover {
+    background: var(--teal-bg);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logout-btn {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray);
+    background: none;
+    border: 1px solid var(--border-teal);
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover {
+    border-color: var(--coral);
+    color: var(--coral);
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    padding: 28px 28px 0;
+  }
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--gray-light);
+    font-weight: 400;
+  }
+
+  /* ===== TABS ===== */
+  .view-tabs {
+    display: flex;
+    gap: 0;
+    margin: 20px 28px 0;
+    border-bottom: 2px solid var(--border-teal);
+  }
+  .view-tab {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray);
+    background: none;
+    border: none;
+    padding: 10px 22px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .view-tab:hover { color: var(--navy); }
+  .view-tab.active {
+    color: var(--navy);
+  }
+  .view-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--coral);
+  }
+
+  /* ===== CONTENT AREA ===== */
+  .content { padding: 24px 28px; }
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  /* ===== SEARCH FORM ===== */
+  .search-form {
+    background: var(--white);
+    border: 1px solid var(--border-teal);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
+    padding: 28px;
+    max-width: 900px;
+  }
+  .form-section {
+    margin-bottom: 22px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #EEF3F5;
+  }
+  .form-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .form-section-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-section-label .icon {
+    width: 20px;
+    height: 20px;
+    background: var(--teal-bg);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .form-row:last-child { margin-bottom: 0; }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray);
+    min-width: 130px;
+    text-align: right;
+  }
+
+  .form-input {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: var(--navy);
+    border: 1px solid var(--border-teal);
+    padding: 9px 14px;
+    width: 260px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--white);
+    border-radius: 3px;
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: var(--logo-teal);
+    box-shadow: 0 0 0 3px rgba(132,208,210,0.2);
+  }
+  .form-input::placeholder { color: var(--gray-light); }
+
+  /* Checkbox / Radio groups */
+  .check-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--navy);
+    background: var(--off-white);
+    border: 1px solid #E0E8EC;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .chip-label:hover {
+    border-color: var(--logo-teal);
+    background: var(--teal-bg);
+  }
+  .chip-label input { display: none; }
+  .chip-label input:checked + .chip-text {
+    /* handled via JS class toggle */
+  }
+  .chip-label.selected {
+    background: var(--teal-bg);
+    border-color: var(--logo-teal);
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  /* Radio pills for availability */
+  .radio-pills {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-teal);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .radio-pill {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 8px 18px;
+    cursor: pointer;
+    background: var(--white);
+    color: var(--gray);
+    border-right: 1px solid var(--border-teal);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .radio-pill:last-child { border-right: none; }
+  .radio-pill:hover { background: var(--teal-bg); }
+  .radio-pill input { display: none; }
+  .radio-pill.selected {
+    background: var(--navy);
+    color: var(--white);
+  }
+
+  /* Date rows */
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    background: var(--off-white);
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .date-row:hover { border-color: var(--border-teal); }
+  .date-row:last-child { margin-bottom: 0; }
+  .date-input {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    color: var(--navy);
+    border: 1px solid var(--border-teal);
+    padding: 7px 10px;
+    width: 150px;
+    background: var(--white);
+    border-radius: 3px;
+  }
+  .date-input:focus {
+    outline: none;
+    border-color: var(--logo-teal);
+    box-shadow: 0 0 0 3px rgba(132,208,210,0.2);
+  }
+  .time-chips {
+    display: flex;
+    gap: 4px;
+  }
+  .time-chip {
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    border: 1px solid #E0E8EC;
+    background: var(--white);
+    color: var(--gray);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .time-chip:hover {
+    border-color: var(--logo-teal);
+  }
+  .time-chip.am { }
+  .time-chip.pm { }
+  .time-chip.eve { }
+  .time-chip.selected-am {
+    background: #FFF8E1;
+    border-color: #F9C74F;
+    color: #8B6914;
+  }
+  .time-chip.selected-pm {
+    background: #E0F7FA;
+    border-color: var(--logo-teal);
+    color: var(--navy);
+  }
+  .time-chip.selected-eve {
+    background: #EDE7F6;
+    border-color: #9575CD;
+    color: #4527A0;
+  }
+  .add-date-btn {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--logo-teal);
+    background: none;
+    border: 1px dashed var(--border-teal);
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 6px;
+    transition: all 0.2s;
+  }
+  .add-date-btn:hover {
+    background: var(--teal-bg);
+    border-color: var(--logo-teal);
+    color: var(--navy);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--coral);
+    color: var(--white);
+    border: none;
+    padding: 11px 32px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.3px;
+    border-radius: 0;
+  }
+  .btn-primary:hover {
+    background: var(--coral-hover);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--white);
+    color: var(--gray);
+    border: 1px solid var(--border-teal);
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 0;
+  }
+  .btn-secondary:hover {
+    border-color: var(--logo-teal);
+    color: var(--navy);
+  }
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  /* ===== RESULTS TABLE ===== */
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .results-count {
+    font-size: 13px;
+    color: var(--gray);
+  }
+  .results-count strong {
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  .results-table-wrap {
+    background: var(--white);
+    border: 1px solid var(--border-teal);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+  }
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .results-table thead {
+    background: var(--navy);
+  }
+  .results-table th {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: rgba(255,255,255,0.9);
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+  }
+  .results-table th.date-col {
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .results-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #EEF3F5;
+    vertical-align: middle;
+  }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td {
+    background: var(--blush);
+  }
+
+  .cg-name {
+    font-weight: 500;
+    color: var(--logo-teal);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .cg-name:hover { color: var(--navy); text-decoration: underline; }
+
+  /* Star rating */
+  .stars {
+    display: flex;
+    gap: 1px;
+  }
+  .star {
+    color: #F9C74F;
+    font-size: 13px;
+  }
+  .star.empty { color: #DDE4E8; }
+
+  /* Expertise / area tags */
+  .tag-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .tag.babies { background: #E0F7FA; color: #006064; }
+  .tag.toddlers { background: #E8F5E9; color: #2E7D32; }
+  .tag.preschool { background: #FFF3E0; color: #E65100; }
+  .tag.school { background: #EDE7F6; color: #4527A0; }
+  .tag.pets { background: #F3E5F5; color: #6A1B9A; }
+  .tag.special { background: #FCE4EC; color: #880E4F; }
+  .tag.spanish { background: #FFF8E1; color: #F57F17; }
+  /* Area icons — Hotel Del (South) + Balloon (North)
+     dark = preferred area, light = will go but not preferred */
+  .area-icons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .area-icon {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .area-icon svg { width: 19px; height: 19px; }
+  .area-icon.dark svg { fill: #3a9a9c; }
+  .area-icon.light svg { fill: #c2e5e5; }
+
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal-bg);
+    color: var(--logo-teal);
+    font-size: 12px;
+  }
+
+  /* Availability cells */
+  .avail-cell {
+    text-align: center;
+    min-width: 80px;
+  }
+  .avail-dots {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+  }
+  .dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  /* Morning = gold */
+  .dot.am-avail { background: #F9C74F; color: #fff; }
+  .dot.am-unavail { background: #F5F0E0; color: #C9B97A; }
+  /* Afternoon = teal */
+  .dot.pm-avail { background: var(--logo-teal); color: #fff; }
+  .dot.pm-unavail { background: #DFF0F0; color: #9EC8C9; }
+  /* Evening = navy */
+  .dot.eve-avail { background: var(--navy); color: #fff; }
+  .dot.eve-unavail { background: #E0E5EA; color: #8B9BA5; }
+  /* Unavailable entire day */
+  .dot.blocked {
+    background: #F0F0F0;
+    color: #C0C0C0;
+  }
+  /* Pinned / already booked */
+  .dot.booked { background: var(--coral); color: #fff; }
+
+  .avail-legend {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 11.5px;
+    color: var(--gray);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ===== DESIGN NOTE CALLOUT ===== */
+  .design-notes {
+    margin-top: 32px;
+    background: var(--blush);
+    border: 1px solid var(--border-teal);
+    border-left: 4px solid var(--coral);
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
+    padding: 20px 24px;
+    max-width: 900px;
+  }
+  .design-notes h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--navy);
+    margin-bottom: 10px;
+  }
+  .design-notes ul {
+    list-style: none;
+    padding: 0;
+  }
+  .design-notes li {
+    font-size: 13px;
+    color: var(--gray);
+    padding: 4px 0;
+    padding-left: 18px;
+    position: relative;
+  }
+  .design-notes li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--coral);
+  }
+  .design-notes li strong { color: var(--navy); }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAVIGATION ===== -->
+<nav class="top-nav">
+  <div class="top-nav-left">
+    <div class="logo"><img src="https://sitterwise.com/wp-content/uploads/2026/02/sitterwise.png" alt="Sitterwise" style="height: 36px; width: auto;"></div>
+    <div class="nav-links">
+      <a class="nav-link active" href="#">
+        Caregiver <span class="arrow">▾</span>
+        <div class="dropdown-menu">
+          <a class="dropdown-item" href="#">Search</a>
+          <a class="dropdown-item" href="#">List All</a>
+          <a class="dropdown-item" href="#">Add New</a>
+        </div>
+      </a>
+      <a class="nav-link" href="#">
+        User <span class="arrow">▾</span>
+        <div class="dropdown-menu">
+          <a class="dropdown-item" href="#">List All</a>
+          <a class="dropdown-item" href="#">Add</a>
+        </div>
+      </a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="logout-btn">⏻ Logout</button>
+  </div>
+</nav>
+
+<!-- ===== PAGE HEADER ===== -->
+<div class="page-header">
+  <h1 class="page-title">Caregiver Search</h1>
+  <p class="page-subtitle">Find available caregivers by date, expertise, and preferences</p>
+</div>
+
+<!-- ===== TABS ===== -->
+<div class="view-tabs">
+  <button class="view-tab active" onclick="switchTab('search')">Search</button>
+  <button class="view-tab" onclick="switchTab('results')">Results</button>
+</div>
+
+<!-- ===== CONTENT ===== -->
+<div class="content">
+
+  <!-- SEARCH VIEW -->
+  <div class="view-panel active" id="panel-search">
+    <div class="search-form">
+
+      <!-- Name -->
+      <div class="form-section">
+        <div class="form-section-label"><span class="icon">👤</span> Caregiver</div>
+        <div class="form-row">
+          <label class="form-label">Name</label>
+          <input class="form-input" type="text" placeholder="Search by name…">
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="form-section">
+        <div class="form-section-label"><span class="icon">🏷</span> Filters</div>
+
+        <div class="form-row">
+          <label class="form-label">Age Category</label>
+          <div class="check-group">
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Young &amp; Fun</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Mom Type</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Grandma Type</span></label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Location</label>
+          <div class="check-group">
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">South County</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">North County</span></label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Expertise</label>
+          <div class="check-group">
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Babies</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Toddlers</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Preschool</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">School Age</span></label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Other</label>
+          <div class="check-group">
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Care.com Certified</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Pet Sitting</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Special Needs</span></label>
+            <label class="chip-label" onclick="this.classList.toggle('selected')"><input type="checkbox"><span class="chip-text">Spanish</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="form-section">
+        <div class="form-section-label"><span class="icon">📅</span> Dates</div>
+        <div class="date-row">
+          <input class="date-input" type="date">
+          <div class="time-chips">
+            <span class="time-chip am" onclick="this.classList.toggle('selected-am')">Morning</span>
+            <span class="time-chip pm" onclick="this.classList.toggle('selected-pm')">Afternoon</span>
+            <span class="time-chip eve" onclick="this.classList.toggle('selected-eve')">Evening</span>
+          </div>
+        </div>
+        <div class="date-row">
+          <input class="date-input" type="date">
+          <div class="time-chips">
+            <span class="time-chip am" onclick="this.classList.toggle('selected-am')">Morning</span>
+            <span class="time-chip pm" onclick="this.classList.toggle('selected-pm')">Afternoon</span>
+            <span class="time-chip eve" onclick="this.classList.toggle('selected-eve')">Evening</span>
+          </div>
+        </div>
+        <div class="date-row">
+          <input class="date-input" type="date">
+          <div class="time-chips">
+            <span class="time-chip am" onclick="this.classList.toggle('selected-am')">Morning</span>
+            <span class="time-chip pm" onclick="this.classList.toggle('selected-pm')">Afternoon</span>
+            <span class="time-chip eve" onclick="this.classList.toggle('selected-eve')">Evening</span>
+          </div>
+        </div>
+        <div class="date-row">
+          <input class="date-input" type="date">
+          <div class="time-chips">
+            <span class="time-chip am" onclick="this.classList.toggle('selected-am')">Morning</span>
+            <span class="time-chip pm" onclick="this.classList.toggle('selected-pm')">Afternoon</span>
+            <span class="time-chip eve" onclick="this.classList.toggle('selected-eve')">Evening</span>
+          </div>
+        </div>
+        <button class="add-date-btn">+ Add another date</button>
+      </div>
+
+      <!-- Availability filter -->
+      <div class="form-section">
+        <div class="form-section-label"><span class="icon">✓</span> Availability</div>
+        <div class="form-row">
+          <label class="form-label">Show</label>
+          <div class="radio-pills">
+            <label class="radio-pill selected" onclick="selectPill(this)"><input type="radio" name="avail" checked>Available Only</label>
+            <label class="radio-pill" onclick="selectPill(this)"><input type="radio" name="avail">All Caregivers</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary">Search</button>
+        <button class="btn-secondary">Clear Filters</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div class="view-panel" id="panel-results">
+
+    <div class="results-header">
+      <div class="results-count">Showing <strong>12</strong> caregivers matching your search</div>
+    </div>
+
+    <div class="avail-legend">
+      <span style="font-weight:500; color:var(--navy);">Availability:</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#F9C74F"></span> Morning</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--logo-teal)"></span> Afternoon</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--navy)"></span> Evening</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#F0F0F0; border:1px solid #ddd"></span> Unavailable</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--coral)"></span> Booked</span>
+    </div>
+    <div class="avail-legend" style="margin-top:-6px;">
+      <span style="font-weight:500; color:var(--navy);">Area:</span>
+      <span class="legend-item"><span class="area-icon dark" style="width:16px;height:16px"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span> South County</span>
+      <span class="legend-item"><span class="area-icon dark" style="width:16px;height:16px"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span> North County</span>
+      <span style="color:var(--gray); margin-left:8px;">Dark = preferred &nbsp;|&nbsp; Light = will go</span>
+    </div>
+
+    <div class="results-table-wrap">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Rating</th>
+            <th>Age</th>
+            <th>Area</th>
+            <th>Expertise</th>
+            <th>C</th>
+            <th class="date-col">Mon 23</th>
+            <th class="date-col">Tue 24</th>
+            <th class="date-col">Wed 25</th>
+            <th class="date-col">Thu 26</th>
+            <th class="date-col">Fri 27</th>
+            <th class="date-col">Sat 28</th>
+            <th class="date-col">Sun 29</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a class="cg-name">Ann Talcott</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+            <td>61</td>
+            <td><div class="area-icons"><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span><span class="area-icon light"><svg viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag babies">Babies</span></div></td>
+            <td></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+          </tr>
+          <tr>
+            <td><a class="cg-name">Brittany Horton</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+            <td>41</td>
+            <td><div class="area-icons"><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag babies">Babies</span><span class="tag toddlers">Toddlers</span><span class="tag special">Spec. Needs</span></div></td>
+            <td><span class="cert-badge">✓</span></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+          </tr>
+          <tr>
+            <td><a class="cg-name">Damaris Ramirez</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+            <td>40</td>
+            <td><div class="area-icons"><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag babies">Babies</span><span class="tag toddlers">Toddlers</span><span class="tag special">Spec. Needs</span><span class="tag pets">Pets</span></div></td>
+            <td><span class="cert-badge">✓</span></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+          </tr>
+          <tr>
+            <td><a class="cg-name">Delaiah Luna</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+            <td>46</td>
+            <td><div class="area-icons"><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag toddlers">Toddlers</span><span class="tag special">Spec. Needs</span></div></td>
+            <td><span class="cert-badge">✓</span></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+          </tr>
+          <tr>
+            <td><a class="cg-name">Elizabeth Franco</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star empty">★</span></div></td>
+            <td>24</td>
+            <td><div class="area-icons"><span class="area-icon light"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag toddlers">Toddlers</span></div></td>
+            <td><span class="cert-badge">✓</span></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot booked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+          </tr>
+          <tr>
+            <td><a class="cg-name">Ellie Lavassani</a></td>
+            <td><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+            <td>56</td>
+            <td><div class="area-icons"><span class="area-icon dark"><svg viewBox="0 0 24 24"><path d="M12 2L8 6.5V10H4v12h16V10h-4V6.5L12 2zm0 2.5L14.5 8V10h-5V8L12 4.5zM6 20v-8h3v3h6v-3h3v8H6z"/></svg></span><span class="area-icon light"><svg viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 5 6 8.5c0 3.2 3 6.8 5 9l1 1.2 1-1.2c2-2.2 5-5.8 5-9C18 5 15.3 2 12 2zm0 1.5c2.5 0 4.5 2.2 4.5 5 0 2.5-2.3 5.5-4.5 8-2.2-2.5-4.5-5.5-4.5-8 0-2.8 2-5 4.5-5zM10.5 19.5h3V22h-3v-2.5z"/></svg></span></div></td>
+            <td><div class="tag-row"><span class="tag babies">Babies</span><span class="tag toddlers">Toddlers</span><span class="tag special">Spec. Needs</span></div></td>
+            <td><span class="cert-badge">✓</span></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span><span class="dot eve-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot pm-avail"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot blocked"></span></div></td>
+            <td class="avail-cell"><div class="avail-dots"><span class="dot am-avail"></span><span class="dot pm-avail"></span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Design Notes for Aji -->
+    <div class="design-notes">
+      <h3>Design Notes for Aji</h3>
+      <ul>
+        <li><strong>Area icons</strong> — Hotel Del icon = South County, Balloon icon = North County. Dark fill = preferred area, light fill = will go there but not preferred</li>
+        <li><strong>Color palette</strong> — Navy (#1B3A5C) as the dominant accent, teal (#84D0D2, #E8F5F5) for backgrounds and borders, coral (#F48A91) reserved for primary action buttons and the booked indicator only</li>
+        <li><strong>Typography</strong> — Playfair Display for headings, Poppins for all UI text — matching sitterwise.com</li>
+        <li><strong>Buttons</strong> — Square corners (border-radius: 0) per brand standard; coral primary, teal-outline secondary</li>
+        <li><strong>Filters</strong> — Pill/chip style replaces plain checkboxes for a cleaner, more tappable feel</li>
+        <li><strong>Time-of-day chips</strong> — Color-coded: gold = morning, teal = afternoon, purple = evening (matches availability dots in results)</li>
+        <li><strong>Availability dots</strong> — Replace the starburst icons with clean circles using M/P/E letters and color coding for quick scanning</li>
+        <li><strong>Booked status</strong> — Coral dot with "B" distinguishes booked from blocked/unavailable</li>
+        <li><strong>Table header</strong> — Navy background with white text for strong visual anchor and easy scanning</li>
+        <li><strong>Hover state</strong> — Blush (#FDF5F2) row highlight on hover</li>
+        <li><strong>Expertise tags</strong> — Color-coded mini-pills replace icon-only system for better readability</li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+  function selectPill(el) {
+    el.parentElement.querySelectorAll('.radio-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+</script>
+</body>
+</html>
