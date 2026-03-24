@@ -1,36 +1,51 @@
-import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import AppLayout from '@/layouts/app-layout';
-import { dashboard } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-    },
-];
+import { usePage } from '@inertiajs/react';
+import CaregiverDashboard from './dashboard/caregiver';
+import ClientDashboard from './dashboard/client';
+import AdminDashboard from './dashboard/admin';
 
 export default function Dashboard() {
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                </div>
-                <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                </div>
-            </div>
-        </AppLayout>
-    );
+    const { auth } = usePage<{
+        auth: {
+            user: {
+                role: string;
+                name: string;
+                caregiver?: {
+                    first_name: string;
+                    last_name: string;
+                    rating: number | null;
+                    status: { name: string };
+                };
+            };
+        };
+    }>().props;
+
+    switch (auth.user.role) {
+        case 'caregiver':
+            return (
+                <CaregiverDashboard
+                    caregiver={{
+                        first_name:
+                            auth.user.caregiver?.first_name || auth.user.name,
+                        last_name: auth.user.caregiver?.last_name || '',
+                        rating: auth.user.caregiver?.rating || null,
+                        status: auth.user.caregiver?.status?.name || 'Unknown',
+                    }}
+                />
+            );
+
+        case 'admin':
+            return (
+                <AdminDashboard
+                    stats={{
+                        total_caregivers: 51,
+                        active_caregivers: 10,
+                        total_clients: 0,
+                    }}
+                />
+            );
+
+        case 'client':
+        default:
+            return <ClientDashboard user={{ name: auth.user.name }} />;
+    }
 }

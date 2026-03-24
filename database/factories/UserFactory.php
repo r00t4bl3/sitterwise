@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Factories;
 
 use App\Models\User;
@@ -25,14 +24,14 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'two_factor_secret' => null,
+            'name'                      => fake()->name(),
+            'email'                     => fake()->unique()->safeEmail(),
+            'email_verified_at'         => now(),
+            'password'                  => static::$password ??= Hash::make('asdfasdf'),
+            'remember_token'            => Str::random(10),
+            'two_factor_secret'         => null,
             'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
+            'two_factor_confirmed_at'   => null,
         ];
     }
 
@@ -41,7 +40,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
@@ -51,10 +50,10 @@ class UserFactory extends Factory
      */
     public function withTwoFactor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => encrypt('secret'),
+        return $this->state(fn(array $attributes) => [
+            'two_factor_secret'         => encrypt('secret'),
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
-            'two_factor_confirmed_at' => now(),
+            'two_factor_confirmed_at'   => now(),
         ]);
     }
 }

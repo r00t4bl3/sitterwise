@@ -1,0 +1,454 @@
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowLeft, Check, Shield } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { Rating } from '@/components/ui/rating';
+import type { BreadcrumbItem } from '@/types';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+    },
+    {
+        title: 'Manage Caregivers',
+        href: '/caregivers',
+    },
+    {
+        title: 'Caregiver Details',
+        href: '#',
+    },
+];
+
+interface CertificationType {
+    id: number;
+    name: string;
+}
+
+interface Certification {
+    id: number;
+    certification_type: CertificationType;
+    expiration_date: string;
+    verified_at: string;
+}
+
+interface Status {
+    id: number;
+    name: string;
+    color: string;
+}
+
+interface SpecialtyType {
+    id: number;
+    name: string;
+}
+
+interface AttributeDefinition {
+    id: number;
+    name: string;
+    slug: string;
+}
+
+interface Attribute {
+    id: number;
+    attribute_definition: AttributeDefinition;
+    value: string;
+}
+
+interface Location {
+    id: number;
+    name: string;
+    is_preferred: boolean;
+}
+
+interface Caregiver {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    address: string;
+    date_of_birth: string;
+    date_of_birth_raw: string | null;
+    profile_photo_path: string | null;
+    rating: number | null;
+    biography: string | null;
+    notes: string | null;
+    status: Status;
+    specialty_types: SpecialtyType[];
+    locations: Location[];
+    certifications: Certification[];
+    attributes: Attribute[];
+}
+
+interface Props {
+    caregiver: Caregiver;
+    statuses: Status[];
+}
+
+function calculateAge(dateOfBirth: string): number {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+    return age;
+}
+
+function StatusBadge({ status }: { status: Status }) {
+    return (
+        <span
+            className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+            style={{
+                backgroundColor: status.color + '20',
+                color: status.color,
+            }}
+        >
+            {status.name}
+        </span>
+    );
+}
+
+function SpecialtyTag({ name }: { name: string }) {
+    const colors: Record<string, { bg: string; text: string }> = {
+        Babies: { bg: '#E0F7FA', text: '#006064' },
+        Toddlers: { bg: '#E8F5E9', text: '#2E7D32' },
+        Preschool: { bg: '#FFF3E0', text: '#E65100' },
+        'School Age': { bg: '#EDE7F6', text: '#4527A0' },
+        'Special Needs': { bg: '#FCE4EC', text: '#880E4F' },
+    };
+    const style = colors[name] || { bg: '#E8F5F5', text: '#1B3A5C' };
+
+    return (
+        <span
+            className="inline-block rounded-[10px] px-2 py-0.5 text-[10px] font-medium"
+            style={{ backgroundColor: style.bg, color: style.text }}
+        >
+            {name}
+        </span>
+    );
+}
+
+function AttributeBadge({ name, value }: { name: string; value: string }) {
+    const isTrue = value === 'true' || value === '1';
+
+    return (
+        <div className="flex items-center gap-2">
+            {isTrue && <Check className="h-4 w-4 text-green-600" />}
+            <span
+                className={`text-sm ${isTrue ? 'text-foreground' : 'text-muted-foreground'}`}
+            >
+                {name}
+            </span>
+        </div>
+    );
+}
+
+export default function AdminCaregiverShow() {
+    const { caregiver, statuses, csrf_token } = usePage()
+        .props as unknown as Props & { csrf_token: string };
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`${caregiver.first_name} ${caregiver.last_name}`} />
+            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/caregivers"
+                            className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Link>
+                        {caregiver.profile_photo_path ? (
+                            <img
+                                src={
+                                    caregiver.profile_photo_path ===
+                                    'avatar.jpg'
+                                        ? '/avatar.jpg'
+                                        : `/storage/${caregiver.profile_photo_path}`
+                                }
+                                alt={`${caregiver.first_name} ${caregiver.last_name}`}
+                                className="h-16 w-16 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+                                <span className="text-2xl font-medium text-amber-600">
+                                    {caregiver.first_name[0]}
+                                    {caregiver.last_name[0]}
+                                </span>
+                            </div>
+                        )}
+                        <div>
+                            <h1 className="text-2xl font-bold text-foreground">
+                                {caregiver.first_name} {caregiver.last_name}
+                            </h1>
+                            <p className="text-muted-foreground">
+                                Caregiver Profile
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href={`/caregivers/${caregiver.id}/edit`}
+                        className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                    >
+                        Edit
+                    </Link>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="rounded-[6px] border border-border bg-card p-6 lg:col-span-2">
+                        <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                            Profile Information
+                        </h2>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                    Email
+                                </p>
+                                <p className="text-sm font-medium text-foreground">
+                                    {caregiver.email}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                    Phone
+                                </p>
+                                <p className="text-sm font-medium text-foreground">
+                                    {caregiver.phone || '—'}
+                                </p>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Address
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {caregiver.address || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Rating
+                                        </p>
+                                        {caregiver.rating ? (
+                                            <Rating
+                                                value={caregiver.rating}
+                                                size="md"
+                                            />
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">
+                                                —
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                    Date of Birth
+                                </p>
+                                <p className="text-sm font-medium text-foreground">
+                                    {caregiver.date_of_birth || '—'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                    Age
+                                </p>
+                                <p className="text-sm font-medium text-foreground">
+                                    {caregiver.date_of_birth_raw
+                                        ? `${calculateAge(caregiver.date_of_birth_raw)} years old`
+                                        : '—'}
+                                </p>
+                            </div>
+                            {caregiver.biography && (
+                                <div className="sm:col-span-2">
+                                    <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                        Biography
+                                    </p>
+                                    <p className="text-sm text-foreground">
+                                        {caregiver.biography}
+                                    </p>
+                                </div>
+                            )}
+                            {caregiver.notes && (
+                                <div className="sm:col-span-2">
+                                    <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                        Notes
+                                    </p>
+                                    <p className="text-sm text-foreground">
+                                        {caregiver.notes}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 border-t border-border pt-6">
+                            <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Specialties
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                {caregiver.specialty_types.map((specialty) => (
+                                    <SpecialtyTag
+                                        key={specialty.id}
+                                        name={specialty.name}
+                                    />
+                                ))}
+                                {caregiver.specialty_types.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No specialties
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6 border-t border-border pt-6">
+                            <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Locations
+                            </h3>
+                            <div className="space-y-2">
+                                {caregiver.locations.map((location) => (
+                                    <div
+                                        key={location.id}
+                                        className={`flex items-center gap-2 ${location.is_preferred ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                                    >
+                                        <span
+                                            className={`h-2 w-2 rounded-full ${location.is_preferred ? 'bg-ring' : 'bg-border'}`}
+                                        />
+                                        {location.name}
+                                        {location.is_preferred && (
+                                            <span className="text-xs text-ring">
+                                                (Preferred)
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                                {caregiver.locations.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No locations
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6 border-t border-border pt-6">
+                            <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Attributes
+                            </h3>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {caregiver.attributes.map((attr) => (
+                                    <AttributeBadge
+                                        key={attr.id}
+                                        name={attr.attribute_definition.name}
+                                        value={attr.value}
+                                    />
+                                ))}
+                                {caregiver.attributes.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No attributes
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="rounded-[6px] border border-border bg-card p-6">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="font-serif text-lg font-semibold text-foreground">
+                                    Status
+                                </h2>
+                                <StatusBadge status={caregiver.status} />
+                            </div>
+
+                            <form
+                                method="post"
+                                action={`/caregivers/${caregiver.id}`}
+                            >
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value={csrf_token}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="_method"
+                                    value="patch"
+                                />
+                                <label className="block">
+                                    <span className="text-sm text-muted-foreground">
+                                        Change Status
+                                    </span>
+                                    <select
+                                        name="status_id"
+                                        defaultValue={caregiver.status.id}
+                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-ring"
+                                    >
+                                        {statuses.map((status) => (
+                                            <option
+                                                key={status.id}
+                                                value={status.id}
+                                            >
+                                                {status.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <button
+                                    type="submit"
+                                    className="mt-3 w-full rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                                >
+                                    Update Status
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="rounded-[6px] border border-border bg-card p-6">
+                            <h2 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
+                                <Shield className="h-5 w-5" />
+                                Certifications
+                            </h2>
+                            <div className="space-y-3">
+                                {caregiver.certifications.map((cert) => (
+                                    <div
+                                        key={cert.id}
+                                        className="flex items-center justify-between"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {cert.certification_type.name}
+                                            </p>
+                                            {cert.expiration_date && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Expires:{' '}
+                                                    {cert.expiration_date}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {cert.verified_at && (
+                                            <span className="flex items-center gap-1 text-xs text-green-600">
+                                                <Check className="h-3 w-3" />
+                                                Verified
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                                {caregiver.certifications.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No certifications
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

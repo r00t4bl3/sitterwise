@@ -1,5 +1,12 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    Calendar,
+    LayoutGrid,
+    Search,
+    Settings,
+    Shield,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -16,7 +23,7 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -24,20 +31,67 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
+const caregiverNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
+        title: 'Search Caregivers',
+        href: '#',
+        icon: Search,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'My Availability',
+        href: '#',
+        icon: Calendar,
     },
 ];
 
+const clientNavItems: NavItem[] = [
+    {
+        title: 'Find Caregiver',
+        href: '#',
+        icon: Search,
+    },
+    {
+        title: 'My Bookings',
+        href: '#',
+        icon: Calendar,
+    },
+];
+
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Manage Caregivers',
+        href: '/caregivers',
+        icon: Users,
+    },
+    {
+        title: 'Manage Clients',
+        href: '#',
+        icon: Shield,
+    },
+    {
+        title: 'Settings',
+        href: '#',
+        icon: Settings,
+    },
+];
+
+const footerNavItems: NavItem[] = [];
+
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
+
+    const roleBasedItems = (() => {
+        switch (auth.user.role) {
+            case 'caregiver':
+                return [...baseNavItems, ...caregiverNavItems];
+            case 'admin':
+                return [...baseNavItems, ...adminNavItems];
+            case 'client':
+            default:
+                return [...baseNavItems, ...clientNavItems];
+        }
+    })();
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -53,7 +107,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={roleBasedItems} />
             </SidebarContent>
 
             <SidebarFooter>
