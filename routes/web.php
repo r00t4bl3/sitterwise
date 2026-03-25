@@ -17,7 +17,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{caregiver}', [CaregiverController::class, 'show'])->name('show');
         Route::get('/{caregiver}/edit', [CaregiverController::class, 'edit'])->name('edit');
         Route::patch('/{caregiver}', [CaregiverController::class, 'update'])->name('update');
+        Route::post('/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('updateProfilePhoto');
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

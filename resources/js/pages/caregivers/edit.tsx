@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-import { useState, type FormEventHandler } from 'react';
+import { SubmitEventHandler, useState, type FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -142,6 +142,30 @@ export default function AdminCaregiverEdit() {
     const [locationsOpen, setLocationsOpen] = useState(false);
     const [attributesOpen, setAttributesOpen] = useState(false);
     const [certificationsOpen, setCertificationsOpen] = useState(false);
+    const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
+        caregiver.profile_photo_path,
+    );
+
+    const photoForm = useForm<{ profile_photo: File | null }>({
+        profile_photo: null as File | null,
+    });
+
+    const submitPhotoForm: SubmitEventHandler = (e) => {
+        e.preventDefault();
+
+        photoForm.post(`/caregivers/${caregiver.id}/profile-photo`, {
+            forceFormData: true,
+            onSuccess: (page) => {
+                const newPath = (page.props as any).caregiver
+                    ?.profile_photo_path;
+                if (newPath) {
+                    console.log(newPath);
+                    setCurrentProfilePhoto(newPath);
+                }
+                photoForm.reset();
+            },
+        });
+    };
 
     const form = useForm({
         first_name: caregiver.first_name,
@@ -230,64 +254,88 @@ export default function AdminCaregiverEdit() {
             />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center gap-4">
-                    <Link
-                        href={`/caregivers/${caregiver.id}`}
-                        className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Link>
-                    {caregiver.profile_photo_path ? (
-                        <div className="group relative">
-                            <img
-                                src={
-                                    caregiver.profile_photo_path ===
-                                    'avatar.jpg'
-                                        ? '/avatar.jpg'
-                                        : `/storage/${caregiver.profile_photo_path}`
-                                }
-                                alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                                className="h-16 w-16 rounded-full object-cover"
-                            />
-                            <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file =
-                                            e.target.files?.[0] || null;
-                                        form.setData('profile_photo', file);
-                                    }}
-                                />
-                                <span className="text-xs font-medium text-white">
-                                    Change
-                                </span>
-                            </label>
+                    <form onSubmit={submitPhotoForm}>
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href={`/caregivers/${caregiver.id}`}
+                                className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                            </Link>
+                            {currentProfilePhoto ? (
+                                <div className="group relative">
+                                    <img
+                                        src={
+                                            currentProfilePhoto === 'avatar.jpg'
+                                                ? '/avatar.jpg'
+                                                : `/storage/${currentProfilePhoto}`
+                                        }
+                                        alt={`${caregiver.first_name} ${caregiver.last_name}`}
+                                        className="h-16 w-16 rounded-full object-cover"
+                                    />
+                                    {photoForm.processing && (
+                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                                            <Spinner className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            disabled={photoForm.processing}
+                                            onChange={(e) => {
+                                                photoForm.setData(
+                                                    'profile_photo',
+                                                    e.target.files?.[0] || null,
+                                                );
+                                                if (e.target.files?.[0]) {
+                                                    const form = e.target.form;
+                                                    if (form) {
+                                                        form.requestSubmit();
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <span className="text-xs font-medium text-white">
+                                            Change
+                                        </span>
+                                    </label>
+                                </div>
+                            ) : (
+                                <div className="group relative">
+                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 group-hover:bg-amber-200">
+                                        <span className="text-2xl font-medium text-amber-600">
+                                            {caregiver.first_name[0]}
+                                            {caregiver.last_name[0]}
+                                        </span>
+                                    </div>
+                                    {photoForm.processing && (
+                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                                            <Spinner className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            disabled={photoForm.processing}
+                                            onChange={(e) => {
+                                                photoForm.setData(
+                                                    'profile_photo',
+                                                    e.target.files?.[0] || null,
+                                                );
+                                            }}
+                                        />
+                                        <span className="text-xs font-medium text-white">
+                                            Change
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
-                    ) : (
-                        <label className="cursor-pointer">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 hover:bg-amber-200">
-                                <span className="text-2xl font-medium text-amber-600">
-                                    {caregiver.first_name[0]}
-                                    {caregiver.last_name[0]}
-                                </span>
-                            </div>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0] || null;
-                                    form.setData('profile_photo', file);
-                                }}
-                            />
-                        </label>
-                    )}
-                    {form.data.profile_photo && (
-                        <span className="text-xs text-muted-foreground">
-                            {form.data.profile_photo.name}
-                        </span>
-                    )}
+                    </form>
                     <div>
                         <div>
                             <h1 className="text-2xl font-bold text-foreground">
