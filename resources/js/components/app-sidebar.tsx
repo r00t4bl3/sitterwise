@@ -59,12 +59,12 @@ const clientNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
     {
-        title: 'Manage Caregivers',
+        title: 'Caregivers',
         href: '/caregivers',
         icon: Users,
     },
     {
-        title: 'Manage Clients',
+        title: 'Clients',
         href: '#',
         icon: Shield,
     },

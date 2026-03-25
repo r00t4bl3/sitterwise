@@ -10,7 +10,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
     {
-        title: 'Manage Caregivers',
+        title: 'Caregivers',
         href: '/caregivers',
     },
 ];
@@ -120,12 +120,12 @@ export default function AdminCaregiversIndex() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Manage Caregivers" />
+            <Head title="Caregivers" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="font-serif text-2xl font-bold text-foreground">
-                            Manage Caregivers
+                            Caregivers
                         </h1>
                         <p className="text-sm text-muted-foreground">
                             {caregivers.total} caregivers total
@@ -202,7 +202,7 @@ export default function AdminCaregiversIndex() {
                                     <td className="px-4 py-3">
                                         <Link
                                             href={`/caregivers/${caregiver.id}`}
-                                            className="font-medium text-sm text-ring hover:text-foreground hover:underline"
+                                            className="text-sm font-medium text-ring hover:text-foreground hover:underline"
                                         >
                                             {caregiver.first_name}{' '}
                                             {caregiver.last_name}
@@ -254,21 +254,13 @@ export default function AdminCaregiversIndex() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
-                                            {caregiver.specialty_types
-                                                .slice(0, 2)
-                                                .map((specialty) => (
+                                            {caregiver.specialty_types.map(
+                                                (specialty) => (
                                                     <SpecialtyTag
                                                         key={specialty.id}
                                                         name={specialty.name}
                                                     />
-                                                ))}
-                                            {caregiver.specialty_types.length >
-                                                2 && (
-                                                <span className="text-xs text-muted-foreground">
-                                                    +
-                                                    {caregiver.specialty_types
-                                                        .length - 2}
-                                                </span>
+                                                ),
                                             )}
                                             {caregiver.specialty_types
                                                 .length === 0 && (

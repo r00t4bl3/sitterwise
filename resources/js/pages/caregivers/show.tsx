@@ -12,7 +12,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
     {
-        title: 'Manage Caregivers',
+        title: 'Caregivers',
         href: '/caregivers',
     },
     {
@@ -420,9 +420,7 @@ export default function AdminCaregiverShow() {
                                 <button
                                     type="button"
                                     onClick={handleStatusUpdate}
-                                    disabled={
-                                        statusForm.processing 
-                                    }
+                                    disabled={statusForm.processing}
                                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {isStatusUpdating ? <Spinner /> : null}

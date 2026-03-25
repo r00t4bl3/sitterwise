@@ -18,7 +18,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
     {
-        title: 'Manage Caregivers',
+        title: 'Caregivers',
         href: '/caregivers',
     },
     {
@@ -147,19 +147,29 @@ export default function AdminCaregiverEdit() {
     );
 
     const photoForm = useForm<{ profile_photo: File | null }>({
-        profile_photo: null as File | null,
+        profile_photo: null,
     });
+
+    const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        photoForm.setData('profile_photo', file);
+        if (file && e.target.form) {
+            photoForm.data.profile_photo = file;
+            e.target.form.requestSubmit();
+        }
+    }
 
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();
+        if (photoForm.data.profile_photo === null) {
+            return;
+        }
 
         photoForm.post(`/caregivers/${caregiver.id}/profile-photo`, {
-            forceFormData: true,
             onSuccess: (page) => {
                 const newPath = (page.props as any).caregiver
                     ?.profile_photo_path;
                 if (newPath) {
-                    console.log(newPath);
                     setCurrentProfilePhoto(newPath);
                 }
                 photoForm.reset();
@@ -284,18 +294,7 @@ export default function AdminCaregiverEdit() {
                                             accept="image/*"
                                             className="hidden"
                                             disabled={photoForm.processing}
-                                            onChange={(e) => {
-                                                photoForm.setData(
-                                                    'profile_photo',
-                                                    e.target.files?.[0] || null,
-                                                );
-                                                if (e.target.files?.[0]) {
-                                                    const form = e.target.form;
-                                                    if (form) {
-                                                        form.requestSubmit();
-                                                    }
-                                                }
-                                            }}
+                                            onChange={handlePhotoFormChange}
                                         />
                                         <span className="text-xs font-medium text-white">
                                             Change
@@ -321,12 +320,7 @@ export default function AdminCaregiverEdit() {
                                             accept="image/*"
                                             className="hidden"
                                             disabled={photoForm.processing}
-                                            onChange={(e) => {
-                                                photoForm.setData(
-                                                    'profile_photo',
-                                                    e.target.files?.[0] || null,
-                                                );
-                                            }}
+                                            onChange={handlePhotoFormChange}
                                         />
                                         <span className="text-xs font-medium text-white">
                                             Change
