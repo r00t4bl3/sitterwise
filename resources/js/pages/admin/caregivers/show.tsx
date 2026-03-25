@@ -1,5 +1,6 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Check, Shield } from 'lucide-react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Rating } from '@/components/ui/rating';
 import type { BreadcrumbItem } from '@/types';
@@ -81,6 +82,7 @@ interface Caregiver {
 }
 
 interface Props {
+    [key: string]: unknown;
     caregiver: Caregiver;
     statuses: Status[];
 }
@@ -149,8 +151,24 @@ function AttributeBadge({ name, value }: { name: string; value: string }) {
 }
 
 export default function AdminCaregiverShow() {
-    const { caregiver, statuses, csrf_token } = usePage()
-        .props as unknown as Props & { csrf_token: string };
+    const { caregiver, statuses } = usePage<Props>().props;
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+
+    const statusForm = useForm<{ status_id: number }>({
+        status_id: caregiver.status.id,
+    });
+
+    const handleStatusUpdate = () => {
+        setIsStatusUpdating(true);
+        statusForm.patch(`/caregivers/${caregiver.id}`, {
+            onSuccess: () => {
+                setIsStatusUpdating(false);
+            },
+            onError: () => {
+                setIsStatusUpdating(false);
+            },
+        });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -367,28 +385,18 @@ export default function AdminCaregiverShow() {
                                 <StatusBadge status={caregiver.status} />
                             </div>
 
-                            <form
-                                method="post"
-                                action={`/caregivers/${caregiver.id}`}
-                            >
-                                <input
-                                    type="hidden"
-                                    name="_token"
-                                    value={csrf_token}
-                                />
-                                <input
-                                    type="hidden"
-                                    name="_method"
-                                    value="patch"
-                                />
+                            <div className="space-y-3">
                                 <label className="block">
                                     <span className="text-sm text-muted-foreground">
                                         Change Status
                                     </span>
                                     <select
-                                        name="status_id"
-                                        defaultValue={caregiver.status.id}
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-ring"
+                                        value={statusForm.data.status_id}
+                                        onChange={(e) =>
+                                            statusForm.setData('status_id', Number(e.target.value))
+                                        }
+                                        disabled={statusForm.processing}
+                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-ring disabled:opacity-50"
                                     >
                                         {statuses.map((status) => (
                                             <option
@@ -399,14 +407,21 @@ export default function AdminCaregiverShow() {
                                             </option>
                                         ))}
                                     </select>
+                                    {statusForm.errors.status_id && (
+                                        <p className="mt-1 text-xs text-red-500">
+                                            {statusForm.errors.status_id}
+                                        </p>
+                                    )}
                                 </label>
                                 <button
-                                    type="submit"
-                                    className="mt-3 w-full rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                                    type="button"
+                                    onClick={handleStatusUpdate}
+                                    disabled={statusForm.processing || statusForm.data.status_id === caregiver.status.id}
+                                    className="mt-3 w-full rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Update Status
+                                    {isStatusUpdating ? 'Updating...' : 'Update Status'}
                                 </button>
-                            </form>
+                            </div>
                         </div>
 
                         <div className="rounded-[6px] border border-border bg-card p-6">

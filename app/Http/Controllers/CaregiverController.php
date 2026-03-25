@@ -125,6 +125,7 @@ class CaregiverController extends Controller
             $rules['rating'] = 'nullable|numeric|min:0|max:5';
             $rules['biography'] = 'nullable|string';
             $rules['notes'] = 'nullable|string';
+            $rules['profile_photo'] = 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048';
             $rules['specialty_type_ids'] = 'nullable|array';
             $rules['specialty_type_ids.*'] = 'exists:specialty_types,id';
             $rules['location_ids'] = 'nullable|array';
@@ -141,7 +142,7 @@ class CaregiverController extends Controller
         $validated = $request->validate($rules);
 
         if ($request->has('first_name')) {
-            $caregiver->update([
+            $updateData = [
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
                 'phone' => $validated['phone'] ?? null,
@@ -151,7 +152,16 @@ class CaregiverController extends Controller
                 'biography' => $validated['biography'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'status_id' => $validated['status_id'],
-            ]);
+            ];
+
+            if ($request->hasFile('profile_photo')) {
+                $file = $request->file('profile_photo');
+                $filename = time().'_'.$file->getClientOriginalName();
+                $path = $file->storeAs('profile-photos', $filename, 'public');
+                $updateData['profile_photo_path'] = $path;
+            }
+
+            $caregiver->update($updateData);
 
             if (isset($validated['specialty_type_ids'])) {
                 $caregiver->specialtyTypes()->sync($validated['specialty_type_ids']);

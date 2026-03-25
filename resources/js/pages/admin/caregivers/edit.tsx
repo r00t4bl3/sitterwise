@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useState, type FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -93,6 +93,7 @@ interface Caregiver {
 }
 
 interface Props {
+    [key: string]: unknown;
     caregiver: Caregiver;
     statuses: Status[];
     specialty_types: SpecialtyType[];
@@ -102,28 +103,14 @@ interface Props {
 }
 
 export default function AdminCaregiverEdit() {
-    const props = usePage().props as unknown as Props & { csrf_token: string };
     const {
         caregiver,
         statuses,
-        csrf_token,
         specialty_types,
         locations,
         attribute_definitions,
         certification_types,
-    } = props;
-
-    const [data, setData] = useState({
-        first_name: caregiver.first_name,
-        last_name: caregiver.last_name,
-        phone: caregiver.phone || '',
-        address: caregiver.address || '',
-        date_of_birth: caregiver.date_of_birth || '',
-        rating: caregiver.rating?.toString() || '',
-        biography: caregiver.biography || '',
-        notes: caregiver.notes || '',
-        status_id: caregiver.status_id.toString(),
-    });
+    } = usePage<Props>().props;
 
     const [selectedSpecialtyIds, setSelectedSpecialtyIds] = useState<number[]>(
         caregiver.specialty_type_ids,
@@ -155,7 +142,32 @@ export default function AdminCaregiverEdit() {
     const [attributesOpen, setAttributesOpen] = useState(false);
     const [certificationsOpen, setCertificationsOpen] = useState(false);
 
-    const [processing, setProcessing] = useState(false);
+    const form = useForm({
+        first_name: caregiver.first_name,
+        last_name: caregiver.last_name,
+        phone: caregiver.phone || '',
+        address: caregiver.address || '',
+        date_of_birth: caregiver.date_of_birth || '',
+        rating: caregiver.rating?.toString() || '',
+        biography: caregiver.biography || '',
+        notes: caregiver.notes || '',
+        status_id: caregiver.status_id.toString(),
+        profile_photo: null as File | null,
+        specialty_type_ids: caregiver.specialty_type_ids,
+        location_ids: caregiver.location_ids,
+        preferred_location_id: caregiver.preferred_location_id,
+        attribute_values: (() => {
+            const initial: Record<number, string> = {};
+            attribute_definitions.forEach((def) => {
+                const existing = caregiver.attributes.find(
+                    (a) => a.attribute_definition_id === def.id,
+                );
+                initial[def.id] = existing?.value === 'true' ? 'true' : 'false';
+            });
+            return initial;
+        })(),
+        certifications: caregiver.certifications,
+    });
 
     const addCertification = () => {
         if (certification_types.length > 0) {
@@ -193,64 +205,19 @@ export default function AdminCaregiverEdit() {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        setProcessing(true);
 
-        const form = e.currentTarget;
-        const formData = new FormData(form as HTMLFormElement);
+        // Use setData for each field to properly handle file uploads
+        form.setData('specialty_type_ids', selectedSpecialtyIds);
+        form.setData('location_ids', selectedLocationIds);
+        form.setData('preferred_location_id', preferredLocationId);
+        form.setData('attribute_values', attributeValues);
+        form.setData('certifications', certifications);
 
-        selectedSpecialtyIds.forEach((id) => {
-            formData.append('specialty_type_ids[]', id.toString());
-        });
-
-        selectedLocationIds.forEach((id) => {
-            formData.append('location_ids[]', id.toString());
-        });
-
-        if (preferredLocationId) {
-            formData.append(
-                'preferred_location_id',
-                preferredLocationId.toString(),
-            );
-        }
-
-        Object.entries(attributeValues).forEach(([key, value]) => {
-            formData.append(`attribute_values[${key}]`, value);
-        });
-
-        certifications.forEach((cert) => {
-            formData.append(
-                `certifications[${cert.id}][certification_type_id]`,
-                cert.certification_type_id.toString(),
-            );
-            if (cert.expiration_date) {
-                formData.append(
-                    `certifications[${cert.id}][expiration_date]`,
-                    cert.expiration_date,
-                );
-            }
-            if (cert.verified_at) {
-                formData.append(
-                    `certifications[${cert.id}][verified_at]`,
-                    cert.verified_at,
-                );
-            }
-        });
-
-        fetch((form as HTMLFormElement).action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
+        form.patch(`/caregivers/${caregiver.id}`, {
+            onSuccess: () => {
+                // Inertia automatically handles redirect on success
             },
-        })
-            .then((response) => {
-                if (response.ok) {
-                    window.location.href = `/caregivers/${caregiver.id}`;
-                }
-            })
-            .finally(() => {
-                setProcessing(false);
-            });
+        });
     };
 
     return (
@@ -284,6 +251,25 @@ export default function AdminCaregiverEdit() {
                             </span>
                         </div>
                     )}
+                    <div className="flex flex-col gap-1">
+                        <label className="cursor-pointer text-sm text-primary hover:underline">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    form.setData('profile_photo', file);
+                                }}
+                            />
+                            Change Photo
+                        </label>
+                        {form.data.profile_photo && (
+                            <span className="text-xs text-muted-foreground">
+                                {form.data.profile_photo.name}
+                            </span>
+                        )}
+                    </div>
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">
                             Edit {caregiver.first_name} {caregiver.last_name}
@@ -294,14 +280,7 @@ export default function AdminCaregiverEdit() {
                     </div>
                 </div>
 
-                <form
-                    method="post"
-                    action={`/caregivers/${caregiver.id}`}
-                    onSubmit={submit}
-                >
-                    <input type="hidden" name="_token" value={csrf_token} />
-                    <input type="hidden" name="_method" value="PATCH" />
-
+                <form onSubmit={submit}>
                     <div className="rounded-[6px] border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
@@ -315,12 +294,12 @@ export default function AdminCaregiverEdit() {
                                     <input
                                         type="text"
                                         name="first_name"
-                                        value={data.first_name}
+                                        value={form.data.first_name}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                first_name: e.target.value,
-                                            })
+                                            form.setData(
+                                                'first_name',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
                                         required
@@ -335,12 +314,12 @@ export default function AdminCaregiverEdit() {
                                     <input
                                         type="text"
                                         name="last_name"
-                                        value={data.last_name}
+                                        value={form.data.last_name}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                last_name: e.target.value,
-                                            })
+                                            form.setData(
+                                                'last_name',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
                                         required
@@ -368,12 +347,12 @@ export default function AdminCaregiverEdit() {
                                     <input
                                         type="text"
                                         name="phone"
-                                        value={data.phone}
+                                        value={form.data.phone}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                phone: e.target.value,
-                                            })
+                                            form.setData(
+                                                'phone',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
                                     />
@@ -387,12 +366,12 @@ export default function AdminCaregiverEdit() {
                                     <input
                                         type="text"
                                         name="address"
-                                        value={data.address}
+                                        value={form.data.address}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                address: e.target.value,
-                                            })
+                                            form.setData(
+                                                'address',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
                                     />
@@ -406,12 +385,12 @@ export default function AdminCaregiverEdit() {
                                     <div className="mt-1">
                                         <DatePicker
                                             name="date_of_birth"
-                                            value={data.date_of_birth}
+                                            value={form.data.date_of_birth}
                                             onChange={(date) =>
-                                                setData({
-                                                    ...data,
-                                                    date_of_birth: date,
-                                                })
+                                                form.setData(
+                                                    'date_of_birth',
+                                                    date || '',
+                                                )
                                             }
                                             placeholder="Select date of birth"
                                         />
@@ -426,12 +405,12 @@ export default function AdminCaregiverEdit() {
                                     <input
                                         type="number"
                                         name="rating"
-                                        value={data.rating}
+                                        value={form.data.rating}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                rating: e.target.value,
-                                            })
+                                            form.setData(
+                                                'rating',
+                                                e.target.value,
+                                            )
                                         }
                                         min="0"
                                         max="5"
@@ -447,12 +426,12 @@ export default function AdminCaregiverEdit() {
                                     </span>
                                     <textarea
                                         name="biography"
-                                        value={data.biography}
+                                        value={form.data.biography}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                biography: e.target.value,
-                                            })
+                                            form.setData(
+                                                'biography',
+                                                e.target.value,
+                                            )
                                         }
                                         rows={4}
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
@@ -466,12 +445,12 @@ export default function AdminCaregiverEdit() {
                                     </span>
                                     <textarea
                                         name="notes"
-                                        value={data.notes}
+                                        value={form.data.notes}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                notes: e.target.value,
-                                            })
+                                            form.setData(
+                                                'notes',
+                                                e.target.value,
+                                            )
                                         }
                                         rows={3}
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
@@ -485,12 +464,12 @@ export default function AdminCaregiverEdit() {
                                     </span>
                                     <select
                                         name="status_id"
-                                        value={data.status_id}
+                                        value={form.data.status_id}
                                         onChange={(e) =>
-                                            setData({
-                                                ...data,
-                                                status_id: e.target.value,
-                                            })
+                                            form.setData(
+                                                'status_id',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
                                     >
@@ -806,10 +785,10 @@ export default function AdminCaregiverEdit() {
                         </Link>
                         <button
                             type="submit"
-                            disabled={processing}
+                            disabled={form.processing}
                             className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
                         >
-                            {processing ? 'Saving...' : 'Save Changes'}
+                            {form.processing ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 </form>

@@ -47,6 +47,7 @@ interface Caregiver {
 }
 
 interface Props {
+    [key: string]: unknown;
     caregivers: {
         data: Caregiver[];
         current_page: number;
@@ -201,7 +202,7 @@ export default function AdminCaregiversIndex() {
                                     <td className="px-4 py-3">
                                         <Link
                                             href={`/caregivers/${caregiver.id}`}
-                                            className="font-medium text-ring hover:text-foreground hover:underline"
+                                            className="font-medium text-sm text-ring hover:text-foreground hover:underline"
                                         >
                                             {caregiver.first_name}{' '}
                                             {caregiver.last_name}
@@ -211,6 +212,7 @@ export default function AdminCaregiversIndex() {
                                         {caregiver.rating ? (
                                             <Rating
                                                 value={caregiver.rating}
+                                                showScore={false}
                                                 size="sm"
                                             />
                                         ) : (
