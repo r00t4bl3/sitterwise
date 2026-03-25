@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Shield } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Rating } from '@/components/ui/rating';
+import { Spinner } from '@/components/ui/spinner';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -221,7 +222,7 @@ export default function AdminCaregiverShow() {
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="rounded-[6px] border border-border bg-card p-6 lg:col-span-2">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                            Profile Information
+                            Personal Information
                         </h2>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
@@ -393,7 +394,10 @@ export default function AdminCaregiverShow() {
                                     <select
                                         value={statusForm.data.status_id}
                                         onChange={(e) =>
-                                            statusForm.setData('status_id', Number(e.target.value))
+                                            statusForm.setData(
+                                                'status_id',
+                                                Number(e.target.value),
+                                            )
                                         }
                                         disabled={statusForm.processing}
                                         className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-ring disabled:opacity-50"
@@ -416,10 +420,15 @@ export default function AdminCaregiverShow() {
                                 <button
                                     type="button"
                                     onClick={handleStatusUpdate}
-                                    disabled={statusForm.processing || statusForm.data.status_id === caregiver.status.id}
-                                    className="mt-3 w-full rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={
+                                        statusForm.processing 
+                                    }
+                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {isStatusUpdating ? 'Updating...' : 'Update Status'}
+                                    {isStatusUpdating ? <Spinner /> : null}
+                                    {isStatusUpdating
+                                        ? 'Updating...'
+                                        : 'Update Status'}
                                 </button>
                             </div>
                         </div>

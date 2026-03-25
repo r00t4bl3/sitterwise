@@ -4,6 +4,7 @@ import { useState, type FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Collapsible,
     CollapsibleContent,
@@ -206,12 +207,14 @@ export default function AdminCaregiverEdit() {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        // Use setData for each field to properly handle file uploads
-        form.setData('specialty_type_ids', selectedSpecialtyIds);
-        form.setData('location_ids', selectedLocationIds);
-        form.setData('preferred_location_id', preferredLocationId);
-        form.setData('attribute_values', attributeValues);
-        form.setData('certifications', certifications);
+        form.transform((data) => ({
+            ...data,
+            specialty_type_ids: selectedSpecialtyIds,
+            location_ids: selectedLocationIds,
+            preferred_location_id: preferredLocationId,
+            attribute_values: attributeValues,
+            certifications: certifications,
+        }));
 
         form.patch(`/caregivers/${caregiver.id}`, {
             onSuccess: () => {
@@ -234,25 +237,41 @@ export default function AdminCaregiverEdit() {
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                     {caregiver.profile_photo_path ? (
-                        <img
-                            src={
-                                caregiver.profile_photo_path === 'avatar.jpg'
-                                    ? '/avatar.jpg'
-                                    : `/storage/${caregiver.profile_photo_path}`
-                            }
-                            alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                            className="h-16 w-16 rounded-full object-cover"
-                        />
-                    ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-                            <span className="text-2xl font-medium text-amber-600">
-                                {caregiver.first_name[0]}
-                                {caregiver.last_name[0]}
-                            </span>
+                        <div className="group relative">
+                            <img
+                                src={
+                                    caregiver.profile_photo_path ===
+                                    'avatar.jpg'
+                                        ? '/avatar.jpg'
+                                        : `/storage/${caregiver.profile_photo_path}`
+                                }
+                                alt={`${caregiver.first_name} ${caregiver.last_name}`}
+                                className="h-16 w-16 rounded-full object-cover"
+                            />
+                            <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file =
+                                            e.target.files?.[0] || null;
+                                        form.setData('profile_photo', file);
+                                    }}
+                                />
+                                <span className="text-xs font-medium text-white">
+                                    Change
+                                </span>
+                            </label>
                         </div>
-                    )}
-                    <div className="flex flex-col gap-1">
-                        <label className="cursor-pointer text-sm text-primary hover:underline">
+                    ) : (
+                        <label className="cursor-pointer">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 hover:bg-amber-200">
+                                <span className="text-2xl font-medium text-amber-600">
+                                    {caregiver.first_name[0]}
+                                    {caregiver.last_name[0]}
+                                </span>
+                            </div>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -262,21 +281,22 @@ export default function AdminCaregiverEdit() {
                                     form.setData('profile_photo', file);
                                 }}
                             />
-                            Change Photo
                         </label>
-                        {form.data.profile_photo && (
-                            <span className="text-xs text-muted-foreground">
-                                {form.data.profile_photo.name}
-                            </span>
-                        )}
-                    </div>
+                    )}
+                    {form.data.profile_photo && (
+                        <span className="text-xs text-muted-foreground">
+                            {form.data.profile_photo.name}
+                        </span>
+                    )}
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground">
-                            Edit {caregiver.first_name} {caregiver.last_name}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Caregiver Profile
-                        </p>
+                        <div>
+                            <h1 className="text-2xl font-bold text-foreground">
+                                {caregiver.first_name} {caregiver.last_name}
+                            </h1>
+                            <p className="text-muted-foreground">
+                                Edit Caregiver Profile
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -786,8 +806,9 @@ export default function AdminCaregiverEdit() {
                         <button
                             type="submit"
                             disabled={form.processing}
-                            className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                            className="flex items-center gap-2 rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
                         >
+                            {form.processing ? <Spinner /> : null}
                             {form.processing ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>

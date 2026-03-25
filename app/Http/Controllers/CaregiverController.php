@@ -33,7 +33,7 @@ class CaregiverController extends Controller
         $caregivers = $query->orderBy('last_name')->paginate(20);
         $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
 
-        return Inertia::render('admin/caregivers/index', [
+        return Inertia::render('caregivers/index', [
             'caregivers' => $caregivers,
             'statuses' => $statuses,
             'filters' => [
@@ -65,7 +65,7 @@ class CaregiverController extends Controller
             ? Carbon::parse($caregiver->date_of_birth)->format('F j, Y')
             : null;
 
-        return Inertia::render('admin/caregivers/show', [
+        return Inertia::render('caregivers/show', [
             'caregiver' => [
                 'id' => $caregiver->id,
                 'first_name' => $caregiver->first_name,
@@ -223,7 +223,7 @@ class CaregiverController extends Controller
         $attributeDefinitions = AttributeDefinition::active()->get();
         $certificationTypes = CertificationType::active()->get();
 
-        return Inertia::render('admin/caregivers/edit', [
+        return Inertia::render('caregivers/edit', [
             'caregiver' => [
                 'id' => $caregiver->id,
                 'first_name' => $caregiver->first_name,
