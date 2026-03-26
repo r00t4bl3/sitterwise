@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\User;
@@ -22,9 +23,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'name'  => 'Test User',
+            'name' => 'Test User',
             'email' => 'admin@example.test',
-            'role'  => 'admin',
+            'role' => 'admin',
         ]);
     }
 }

@@ -149,6 +149,11 @@ export default function CaregiversIndex() {
             setShowSuggestions(false);
             return;
         }
+        if (value.trim().length < 2) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
         setIsLoading(true);
         debounceRef.current = setTimeout(async () => {
             try {
@@ -198,6 +203,7 @@ export default function CaregiversIndex() {
                             <input
                                 type="text"
                                 name="search"
+                                autoComplete="off"
                                 value={searchQuery}
                                 onChange={(e) =>
                                     handleSearchChange(e.target.value)

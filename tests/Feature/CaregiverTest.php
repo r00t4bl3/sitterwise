@@ -74,22 +74,22 @@ test('guests cannot access search suggestions', function () {
     $response->assertRedirect(route('login'));
 });
 
-// Regular authenticated user (non-admin) tests - only index and show should work
-test('regular users can view caregivers index', function () {
+// Regular authenticated user (non-admin) tests - nothing should work
+test('regular users cannot view caregivers index', function () {
     $user = User::factory()->create(['role' => 'client']);
     $this->actingAs($user);
 
     $response = $this->get(route('caregivers.index'));
-    $response->assertSuccessful();
+    $response->assertForbidden();
 });
 
-test('regular users can view caregiver show page', function () {
+test('regular users cannot view caregiver show page', function () {
     $user = User::factory()->create(['role' => 'client']);
     $this->actingAs($user);
 
     $caregiver = Caregiver::factory()->create();
     $response = $this->get(route('caregivers.show', $caregiver));
-    $response->assertSuccessful();
+    $response->assertForbidden();
 });
 
 test('regular users cannot view caregiver create page - forbidden', function () {

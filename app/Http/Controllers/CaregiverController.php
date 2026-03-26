@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCaregiverRequest;
@@ -33,12 +34,12 @@ class CaregiverController extends Controller
         }
 
         $caregivers = $query->orderBy('last_name')->paginate(20);
-        $statuses   = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
 
         return Inertia::render('caregivers/index', [
             'caregivers' => $caregivers,
-            'statuses'   => $statuses,
-            'filters'    => [
+            'statuses' => $statuses,
+            'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
             ],
@@ -59,21 +60,21 @@ class CaregiverController extends Controller
         $validated = $request->validated();
 
         $user = User::create([
-            'name'     => $validated['first_name'] . ' ' . $validated['last_name'],
-            'email'    => $validated['email'],
+            'name' => $validated['first_name'].' '.$validated['last_name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
 
         $caregiver = Caregiver::create([
-            'user_id'       => $user->id,
-            'status_id'     => $validated['status_id'],
-            'first_name'    => $validated['first_name'],
-            'last_name'     => $validated['last_name'],
-            'phone'         => $validated['phone'] ?? null,
-            'address'       => $validated['address'] ?? null,
+            'user_id' => $user->id,
+            'status_id' => $validated['status_id'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'biography'     => $validated['biography'] ?? null,
-            'notes'         => $validated['notes'] ?? null,
+            'biography' => $validated['biography'] ?? null,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return redirect()->route('caregivers.show', $caregiver->id)
@@ -120,46 +121,46 @@ class CaregiverController extends Controller
             : null;
 
         return Inertia::render('caregivers/show', [
-            'caregiver'  => [
-                'id'                 => $caregiver->id,
-                'first_name'         => $caregiver->first_name,
-                'last_name'          => $caregiver->last_name,
-                'email'              => $caregiver->user?->email,
-                'phone'              => $caregiver->phone,
-                'address'            => $caregiver->address,
-                'date_of_birth'      => $formattedDob,
-                'date_of_birth_raw'  => $caregiver->date_of_birth,
+            'caregiver' => [
+                'id' => $caregiver->id,
+                'first_name' => $caregiver->first_name,
+                'last_name' => $caregiver->last_name,
+                'email' => $caregiver->user?->email,
+                'phone' => $caregiver->phone,
+                'address' => $caregiver->address,
+                'date_of_birth' => $formattedDob,
+                'date_of_birth_raw' => $caregiver->date_of_birth,
                 'profile_photo_path' => $caregiver->profile_photo_path,
-                'rating'             => $caregiver->rating,
-                'biography'          => $caregiver->biography,
-                'notes'              => $caregiver->notes,
-                'status'             => $caregiver->status,
-                'specialty_types'    => $caregiver->specialtyTypes,
-                'locations'          => $caregiver->locations->map(fn($l) => [
-                    'id'           => $l->id,
-                    'name'         => $l->name,
+                'rating' => $caregiver->rating,
+                'biography' => $caregiver->biography,
+                'notes' => $caregiver->notes,
+                'status' => $caregiver->status,
+                'specialty_types' => $caregiver->specialtyTypes,
+                'locations' => $caregiver->locations->map(fn ($l) => [
+                    'id' => $l->id,
+                    'name' => $l->name,
                     'is_preferred' => (bool) $l->pivot->is_preferred,
                 ]),
-                'certifications'     => $caregiver->certifications->map(fn($c) => [
-                    'id'                 => $c->id,
+                'certifications' => $caregiver->certifications->map(fn ($c) => [
+                    'id' => $c->id,
                     'certification_type' => [
-                        'id'   => $c->id,
+                        'id' => $c->id,
                         'name' => $c->name,
                     ],
-                    'expiration_date'    => $c->pivot->expiration_date,
-                    'verified_at'        => $c->pivot->verified_at,
+                    'expiration_date' => $c->pivot->expiration_date,
+                    'verified_at' => $c->pivot->verified_at,
                 ]),
-                'attributes'         => $caregiver->attributes->map(fn($a) => [
-                    'id'                   => $a->id,
+                'attributes' => $caregiver->attributes->map(fn ($a) => [
+                    'id' => $a->id,
                     'attribute_definition' => [
-                        'id'   => $a->id,
+                        'id' => $a->id,
                         'name' => $a->name,
                         'slug' => $a->slug,
                     ],
-                    'value'                => $a->pivot->value,
+                    'value' => $a->pivot->value,
                 ]),
             ],
-            'statuses'   => $statuses,
+            'statuses' => $statuses,
             'csrf_token' => csrf_token(),
         ]);
     }
@@ -171,47 +172,47 @@ class CaregiverController extends Controller
         ];
 
         if ($request->has('first_name')) {
-            $rules['first_name']                             = 'required|string|max:255';
-            $rules['last_name']                              = 'required|string|max:255';
-            $rules['phone']                                  = 'nullable|string|max:255';
-            $rules['address']                                = 'nullable|string|max:500';
-            $rules['date_of_birth']                          = 'nullable|date';
-            $rules['rating']                                 = 'nullable|numeric|min:0|max:5';
-            $rules['biography']                              = 'nullable|string';
-            $rules['notes']                                  = 'nullable|string';
-            $rules['profile_photo']                          = 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048';
-            $rules['specialty_type_ids']                     = 'nullable|array';
-            $rules['specialty_type_ids.*']                   = 'exists:specialty_types,id';
-            $rules['location_ids']                           = 'nullable|array';
-            $rules['location_ids.*']                         = 'exists:locations,id';
-            $rules['preferred_location_id']                  = 'nullable|exists:locations,id';
-            $rules['attribute_values']                       = 'nullable|array';
-            $rules['attribute_values.*']                     = 'nullable|string';
-            $rules['certifications']                         = 'nullable|array';
+            $rules['first_name'] = 'required|string|max:255';
+            $rules['last_name'] = 'required|string|max:255';
+            $rules['phone'] = 'nullable|string|max:255';
+            $rules['address'] = 'nullable|string|max:500';
+            $rules['date_of_birth'] = 'nullable|date';
+            $rules['rating'] = 'nullable|numeric|min:0|max:5';
+            $rules['biography'] = 'nullable|string';
+            $rules['notes'] = 'nullable|string';
+            $rules['profile_photo'] = 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048';
+            $rules['specialty_type_ids'] = 'nullable|array';
+            $rules['specialty_type_ids.*'] = 'exists:specialty_types,id';
+            $rules['location_ids'] = 'nullable|array';
+            $rules['location_ids.*'] = 'exists:locations,id';
+            $rules['preferred_location_id'] = 'nullable|exists:locations,id';
+            $rules['attribute_values'] = 'nullable|array';
+            $rules['attribute_values.*'] = 'nullable|string';
+            $rules['certifications'] = 'nullable|array';
             $rules['certifications.*.certification_type_id'] = 'required|exists:certification_types,id';
-            $rules['certifications.*.expiration_date']       = 'nullable|date';
-            $rules['certifications.*.verified_at']           = 'nullable|date';
+            $rules['certifications.*.expiration_date'] = 'nullable|date';
+            $rules['certifications.*.verified_at'] = 'nullable|date';
         }
 
         $validated = $request->validate($rules);
 
         if ($request->has('first_name')) {
             $updateData = [
-                'first_name'    => $validated['first_name'],
-                'last_name'     => $validated['last_name'],
-                'phone'         => $validated['phone'] ?? null,
-                'address'       => $validated['address'] ?? null,
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
-                'rating'        => $validated['rating'] ?? null,
-                'biography'     => $validated['biography'] ?? null,
-                'notes'         => $validated['notes'] ?? null,
-                'status_id'     => $validated['status_id'],
+                'rating' => $validated['rating'] ?? null,
+                'biography' => $validated['biography'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'status_id' => $validated['status_id'],
             ];
 
             if ($request->hasFile('profile_photo')) {
-                $file                             = $request->file('profile_photo');
-                $filename                         = time() . '_' . $file->getClientOriginalName();
-                $path                             = $file->storeAs('profile-photos', $filename, 'public');
+                $file = $request->file('profile_photo');
+                $filename = time().'_'.$file->getClientOriginalName();
+                $path = $file->storeAs('profile-photos', $filename, 'public');
                 $updateData['profile_photo_path'] = $path;
             }
 
@@ -246,7 +247,7 @@ class CaregiverController extends Controller
                 foreach ($validated['certifications'] as $cert) {
                     $certSync[$cert['certification_type_id']] = [
                         'expiration_date' => $cert['expiration_date'] ?? null,
-                        'verified_at'     => $cert['verified_at'] ?? null,
+                        'verified_at' => $cert['verified_at'] ?? null,
                     ];
                 }
                 $caregiver->certifications()->sync($certSync);
@@ -271,53 +272,53 @@ class CaregiverController extends Controller
             $query->withPivot('value');
         }]);
 
-        $statuses             = CaregiverStatus::active()->orderBy('sort_order')->get();
-        $specialtyTypes       = SpecialtyType::active()->get();
-        $locations            = Location::active()->get();
+        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $specialtyTypes = SpecialtyType::active()->get();
+        $locations = Location::active()->get();
         $attributeDefinitions = AttributeDefinition::active()->get();
-        $certificationTypes   = CertificationType::active()->get();
+        $certificationTypes = CertificationType::active()->get();
 
         return Inertia::render('caregivers/edit', [
-            'caregiver'             => [
-                'id'                    => $caregiver->id,
-                'first_name'            => $caregiver->first_name,
-                'last_name'             => $caregiver->last_name,
-                'email'                 => $caregiver->user?->email,
-                'phone'                 => $caregiver->phone,
-                'address'               => $caregiver->address,
-                'date_of_birth'         => $caregiver->date_of_birth,
-                'profile_photo_path'    => $caregiver->profile_photo_path,
-                'rating'                => $caregiver->rating,
-                'biography'             => $caregiver->biography,
-                'notes'                 => $caregiver->notes,
-                'status_id'             => $caregiver->status_id,
-                'specialty_type_ids'    => $caregiver->specialtyTypes->pluck('id')->toArray(),
-                'location_ids'          => $caregiver->locations->pluck('id')->toArray(),
+            'caregiver' => [
+                'id' => $caregiver->id,
+                'first_name' => $caregiver->first_name,
+                'last_name' => $caregiver->last_name,
+                'email' => $caregiver->user?->email,
+                'phone' => $caregiver->phone,
+                'address' => $caregiver->address,
+                'date_of_birth' => $caregiver->date_of_birth,
+                'profile_photo_path' => $caregiver->profile_photo_path,
+                'rating' => $caregiver->rating,
+                'biography' => $caregiver->biography,
+                'notes' => $caregiver->notes,
+                'status_id' => $caregiver->status_id,
+                'specialty_type_ids' => $caregiver->specialtyTypes->pluck('id')->toArray(),
+                'location_ids' => $caregiver->locations->pluck('id')->toArray(),
                 'preferred_location_id' => $caregiver->locations()->wherePivot('is_preferred', true)->first()?->id,
-                'attributes'            => $caregiver->attributes->map(fn($a) => [
-                    'id'                      => $a->id,
+                'attributes' => $caregiver->attributes->map(fn ($a) => [
+                    'id' => $a->id,
                     'attribute_definition_id' => $a->pivot->attribute_definition_id,
-                    'name'                    => $a->name,
-                    'slug'                    => $a->slug,
-                    'value'                   => $a->pivot->value,
+                    'name' => $a->name,
+                    'slug' => $a->slug,
+                    'value' => $a->pivot->value,
                 ]),
-                'certifications'        => $caregiver->certifications->map(fn($c) => [
-                    'id'                    => $c->pivot->id,
+                'certifications' => $caregiver->certifications->map(fn ($c) => [
+                    'id' => $c->pivot->id,
                     'certification_type_id' => $c->pivot->certification_type_id,
-                    'certification_type'    => [
-                        'id'   => $c->id,
+                    'certification_type' => [
+                        'id' => $c->id,
                         'name' => $c->name,
                     ],
-                    'expiration_date'       => $c->pivot->expiration_date,
-                    'verified_at'           => $c->pivot->verified_at,
+                    'expiration_date' => $c->pivot->expiration_date,
+                    'verified_at' => $c->pivot->verified_at,
                 ]),
             ],
-            'statuses'              => $statuses,
-            'specialty_types'       => $specialtyTypes,
-            'locations'             => $locations,
+            'statuses' => $statuses,
+            'specialty_types' => $specialtyTypes,
+            'locations' => $locations,
             'attribute_definitions' => $attributeDefinitions,
-            'certification_types'   => $certificationTypes,
-            'csrf_token'            => csrf_token(),
+            'certification_types' => $certificationTypes,
+            'csrf_token' => csrf_token(),
         ]);
     }
 
@@ -328,9 +329,9 @@ class CaregiverController extends Controller
         ]);
 
         if ($request->hasFile('profile_photo')) {
-            $file     = $request->file('profile_photo');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path     = $file->storeAs('profile-photos', $filename, 'public');
+            $file = $request->file('profile_photo');
+            $filename = time().'_'.$file->getClientOriginalName();
+            $path = $file->storeAs('profile-photos', $filename, 'public');
             $caregiver->update(['profile_photo_path' => $path]);
 
             return redirect()->route('caregivers.edit', $caregiver->id)
