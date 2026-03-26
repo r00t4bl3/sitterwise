@@ -8,6 +8,7 @@ use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Location;
 use App\Models\SpecialtyType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -57,6 +58,7 @@ class CaregiverFactory extends Factory
         $lastName = $this->faker->randomElement($lastNames);
 
         return [
+            'user_id' => User::factory(),
             'first_name' => $firstName,
             'last_name' => $lastName,
             'phone' => $this->faker->phoneNumber(),

@@ -1,10 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    ChevronDown,
-    CheckCircle2,
-    AlertCircle,
-} from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { SubmitEventHandler, useState, type FormEventHandler } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -15,7 +10,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ToasterMessage } from '@/components/toaster-message';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -109,7 +104,7 @@ interface Props {
     certification_types: CertificationType[];
 }
 
-export default function AdminCaregiverEdit() {
+export default function CaregiverEdit() {
     const {
         caregiver,
         statuses,
@@ -118,11 +113,6 @@ export default function AdminCaregiverEdit() {
         attribute_definitions,
         certification_types,
     } = usePage<Props>().props;
-
-    const flash = (usePage().props as Record<string, unknown>).flash as Record<
-        string,
-        string
-    > | null;
 
     const [selectedSpecialtyIds, setSelectedSpecialtyIds] = useState<number[]>(
         caregiver.specialty_type_ids,
@@ -273,21 +263,8 @@ export default function AdminCaregiverEdit() {
             <Head
                 title={`Edit ${caregiver.first_name} ${caregiver.last_name}`}
             />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                {flash?.success && (
-                    <Alert className="border-green-200 bg-green-50 text-green-800">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <AlertTitle>Success</AlertTitle>
-                        <AlertDescription>{flash.success}</AlertDescription>
-                    </Alert>
-                )}
-                {flash?.error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{flash.error}</AlertDescription>
-                    </Alert>
-                )}
                 <div className="flex items-center gap-4">
                     <form onSubmit={submitPhotoForm}>
                         <div className="flex items-center gap-4">

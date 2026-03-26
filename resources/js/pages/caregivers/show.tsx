@@ -1,9 +1,17 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, Check, Shield, Eye, EyeOff } from 'lucide-react';
+import { SubmitEventHandler, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Rating } from '@/components/ui/rating';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetFooter,
+} from '@/components/ui/sheet';
+import { ToasterMessage } from '@/components/toaster-message';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -151,12 +159,22 @@ function AttributeBadge({ name, value }: { name: string; value: string }) {
     );
 }
 
-export default function AdminCaregiverShow() {
+export default function CaregiverShow() {
     const { caregiver, statuses } = usePage<Props>().props;
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const statusForm = useForm<{ status_id: number }>({
         status_id: caregiver.status.id,
+    });
+
+    const passwordForm = useForm<{
+        new_password: string;
+        new_password_confirmation: string;
+    }>({
+        new_password: '',
+        new_password_confirmation: '',
     });
 
     const handleStatusUpdate = () => {
@@ -171,9 +189,20 @@ export default function AdminCaregiverShow() {
         });
     };
 
+    const handlePasswordReset: SubmitEventHandler = (e) => {
+        e.preventDefault();
+        passwordForm.post(`/caregivers/${caregiver.id}/password`, {
+            onSuccess: () => {
+                setIsPasswordSheetOpen(false);
+                passwordForm.reset();
+            },
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${caregiver.first_name} ${caregiver.last_name}`} />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -211,13 +240,125 @@ export default function AdminCaregiverShow() {
                             </p>
                         </div>
                     </div>
-                    <Link
-                        href={`/caregivers/${caregiver.id}/edit`}
-                        className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-                    >
-                        Edit
-                    </Link>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setIsPasswordSheetOpen(true)}
+                            className="rounded-[3px] border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+                        >
+                            Reset Password
+                        </button>
+                        <Link
+                            href={`/caregivers/${caregiver.id}/edit`}
+                            className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                        >
+                            Edit
+                        </Link>
+                    </div>
                 </div>
+
+                <Sheet
+                    open={isPasswordSheetOpen}
+                    onOpenChange={setIsPasswordSheetOpen}
+                >
+                    <SheetContent side="right">
+                        <SheetHeader>
+                            <SheetTitle>Reset Password</SheetTitle>
+                        </SheetHeader>
+                        <form
+                            onSubmit={handlePasswordReset}
+                            className="space-y-4"
+                        >
+                            <div className="space-y-2 px-4">
+                                <label className="text-sm font-medium text-foreground">
+                                    New Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={
+                                            showPassword ? 'text' : 'password'
+                                        }
+                                        value={passwordForm.data.new_password}
+                                        onChange={(e) =>
+                                            passwordForm.setData(
+                                                'new_password',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 pr-10 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPassword(!showPassword)
+                                        }
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                                {passwordForm.errors.new_password && (
+                                    <p className="text-sm text-destructive">
+                                        {passwordForm.errors.new_password}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="space-y-2 px-4">
+                                <label className="text-sm font-medium text-foreground">
+                                    Confirm Password
+                                </label>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={
+                                        passwordForm.data
+                                            .new_password_confirmation
+                                    }
+                                    onChange={(e) =>
+                                        passwordForm.setData(
+                                            'new_password_confirmation',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                    required
+                                />
+                                {passwordForm.errors
+                                    .new_password_confirmation && (
+                                    <p className="text-sm text-destructive">
+                                        {
+                                            passwordForm.errors
+                                                .new_password_confirmation
+                                        }
+                                    </p>
+                                )}
+                            </div>
+                            <SheetFooter>
+                                <button
+                                    type="submit"
+                                    disabled={passwordForm.processing}
+                                    className="h-10 rounded-[3px] bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                                >
+                                    {passwordForm.processing
+                                        ? 'Resetting...'
+                                        : 'Reset Password'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPasswordSheetOpen(false)
+                                    }
+                                    className="h-10 rounded-[3px] border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent"
+                                >
+                                    Cancel
+                                </button>
+                            </SheetFooter>
+                        </form>
+                    </SheetContent>
+                </Sheet>
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="rounded-[6px] border border-border bg-card p-6 lg:col-span-2">

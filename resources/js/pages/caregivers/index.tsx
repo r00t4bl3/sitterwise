@@ -1,8 +1,9 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Rating } from '@/components/ui/rating';
 import type { BreadcrumbItem } from '@/types';
+import { useState, useRef, useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -44,6 +45,7 @@ interface Caregiver {
     status: Status;
     specialty_types: SpecialtyType[];
     locations: Location[];
+    certifications: Array<{ id: number; certification_type_id: number }>;
 }
 
 interface Props {
@@ -115,8 +117,55 @@ function calculateAge(dateOfBirth: string): number {
     return age;
 }
 
-export default function AdminCaregiversIndex() {
+export default function CaregiversIndex() {
     const { caregivers, statuses, filters } = usePage<Props>().props;
+
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [suggestions, setSuggestions] = useState<Caregiver[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                searchRef.current &&
+                !searchRef.current.contains(event.target as Node)
+            ) {
+                setShowSuggestions(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (!value.trim()) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+        setIsLoading(true);
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const params = new URLSearchParams({ q: value });
+                const response = await fetch(
+                    `/caregivers/search-suggestions?${params}`,
+                );
+                const data = await response.json();
+                setSuggestions(data);
+                setShowSuggestions(true);
+            } catch (error) {
+                console.error('Search error:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        }, 300);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -131,19 +180,75 @@ export default function AdminCaregiversIndex() {
                             {caregivers.total} caregivers total
                         </p>
                     </div>
+                    <Link
+                        href="/caregivers/create"
+                        className="inline-flex h-10 items-center justify-center rounded-[3px] bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                    >
+                        Add Caregiver
+                    </Link>
                 </div>
 
                 <div className="flex gap-4">
                     <form method="get" className="flex flex-1 gap-2">
-                        <div className="relative max-w-md flex-1">
+                        <div
+                            className="relative max-w-md flex-1"
+                            ref={searchRef}
+                        >
                             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="text"
                                 name="search"
-                                defaultValue={filters.search || ''}
+                                value={searchQuery}
+                                onChange={(e) =>
+                                    handleSearchChange(e.target.value)
+                                }
+                                onFocus={() =>
+                                    suggestions.length > 0 &&
+                                    setShowSuggestions(true)
+                                }
                                 placeholder="Search by name..."
                                 className="h-10 w-full rounded-[3px] border border-input bg-background px-10 pr-4 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                             />
+                            {showSuggestions && (
+                                <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
+                                    {isLoading ? (
+                                        <div className="p-3 text-sm text-muted-foreground">
+                                            Loading...
+                                        </div>
+                                    ) : suggestions.length > 0 ? (
+                                        <ul>
+                                            {suggestions.map((caregiver) => (
+                                                <li key={caregiver.id}>
+                                                    <Link
+                                                        href={`/caregivers/${caregiver.id}`}
+                                                        className="flex items-center justify-between px-3 py-2 hover:bg-accent"
+                                                    >
+                                                        <span className="text-sm text-foreground">
+                                                            {
+                                                                caregiver.first_name
+                                                            }{' '}
+                                                            {
+                                                                caregiver.last_name
+                                                            }
+                                                        </span>
+                                                        {caregiver.status && (
+                                                            <StatusBadge
+                                                                status={
+                                                                    caregiver.status
+                                                                }
+                                                            />
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <div className="p-3 text-sm text-muted-foreground">
+                                            No results found
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         <select
                             name="status"
@@ -184,6 +289,9 @@ export default function AdminCaregiversIndex() {
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Expertise
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Certified
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Photo
@@ -269,6 +377,19 @@ export default function AdminCaregiversIndex() {
                                                 </span>
                                             )}
                                         </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {caregiver.certifications.some(
+                                            (c) => c.id === 4,
+                                        ) ? (
+                                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                                Care.com
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">
+                                                —
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         {caregiver.profile_photo_path ? (
