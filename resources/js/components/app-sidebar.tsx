@@ -39,7 +39,7 @@ const caregiverNavItems: NavItem[] = [
     },
     {
         title: 'My Availability',
-        href: '#',
+        href: '/my-availability',
         icon: Calendar,
     },
 ];
@@ -67,6 +67,11 @@ const adminNavItems: NavItem[] = [
         title: 'Clients',
         href: '#',
         icon: Shield,
+    },
+    {
+        title: 'Availability',
+        href: '/availabilities',
+        icon: Calendar,
     },
     {
         title: 'Settings',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -12,18 +13,22 @@ Route::inertia('/', 'welcome', [
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Route::get('/', [CaregiverController::class, 'index'])->name('index');
     Route::middleware('admin')->group(function () {
-        // Route::get('/create', [CaregiverController::class, 'create'])->name('create');
-        // Route::post('/', [CaregiverController::class, 'store'])->name('store');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
-        // Route::get('/{caregiver}/edit', [CaregiverController::class, 'edit'])->name('edit');
-        // Route::patch('/{caregiver}', [CaregiverController::class, 'update'])->name('update');
         Route::post('{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
         Route::post('{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
+
+        // Custom availability routes (must come before resource to take precedence)
+        Route::get('/caregivers/{caregiver}/availability/manage', [AvailabilityController::class, 'manage'])->name('caregivers.availability.manage');
+        Route::post('/caregivers/{caregiver}/availability', [AvailabilityController::class, 'storeForCaregiver'])->name('caregivers.availability.store');
+        Route::delete('/caregivers/{caregiver}/availability/{availability}', [AvailabilityController::class, 'destroyForCaregiver'])->name('caregivers.availability.destroy');
+
+        Route::resource('availabilities', AvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
     });
-    // Route::get('/{caregiver}', [CaregiverController::class, 'show'])->name('show');
+
+    Route::get('/my-availability', [AvailabilityController::class, 'myAvailability'])->name('availabilities.my');
+    Route::put('/my-availability', [AvailabilityController::class, 'updateMyAvailability'])->name('availabilities.updateMy');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

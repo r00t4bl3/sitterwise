@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             AttributeDefinitionSeeder::class,
             CaregiverSeeder::class,
+            AvailabilitySeeder::class,
         ]);
 
         User::factory()->create([
