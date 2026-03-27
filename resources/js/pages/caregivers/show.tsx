@@ -243,13 +243,13 @@ export default function CaregiverShow() {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setIsPasswordSheetOpen(true)}
-                            className="rounded-[3px] border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+                            className="btn-secondary"
                         >
                             Reset Password
                         </button>
                         <Link
                             href={`/caregivers/${caregiver.id}/edit`}
-                            className="rounded-[3px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                            className="btn-primary "
                         >
                             Edit
                         </Link>
@@ -266,9 +266,9 @@ export default function CaregiverShow() {
                         </SheetHeader>
                         <form
                             onSubmit={handlePasswordReset}
-                            className="space-y-4"
+                            className="mt-4 space-y-4 px-4"
                         >
-                            <div className="space-y-2 px-4">
+                            <div>
                                 <label className="text-sm font-medium text-foreground">
                                     New Password
                                 </label>
@@ -307,7 +307,7 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
-                            <div className="space-y-2 px-4">
+                            <div>
                                 <label className="text-sm font-medium text-foreground">
                                     Confirm Password
                                 </label>
@@ -336,11 +336,11 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
-                            <SheetFooter>
+                            <div>
                                 <button
                                     type="submit"
                                     disabled={passwordForm.processing}
-                                    className="h-10 rounded-[3px] bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                                    className="btn-primary w-full"
                                 >
                                     {passwordForm.processing
                                         ? 'Resetting...'
@@ -351,11 +351,11 @@ export default function CaregiverShow() {
                                     onClick={() =>
                                         setIsPasswordSheetOpen(false)
                                     }
-                                    className="h-10 rounded-[3px] border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent"
+                                    className="btn-secondary w-full mt-2"
                                 >
                                     Cancel
                                 </button>
-                            </SheetFooter>
+                            </div>
                         </form>
                     </SheetContent>
                 </Sheet>
@@ -562,7 +562,7 @@ export default function CaregiverShow() {
                                     type="button"
                                     onClick={handleStatusUpdate}
                                     disabled={statusForm.processing}
-                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-none bg-primary py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="btn-primary w-full"
                                 >
                                     {isStatusUpdating ? <Spinner /> : null}
                                     {isStatusUpdating

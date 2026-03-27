@@ -431,7 +431,7 @@ export default function ManageAvailability() {
                                         processing ||
                                         data.time_slots.length === 0
                                     }
-                                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[3px] bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+                                    className="btn-primary w-3/4"
                                 >
                                     {processing && (
                                         <Spinner className="size-4" />
@@ -442,7 +442,7 @@ export default function ManageAvailability() {
                                     <button
                                         onClick={handleDelete}
                                         disabled={processing}
-                                        className="h-10 rounded-[3px] border border-destructive px-4 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
+                                        className="btn-secondary w-1/4"
                                     >
                                         Delete
                                     </button>
@@ -451,7 +451,7 @@ export default function ManageAvailability() {
 
                             <button
                                 onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full rounded-[3px] border border-input bg-background py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+                                className="btn-secondary w-full mt-2"
                             >
                                 Cancel
                             </button>

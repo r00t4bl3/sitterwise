@@ -142,6 +142,8 @@
         transform 0.1s;
     letter-spacing: 0.3px;
     border-radius: 0;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary:hover {
@@ -160,6 +162,8 @@
     cursor: pointer;
     transition: all 0.2s;
     border-radius: 0;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-secondary:hover {
