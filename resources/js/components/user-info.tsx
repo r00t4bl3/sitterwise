@@ -2,6 +2,20 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
 
+function getAvatarUrl(user: User | null): string | undefined {
+    if (!user || !user.profile_photo_path) {
+        console.log('User', user);
+        console.log('No profile photo path provided, using default avatar.');
+        return undefined;
+    }
+    if (user.profile_photo_path === 'avatar.jpg') {
+        console.log('Profile photo path is avatar.jpg, using default avatar.');
+        return '/avatar.jpg';
+    }
+    console.log(`Profile photo path provided: ${user.profile_photo_path}, constructing URL.`);
+    return `/storage/${user.profile_photo_path}`;
+}
+
 export function UserInfo({
     user,
     showEmail = false,
@@ -14,7 +28,10 @@ export function UserInfo({
     return (
         <>
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage
+                    src={getAvatarUrl(user)}
+                    alt={user.name}
+                />
                 <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                     {getInitials(user.name)}
                 </AvatarFallback>

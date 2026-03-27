@@ -16,6 +16,9 @@ class CaregiverSeeder extends Seeder
         $users = User::factory()->count(51)->create();
 
         foreach ($users as $user) {
+            $user->role = 'caregiver';
+            $user->save();
+
             Caregiver::factory()->create([
                 'user_id' => $user->id,
             ]);

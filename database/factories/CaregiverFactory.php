@@ -64,7 +64,6 @@ class CaregiverFactory extends Factory
             'phone' => $this->faker->phoneNumber(),
             'address' => $this->faker->numberBetween(100, 9999).' '.$this->faker->randomElement($streets).', '.$this->faker->randomElement($cities).', CA '.$this->faker->numerify('92###'),
             'date_of_birth' => $this->faker->date('Y-m-d', '-18 years'),
-            'profile_photo_path' => $this->faker->boolean(70) ? 'avatar.jpg' : null,
             'rating' => $this->faker->randomFloat(2, 3.5, 5.0),
             'biography' => $this->faker->optional()->paragraph(),
             'notes' => $this->faker->optional()->sentence(),

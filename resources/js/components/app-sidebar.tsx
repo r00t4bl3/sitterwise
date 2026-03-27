@@ -33,11 +33,6 @@ const baseNavItems: NavItem[] = [
 
 const caregiverNavItems: NavItem[] = [
     {
-        title: 'Search Caregivers',
-        href: '#',
-        icon: Search,
-    },
-    {
         title: 'My Availability',
         href: '/my-availability',
         icon: Calendar,

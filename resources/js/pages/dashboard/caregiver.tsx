@@ -32,7 +32,7 @@ export default function CaregiverDashboard({
                         Welcome back, {caregiver.first_name}!
                     </h1>
                     <p className="text-muted-foreground">
-                        Manage your availability and bookings
+                        Manage your availability and appointments
                     </p>
                 </div>
 

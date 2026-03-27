@@ -82,7 +82,9 @@ interface Caregiver {
     phone: string;
     address: string;
     date_of_birth: string | null;
-    profile_photo_path: string | null;
+    user: {
+        profile_photo_path: string | null;
+    };
     rating: number | null;
     biography: string | null;
     notes: string | null;
@@ -144,7 +146,7 @@ export default function CaregiverEdit() {
     const [attributesOpen, setAttributesOpen] = useState(false);
     const [certificationsOpen, setCertificationsOpen] = useState(false);
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
-        caregiver.profile_photo_path,
+        caregiver.user.profile_photo_path,
     );
 
     const photoForm = useForm<{ profile_photo: File | null }>({
@@ -168,7 +170,7 @@ export default function CaregiverEdit() {
 
         photoForm.post(`/caregivers/${caregiver.id}/profile-photo`, {
             onSuccess: (page) => {
-                const newPath = (page.props as any).caregiver
+                const newPath = (page.props as any).caregiver?.user
                     ?.profile_photo_path;
                 if (newPath) {
                     setCurrentProfilePhoto(newPath);

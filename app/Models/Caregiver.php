@@ -18,6 +18,16 @@ class Caregiver extends Model
         return CaregiverFactory::new();
     }
 
+    // Sync system's user name with caregiver's first and last name
+    protected static function booted(): void
+    {
+        static::saved(function (Caregiver $caregiver) {
+            if ($caregiver->user) {
+                $caregiver->user->update(['name' => "{$caregiver->first_name} {$caregiver->last_name}"]);
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'status_id',
@@ -25,7 +35,6 @@ class Caregiver extends Model
         'last_name',
         'phone',
         'address',
-        'profile_photo_path',
         'date_of_birth',
         'rating',
         'biography',

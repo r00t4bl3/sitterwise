@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['caregiver', 'client', 'admin'])->default('client')->after('email');
+            $table->string('profile_photo_path')->nullable()->after('role');
         });
     }
 

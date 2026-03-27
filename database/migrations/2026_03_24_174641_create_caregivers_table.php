@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
-            $table->string('profile_photo_path')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->decimal('rating', 3, 2)->nullable();
             $table->text('biography')->nullable();

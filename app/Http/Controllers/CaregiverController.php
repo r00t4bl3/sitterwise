@@ -19,7 +19,7 @@ class CaregiverController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Caregiver::with(['status', 'specialtyTypes', 'locations', 'certifications']);
+        $query = Caregiver::with(['user', 'status', 'specialtyTypes', 'locations', 'certifications']);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -83,7 +83,7 @@ class CaregiverController extends Controller
 
     public function searchSuggestions(Request $request)
     {
-        $query = Caregiver::with(['status']);
+        $query = Caregiver::with(['user', 'status']);
 
         if ($request->has('q') && $request->q) {
             $search = $request->q;
@@ -130,7 +130,9 @@ class CaregiverController extends Controller
                 'address' => $caregiver->address,
                 'date_of_birth' => $formattedDob,
                 'date_of_birth_raw' => $caregiver->date_of_birth,
-                'profile_photo_path' => $caregiver->profile_photo_path,
+                'user' => [
+                    'profile_photo_path' => $caregiver->user->profile_photo_path,
+                ],
                 'rating' => $caregiver->rating,
                 'biography' => $caregiver->biography,
                 'notes' => $caregiver->notes,
@@ -213,7 +215,7 @@ class CaregiverController extends Controller
                 $file = $request->file('profile_photo');
                 $filename = time().'_'.$file->getClientOriginalName();
                 $path = $file->storeAs('profile-photos', $filename, 'public');
-                $updateData['profile_photo_path'] = $path;
+                $caregiver->user->update(['profile_photo_path' => $path]);
             }
 
             $caregiver->update($updateData);
@@ -287,7 +289,9 @@ class CaregiverController extends Controller
                 'phone' => $caregiver->phone,
                 'address' => $caregiver->address,
                 'date_of_birth' => $caregiver->date_of_birth,
-                'profile_photo_path' => $caregiver->profile_photo_path,
+                'user' => [
+                    'profile_photo_path' => $caregiver->user->profile_photo_path,
+                ],
                 'rating' => $caregiver->rating,
                 'biography' => $caregiver->biography,
                 'notes' => $caregiver->notes,
@@ -332,7 +336,7 @@ class CaregiverController extends Controller
             $file = $request->file('profile_photo');
             $filename = time().'_'.$file->getClientOriginalName();
             $path = $file->storeAs('profile-photos', $filename, 'public');
-            $caregiver->update(['profile_photo_path' => $path]);
+            $caregiver->user->update(['profile_photo_path' => $path]);
 
             return redirect()->route('caregivers.edit', $caregiver->id)
                 ->with('success', 'Profile photo updated successfully');

@@ -39,7 +39,9 @@ interface Caregiver {
     id: number;
     first_name: string;
     last_name: string;
-    profile_photo_path: string | null;
+    user: {
+        profile_photo_path: string | null;
+    };
     status: Status;
     specialty_types: SpecialtyType[];
     locations: Location[];
@@ -245,7 +247,7 @@ export default function ManageAvailability() {
         },
         {
             title: `${caregiver.first_name} ${caregiver.last_name}`,
-            href: `/caregivers/${caregiver.id}/availability/manage`,
+            href: `/caregivers/${caregiver.id}`,
         },
         {
             title: 'Availability',
@@ -306,7 +308,7 @@ export default function ManageAvailability() {
                                 return (
                                     <div
                                         key={`empty-${index}`}
-                                        className="h-20"
+                                        className="h-24"
                                     />
                                 );
                             }
@@ -318,7 +320,9 @@ export default function ManageAvailability() {
                                 dateObj.getMonth(),
                                 dateObj.getDate(),
                             );
-                            const isPastOrToday = dateOnly <= today;
+                            const isToday =
+                                dateOnly.getTime() === today.getTime();
+                            const isPast = dateOnly < today;
                             const availability = availabilityMap[dateStr];
                             const hasAvailability =
                                 availability &&
@@ -327,14 +331,15 @@ export default function ManageAvailability() {
                             return (
                                 <div
                                     key={day}
-                                    className={`flex h-20 flex-col items-center justify-center gap-1 border border-border bg-background p-1 ${!isPastOrToday ? 'group relative cursor-pointer' : ''}`}
+                                    className={`flex h-24 flex-col items-center justify-center gap-1 border border-border p-1 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
                                 >
                                     <span
-                                        className={`text-sm ${isPastOrToday ? 'text-muted-foreground' : 'text-foreground'}`}
+                                        className={`text-sm ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
                                     >
                                         {day}
                                     </span>
-                                    {!isPastOrToday &&
+                                    {!isPast &&
+                                        !isToday &&
                                         (hasAvailability ? (
                                             <div className="flex items-center gap-0.5">
                                                 {availability.time_slots.map(
@@ -349,7 +354,7 @@ export default function ManageAvailability() {
                                                 )}
                                             </div>
                                         ) : null)}
-                                    {!isPastOrToday && (
+                                    {!isPast && !isToday && (
                                         <button
                                             onClick={() => openSheet(dateStr)}
                                             className={`absolute inset-0 flex items-center justify-center rounded-[3px] text-xs font-medium transition ${
@@ -451,7 +456,7 @@ export default function ManageAvailability() {
 
                             <button
                                 onClick={() => setIsSheetOpen(false)}
-                                className="btn-secondary w-full mt-2"
+                                className="btn-secondary mt-2 w-full"
                             >
                                 Cancel
                             </button>

@@ -50,7 +50,9 @@ interface Caregiver {
     last_name: string;
     rating: number | null;
     date_of_birth: string | null;
-    profile_photo_path: string | null;
+    user: {
+        profile_photo_path: string | null;
+    };
     status: Status;
     specialty_types: SpecialtyType[];
     locations: Location[];
@@ -257,17 +259,20 @@ export default function AvailabilitiesIndex() {
                                         return (
                                             <tr
                                                 key={caregiver.id}
-                                                className="border-b border-border transition hover:bg-accent/50"
+                                                className="border-b border-border transition hover:bg-blush"
                                             >
                                                 <td className="px-3 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        {caregiver.profile_photo_path ? (
+                                                        {caregiver.user
+                                                            .profile_photo_path ? (
                                                             <img
                                                                 src={
-                                                                    caregiver.profile_photo_path ===
+                                                                    caregiver
+                                                                        .user
+                                                                        .profile_photo_path ===
                                                                     'avatar.jpg'
                                                                         ? '/avatar.jpg'
-                                                                        : `/storage/${caregiver.profile_photo_path}`
+                                                                        : `/storage/${caregiver.user.profile_photo_path}`
                                                                 }
                                                                 alt=""
                                                                 className="h-8 w-8 rounded-full object-cover"

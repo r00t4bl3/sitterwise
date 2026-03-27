@@ -42,7 +42,9 @@ interface Caregiver {
     last_name: string;
     rating: number | null;
     date_of_birth: string | null;
-    profile_photo_path: string | null;
+    user: {
+        profile_photo_path: string | null;
+    };
     status: Status;
     specialty_types: SpecialtyType[];
     locations: Location[];
@@ -166,10 +168,7 @@ export default function CaregiversIndex() {
                             {caregivers.total} caregivers total
                         </p>
                     </div>
-                    <Link
-                        href="/caregivers/create"
-                        className="btn-primary"
-                    >
+                    <Link href="/caregivers/create" className="btn-primary">
                         Add Caregiver
                     </Link>
                 </div>
@@ -249,10 +248,7 @@ export default function CaregiversIndex() {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            type="submit"
-                            className="btn-primary"
-                        >
+                        <button type="submit" className="btn-primary">
                             Filter
                         </button>
                     </form>
@@ -292,7 +288,7 @@ export default function CaregiversIndex() {
                             {caregivers.data.map((caregiver) => (
                                 <tr
                                     key={caregiver.id}
-                                    className="border-b border-border transition hover:bg-accent/50"
+                                    className="border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3">
                                         <Link
@@ -379,14 +375,15 @@ export default function CaregiversIndex() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {caregiver.profile_photo_path ? (
+                                        {caregiver.user.profile_photo_path ? (
                                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
                                                 <img
                                                     src={
-                                                        caregiver.profile_photo_path ===
+                                                        caregiver.user
+                                                            .profile_photo_path ===
                                                         'avatar.jpg'
                                                             ? '/avatar.jpg'
-                                                            : `/storage/${caregiver.profile_photo_path}`
+                                                            : `/storage/${caregiver.user.profile_photo_path}`
                                                     }
                                                     alt={`${caregiver.first_name} ${caregiver.last_name}`}
                                                     className="h-10 w-10 rounded-full object-cover"

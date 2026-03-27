@@ -15,8 +15,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('admin')->group(function () {
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
-        Route::post('{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
-        Route::post('{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
+        Route::post('caregivers/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
+        Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
 
         // Custom availability routes (must come before resource to take precedence)
@@ -31,4 +31,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/my-availability', [AvailabilityController::class, 'updateMyAvailability'])->name('availabilities.updateMy');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

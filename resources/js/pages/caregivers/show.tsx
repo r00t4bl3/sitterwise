@@ -79,7 +79,9 @@ interface Caregiver {
     address: string;
     date_of_birth: string;
     date_of_birth_raw: string | null;
-    profile_photo_path: string | null;
+    user: {
+        profile_photo_path: string | null;
+    };
     rating: number | null;
     biography: string | null;
     notes: string | null;
@@ -212,13 +214,13 @@ export default function CaregiverShow() {
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
-                        {caregiver.profile_photo_path ? (
+                        {caregiver.user.profile_photo_path ? (
                             <img
                                 src={
-                                    caregiver.profile_photo_path ===
+                                    caregiver.user.profile_photo_path ===
                                     'avatar.jpg'
                                         ? '/avatar.jpg'
-                                        : `/storage/${caregiver.profile_photo_path}`
+                                        : `/storage/${caregiver.user.profile_photo_path}`
                                 }
                                 alt={`${caregiver.first_name} ${caregiver.last_name}`}
                                 className="h-16 w-16 rounded-full object-cover"
@@ -249,7 +251,7 @@ export default function CaregiverShow() {
                         </button>
                         <Link
                             href={`/caregivers/${caregiver.id}/edit`}
-                            className="btn-primary "
+                            className="btn-primary"
                         >
                             Edit
                         </Link>
@@ -351,7 +353,7 @@ export default function CaregiverShow() {
                                     onClick={() =>
                                         setIsPasswordSheetOpen(false)
                                     }
-                                    className="btn-secondary w-full mt-2"
+                                    className="btn-secondary mt-2 w-full"
                                 >
                                     Cancel
                                 </button>
