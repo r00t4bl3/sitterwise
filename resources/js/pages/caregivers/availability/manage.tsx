@@ -341,18 +341,27 @@ export default function ManageAvailability() {
                                     {!isPast &&
                                         !isToday &&
                                         (hasAvailability ? (
-                                            <div className="flex items-center gap-0.5">
-                                                {availability.time_slots.map(
-                                                    (slot) => (
-                                                        <span
-                                                            key={slot}
-                                                            className="flex items-center"
-                                                        >
-                                                            {getIcon(slot)}
-                                                        </span>
-                                                    ),
+                                            <>
+                                                <div className="flex items-center gap-0.5">
+                                                    {availability.time_slots.map(
+                                                        (slot) => (
+                                                            <span
+                                                                key={slot}
+                                                                className="flex items-center"
+                                                            >
+                                                                {getIcon(slot)}
+                                                            </span>
+                                                        ),
+                                                    )}
+                                                </div>
+                                                {availability.specific_time && (
+                                                    <span className="truncate text-[8px] text-muted-foreground">
+                                                        {
+                                                            availability.specific_time
+                                                        }
+                                                    </span>
                                                 )}
-                                            </div>
+                                            </>
                                         ) : null)}
                                     {!isPast && !isToday && (
                                         <button
@@ -436,7 +445,7 @@ export default function ManageAvailability() {
                                         processing ||
                                         data.time_slots.length === 0
                                     }
-                                    className="btn-primary w-3/4"
+                                    className="btn-primary flex-1"
                                 >
                                     {processing && (
                                         <Spinner className="size-4" />

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Enums\TimeSlot;
@@ -26,14 +27,14 @@ class AvailabilityController extends Controller
                 'specialtyTypes',
                 'certifications',
                 'availabilities' => function ($q) {
-                    $q->where('date', '>=', now()->toDateString())->orderBy('date');
+                    $q->inTheFuture()->orderBy('date');
                 },
             ]);
 
         return Inertia::render('availabilities/index', [
-            'caregivers' => Inertia::scroll(fn() => $caregivers->paginate($perPage)),
-            'timeSlots'  => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'caregivers' => Inertia::scroll(fn () => $caregivers->paginate($perPage)),
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 TimeSlot::cases()
             ),
         ]);
@@ -105,8 +106,8 @@ class AvailabilityController extends Controller
 
         return Inertia::render('availabilities/my', [
             'availabilities' => $availabilities,
-            'timeSlots'      => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 TimeSlot::cases()
             ),
         ]);
@@ -121,10 +122,10 @@ class AvailabilityController extends Controller
         }
 
         $validated = $request->validate([
-            'availabilities'                 => 'required|array',
-            'availabilities.*.date'          => 'required|date|after_or_equal:today',
-            'availabilities.*.time_slots'    => 'required|array',
-            'availabilities.*.time_slots.*'  => 'in:morning,afternoon,evening',
+            'availabilities' => 'required|array',
+            'availabilities.*.date' => 'required|date|after_or_equal:today',
+            'availabilities.*.time_slots' => 'required|array',
+            'availabilities.*.time_slots.*' => 'in:morning,afternoon,evening',
             'availabilities.*.specific_time' => 'nullable|string|max:255',
         ]);
 
@@ -137,10 +138,10 @@ class AvailabilityController extends Controller
                 Availability::updateOrCreate(
                     [
                         'caregiver_id' => $user->caregiver->id,
-                        'date'         => $item['date'],
+                        'date' => $item['date'],
                     ],
                     [
-                        'time_slots'    => array_values($item['time_slots']),
+                        'time_slots' => array_values($item['time_slots']),
                         'specific_time' => $item['specific_time'] ?? null,
                     ]
                 );
@@ -150,26 +151,72 @@ class AvailabilityController extends Controller
         return back()->with('success', 'Availability updated successfully.');
     }
 
+    public function upsertMyAvailability(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->caregiver) {
+            return back()->with('error', 'You are not a caregiver.');
+        }
+
+        $validated = $request->validate([
+            'date' => 'required|date|after_or_equal:today',
+            'time_slots' => 'required|array|min:1',
+            'time_slots.*' => 'in:morning,afternoon,evening',
+            'specific_time' => 'nullable|string|max:255',
+        ]);
+
+        Availability::updateOrCreate(
+            [
+                'caregiver_id' => $user->caregiver->id,
+                'date' => Carbon::parse($validated['date'])->toDateTimeString(),
+            ],
+            [
+                'time_slots' => $validated['time_slots'],
+                'specific_time' => $validated['specific_time'] ?? null,
+            ]
+        );
+
+        return back()->with('success', 'Availability saved successfully.');
+    }
+
+    public function destroyMyAvailability(Request $request, Availability $availability)
+    {
+        $user = $request->user();
+
+        if (! $user->caregiver) {
+            return back()->with('error', 'You are not a caregiver.');
+        }
+
+        if ($availability->caregiver_id !== $user->caregiver->id) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
+        $availability->delete();
+
+        return back()->with('success', 'Availability deleted successfully.');
+    }
+
     public function manage(Caregiver $caregiver)
     {
         $availabilities = $caregiver->availabilities()
-            ->where('date', '>=', now()->toDateString())
+            ->inTheFuture()
             ->orderBy('date')
             ->get()
             ->map(function ($availability) {
                 return [
-                    'id'            => $availability->id,
-                    'date'          => $availability->date->format('Y-m-d'),
-                    'time_slots'    => $availability->time_slots,
+                    'id' => $availability->id,
+                    'date' => $availability->date->format('Y-m-d'),
+                    'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
                 ];
             });
 
         return Inertia::render('caregivers/availability/manage', [
-            'caregiver'      => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
+            'caregiver' => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
             'availabilities' => $availabilities,
-            'timeSlots'      => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 TimeSlot::cases()
             ),
         ]);
@@ -178,19 +225,19 @@ class AvailabilityController extends Controller
     public function storeForCaregiver(Request $request, Caregiver $caregiver)
     {
         $validated = $request->validate([
-            'date'          => 'required|date|after_or_equal:today',
-            'time_slots'    => 'required|array|min:1',
-            'time_slots.*'  => 'required|in:morning,afternoon,evening',
+            'date' => 'required|date|after_or_equal:today',
+            'time_slots' => 'required|array|min:1',
+            'time_slots.*' => 'required|in:morning,afternoon,evening',
             'specific_time' => 'nullable|string|max:255',
         ]);
 
         Availability::updateOrCreate(
             [
                 'caregiver_id' => $caregiver->id,
-                'date'         => Carbon::parse($validated['date'])->toDateTimeString(),
+                'date' => Carbon::parse($validated['date'])->toDateTimeString(),
             ],
             [
-                'time_slots'    => $validated['time_slots'],
+                'time_slots' => $validated['time_slots'],
                 'specific_time' => $validated['specific_time'] ?? null,
             ]
         );

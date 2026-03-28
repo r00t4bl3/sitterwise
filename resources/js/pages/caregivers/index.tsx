@@ -322,10 +322,7 @@ export default function CaregiversIndex() {
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {caregiver.locations
-                                                .filter(
-                                                    (l) => l.pivot.is_preferred,
-                                                )
-                                                .slice(0, 2)
+                                                .slice(0, 3)
                                                 .map((location) => (
                                                     <span
                                                         key={location.id}
@@ -334,9 +331,8 @@ export default function CaregiversIndex() {
                                                         {location.name}
                                                     </span>
                                                 ))}
-                                            {caregiver.locations.filter(
-                                                (l) => l.pivot.is_preferred,
-                                            ).length === 0 && (
+                                            {caregiver.locations.length ===
+                                                0 && (
                                                 <span className="text-xs text-muted-foreground">
                                                     —
                                                 </span>

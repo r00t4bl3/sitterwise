@@ -26,4 +26,9 @@ class Availability extends Model
     {
         return $this->belongsTo(Caregiver::class);
     }
+
+    public function scopeInTheFuture($query)
+    {
+        return $query->where('date', '>=', now()->toDateString());
+    }
 }

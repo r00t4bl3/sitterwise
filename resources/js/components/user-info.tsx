@@ -4,15 +4,11 @@ import type { User } from '@/types';
 
 function getAvatarUrl(user: User | null): string | undefined {
     if (!user || !user.profile_photo_path) {
-        console.log('User', user);
-        console.log('No profile photo path provided, using default avatar.');
         return undefined;
     }
     if (user.profile_photo_path === 'avatar.jpg') {
-        console.log('Profile photo path is avatar.jpg, using default avatar.');
         return '/avatar.jpg';
     }
-    console.log(`Profile photo path provided: ${user.profile_photo_path}, constructing URL.`);
     return `/storage/${user.profile_photo_path}`;
 }
 

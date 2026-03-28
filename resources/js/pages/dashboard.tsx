@@ -3,6 +3,13 @@ import CaregiverDashboard from './dashboard/caregiver';
 import ClientDashboard from './dashboard/client';
 import AdminDashboard from './dashboard/admin';
 
+interface Availability {
+    id: number;
+    date: string;
+    time_slots: string[];
+    specific_time: string | null;
+}
+
 interface Props {
     [key: string]: unknown;
     user: {
@@ -15,10 +22,12 @@ interface Props {
         total_clients: number;
     };
     caregiver?: {
+        id: number;
         first_name: string;
         last_name: string;
         rating: number | null;
         status: { name: string };
+        availabilities: Availability[];
     };
 }
 
@@ -30,10 +39,12 @@ export default function Dashboard() {
             return (
                 <CaregiverDashboard
                     caregiver={{
+                        id: caregiver?.id || 0,
                         first_name: caregiver?.first_name || user.name,
                         last_name: caregiver?.last_name || '',
                         rating: caregiver?.rating || null,
                         status: caregiver?.status?.name || 'Unknown',
+                        availabilities: caregiver?.availabilities || [],
                     }}
                 />
             );
