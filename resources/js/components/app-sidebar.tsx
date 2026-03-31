@@ -84,7 +84,7 @@ export function AppSidebar() {
     const roleBasedItems = (() => {
         switch (auth.user.role) {
             case 'caregiver':
-                return [...baseNavItems, ...caregiverNavItems];
+                return [...baseNavItems];
             case 'admin':
                 return [...baseNavItems, ...adminNavItems];
             case 'client':

@@ -77,7 +77,11 @@ function formatDate(dateString: string): string {
 export default function CaregiverDashboard({
     caregiver,
 }: CaregiverDashboardProps) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(() => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow;
+    });
     const [availabilities, setAvailabilities] = useState(
         caregiver.availabilities,
     );
