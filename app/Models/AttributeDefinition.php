@@ -11,6 +11,7 @@ class AttributeDefinition extends Model
         'name',
         'slug',
         'type',
+        'entity_type',
         'options',
         'is_active',
         'sort_order',
@@ -25,14 +26,38 @@ class AttributeDefinition extends Model
     {
         return $this->belongsToMany(
             Caregiver::class,
-            'caregiver_attributes'
+            'entity_attribute_values',
+            'entity_id'
         )
-            ->withPivot('value')
-            ->withTimestamps();
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'caregiver');
+    }
+
+    public function clients(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Client::class,
+            'entity_attribute_values',
+            'entity_id'
+        )
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'client');
     }
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('sort_order');
+    }
+
+    public function scopeForCaregivers($query)
+    {
+        return $query->whereIn('entity_type', ['caregiver', 'both']);
+    }
+
+    public function scopeForClients($query)
+    {
+        return $query->whereIn('entity_type', ['client', 'both']);
     }
 }

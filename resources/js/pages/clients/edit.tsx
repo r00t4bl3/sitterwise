@@ -70,20 +70,49 @@ interface Client {
     addresses: Address[];
     children: Child[];
     pets: Pet[];
+    attributes: ClientAttribute[];
+}
+
+interface ClientAttribute {
+    id: number;
+    name: string;
+    slug: string;
+    type: string;
+    value: string;
+}
+
+interface AttributeDefinition {
+    id: number;
+    name: string;
+    slug: string;
+    type: string;
 }
 
 interface Props {
     [key: string]: unknown;
     client: Client;
+    attribute_definitions: AttributeDefinition[];
     csrf_token: string;
 }
 
 export default function ClientEdit() {
-    const { client, csrf_token } = usePage<Props>().props;
+    const { client, attribute_definitions, csrf_token } =
+        usePage<Props>().props;
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
         client.user.profile_photo_path,
     );
+
+    const [attributeValues, setAttributeValues] = useState<
+        Record<number, string>
+    >(() => {
+        const initial: Record<number, string> = {};
+        attribute_definitions.forEach((def) => {
+            const existing = client.attributes.find((a) => a.id === def.id);
+            initial[def.id] = existing?.value === 'true' ? 'true' : 'false';
+        });
+        return initial;
+    });
 
     const photoForm = useForm({
         profile_photo: null as File | null,
@@ -127,6 +156,7 @@ export default function ClientEdit() {
         medical_info: client.medical_info || '',
         emergency_instructions: client.emergency_instructions || '',
         caregiver_notes: client.caregiver_notes || '',
+        attributes: attributeValues,
     });
 
     const submit: SubmitEventHandler = (e) => {
@@ -134,6 +164,13 @@ export default function ClientEdit() {
         form.patch(`/clients/${client.id}`, {
             onSuccess: () => {},
         });
+    };
+
+    const handleAttributeChange = (attributeId: number, checked: boolean) => {
+        setAttributeValues((prev) => ({
+            ...prev,
+            [attributeId]: checked ? 'true' : 'false',
+        }));
     };
 
     const sitterPreferenceOptions = [
@@ -405,6 +442,40 @@ export default function ClientEdit() {
                             ))}
                         </div>
                     </div>
+
+                    {attribute_definitions.length > 0 && (
+                        <div className="rounded-[6px] border border-border bg-card p-6">
+                            <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Attributes
+                            </h2>
+                            <div className="flex flex-wrap gap-4">
+                                {attribute_definitions.map((def) => (
+                                    <label
+                                        key={def.id}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                attributeValues[def.id] ===
+                                                'true'
+                                            }
+                                            onChange={(e) =>
+                                                handleAttributeChange(
+                                                    def.id,
+                                                    e.target.checked,
+                                                )
+                                            }
+                                            className="h-4 w-4 rounded border-input text-primary"
+                                        />
+                                        <span className="text-sm text-foreground">
+                                            {def.name}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="rounded-[6px] border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">

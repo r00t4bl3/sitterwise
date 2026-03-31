@@ -69,6 +69,18 @@ class Client extends Model
         return $this->hasMany(ClientTypeChange::class);
     }
 
+    public function attributes(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            AttributeDefinition::class,
+            'entity_attribute_values',
+            'entity_id'
+        )
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'client');
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";

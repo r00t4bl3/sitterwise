@@ -277,7 +277,7 @@ class CaregiverController extends Controller
         $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
         $specialtyTypes = SpecialtyType::active()->get();
         $locations = Location::active()->get();
-        $attributeDefinitions = AttributeDefinition::active()->get();
+        $attributeDefinitions = AttributeDefinition::active()->forCaregivers()->get();
         $certificationTypes = CertificationType::active()->get();
 
         return Inertia::render('caregivers/edit', [

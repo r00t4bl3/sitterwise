@@ -56,6 +56,14 @@ interface Pet {
     notes: string | null;
 }
 
+interface ClientAttribute {
+    id: number;
+    name: string;
+    slug: string;
+    type: string;
+    value: string;
+}
+
 interface FavoriteCaregiver {
     id: number;
     first_name: string;
@@ -95,6 +103,7 @@ interface Client {
     addresses: Address[];
     children: Child[];
     pets: Pet[];
+    attributes: ClientAttribute[];
     favorite_caregivers: FavoriteCaregiver[];
     type_changes: TypeChange[];
 }
@@ -140,6 +149,21 @@ function calculateAge(
     let age = now.getFullYear() - birthYear;
     if (now.getMonth() < birthMonth) age--;
     return age;
+}
+
+function AttributeBadge({ name, value }: { name: string; value: string }) {
+    const isTrue = value === 'true' || value === '1';
+
+    return (
+        <div className="flex items-center gap-2">
+            {isTrue && <Check className="h-4 w-4 text-green-600" />}
+            <span
+                className={`text-sm ${isTrue ? 'text-foreground' : 'text-muted-foreground'}`}
+            >
+                {name}
+            </span>
+        </div>
+    );
 }
 
 export default function ClientShow() {
@@ -557,6 +581,23 @@ export default function ClientShow() {
                                     </div>
                                 </div>
                             )}
+
+                        {client.attributes && client.attributes.length > 0 && (
+                            <div className="rounded-[6px] border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Attributes
+                                </h2>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    {client.attributes.map((attr) => (
+                                        <AttributeBadge
+                                            key={attr.id}
+                                            name={attr.name}
+                                            value={attr.value}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {client.caregiver_notes && (
                             <div className="rounded-[6px] border border-border bg-card p-6">

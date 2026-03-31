@@ -98,10 +98,12 @@ class Caregiver extends Model
     {
         return $this->belongsToMany(
             AttributeDefinition::class,
-            'caregiver_attributes'
+            'entity_attribute_values',
+            'entity_id'
         )
-            ->withPivot('value')
-            ->withTimestamps();
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'caregiver');
     }
 
     public function availabilities(): HasMany

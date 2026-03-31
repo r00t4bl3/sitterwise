@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AttributeDefinition;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -96,7 +97,7 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
-        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin']);
+        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin', 'attributes']);
 
         return Inertia::render('clients/show', [
             'client' => [
@@ -142,6 +143,13 @@ class ClientController extends Controller
                     'breed' => $p->breed,
                     'notes' => $p->notes,
                 ]),
+                'attributes' => $client->attributes->map(fn ($a) => [
+                    'id' => $a->id,
+                    'name' => $a->name,
+                    'slug' => $a->slug,
+                    'type' => $a->type,
+                    'value' => $a->pivot->value,
+                ]),
                 'favorite_caregivers' => $client->favoriteCaregivers->map(fn ($c) => [
                     'id' => $c->id,
                     'first_name' => $c->first_name,
@@ -166,7 +174,18 @@ class ClientController extends Controller
 
     public function edit(Client $client)
     {
-        $client->load(['user', 'addresses', 'children', 'pets']);
+        $client->load(['user', 'addresses', 'children', 'pets', 'attributes']);
+
+        $attributeDefinitions = AttributeDefinition::active()
+            ->forClients()
+            ->where('type', 'boolean')
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'name' => $a->name,
+                'slug' => $a->slug,
+                'type' => $a->type,
+            ]);
 
         return Inertia::render('clients/edit', [
             'client' => [
@@ -212,7 +231,15 @@ class ClientController extends Controller
                     'breed' => $p->breed,
                     'notes' => $p->notes,
                 ]),
+                'attributes' => $client->attributes->map(fn ($a) => [
+                    'id' => $a->id,
+                    'name' => $a->name,
+                    'slug' => $a->slug,
+                    'type' => $a->type,
+                    'value' => $a->pivot->value,
+                ]),
             ],
+            'attribute_definitions' => $attributeDefinitions,
             'csrf_token' => csrf_token(),
         ]);
     }
@@ -230,6 +257,7 @@ class ClientController extends Controller
             'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
             'caregiver_notes' => 'nullable|string',
+            'attributes' => 'nullable|array',
         ]);
 
         $client->update($validated);
@@ -237,6 +265,17 @@ class ClientController extends Controller
         $client->user->update([
             'name' => $validated['first_name'].' '.$validated['last_name'],
         ]);
+
+        if (isset($validated['attributes'])) {
+            $attributesToSync = [];
+            foreach ($validated['attributes'] as $attributeId => $value) {
+                $attributesToSync[$attributeId] = [
+                    'value' => $value,
+                    'entity_type' => 'client',
+                ];
+            }
+            $client->attributes()->sync($attributesToSync);
+        }
 
         return redirect()->route('clients.show', $client->id)
             ->with('success', 'Client updated successfully');

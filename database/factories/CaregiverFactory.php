@@ -89,7 +89,7 @@ class CaregiverFactory extends Factory
             }
             $caregiver->locations()->sync($locationSync);
 
-            $attributeIds = AttributeDefinition::pluck('id')->toArray();
+            $attributeIds = AttributeDefinition::forCaregivers()->pluck('id')->toArray();
             $selectedAttributes = $this->faker->randomElements($attributeIds, $this->faker->numberBetween(1, 3));
             $attributeSync = [];
             foreach ($selectedAttributes as $attributeId) {

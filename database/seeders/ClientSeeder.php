@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AttributeDefinition;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
@@ -13,6 +14,8 @@ class ClientSeeder extends Seeder
 {
     public function run(): void
     {
+        $attributes = AttributeDefinition::active()->forClients()->get();
+
         for ($i = 0; $i < 21; $i++) {
             $user = User::factory()->create([
                 'role' => 'client',
@@ -45,6 +48,18 @@ class ClientSeeder extends Seeder
                         'client_id' => $client->id,
                     ]);
                 }
+            }
+
+            if ($attributes->isNotEmpty() && fake()->boolean(50)) {
+                $selectedAttributes = $attributes->random(fake()->numberBetween(1, 3));
+                $pivotData = [];
+                foreach ($selectedAttributes as $attribute) {
+                    $pivotData[$attribute->id] = [
+                        'value' => fake()->randomElement(['true', 'false']),
+                        'entity_type' => 'client',
+                    ];
+                }
+                $client->attributes()->sync($pivotData);
             }
         }
     }
