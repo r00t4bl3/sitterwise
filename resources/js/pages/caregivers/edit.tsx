@@ -42,6 +42,7 @@ interface SpecialtyType {
 interface Location {
     id: number;
     name: string;
+    svg_icon: string | null;
 }
 
 interface AttributeDefinition {

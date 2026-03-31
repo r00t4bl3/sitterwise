@@ -34,7 +34,7 @@ interface Address {
 }
 
 interface Child {
-    id: number;
+    id: number | null;
     name: string | null;
     gender: string | null;
     birth_month: number | null;
@@ -44,7 +44,7 @@ interface Child {
 }
 
 interface Pet {
-    id: number;
+    id: number | null;
     name: string | null;
     type: string;
     breed: string | null;
@@ -78,7 +78,7 @@ interface ClientAttribute {
     name: string;
     slug: string;
     type: string;
-    value: string;
+    value: string | boolean;
 }
 
 interface AttributeDefinition {
@@ -109,7 +109,11 @@ export default function ClientEdit() {
         const initial: Record<number, string> = {};
         attribute_definitions.forEach((def) => {
             const existing = client.attributes.find((a) => a.id === def.id);
-            initial[def.id] = existing?.value === 'true' ? 'true' : 'false';
+            const isTrue =
+                existing?.value === 'true' ||
+                existing?.value === '1' ||
+                existing?.value === true;
+            initial[def.id] = isTrue ? 'true' : 'false';
         });
         return initial;
     });
@@ -157,6 +161,8 @@ export default function ClientEdit() {
         emergency_instructions: client.emergency_instructions || '',
         caregiver_notes: client.caregiver_notes || '',
         attributes: attributeValues,
+        children: client.children,
+        pets: client.pets,
     });
 
     const submit: SubmitEventHandler = (e) => {
@@ -167,10 +173,12 @@ export default function ClientEdit() {
     };
 
     const handleAttributeChange = (attributeId: number, checked: boolean) => {
-        setAttributeValues((prev) => ({
-            ...prev,
+        const newValues = {
+            ...attributeValues,
             [attributeId]: checked ? 'true' : 'false',
-        }));
+        };
+        setAttributeValues(newValues);
+        form.setData('attributes', newValues);
     };
 
     const sitterPreferenceOptions = [
@@ -478,6 +486,339 @@ export default function ClientEdit() {
                     )}
 
                     <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-serif text-lg font-semibold text-foreground">
+                                Children ({form.data.children.length})
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    form.setData('children', [
+                                        ...form.data.children,
+                                        {
+                                            id: null,
+                                            name: '',
+                                            gender: null,
+                                            birth_month: null,
+                                            birth_year: null,
+                                            special_needs: false,
+                                            special_needs_notes: null,
+                                        },
+                                    ]);
+                                }}
+                                className="text-sm text-ring hover:text-foreground"
+                            >
+                                + Add Child
+                            </button>
+                        </div>
+                        {form.data.children.length > 0 ? (
+                            <div className="space-y-4">
+                                {form.data.children.map((child, index) => (
+                                    <div
+                                        key={child.id}
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-6"
+                                    >
+                                        <div className="sm:col-span-2">
+                                            <input
+                                                type="text"
+                                                value={child.name || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.children,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...child,
+                                                        name: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'children',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Name"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <select
+                                                value={child.gender || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.children,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...child,
+                                                        gender:
+                                                            e.target.value ||
+                                                            null,
+                                                    };
+                                                    form.setData(
+                                                        'children',
+                                                        updated,
+                                                    );
+                                                }}
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            >
+                                                <option value="">Gender</option>
+                                                <option value="male">
+                                                    Male
+                                                </option>
+                                                <option value="female">
+                                                    Female
+                                                </option>
+                                                <option value="other">
+                                                    Other
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="number"
+                                                value={child.birth_year || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.children,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...child,
+                                                        birth_year: e.target
+                                                            .value
+                                                            ? parseInt(
+                                                                  e.target
+                                                                      .value,
+                                                              )
+                                                            : null,
+                                                    };
+                                                    form.setData(
+                                                        'children',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Birth Year"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="flex items-center gap-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={
+                                                        child.special_needs
+                                                    }
+                                                    onChange={(e) => {
+                                                        const updated = [
+                                                            ...form.data
+                                                                .children,
+                                                        ];
+                                                        updated[index] = {
+                                                            ...child,
+                                                            special_needs:
+                                                                e.target
+                                                                    .checked,
+                                                        };
+                                                        form.setData(
+                                                            'children',
+                                                            updated,
+                                                        );
+                                                    }}
+                                                    className="h-4 w-4 rounded border-input"
+                                                />
+                                                Special Needs
+                                            </label>
+                                        </div>
+                                        {child.special_needs && (
+                                            <div className="sm:col-span-2">
+                                                <input
+                                                    type="text"
+                                                    value={
+                                                        child.special_needs_notes ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) => {
+                                                        const updated = [
+                                                            ...form.data
+                                                                .children,
+                                                        ];
+                                                        updated[index] = {
+                                                            ...child,
+                                                            special_needs_notes:
+                                                                e.target
+                                                                    .value ||
+                                                                null,
+                                                        };
+                                                        form.setData(
+                                                            'children',
+                                                            updated,
+                                                        );
+                                                    }}
+                                                    placeholder="Special needs notes"
+                                                    className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="flex items-center justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    form.setData(
+                                                        'children',
+                                                        form.data.children.filter(
+                                                            (c) =>
+                                                                c.id !==
+                                                                child.id,
+                                                        ),
+                                                    );
+                                                }}
+                                                className="text-sm text-destructive hover:text-destructive"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                No children on file
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-serif text-lg font-semibold text-foreground">
+                                Pets ({form.data.pets.length})
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    form.setData('pets', [
+                                        ...form.data.pets,
+                                        {
+                                            id: null,
+                                            name: '',
+                                            type: '',
+                                            breed: null,
+                                            notes: null,
+                                        },
+                                    ]);
+                                }}
+                                className="text-sm text-ring hover:text-foreground"
+                            >
+                                + Add Pet
+                            </button>
+                        </div>
+                        {form.data.pets.length > 0 ? (
+                            <div className="space-y-4">
+                                {form.data.pets.map((pet, index) => (
+                                    <div
+                                        key={pet.id}
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-5"
+                                    >
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={pet.name || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.pets,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...pet,
+                                                        name: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'pets',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Name"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <select
+                                                value={pet.type || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.pets,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...pet,
+                                                        type: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'pets',
+                                                        updated,
+                                                    );
+                                                }}
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            >
+                                                <option value="">Type</option>
+                                                <option value="dog">Dog</option>
+                                                <option value="cat">Cat</option>
+                                                <option value="bird">
+                                                    Bird
+                                                </option>
+                                                <option value="fish">
+                                                    Fish
+                                                </option>
+                                                <option value="other">
+                                                    Other
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={pet.breed || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.pets,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...pet,
+                                                        breed:
+                                                            e.target.value ||
+                                                            null,
+                                                    };
+                                                    form.setData(
+                                                        'pets',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Breed"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    form.setData(
+                                                        'pets',
+                                                        form.data.pets.filter(
+                                                            (p) =>
+                                                                p.id !== pet.id,
+                                                        ),
+                                                    );
+                                                }}
+                                                className="text-sm text-destructive hover:text-destructive"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                No pets on file
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-[6px] border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Additional Information
                         </h2>
@@ -543,8 +884,13 @@ export default function ClientEdit() {
                         >
                             Cancel
                         </Link>
-                        <button type="submit" className="btn-primary">
-                            Save Changes
+                        <button
+                            type="submit"
+                            disabled={form.processing}
+                            className="btn-primary"
+                        >
+                            {form.processing ? <Spinner /> : null}
+                            {form.processing ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 </form>

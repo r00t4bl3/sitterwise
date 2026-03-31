@@ -212,7 +212,7 @@ class AvailabilityController extends Controller
                 ];
             });
 
-        return Inertia::render('caregivers/availability/manage', [
+        return Inertia::render('availabilities/show', [
             'caregiver' => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
             'availabilities' => $availabilities,
             'timeSlots' => array_map(

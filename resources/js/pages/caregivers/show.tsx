@@ -61,12 +61,13 @@ interface AttributeDefinition {
 interface Attribute {
     id: number;
     attribute_definition: AttributeDefinition;
-    value: string;
+    value: string | boolean;
 }
 
 interface Location {
     id: number;
     name: string;
+    svg_icon: string | null;
     is_preferred: boolean;
 }
 
@@ -146,8 +147,14 @@ function SpecialtyTag({ name }: { name: string }) {
     );
 }
 
-function AttributeBadge({ name, value }: { name: string; value: string }) {
-    const isTrue = value === 'true' || value === '1';
+function AttributeBadge({
+    name,
+    value,
+}: {
+    name: string;
+    value: string | boolean;
+}) {
+    const isTrue = value === 'true' || value === '1' || value === true;
 
     return (
         <div className="flex items-center gap-2">
@@ -483,7 +490,16 @@ export default function CaregiverShow() {
                                         <span
                                             className={`h-2 w-2 rounded-full ${location.is_preferred ? 'bg-ring' : 'bg-border'}`}
                                         />
-                                        {location.name}
+                                        {location.svg_icon ? (
+                                            <span
+                                                className="h-4 w-4"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: location.svg_icon,
+                                                }}
+                                            />
+                                        ) : (
+                                            location.name
+                                        )}
                                         {location.is_preferred && (
                                             <span className="text-xs text-ring">
                                                 (Preferred)
@@ -504,14 +520,28 @@ export default function CaregiverShow() {
                                 Attributes
                             </h3>
                             <div className="grid gap-2 sm:grid-cols-2">
-                                {caregiver.attributes.map((attr) => (
-                                    <AttributeBadge
-                                        key={attr.id}
-                                        name={attr.attribute_definition.name}
-                                        value={attr.value}
-                                    />
-                                ))}
-                                {caregiver.attributes.length === 0 && (
+                                {caregiver.attributes
+                                    .filter(
+                                        (a) =>
+                                            a.value === 'true' ||
+                                            a.value === '1' ||
+                                            a.value === true,
+                                    )
+                                    .map((attr) => (
+                                        <AttributeBadge
+                                            key={attr.id}
+                                            name={
+                                                attr.attribute_definition.name
+                                            }
+                                            value={attr.value}
+                                        />
+                                    ))}
+                                {caregiver.attributes.filter(
+                                    (a) =>
+                                        a.value === 'true' ||
+                                        a.value === '1' ||
+                                        a.value === true,
+                                ).length === 0 && (
                                     <p className="text-sm text-muted-foreground">
                                         No attributes
                                     </p>

@@ -163,7 +163,6 @@ class CaregiverController extends Controller
                 ]),
             ],
             'statuses' => $statuses,
-            'csrf_token' => csrf_token(),
         ]);
     }
 

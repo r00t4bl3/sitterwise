@@ -1,10 +1,14 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Award,
     Calendar,
+    Home,
     LayoutGrid,
+    MapPin,
     Search,
     Settings,
     Shield,
+    Star,
     Users,
     User,
 } from 'lucide-react';
@@ -76,6 +80,34 @@ const adminNavItems: NavItem[] = [
     },
 ];
 
+const superAdminNavItems: NavItem[] = [
+    {
+        title: 'Certifications',
+        href: '/admin/certifications',
+        icon: Award,
+    },
+    {
+        title: 'Specialties',
+        href: '/admin/specialties',
+        icon: Star,
+    },
+    {
+        title: 'Locations',
+        href: '/admin/locations',
+        icon: MapPin,
+    },
+    {
+        title: 'Attributes',
+        href: '/admin/attributes',
+        icon: Shield,
+    },
+    {
+        title: 'Hotels',
+        href: '/admin/hotels',
+        icon: Home,
+    },
+];
+
 const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
@@ -85,6 +117,8 @@ export function AppSidebar() {
         switch (auth.user.role) {
             case 'caregiver':
                 return [...baseNavItems];
+            case 'super_admin':
+                return [...baseNavItems, ...superAdminNavItems];
             case 'admin':
                 return [...baseNavItems, ...adminNavItems];
             case 'client':

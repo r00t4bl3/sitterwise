@@ -56,12 +56,16 @@ interface Pet {
     notes: string | null;
 }
 
-interface ClientAttribute {
+interface AttributeDefinition {
     id: number;
     name: string;
     slug: string;
-    type: string;
-    value: string;
+}
+
+interface Attribute {
+    id: number;
+    attribute_definition: AttributeDefinition;
+    value: string | boolean;
 }
 
 interface FavoriteCaregiver {
@@ -103,7 +107,7 @@ interface Client {
     addresses: Address[];
     children: Child[];
     pets: Pet[];
-    attributes: ClientAttribute[];
+    attributes: Attribute[];
     favorite_caregivers: FavoriteCaregiver[];
     type_changes: TypeChange[];
 }
@@ -151,8 +155,14 @@ function calculateAge(
     return age;
 }
 
-function AttributeBadge({ name, value }: { name: string; value: string }) {
-    const isTrue = value === 'true' || value === '1';
+function AttributeBadge({
+    name,
+    value,
+}: {
+    name: string;
+    value: string | boolean;
+}) {
+    const isTrue = value === 'true' || value === '1' || value === true;
 
     return (
         <div className="flex items-center gap-2">
@@ -421,6 +431,118 @@ export default function ClientShow() {
                                 </div>
                             )}
                         </div>
+
+                        {client.children.length > 0 && (
+                            <div className="mt-6 border-t border-border pt-6">
+                                <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Children ({client.children.length})
+                                </h3>
+                                <div className="space-y-3">
+                                    {client.children.map((child) => (
+                                        <div
+                                            key={child.id}
+                                            className="rounded-[3px] border border-border bg-background p-3"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-foreground">
+                                                    {child.name || 'Unnamed'}
+                                                </span>
+                                                {child.special_needs && (
+                                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                                                        Special Needs
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                {child.gender ||
+                                                    'Gender not specified'}{' '}
+                                                •{' '}
+                                                {calculateAge(
+                                                    child.birth_month,
+                                                    child.birth_year,
+                                                ) !== null
+                                                    ? `${calculateAge(child.birth_month, child.birth_year)} years old`
+                                                    : 'Age not specified'}
+                                            </p>
+                                            {child.special_needs_notes && (
+                                                <p className="mt-1 text-sm text-foreground">
+                                                    {child.special_needs_notes}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {client.pets.length > 0 && (
+                            <div className="mt-6 border-t border-border pt-6">
+                                <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Pets ({client.pets.length})
+                                </h3>
+                                <div className="space-y-3">
+                                    {client.pets.map((pet) => (
+                                        <div
+                                            key={pet.id}
+                                            className="rounded-[3px] border border-border bg-background p-3"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-foreground">
+                                                    {pet.name || pet.type}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground capitalize">
+                                                    {pet.type}
+                                                </span>
+                                            </div>
+                                            {pet.breed && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    {pet.breed}
+                                                </p>
+                                            )}
+                                            {pet.notes && (
+                                                <p className="mt-1 text-sm text-foreground">
+                                                    {pet.notes}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {client.attributes &&
+                            client.attributes.filter(
+                                (a) =>
+                                    a.value === 'true' ||
+                                    a.value === '1' ||
+                                    a.value === true,
+                            ).length > 0 && (
+                                <div className="mt-6 border-t border-border pt-6">
+                                    <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                        Attributes
+                                    </h3>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        {client.attributes
+                                            .filter(
+                                                (a) =>
+                                                    a.value === 'true' ||
+                                                    a.value === '1' ||
+                                                    a.value === true,
+                                            )
+                                            .map((attr) => (
+                                                <AttributeBadge
+                                                    key={attr.id}
+                                                    name={
+                                                        attr
+                                                            .attribute_definition
+                                                            .name
+                                                    }
+                                                    value={attr.value}
+                                                />
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                     </div>
 
                     <div className="space-y-6">
@@ -465,102 +587,6 @@ export default function ClientShow() {
                             )}
                         </div>
 
-                        {client.children.length > 0 ? (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Children ({client.children.length})
-                                </h2>
-                                <div className="space-y-3">
-                                    {client.children.map((child) => (
-                                        <div
-                                            key={child.id}
-                                            className="rounded-[3px] border border-border bg-background p-3"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-medium text-foreground">
-                                                    {child.name || 'Unnamed'}
-                                                </span>
-                                                {child.special_needs && (
-                                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                                                        Special Needs
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                {child.gender ||
-                                                    'Gender not specified'}{' '}
-                                                •{' '}
-                                                {calculateAge(
-                                                    child.birth_month,
-                                                    child.birth_year,
-                                                ) !== null
-                                                    ? `${calculateAge(child.birth_month, child.birth_year)} years old`
-                                                    : 'Age not specified'}
-                                            </p>
-                                            {child.special_needs_notes && (
-                                                <p className="mt-1 text-sm text-foreground">
-                                                    {child.special_needs_notes}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Children
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    No children on file
-                                </p>
-                            </div>
-                        )}
-
-                        {client.pets.length > 0 ? (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Pets ({client.pets.length})
-                                </h2>
-                                <div className="space-y-3">
-                                    {client.pets.map((pet) => (
-                                        <div
-                                            key={pet.id}
-                                            className="rounded-[3px] border border-border bg-background p-3"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-medium text-foreground">
-                                                    {pet.name || pet.type}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground capitalize">
-                                                    {pet.type}
-                                                </span>
-                                            </div>
-                                            {pet.breed && (
-                                                <p className="text-sm text-muted-foreground">
-                                                    {pet.breed}
-                                                </p>
-                                            )}
-                                            {pet.notes && (
-                                                <p className="mt-1 text-sm text-foreground">
-                                                    {pet.notes}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Pets
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    No pets on file
-                                </p>
-                            </div>
-                        )}
-
                         {client.sitter_preferences &&
                             client.sitter_preferences.length > 0 && (
                                 <div className="rounded-[6px] border border-border bg-card p-6">
@@ -581,23 +607,6 @@ export default function ClientShow() {
                                     </div>
                                 </div>
                             )}
-
-                        {client.attributes && client.attributes.length > 0 && (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Attributes
-                                </h2>
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                    {client.attributes.map((attr) => (
-                                        <AttributeBadge
-                                            key={attr.id}
-                                            name={attr.name}
-                                            value={attr.value}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         {client.caregiver_notes && (
                             <div className="rounded-[6px] border border-border bg-card p-6">

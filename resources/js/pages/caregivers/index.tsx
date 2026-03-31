@@ -3,6 +3,11 @@ import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { BreadcrumbItem } from '@/types';
 import { useState, useRef, useEffect } from 'react';
 
@@ -31,6 +36,7 @@ interface SpecialtyType {
 interface Location {
     id: number;
     name: string;
+    svg_icon: string | null;
     pivot: {
         is_preferred: boolean;
     };
@@ -326,9 +332,55 @@ export default function CaregiversIndex() {
                                                 .map((location) => (
                                                     <span
                                                         key={location.id}
-                                                        className="text-xs font-medium text-foreground"
+                                                        className="flex items-center text-xs"
                                                     >
-                                                        {location.name}
+                                                        {location.svg_icon ? (
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <span className="flex h-4 w-4 cursor-pointer items-center justify-center">
+                                                                        <svg
+                                                                            viewBox="0 0 24 24"
+                                                                            className="h-4 w-4"
+                                                                            style={{
+                                                                                fill: location
+                                                                                    .pivot
+                                                                                    .is_preferred
+                                                                                    ? '#3a9a9c'
+                                                                                    : '#c2e5e5',
+                                                                            }}
+                                                                        >
+                                                                            <path
+                                                                                d={
+                                                                                    location.svg_icon.match(
+                                                                                        /d="([^"]+)"/,
+                                                                                    )?.[1] ||
+                                                                                    ''
+                                                                                }
+                                                                            />
+                                                                        </svg>
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {
+                                                                        location.name
+                                                                    }
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <span
+                                                                className={
+                                                                    location
+                                                                        .pivot
+                                                                        .is_preferred
+                                                                        ? 'font-medium text-foreground'
+                                                                        : 'text-muted-foreground'
+                                                                }
+                                                            >
+                                                                {location.name}
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 ))}
                                             {caregiver.locations.length ===

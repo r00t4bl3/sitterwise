@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
 
 class AttributeDefinition extends Model
 {
@@ -21,6 +22,34 @@ class AttributeDefinition extends Model
         'options' => 'array',
         'is_active' => 'boolean',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (AttributeDefinition $attribute) {
+            if (empty($attribute->slug) && ! empty($attribute->name)) {
+                $attribute->slug = static::generateSlug($attribute->name);
+            }
+        });
+    }
+
+    private static function generateSlug(string $name): string
+    {
+        $slug = Str::slug($name);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        $query = self::where('slug', $slug);
+
+        while ($query->exists()) {
+            $slug = $originalSlug.'_'.$counter;
+            $query = self::where('slug', $slug);
+            $counter++;
+        }
+
+        return $slug;
+    }
 
     public function caregivers(): BelongsToMany
     {

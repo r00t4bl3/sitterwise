@@ -4,6 +4,11 @@ import { Sunrise, Sun, Moon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -31,6 +36,7 @@ interface SpecialtyType {
 interface Location {
     id: number;
     name: string;
+    svg_icon: string | null;
     pivot: {
         is_preferred: boolean;
     };
@@ -292,7 +298,7 @@ export default function AvailabilitiesIndex() {
                                                             </div>
                                                         )}
                                                         <Link
-                                                            href={`/caregivers/${caregiver.id}/availability/manage`}
+                                                            href={`/availabilities/${caregiver.id}/show`}
                                                             className="text-sm font-medium whitespace-nowrap text-ring hover:text-foreground hover:underline"
                                                         >
                                                             {
@@ -327,29 +333,67 @@ export default function AvailabilitiesIndex() {
                                                 <td className="px-3 py-3">
                                                     <div className="flex flex-wrap gap-1">
                                                         {caregiver.locations
-                                                            .filter(
-                                                                (l) =>
-                                                                    l.pivot
-                                                                        .is_preferred,
-                                                            )
-                                                            .slice(0, 2)
+                                                            .slice(0, 3)
                                                             .map((location) => (
                                                                 <span
                                                                     key={
                                                                         location.id
                                                                     }
-                                                                    className="text-xs text-foreground"
+                                                                    className="flex items-center text-xs"
                                                                 >
-                                                                    {
-                                                                        location.name
-                                                                    }
+                                                                    {location.svg_icon ? (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
+                                                                                <span className="flex h-4 w-4 cursor-pointer items-center justify-center">
+                                                                                    <svg
+                                                                                        viewBox="0 0 24 24"
+                                                                                        className="h-4 w-4"
+                                                                                        style={{
+                                                                                            fill: location
+                                                                                                .pivot
+                                                                                                .is_preferred
+                                                                                                ? '#3a9a9c'
+                                                                                                : '#c2e5e5',
+                                                                                        }}
+                                                                                    >
+                                                                                        <path
+                                                                                            d={
+                                                                                                location.svg_icon.match(
+                                                                                                    /d="([^"]+)"/,
+                                                                                                )?.[1] ||
+                                                                                                ''
+                                                                                            }
+                                                                                        />
+                                                                                    </svg>
+                                                                                </span>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                {
+                                                                                    location.name
+                                                                                }
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <span
+                                                                            className={
+                                                                                location
+                                                                                    .pivot
+                                                                                    .is_preferred
+                                                                                    ? 'font-medium text-foreground'
+                                                                                    : 'text-muted-foreground'
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                location.name
+                                                                            }
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                             ))}
-                                                        {caregiver.locations.filter(
-                                                            (l) =>
-                                                                l.pivot
-                                                                    .is_preferred,
-                                                        ).length === 0 && (
+                                                        {caregiver.locations
+                                                            .length === 0 && (
                                                             <span className="text-xs text-muted-foreground">
                                                                 —
                                                             </span>

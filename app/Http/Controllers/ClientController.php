@@ -97,7 +97,10 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
-        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin', 'attributes']);
+        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin']);
+        $client->load(['attributes' => function ($query) {
+            $query->withPivot('value');
+        }]);
 
         return Inertia::render('clients/show', [
             'client' => [
@@ -145,9 +148,11 @@ class ClientController extends Controller
                 ]),
                 'attributes' => $client->attributes->map(fn ($a) => [
                     'id' => $a->id,
-                    'name' => $a->name,
-                    'slug' => $a->slug,
-                    'type' => $a->type,
+                    'attribute_definition' => [
+                        'id' => $a->id,
+                        'name' => $a->name,
+                        'slug' => $a->slug,
+                    ],
                     'value' => $a->pivot->value,
                 ]),
                 'favorite_caregivers' => $client->favoriteCaregivers->map(fn ($c) => [
@@ -258,6 +263,18 @@ class ClientController extends Controller
             'emergency_instructions' => 'nullable|string',
             'caregiver_notes' => 'nullable|string',
             'attributes' => 'nullable|array',
+            'children' => 'nullable|array',
+            'children.*.name' => 'nullable|string|max:255',
+            'children.*.gender' => 'nullable|in:male,female,other',
+            'children.*.birth_month' => 'nullable|integer|min:1|max:12',
+            'children.*.birth_year' => 'nullable|integer|min:1900|max:2100',
+            'children.*.special_needs' => 'nullable|boolean',
+            'children.*.special_needs_notes' => 'nullable|string',
+            'pets' => 'nullable|array',
+            'pets.*.name' => 'nullable|string|max:255',
+            'pets.*.type' => 'nullable|string|max:255',
+            'pets.*.breed' => 'nullable|string|max:255',
+            'pets.*.notes' => 'nullable|string',
         ]);
 
         $client->update($validated);
@@ -275,6 +292,70 @@ class ClientController extends Controller
                 ];
             }
             $client->attributes()->sync($attributesToSync);
+        }
+
+        if (isset($validated['children'])) {
+            $existingChildIds = $client->children()->pluck('id')->toArray();
+            $submittedChildIds = [];
+
+            foreach ($validated['children'] as $childData) {
+                if (isset($childData['id']) && in_array($childData['id'], $existingChildIds)) {
+                    $child = $client->children()->find($childData['id']);
+                    if ($child) {
+                        $child->update([
+                            'name' => $childData['name'] ?? null,
+                            'gender' => $childData['gender'] ?? null,
+                            'birth_month' => $childData['birth_month'] ?? null,
+                            'birth_year' => $childData['birth_year'] ?? null,
+                            'special_needs' => $childData['special_needs'] ?? false,
+                            'special_needs_notes' => $childData['special_needs_notes'] ?? null,
+                        ]);
+                        $submittedChildIds[] = $childData['id'];
+                    }
+                } else {
+                    $newChild = $client->children()->create([
+                        'name' => $childData['name'] ?? null,
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => $childData['birth_month'] ?? null,
+                        'birth_year' => $childData['birth_year'] ?? null,
+                        'special_needs' => $childData['special_needs'] ?? false,
+                        'special_needs_notes' => $childData['special_needs_notes'] ?? null,
+                    ]);
+                    $submittedChildIds[] = $newChild->id;
+                }
+            }
+
+            $client->children()->whereNotIn('id', $submittedChildIds)->delete();
+        }
+
+        if (isset($validated['pets'])) {
+            $existingPetIds = $client->pets()->pluck('id')->toArray();
+            $submittedPetIds = [];
+
+            foreach ($validated['pets'] as $petData) {
+                if (isset($petData['id']) && in_array($petData['id'], $existingPetIds)) {
+                    $pet = $client->pets()->find($petData['id']);
+                    if ($pet) {
+                        $pet->update([
+                            'name' => $petData['name'] ?? null,
+                            'type' => $petData['type'] ?? null,
+                            'breed' => $petData['breed'] ?? null,
+                            'notes' => $petData['notes'] ?? null,
+                        ]);
+                        $submittedPetIds[] = $petData['id'];
+                    }
+                } else {
+                    $newPet = $client->pets()->create([
+                        'name' => $petData['name'] ?? null,
+                        'type' => $petData['type'] ?? null,
+                        'breed' => $petData['breed'] ?? null,
+                        'notes' => $petData['notes'] ?? null,
+                    ]);
+                    $submittedPetIds[] = $newPet->id;
+                }
+            }
+
+            $client->pets()->whereNotIn('id', $submittedPetIds)->delete();
         }
 
         return redirect()->route('clients.show', $client->id)

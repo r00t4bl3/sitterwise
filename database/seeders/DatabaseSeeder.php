@@ -20,13 +20,37 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             AttributeDefinitionSeeder::class,
             CaregiverSeeder::class,
+            ClientSeeder::class,
             AvailabilitySeeder::class,
+            HotelSeeder::class,
         ]);
 
         User::factory()->create([
-            'name' => 'Test User',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.test',
+            'password' => 'asdfasdf',
+            'role' => 'super_admin',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Admin',
             'email' => 'admin@example.test',
+            'password' => 'asdfasdf',
             'role' => 'admin',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Caregiver User',
+            'email' => 'caregiver@example.test',
+            'password' => 'asdfasdf',
+            'role' => 'caregiver',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Client User',
+            'email' => 'client@example.test',
+            'password' => 'asdfasdf',
+            'role' => 'client',
         ]);
     }
 }

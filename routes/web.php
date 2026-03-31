@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\AttributeDefinitionController;
+use App\Http\Controllers\Admin\CertificationTypeController;
+use App\Http\Controllers\Admin\HotelController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\SpecialtyTypeController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\ClientController;
@@ -28,9 +33,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
 
-        Route::get('/caregivers/{caregiver}/availability/manage', [AvailabilityController::class, 'manage'])->name('caregivers.availability.manage');
+        Route::get('/availabilities/{caregiver}/show', [AvailabilityController::class, 'manage'])->name('availabilities.show');
 
         Route::resource('availabilities', AvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
+    });
+
+    Route::middleware('super_admin')->group(function () {
+        Route::resource('admin/certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.certifications.index');
+        Route::resource('admin/specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.specialties.index');
+        Route::resource('admin/locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.locations.index');
+        Route::resource('admin/attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.attributes.index');
+        Route::resource('admin/hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.hotels.index');
     });
 
     Route::get('/my-availability', [AvailabilityController::class, 'myAvailability'])->name('availabilities.my');
