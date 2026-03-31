@@ -6,6 +6,7 @@ import {
     Settings,
     Shield,
     Users,
+    User,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -60,8 +61,8 @@ const adminNavItems: NavItem[] = [
     },
     {
         title: 'Clients',
-        href: '#',
-        icon: Shield,
+        href: '/clients',
+        icon: User,
     },
     {
         title: 'Availability',

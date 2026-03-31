@@ -38,6 +38,11 @@ class User extends Authenticatable
         return $this->hasOne(Caregiver::class);
     }
 
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

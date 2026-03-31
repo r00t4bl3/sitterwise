@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -18,7 +19,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/caregivers/{caregiver}/availability/{availability}', [AvailabilityController::class, 'destroyForCaregiver'])->name('caregivers.availability.destroy');
 
     Route::middleware('admin')->group(function () {
+        Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
+        Route::resource('clients', ClientController::class)->except(['destroy']);
+        Route::post('clients/{client}/profile-photo', [ClientController::class, 'updateProfilePhoto'])->name('clients.updateProfilePhoto');
+        Route::post('clients/{client}/password', [ClientController::class, 'resetPassword'])->name('clients.resetPassword');
         Route::post('caregivers/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
