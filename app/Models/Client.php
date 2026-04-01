@@ -69,6 +69,16 @@ class Client extends Model
         return $this->hasMany(ClientTypeChange::class);
     }
 
+    public function bookingGroups(): HasMany
+    {
+        return $this->hasMany(BookingGroup::class);
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(

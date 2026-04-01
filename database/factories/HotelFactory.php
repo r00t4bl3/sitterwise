@@ -26,7 +26,7 @@ class HotelFactory extends Factory
             'city' => 'San Diego',
             'state' => 'CA',
             'zip' => fake()->postcode(),
-            'parking_instructions' => fake()->optional()->sentence(),
+            'parking_instructions' => fake()->optional()->sentence() ?? 'Parking available',
             'hourly_rate' => fake()->randomFloat(2, 18, 30),
             'resort_fee' => fake()->optional()->randomFloat(2, 10, 25),
             'contact_name' => fake()->optional()->name(),

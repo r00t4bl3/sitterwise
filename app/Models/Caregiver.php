@@ -111,6 +111,11 @@ class Caregiver extends Model
         return $this->hasMany(Availability::class)->orderBy('date');
     }
 
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
