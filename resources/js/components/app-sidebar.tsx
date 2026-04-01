@@ -74,11 +74,6 @@ const adminNavItems: NavItem[] = [
         icon: Calendar,
     },
     {
-        title: 'Bookings',
-        href: '/admin/bookings',
-        icon: Calendar,
-    },
-    {
         title: 'Settings',
         href: '#',
         icon: Settings,

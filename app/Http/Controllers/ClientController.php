@@ -95,25 +95,6 @@ class ClientController extends Controller
         return response()->json($clients);
     }
 
-    public function getClientData(Client $client)
-    {
-        $client->load('addresses');
-
-        return response()->json([
-            'client' => [
-                'id' => $client->id,
-                'name' => $client->user->name ?? $client->first_name.' '.$client->last_name,
-                'addresses' => $client->addresses->map(fn ($a) => [
-                    'id' => $a->id,
-                    'line1' => $a->line1,
-                    'city' => $a->city,
-                    'state' => $a->state,
-                    'zip' => $a->zip,
-                ]),
-            ],
-        ]);
-    }
-
     public function show(Client $client)
     {
         $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin']);

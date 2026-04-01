@@ -23,8 +23,6 @@ class DatabaseSeeder extends Seeder
             ClientSeeder::class,
             AvailabilitySeeder::class,
             HotelSeeder::class,
-            BookingGroupSeeder::class,
-            BookingSeeder::class,
         ]);
 
         User::factory()->create([

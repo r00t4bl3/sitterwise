@@ -1,8 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\CaregiverAvailabilityController;
 use App\Http\Controllers\AvailabilityController;
-use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
@@ -23,7 +21,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('admin')->group(function () {
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
-        Route::get('clients/{client}/data', [ClientController::class, 'getClientData'])->name('clients.getClientData');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
         Route::resource('clients', ClientController::class)->except(['destroy']);
         Route::post('clients/{client}/profile-photo', [ClientController::class, 'updateProfilePhoto'])->name('clients.updateProfilePhoto');
@@ -33,14 +30,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
 
         Route::resource('availabilities', AvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
-
-        Route::resource('caregivers.availabilities', CaregiverAvailabilityController::class);
-
-        Route::get('/admin/bookings', [BookingController::class, 'index'])->name('admin.bookings.index');
-        Route::get('/admin/bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('admin.bookings.searchHotels');
-        Route::post('/admin/bookings', [BookingController::class, 'store'])->name('admin.bookings.store');
-        Route::put('/admin/bookings/{booking}', [BookingController::class, 'update'])->name('admin.bookings.update');
-        Route::delete('/admin/bookings/{booking}', [BookingController::class, 'destroy'])->name('admin.bookings.destroy');
     });
 
     Route::middleware('super_admin')->group(function () {
@@ -52,4 +41,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
