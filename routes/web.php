@@ -1,15 +1,16 @@
 <?php
 
-use App\Http\Controllers\Admin\AttributeDefinitionController;
-use App\Http\Controllers\Admin\CertificationTypeController;
-use App\Http\Controllers\Admin\HotelController;
-use App\Http\Controllers\Admin\LocationController;
-use App\Http\Controllers\Admin\SpecialtyTypeController;
+use App\Http\Controllers\Admin\CaregiverAvailabilityController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SuperAdmin\AttributeDefinitionController;
+use App\Http\Controllers\SuperAdmin\CertificationTypeController;
+use App\Http\Controllers\SuperAdmin\HotelController;
+use App\Http\Controllers\SuperAdmin\LocationController;
+use App\Http\Controllers\SuperAdmin\SpecialtyTypeController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -19,10 +20,6 @@ Route::inertia('/', 'welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Custom availability routes (must come before resource to take precedence)
-    Route::post('/caregivers/{caregiver}/availability', [AvailabilityController::class, 'storeForCaregiver'])->name('caregivers.availability.store');
-    Route::delete('/caregivers/{caregiver}/availability/{availability}', [AvailabilityController::class, 'destroyForCaregiver'])->name('caregivers.availability.destroy');
 
     Route::middleware('admin')->group(function () {
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
@@ -35,9 +32,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
 
-        Route::get('/availabilities/{caregiver}/show', [AvailabilityController::class, 'manage'])->name('availabilities.show');
-
         Route::resource('availabilities', AvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::resource('caregivers.availabilities', CaregiverAvailabilityController::class);
 
         Route::get('/admin/bookings', [BookingController::class, 'index'])->name('admin.bookings.index');
         Route::get('/admin/bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('admin.bookings.searchHotels');
@@ -53,11 +50,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('admin/attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.attributes.index');
         Route::resource('admin/hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'admin.hotels.index');
     });
-
-    Route::get('/my-availability', [AvailabilityController::class, 'myAvailability'])->name('availabilities.my');
-    Route::put('/my-availability', [AvailabilityController::class, 'updateMyAvailability'])->name('availabilities.updateMy');
-    Route::put('/my-availability/availability', [AvailabilityController::class, 'upsertMyAvailability'])->name('availabilities.upsert');
-    Route::delete('/my-availability/availability/{availability}', [AvailabilityController::class, 'destroyMyAvailability'])->name('availabilities.destroyMy');
 });
 
 require __DIR__.'/settings.php';
