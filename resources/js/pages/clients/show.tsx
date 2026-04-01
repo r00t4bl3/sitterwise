@@ -144,15 +144,65 @@ function ClientTypeBadge({ type }: { type: string }) {
     );
 }
 
-function calculateAge(
+function calculateAgeInMonths(
     birthMonth: number | null,
     birthYear: number | null,
 ): number | null {
-    if (!birthMonth || !birthYear) return null;
+    if (!birthYear || birthMonth === null) return null;
     const now = new Date();
-    let age = now.getFullYear() - birthYear;
-    if (now.getMonth() < birthMonth) age--;
-    return age;
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    let totalMonths =
+        (currentYear - birthYear) * 12 + (currentMonth - birthMonth);
+
+    return totalMonths;
+}
+
+function getAgeDisplay(
+    birthMonth: number | null,
+    birthYear: number | null,
+): string {
+    const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+    ];
+
+    if (birthYear) {
+        const totalMonths = calculateAgeInMonths(birthMonth, birthYear);
+        if (totalMonths !== null) {
+            if (totalMonths < 12) {
+                return totalMonths === 1
+                    ? '1 month old'
+                    : `${totalMonths} months old`;
+            }
+            const years = Math.floor(totalMonths / 12);
+            const remainingMonths = totalMonths % 12;
+            if (remainingMonths === 0) {
+                return years === 1 ? '1 year old' : `${years} years old`;
+            }
+            const yearLabel = years === 1 ? 'year' : 'years';
+            const monthLabel = remainingMonths === 1 ? 'month' : 'months';
+            return `${years} ${yearLabel}, ${remainingMonths} ${monthLabel} old`;
+        }
+        return `Born in ${birthYear}`;
+    }
+
+    if (birthMonth) {
+        return `Born in ${monthNames[birthMonth - 1]}`;
+    }
+
+    return 'Age not specified';
 }
 
 function AttributeBadge({
@@ -457,12 +507,10 @@ export default function ClientShow() {
                                                 {child.gender ||
                                                     'Gender not specified'}{' '}
                                                 •{' '}
-                                                {calculateAge(
+                                                {getAgeDisplay(
                                                     child.birth_month,
                                                     child.birth_year,
-                                                ) !== null
-                                                    ? `${calculateAge(child.birth_month, child.birth_year)} years old`
-                                                    : 'Age not specified'}
+                                                )}
                                             </p>
                                             {child.special_needs_notes && (
                                                 <p className="mt-1 text-sm text-foreground">

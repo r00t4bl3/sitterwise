@@ -22,7 +22,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Address {
-    id: number;
+    id: number | null;
     label: string | null;
     location_type: string;
     line1: string;
@@ -163,6 +163,7 @@ export default function ClientEdit() {
         attributes: attributeValues,
         children: client.children,
         pets: client.pets,
+        addresses: client.addresses,
     });
 
     const submit: SubmitEventHandler = (e) => {
@@ -516,7 +517,7 @@ export default function ClientEdit() {
                                 {form.data.children.map((child, index) => (
                                     <div
                                         key={child.id}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-6"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-7"
                                     >
                                         <div className="sm:col-span-2">
                                             <input
@@ -572,6 +573,52 @@ export default function ClientEdit() {
                                             </select>
                                         </div>
                                         <div>
+                                            <select
+                                                value={child.birth_month || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.children,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...child,
+                                                        birth_month: e.target
+                                                            .value
+                                                            ? parseInt(
+                                                                  e.target
+                                                                      .value,
+                                                              )
+                                                            : null,
+                                                    };
+                                                    form.setData(
+                                                        'children',
+                                                        updated,
+                                                    );
+                                                }}
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            >
+                                                <option value="">Month</option>
+                                                {Array.from(
+                                                    { length: 12 },
+                                                    (_, i) => i + 1,
+                                                ).map((month) => (
+                                                    <option
+                                                        key={month}
+                                                        value={month}
+                                                    >
+                                                        {new Date(
+                                                            2000,
+                                                            month - 1,
+                                                        ).toLocaleString(
+                                                            'default',
+                                                            {
+                                                                month: 'short',
+                                                            },
+                                                        )}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
                                             <input
                                                 type="number"
                                                 value={child.birth_year || ''}
@@ -594,12 +641,12 @@ export default function ClientEdit() {
                                                         updated,
                                                     );
                                                 }}
-                                                placeholder="Birth Year"
+                                                placeholder="Year"
                                                 className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div>
-                                            <label className="flex items-center gap-2 text-sm">
+                                            <label className="flex items-center gap-1 text-xs">
                                                 <input
                                                     type="checkbox"
                                                     checked={
@@ -623,7 +670,7 @@ export default function ClientEdit() {
                                                     }}
                                                     className="h-4 w-4 rounded border-input"
                                                 />
-                                                Special Needs
+                                                Spec. needs
                                             </label>
                                         </div>
                                         {child.special_needs && (
@@ -814,6 +861,261 @@ export default function ClientEdit() {
                         ) : (
                             <p className="text-sm text-muted-foreground">
                                 No pets on file
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-serif text-lg font-semibold text-foreground">
+                                Addresses ({form.data.addresses.length})
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    form.setData('addresses', [
+                                        ...form.data.addresses,
+                                        {
+                                            id: null,
+                                            label: '',
+                                            location_type: 'residence',
+                                            line1: '',
+                                            line2: '',
+                                            city: '',
+                                            state: '',
+                                            zip: '',
+                                            is_primary:
+                                                form.data.addresses.length ===
+                                                0,
+                                        },
+                                    ]);
+                                }}
+                                className="text-sm text-ring hover:text-foreground"
+                            >
+                                + Add Address
+                            </button>
+                        </div>
+                        {form.data.addresses.length > 0 ? (
+                            <div className="space-y-4">
+                                {form.data.addresses.map((address, index) => (
+                                    <div
+                                        key={address.id || `new-${index}`}
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-3"
+                                    >
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={address.label || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        label: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Label (e.g., Home, Hotel)"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <select
+                                                value={
+                                                    address.location_type ||
+                                                    'residence'
+                                                }
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        location_type:
+                                                            e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            >
+                                                <option value="residence">
+                                                    Residence
+                                                </option>
+                                                <option value="hotel">
+                                                    Hotel
+                                                </option>
+                                                <option value="vacation_rental">
+                                                    Vacation Rental
+                                                </option>
+                                                <option value="other">
+                                                    Other
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <label className="flex items-center gap-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={address.is_primary}
+                                                    onChange={(e) => {
+                                                        const updated =
+                                                            form.data.addresses.map(
+                                                                (a, i) => ({
+                                                                    ...a,
+                                                                    is_primary:
+                                                                        i ===
+                                                                        index
+                                                                            ? e
+                                                                                  .target
+                                                                                  .checked
+                                                                            : false,
+                                                                }),
+                                                            );
+                                                        form.setData(
+                                                            'addresses',
+                                                            updated,
+                                                        );
+                                                    }}
+                                                    className="h-4 w-4 rounded border-input"
+                                                />
+                                                Primary
+                                            </label>
+                                        </div>
+                                        <div className="sm:col-span-2 lg:col-span-3">
+                                            <input
+                                                type="text"
+                                                value={address.line1 || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        line1: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Address Line 1 *"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2 lg:col-span-3">
+                                            <input
+                                                type="text"
+                                                value={address.line2 || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        line2: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="Address Line 2 (Optional)"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={address.city || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        city: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="City *"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={address.state || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        state: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="State *"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={address.zip || ''}
+                                                onChange={(e) => {
+                                                    const updated = [
+                                                        ...form.data.addresses,
+                                                    ];
+                                                    updated[index] = {
+                                                        ...address,
+                                                        zip: e.target.value,
+                                                    };
+                                                    form.setData(
+                                                        'addresses',
+                                                        updated,
+                                                    );
+                                                }}
+                                                placeholder="ZIP *"
+                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-end sm:col-span-2 lg:col-span-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    form.setData(
+                                                        'addresses',
+                                                        form.data.addresses.filter(
+                                                            (_, i) =>
+                                                                i !== index,
+                                                        ),
+                                                    );
+                                                }}
+                                                className="text-sm text-destructive hover:text-destructive"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                No addresses on file
                             </p>
                         )}
                     </div>

@@ -275,6 +275,16 @@ class ClientController extends Controller
             'pets.*.type' => 'nullable|string|max:255',
             'pets.*.breed' => 'nullable|string|max:255',
             'pets.*.notes' => 'nullable|string',
+            'addresses' => 'nullable|array',
+            'addresses.*.id' => 'nullable|integer|exists:client_addresses,id',
+            'addresses.*.label' => 'nullable|string|max:255',
+            'addresses.*.location_type' => 'nullable|in:residence,hotel,vacation_rental,other',
+            'addresses.*.line1' => 'nullable|string|max:255',
+            'addresses.*.line2' => 'nullable|string|max:255',
+            'addresses.*.city' => 'nullable|string|max:255',
+            'addresses.*.state' => 'nullable|string|max:255',
+            'addresses.*.zip' => 'nullable|string|max:20',
+            'addresses.*.is_primary' => 'nullable|boolean',
         ]);
 
         $client->update($validated);
@@ -356,6 +366,44 @@ class ClientController extends Controller
             }
 
             $client->pets()->whereNotIn('id', $submittedPetIds)->delete();
+        }
+
+        if (isset($validated['addresses'])) {
+            $existingAddressIds = $client->addresses()->pluck('id')->toArray();
+            $submittedAddressIds = [];
+
+            foreach ($validated['addresses'] as $addressData) {
+                if (isset($addressData['id']) && in_array($addressData['id'], $existingAddressIds)) {
+                    $address = $client->addresses()->find($addressData['id']);
+                    if ($address) {
+                        $address->update([
+                            'label' => $addressData['label'] ?? null,
+                            'location_type' => $addressData['location_type'] ?? 'residence',
+                            'line1' => $addressData['line1'] ?? '',
+                            'line2' => $addressData['line2'] ?? null,
+                            'city' => $addressData['city'] ?? '',
+                            'state' => $addressData['state'] ?? '',
+                            'zip' => $addressData['zip'] ?? '',
+                            'is_primary' => $addressData['is_primary'] ?? false,
+                        ]);
+                        $submittedAddressIds[] = $addressData['id'];
+                    }
+                } else {
+                    $newAddress = $client->addresses()->create([
+                        'label' => $addressData['label'] ?? null,
+                        'location_type' => $addressData['location_type'] ?? 'residence',
+                        'line1' => $addressData['line1'] ?? '',
+                        'line2' => $addressData['line2'] ?? null,
+                        'city' => $addressData['city'] ?? '',
+                        'state' => $addressData['state'] ?? '',
+                        'zip' => $addressData['zip'] ?? '',
+                        'is_primary' => $addressData['is_primary'] ?? false,
+                    ]);
+                    $submittedAddressIds[] = $newAddress->id;
+                }
+            }
+
+            $client->addresses()->whereNotIn('id', $submittedAddressIds)->delete();
         }
 
         return redirect()->route('clients.show', $client->id)
