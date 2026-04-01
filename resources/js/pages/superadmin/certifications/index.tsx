@@ -1,13 +1,14 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { ToasterMessage } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -71,12 +72,13 @@ export default function CertificationsIndex() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (editingId) {
-            form.patch(`/admin/certifications/${editingId}`, {
+            form.patch(`/certifications/${editingId}`, {
                 onSuccess: () => setIsSheetOpen(false),
             });
         } else {
-            form.post('/admin/certifications', {
+            form.post('/certifications', {
                 onSuccess: () => setIsSheetOpen(false),
             });
         }
@@ -84,7 +86,7 @@ export default function CertificationsIndex() {
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this certification?')) {
-            form.delete(`/admin/certifications/${id}`);
+            form.delete(`/certifications/${id}`);
         }
     };
 
@@ -186,6 +188,9 @@ export default function CertificationsIndex() {
                                     ? 'Edit Certification'
                                     : 'Add Certification'}
                             </SheetTitle>
+                            <SheetDescription>
+                                Add or edit a certification type for caregivers.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}

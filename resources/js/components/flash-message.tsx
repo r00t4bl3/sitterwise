@@ -1,7 +1,7 @@
-import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from "sonner"
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function FlashMessage() {
     const flash = (usePage().props as Record<string, unknown>).flash as Record<

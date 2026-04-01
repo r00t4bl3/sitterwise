@@ -1,13 +1,14 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { ToasterMessage } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -16,90 +17,110 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
     {
-        title: 'Specialties',
+        title: 'Attributes',
         href: '#',
     },
 ];
 
-interface Specialty {
+interface Attribute {
     id: number;
     name: string;
-    description: string | null;
+    slug: string;
+    type: string;
+    entity_type: string;
     is_active: boolean;
     sort_order: number;
 }
 
 interface Props {
     [key: string]: unknown;
-    specialties: Specialty[];
+    attributes: Attribute[];
 }
 
-export default function SpecialtiesIndex() {
-    const { specialties } = usePage<Props>().props;
+export default function AttributesIndex() {
+    const { attributes } = usePage<Props>().props;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
     const form = useForm<{
         name: string;
-        description: string;
+        type: string;
+        entity_type: string;
         is_active: boolean;
     }>({
         name: '',
-        description: '',
+        type: 'boolean',
+        entity_type: 'caregiver',
         is_active: true,
     });
 
     const openCreateSheet = () => {
         setEditingId(null);
         form.setData('name', '');
-        form.setData('description', '');
+        form.setData('type', 'boolean');
+        form.setData('entity_type', 'caregiver');
         form.setData('is_active', true);
         setIsSheetOpen(true);
     };
 
-    const openEditSheet = (specialty: Specialty) => {
-        setEditingId(specialty.id);
-        form.setData('name', specialty.name);
-        form.setData('description', specialty.description || '');
-        form.setData('is_active', specialty.is_active);
+    const openEditSheet = (attr: Attribute) => {
+        setEditingId(attr.id);
+        form.setData('name', attr.name);
+        form.setData('type', attr.type);
+        form.setData('entity_type', attr.entity_type);
+        form.setData('is_active', attr.is_active);
         setIsSheetOpen(true);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (editingId) {
-            form.patch(`/admin/specialties/${editingId}`, {
+            form.patch(`/attributes/${editingId}`, {
                 onSuccess: () => setIsSheetOpen(false),
             });
         } else {
-            form.post('/admin/specialties', {
+            form.post('/attributes', {
                 onSuccess: () => setIsSheetOpen(false),
             });
         }
     };
 
     const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this specialty?')) {
-            form.delete(`/admin/specialties/${id}`);
+        if (confirm('Are you sure you want to delete this attribute?')) {
+            form.delete(`/attributes/${id}`);
+        }
+    };
+
+    const entityTypeLabel = (type: string) => {
+        switch (type) {
+            case 'caregiver':
+                return 'Caregiver';
+            case 'client':
+                return 'Client';
+            case 'both':
+                return 'Both';
+            default:
+                return type;
         }
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Specialties" />
+            <Head title="Attributes" />
             <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="font-serif text-2xl font-bold text-foreground">
-                            Specialties
+                            Attributes
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            Manage specialties visible to caregivers
+                            Manage caregiver and client attributes
                         </p>
                     </div>
                     <button onClick={openCreateSheet} className="btn-primary">
-                        Add Specialty
+                        Add Attribute
                     </button>
                 </div>
 
@@ -111,7 +132,10 @@ export default function SpecialtiesIndex() {
                                     Name
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Description
+                                    Type
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Entity
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Active
@@ -122,42 +146,54 @@ export default function SpecialtiesIndex() {
                             </tr>
                         </thead>
                         <tbody>
-                            {specialties.map((specialty) => (
+                            {attributes.map((attr) => (
                                 <tr
-                                    key={specialty.id}
+                                    key={attr.id}
                                     className="border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                        {specialty.name}
+                                        {attr.name}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {specialty.description || '—'}
+                                    <td className="px-4 py-3 text-sm text-foreground capitalize">
+                                        {attr.type}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span
                                             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                specialty.is_active
+                                                attr.entity_type === 'caregiver'
+                                                    ? 'bg-blue-100 text-blue-800'
+                                                    : attr.entity_type ===
+                                                        'client'
+                                                      ? 'bg-purple-100 text-purple-800'
+                                                      : 'bg-gray-100 text-gray-800'
+                                            }`}
+                                        >
+                                            {entityTypeLabel(attr.entity_type)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                attr.is_active
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-gray-100 text-gray-800'
                                             }`}
                                         >
-                                            {specialty.is_active
+                                            {attr.is_active
                                                 ? 'Active'
                                                 : 'Inactive'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <button
-                                            onClick={() =>
-                                                openEditSheet(specialty)
-                                            }
+                                            onClick={() => openEditSheet(attr)}
                                             className="mr-3 text-sm font-medium text-ring hover:text-foreground"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() =>
-                                                handleDelete(specialty.id)
+                                                handleDelete(attr.id)
                                             }
                                             className="text-sm font-medium text-destructive hover:text-destructive"
                                         >
@@ -174,8 +210,11 @@ export default function SpecialtiesIndex() {
                     <SheetContent side="right">
                         <SheetHeader>
                             <SheetTitle>
-                                {editingId ? 'Edit Specialty' : 'Add Specialty'}
+                                {editingId ? 'Edit Attribute' : 'Add Attribute'}
                             </SheetTitle>
+                            <SheetDescription>
+                                Add or edit a caregiver attribute.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
@@ -197,19 +236,40 @@ export default function SpecialtiesIndex() {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-foreground">
-                                    Description
+                                    Type
                                 </label>
-                                <textarea
-                                    value={form.data.description}
+                                <select
+                                    value={form.data.type}
+                                    onChange={(e) =>
+                                        form.setData('type', e.target.value)
+                                    }
+                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                >
+                                    <option value="boolean">Boolean</option>
+                                    <option value="date">Date</option>
+                                    <option value="text">Text</option>
+                                    <option value="number">Number</option>
+                                    <option value="select">Select</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Entity Type
+                                </label>
+                                <select
+                                    value={form.data.entity_type}
                                     onChange={(e) =>
                                         form.setData(
-                                            'description',
+                                            'entity_type',
                                             e.target.value,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-                                    rows={3}
-                                />
+                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                >
+                                    <option value="caregiver">Caregiver</option>
+                                    <option value="client">Client</option>
+                                    <option value="both">Both</option>
+                                </select>
                             </div>
                             <div className="flex items-center gap-2">
                                 <input

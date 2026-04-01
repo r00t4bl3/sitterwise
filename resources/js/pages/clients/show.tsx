@@ -1,14 +1,16 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
-import { useState, type SubmitEventHandler } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
+import type { SubmitEventHandler } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -148,12 +150,15 @@ function calculateAgeInMonths(
     birthMonth: number | null,
     birthYear: number | null,
 ): number | null {
-    if (!birthYear || birthMonth === null) return null;
+    if (!birthYear || birthMonth === null) {
+        return null;
+    }
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    let totalMonths =
+    const totalMonths =
         (currentYear - birthYear) * 12 + (currentMonth - birthMonth);
 
     return totalMonths;
@@ -180,21 +185,27 @@ function getAgeDisplay(
 
     if (birthYear) {
         const totalMonths = calculateAgeInMonths(birthMonth, birthYear);
+
         if (totalMonths !== null) {
             if (totalMonths < 12) {
                 return totalMonths === 1
                     ? '1 month old'
                     : `${totalMonths} months old`;
             }
+
             const years = Math.floor(totalMonths / 12);
             const remainingMonths = totalMonths % 12;
+
             if (remainingMonths === 0) {
                 return years === 1 ? '1 year old' : `${years} years old`;
             }
+
             const yearLabel = years === 1 ? 'year' : 'years';
             const monthLabel = remainingMonths === 1 ? 'month' : 'months';
+
             return `${years} ${yearLabel}, ${remainingMonths} ${monthLabel} old`;
         }
+
         return `Born in ${birthYear}`;
     }
 
@@ -315,6 +326,10 @@ export default function ClientShow() {
                     <SheetContent side="right">
                         <SheetHeader>
                             <SheetTitle>Reset Password</SheetTitle>
+                            <SheetDescription>
+                                Enter and confirm a new password for this
+                                client.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handlePasswordReset}

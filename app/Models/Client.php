@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Database\Factories\ClientFactory;
@@ -15,7 +14,7 @@ class Client extends Model
 
     protected static function newFactory(): ClientFactory
     {
-        return ClientFactory::new();
+        return ClientFactory::new ();
     }
 
     protected $fillable = [
@@ -36,7 +35,7 @@ class Client extends Model
 
     protected $casts = [
         'sitter_preferences' => 'array',
-        'special_needs' => 'boolean',
+        'special_needs'      => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -67,6 +66,16 @@ class Client extends Model
     public function typeChanges(): HasMany
     {
         return $this->hasMany(ClientTypeChange::class);
+    }
+
+    public function bookingGroups(): HasMany
+    {
+        return $this->hasMany(BookingGroup::class);
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
     }
 
     public function attributes(): BelongsToMany

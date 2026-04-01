@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Services\Availability\AvailabilityServiceFactory;
@@ -19,9 +18,9 @@ class AvailabilityController extends Controller
         return $this->service->index();
     }
 
-    public function store(Request $request)
+    public function show($id)
     {
-        return $this->service->store($request);
+        return $this->service->show($id);
     }
 
     public function update(Request $request, $id)

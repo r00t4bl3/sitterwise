@@ -1,13 +1,14 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { ToasterMessage } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -71,12 +72,13 @@ export default function LocationsIndex() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (editingId) {
-            form.patch(`/admin/locations/${editingId}`, {
+            form.patch(`/locations/${editingId}`, {
                 onSuccess: () => setIsSheetOpen(false),
             });
         } else {
-            form.post('/admin/locations', {
+            form.post('/locations', {
                 onSuccess: () => setIsSheetOpen(false),
             });
         }
@@ -84,7 +86,7 @@ export default function LocationsIndex() {
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this location?')) {
-            form.delete(`/admin/locations/${id}`);
+            form.delete(`/locations/${id}`);
         }
     };
 
@@ -197,6 +199,9 @@ export default function LocationsIndex() {
                             <SheetTitle>
                                 {editingId ? 'Edit Location' : 'Add Location'}
                             </SheetTitle>
+                            <SheetDescription>
+                                Add or edit a service location.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}

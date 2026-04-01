@@ -1,14 +1,14 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { InfiniteScroll } from '@inertiajs/react';
 import { Sunrise, Sun, Moon } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
-import AppLayout from '@/layouts/app-layout';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -89,12 +89,14 @@ function calculateAge(dateOfBirth: string): number {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
+
     if (
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < birthDate.getDate())
     ) {
         age--;
     }
+
     return age;
 }
 
@@ -102,6 +104,7 @@ function formatDateHeader(dateString: string): { day: string; date: string } {
     const date = new Date(dateString);
     const day = date.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = date.getDate();
+
     return { day: day, date: dayNum.toString() };
 }
 
@@ -112,6 +115,7 @@ function formatTimeSlots(
     return slots
         .map((slot) => {
             const found = timeSlots.find((ts) => ts.value === slot);
+
             return found ? found.label : slot;
         })
         .join(', ');
@@ -130,6 +134,7 @@ export default function AvailabilitiesIndex() {
 
     const dateHeaders = uniqueDates.map((d) => {
         const formatted = formatDateHeader(d);
+
         return {
             isoDate: d,
             day: formatted.day,
@@ -254,6 +259,7 @@ export default function AvailabilitiesIndex() {
                                             caregiver.availabilities.reduce(
                                                 (acc, av) => {
                                                     acc[av.date] = av;
+
                                                     return acc;
                                                 },
                                                 {} as Record<
@@ -298,7 +304,7 @@ export default function AvailabilitiesIndex() {
                                                             </div>
                                                         )}
                                                         <Link
-                                                            href={`/availabilities/${caregiver.id}/show`}
+                                                            href={`/availabilities/${caregiver.id}`}
                                                             className="text-sm font-medium whitespace-nowrap text-ring hover:text-foreground hover:underline"
                                                         >
                                                             {
@@ -443,6 +449,7 @@ export default function AvailabilitiesIndex() {
                                                         availabilityMap[
                                                             dh.isoDate
                                                         ];
+
                                                     return (
                                                         <td
                                                             key={dh.isoDate}

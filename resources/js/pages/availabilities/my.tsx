@@ -41,6 +41,7 @@ interface DayAvailability {
 
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
@@ -98,6 +99,7 @@ export default function MyAvailability() {
         checked: boolean,
     ) => {
         const updated = [...data.availabilities];
+
         if (checked) {
             if (!updated[index].time_slots.includes(slot)) {
                 updated[index].time_slots.push(slot);
@@ -107,6 +109,7 @@ export default function MyAvailability() {
                 (s) => s !== slot,
             );
         }
+
         setData('availabilities', updated);
     };
 

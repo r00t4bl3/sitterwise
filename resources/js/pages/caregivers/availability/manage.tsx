@@ -1,15 +1,15 @@
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Sunrise, Sun, Moon } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
-import AppLayout from '@/layouts/app-layout';
+import { useState, useMemo } from 'react';
 import {
     Sheet,
     SheetContent,
-    SheetTrigger,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Status {
@@ -56,6 +56,7 @@ interface Props {
 
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
@@ -82,6 +83,7 @@ function getDaysInMonth(year: number, month: number): (number | null)[] {
 
 function getMonthName(month: number): string {
     const date = new Date(2000, month, 1);
+
     return date.toLocaleDateString('en-US', { month: 'long' });
 }
 
@@ -120,6 +122,7 @@ export default function ManageAvailability() {
         return availabilities.reduce(
             (acc, av) => {
                 acc[av.date] = av;
+
                 return acc;
             },
             {} as Record<string, Availability>,
@@ -199,12 +202,16 @@ export default function ManageAvailability() {
     };
 
     const handleDelete = () => {
-        if (!selectedDate) return;
+        if (!selectedDate) {
+            return;
+        }
 
         setProcessing(true);
         const existing = availabilityMap[selectedDate];
+
         if (!existing) {
             setProcessing(false);
+
             return;
         }
 
@@ -393,6 +400,9 @@ export default function ManageAvailability() {
                                     ? formatDate(selectedDate)
                                     : 'Availability'}
                             </SheetTitle>
+                            <SheetDescription>
+                                Set availability for the selected date.
+                            </SheetDescription>
                         </SheetHeader>
 
                         <div className="mt-4 space-y-4 px-4">

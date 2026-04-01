@@ -1,13 +1,14 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { ToasterMessage } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -116,12 +117,13 @@ export default function HotelsIndex() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (editingId) {
-            form.patch(`/admin/hotels/${editingId}`, {
+            form.patch(`/hotels/${editingId}`, {
                 onSuccess: () => setIsSheetOpen(false),
             });
         } else {
-            form.post('/admin/hotels', {
+            form.post('/hotels', {
                 onSuccess: () => setIsSheetOpen(false),
             });
         }
@@ -129,7 +131,7 @@ export default function HotelsIndex() {
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this hotel?')) {
-            form.delete(`/admin/hotels/${id}`);
+            form.delete(`/hotels/${id}`);
         }
     };
 
@@ -188,7 +190,9 @@ export default function HotelsIndex() {
                                             : hotel.line1 || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {hotel.contact_name || hotel.contact_phone || '—'}
+                                        {hotel.contact_name ||
+                                            hotel.contact_phone ||
+                                            '—'}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span
@@ -231,6 +235,9 @@ export default function HotelsIndex() {
                             <SheetTitle>
                                 {editingId ? 'Edit Hotel' : 'Add Hotel'}
                             </SheetTitle>
+                            <SheetDescription>
+                                Add or edit a hotel partner.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
@@ -259,7 +266,10 @@ export default function HotelsIndex() {
                                         type="text"
                                         value={form.data.line1}
                                         onChange={(e) =>
-                                            form.setData('line1', e.target.value)
+                                            form.setData(
+                                                'line1',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
@@ -273,7 +283,10 @@ export default function HotelsIndex() {
                                         type="text"
                                         value={form.data.line2}
                                         onChange={(e) =>
-                                            form.setData('line2', e.target.value)
+                                            form.setData(
+                                                'line2',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
@@ -302,7 +315,10 @@ export default function HotelsIndex() {
                                         type="text"
                                         value={form.data.state}
                                         onChange={(e) =>
-                                            form.setData('state', e.target.value)
+                                            form.setData(
+                                                'state',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
@@ -330,7 +346,10 @@ export default function HotelsIndex() {
                                 <textarea
                                     value={form.data.parking_instructions}
                                     onChange={(e) =>
-                                        form.setData('parking_instructions', e.target.value)
+                                        form.setData(
+                                            'parking_instructions',
+                                            e.target.value,
+                                        )
                                     }
                                     className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={2}
@@ -348,7 +367,10 @@ export default function HotelsIndex() {
                                         min="0"
                                         value={form.data.hourly_rate}
                                         onChange={(e) =>
-                                            form.setData('hourly_rate', e.target.value)
+                                            form.setData(
+                                                'hourly_rate',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
@@ -364,7 +386,10 @@ export default function HotelsIndex() {
                                         min="0"
                                         value={form.data.resort_fee}
                                         onChange={(e) =>
-                                            form.setData('resort_fee', e.target.value)
+                                            form.setData(
+                                                'resort_fee',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
@@ -379,7 +404,10 @@ export default function HotelsIndex() {
                                         type="text"
                                         value={form.data.contact_name}
                                         onChange={(e) =>
-                                            form.setData('contact_name', e.target.value)
+                                            form.setData(
+                                                'contact_name',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
@@ -392,7 +420,10 @@ export default function HotelsIndex() {
                                         type="text"
                                         value={form.data.contact_phone}
                                         onChange={(e) =>
-                                            form.setData('contact_phone', e.target.value)
+                                            form.setData(
+                                                'contact_phone',
+                                                e.target.value,
+                                            )
                                         }
                                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
@@ -405,7 +436,10 @@ export default function HotelsIndex() {
                                 <textarea
                                     value={form.data.admin_notes}
                                     onChange={(e) =>
-                                        form.setData('admin_notes', e.target.value)
+                                        form.setData(
+                                            'admin_notes',
+                                            e.target.value,
+                                        )
                                     }
                                     className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={2}

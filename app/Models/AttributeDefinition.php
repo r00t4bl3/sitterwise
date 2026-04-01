@@ -1,13 +1,15 @@
 <?php
-
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class AttributeDefinition extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
@@ -19,7 +21,7 @@ class AttributeDefinition extends Model
     ];
 
     protected $casts = [
-        'options' => 'array',
+        'options'   => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -36,14 +38,14 @@ class AttributeDefinition extends Model
 
     private static function generateSlug(string $name): string
     {
-        $slug = Str::slug($name);
+        $slug         = Str::slug($name);
         $originalSlug = $slug;
-        $counter = 1;
+        $counter      = 1;
 
         $query = self::where('slug', $slug);
 
         while ($query->exists()) {
-            $slug = $originalSlug.'_'.$counter;
+            $slug  = $originalSlug . '_' . $counter;
             $query = self::where('slug', $slug);
             $counter++;
         }

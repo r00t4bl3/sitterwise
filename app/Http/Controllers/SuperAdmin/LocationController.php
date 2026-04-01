@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
@@ -13,7 +12,7 @@ class LocationController extends Controller
     {
         $locations = Location::orderBy('name')->get();
 
-        return Inertia::render('admin/locations/index', [
+        return Inertia::render('superadmin/locations/index', [
             'locations' => $locations,
         ]);
     }
@@ -21,30 +20,30 @@ class LocationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|unique:locations,name',
+            'name'        => 'required|string|unique:locations,name',
             'description' => 'nullable|string',
-            'svg_icon' => 'nullable|string',
-            'is_active' => 'boolean',
+            'svg_icon'    => 'nullable|string',
+            'is_active'   => 'boolean',
         ]);
 
         Location::create($validated);
 
-        return redirect()->route('admin.locations.index')
+        return redirect()->route('locations.index')
             ->with('success', 'Location created successfully');
     }
 
     public function update(Request $request, Location $location)
     {
         $validated = $request->validate([
-            'name' => 'required|string|unique:locations,name,'.$location->id,
+            'name'        => 'required|string|unique:locations,name,' . $location->id,
             'description' => 'nullable|string',
-            'svg_icon' => 'nullable|string',
-            'is_active' => 'boolean',
+            'svg_icon'    => 'nullable|string',
+            'is_active'   => 'boolean',
         ]);
 
         $location->update($validated);
 
-        return redirect()->route('admin.locations.index')
+        return redirect()->route('locations.index')
             ->with('success', 'Location updated successfully');
     }
 
@@ -52,7 +51,7 @@ class LocationController extends Controller
     {
         $location->delete();
 
-        return redirect()->route('admin.locations.index')
+        return redirect()->route('locations.index')
             ->with('success', 'Location deleted successfully');
     }
 }

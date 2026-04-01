@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 export function ToasterMessage() {
     const flash = (usePage().props as Record<string, unknown>).flash as Record<
@@ -19,6 +19,7 @@ export function ToasterMessage() {
             if (flash?.success) {
                 toast.success(flash.success, { position: 'top-center' });
             }
+
             if (flash?.error) {
                 toast.error(flash.error, { position: 'top-center' });
             }

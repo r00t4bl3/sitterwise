@@ -1,17 +1,19 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Check, Shield, Eye, EyeOff } from 'lucide-react';
-import { SubmitEventHandler, useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import type { SubmitEventHandler } from 'react';
+import { useState } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Rating } from '@/components/ui/rating';
-import { Spinner } from '@/components/ui/spinner';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
     SheetFooter,
 } from '@/components/ui/sheet';
-import { ToasterMessage } from '@/components/toaster-message';
+import { Spinner } from '@/components/ui/spinner';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -104,12 +106,14 @@ function calculateAge(dateOfBirth: string): number {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
+
     if (
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < birthDate.getDate())
     ) {
         age--;
     }
+
     return age;
 }
 
@@ -272,6 +276,10 @@ export default function CaregiverShow() {
                     <SheetContent side="right">
                         <SheetHeader>
                             <SheetTitle>Reset Password</SheetTitle>
+                            <SheetDescription>
+                                Enter and confirm a new password for this
+                                caregiver.
+                            </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handlePasswordReset}

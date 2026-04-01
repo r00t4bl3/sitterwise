@@ -1,9 +1,10 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState, type SubmitEventHandler } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { Spinner } from '@/components/ui/spinner';
+import { useState  } from 'react';
+import type {SubmitEventHandler} from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Spinner } from '@/components/ui/spinner';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -115,6 +116,7 @@ export default function ClientEdit() {
                 existing?.value === true;
             initial[def.id] = isTrue ? 'true' : 'false';
         });
+
         return initial;
     });
 
@@ -125,6 +127,7 @@ export default function ClientEdit() {
     const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
         photoForm.setData('profile_photo', file);
+
         if (file && e.target.form) {
             photoForm.data.profile_photo = file;
             e.target.form.requestSubmit();
@@ -133,6 +136,7 @@ export default function ClientEdit() {
 
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();
+
         if (photoForm.data.profile_photo === null) {
             return;
         }
@@ -141,9 +145,11 @@ export default function ClientEdit() {
             onSuccess: (page) => {
                 const newPath = (page.props as any).client?.user
                     ?.profile_photo_path;
+
                 if (newPath) {
                     setCurrentProfilePhoto(newPath);
                 }
+
                 photoForm.reset();
             },
         });

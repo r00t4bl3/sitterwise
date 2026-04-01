@@ -98,23 +98,32 @@ export default function ClientsIndex() {
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
+
         return () =>
             document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+}
+
         if (!value.trim()) {
             setSuggestions([]);
             setShowSuggestions(false);
+
             return;
         }
+
         if (value.trim().length < 2) {
             setSuggestions([]);
             setShowSuggestions(false);
+
             return;
         }
+
         setIsLoading(true);
         debounceRef.current = setTimeout(async () => {
             try {

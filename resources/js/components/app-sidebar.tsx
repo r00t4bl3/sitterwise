@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Award,
     Calendar,
+    ClipboardList,
     Home,
     LayoutGrid,
     MapPin,
@@ -74,36 +75,36 @@ const adminNavItems: NavItem[] = [
         icon: Calendar,
     },
     {
-        title: 'Settings',
-        href: '#',
-        icon: Settings,
+        title: 'Bookings',
+        href: '/bookings',
+        icon: ClipboardList,
     },
 ];
 
 const superAdminNavItems: NavItem[] = [
     {
         title: 'Certifications',
-        href: '/admin/certifications',
+        href: '/certifications',
         icon: Award,
     },
     {
         title: 'Specialties',
-        href: '/admin/specialties',
+        href: '/specialties',
         icon: Star,
     },
     {
         title: 'Locations',
-        href: '/admin/locations',
+        href: '/locations',
         icon: MapPin,
     },
     {
         title: 'Attributes',
-        href: '/admin/attributes',
+        href: '/attributes',
         icon: Shield,
     },
     {
         title: 'Hotels',
-        href: '/admin/hotels',
+        href: '/hotels',
         icon: Home,
     },
 ];

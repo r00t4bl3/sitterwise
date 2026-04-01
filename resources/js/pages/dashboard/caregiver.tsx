@@ -1,14 +1,15 @@
 import { Head, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Sunrise, Sun, Moon } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
+import { AvailabilityCalendar } from '@/components/availability-calendar';
 import {
     Sheet,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -43,30 +44,9 @@ const timeSlots = [
     { value: 'evening', label: 'Evening (5pm - 10pm)' },
 ];
 
-function getDaysInMonth(year: number, month: number): (number | null)[] {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days: (number | null)[] = [];
-
-    for (let i = 0; i < firstDay; i++) {
-        days.push(null);
-    }
-
-    for (let i = 1; i <= daysInMonth; i++) {
-        days.push(i);
-    }
-
-    return days;
-}
-
-function getMonthName(month: number): string {
-    const date = new Date(2000, month, 1);
-    return date.toLocaleDateString('en-US', { month: 'long' });
-}
-
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
@@ -77,11 +57,6 @@ function formatDate(dateString: string): string {
 export default function CaregiverDashboard({
     caregiver,
 }: CaregiverDashboardProps) {
-    const [currentDate, setCurrentDate] = useState(() => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return tomorrow;
-    });
     const [availabilities, setAvailabilities] = useState(
         caregiver.availabilities,
     );
@@ -92,7 +67,7 @@ export default function CaregiverDashboard({
     const {
         data,
         setData,
-        put,
+        patch,
         delete: deleteForm,
     } = useForm({
         date: '',
@@ -100,48 +75,15 @@ export default function CaregiverDashboard({
         specific_time: '',
     });
 
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const days = getDaysInMonth(year, month);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const availabilityMap = useMemo(() => {
-        return availabilities.reduce(
+    const openSheet = (date: string) => {
+        const availabilityMap = availabilities.reduce(
             (acc, av) => {
                 acc[av.date] = av;
+
                 return acc;
             },
             {} as Record<string, Availability>,
         );
-    }, [availabilities]);
-
-    const prevMonth = () => {
-        setCurrentDate(new Date(year, month - 1, 1));
-    };
-
-    const nextMonth = () => {
-        setCurrentDate(new Date(year, month + 1, 1));
-    };
-
-    const getIcon = (slot: string) => {
-        switch (slot) {
-            case 'morning':
-                return (
-                    <Sunrise className="h-3 w-3" style={{ color: '#F9C74F' }} />
-                );
-            case 'afternoon':
-                return <Sun className="h-3 w-3" style={{ color: '#84D0D2' }} />;
-            case 'evening':
-                return (
-                    <Moon className="h-3 w-3" style={{ color: '#1B3A5C' }} />
-                );
-            default:
-                return null;
-        }
-    };
-
-    const openSheet = (date: string) => {
         const existing = availabilityMap[date];
         setSelectedDate(date);
         setData({
@@ -154,8 +96,7 @@ export default function CaregiverDashboard({
 
     const handleSave = () => {
         setProcessing(true);
-        put('/my-availability/availability', {
-            method: 'put',
+        patch(`/availabilities/${caregiver.id}`, {
             onSuccess: () => {
                 const updated = [...availabilities];
                 const existingIndex = updated.findIndex(
@@ -189,16 +130,28 @@ export default function CaregiverDashboard({
     };
 
     const handleDelete = () => {
-        if (!selectedDate) return;
+        if (!selectedDate) {
+            return;
+        }
 
         setProcessing(true);
-        const existing = availabilityMap[selectedDate];
+        const map = availabilities.reduce(
+            (acc, av) => {
+                acc[av.date] = av;
+
+                return acc;
+            },
+            {} as Record<string, Availability>,
+        );
+        const existing = map[selectedDate];
+
         if (!existing || existing.id === undefined) {
             setAvailabilities((prev) =>
                 prev.filter((a) => a.date !== selectedDate),
             );
             setIsSheetOpen(false);
             setProcessing(false);
+
             return;
         }
 
@@ -271,113 +224,12 @@ export default function CaregiverDashboard({
                         <h2 className="text-lg font-semibold text-foreground">
                             My Availability
                         </h2>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={prevMonth}
-                                className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </button>
-                            <span className="text-sm font-medium text-foreground">
-                                {getMonthName(month)} {year}
-                            </span>
-                            <button
-                                onClick={nextMonth}
-                                className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </button>
-                        </div>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                            (day) => (
-                                <div
-                                    key={day}
-                                    className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
-                                >
-                                    {day}
-                                </div>
-                            ),
-                        )}
-
-                        {days.map((day, index) => {
-                            if (day === null) {
-                                return (
-                                    <div
-                                        key={`empty-${index}`}
-                                        className="h-24"
-                                    />
-                                );
-                            }
-
-                            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            const dateObj = new Date(year, month, day);
-                            const dateOnly = new Date(
-                                dateObj.getFullYear(),
-                                dateObj.getMonth(),
-                                dateObj.getDate(),
-                            );
-                            const isToday =
-                                dateOnly.getTime() === today.getTime();
-                            const isPast = dateOnly < today;
-                            const availability = availabilityMap[dateStr];
-                            const hasAvailability =
-                                availability &&
-                                availability.time_slots.length > 0;
-
-                            return (
-                                <div
-                                    key={day}
-                                    className={`flex h-24 flex-col items-center justify-center gap-1 border border-border p-1 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
-                                >
-                                    <span
-                                        className={`text-sm ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
-                                    >
-                                        {day}
-                                    </span>
-                                    {!isPast &&
-                                        !isToday &&
-                                        (hasAvailability ? (
-                                            <>
-                                                <div className="flex items-center gap-0.5">
-                                                    {availability.time_slots.map(
-                                                        (slot) => (
-                                                            <span
-                                                                key={slot}
-                                                                className="flex items-center"
-                                                            >
-                                                                {getIcon(slot)}
-                                                            </span>
-                                                        ),
-                                                    )}
-                                                </div>
-                                                {availability.specific_time && (
-                                                    <span className="truncate text-[8px] text-muted-foreground">
-                                                        {
-                                                            availability.specific_time
-                                                        }
-                                                    </span>
-                                                )}
-                                            </>
-                                        ) : null)}
-                                    {!isPast && !isToday && (
-                                        <button
-                                            onClick={() => openSheet(dateStr)}
-                                            className={`absolute inset-0 flex items-center justify-center rounded-[3px] text-xs font-medium transition ${
-                                                hasAvailability
-                                                    ? 'bg-primary/80 text-primary-foreground opacity-0 group-hover:opacity-100 hover:bg-primary'
-                                                    : 'bg-muted/80 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted'
-                                            }`}
-                                        >
-                                            {hasAvailability ? 'Edit' : 'Add'}
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <AvailabilityCalendar
+                        availabilities={availabilities}
+                        onDateClick={openSheet}
+                    />
                 </div>
             </div>
 
@@ -389,6 +241,9 @@ export default function CaregiverDashboard({
                                 ? formatDate(selectedDate)
                                 : 'Availability'}
                         </SheetTitle>
+                        <SheetDescription>
+                            Set availability for the selected date.
+                        </SheetDescription>
                     </SheetHeader>
 
                     <div className="mt-4 space-y-4 px-4">
@@ -449,15 +304,28 @@ export default function CaregiverDashboard({
                                 {processing && <Spinner className="size-4" />}
                                 {processing ? 'Saving...' : 'Save'}
                             </button>
-                            {availabilityMap[selectedDate || ''] && (
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={processing}
-                                    className="btn-secondary w-1/4"
-                                >
-                                    Delete
-                                </button>
-                            )}
+                            {(() => {
+                                const map = availabilities.reduce(
+                                    (acc, av) => {
+                                        acc[av.date] = av;
+
+                                        return acc;
+                                    },
+                                    {} as Record<string, Availability>,
+                                );
+
+                                return (
+                                    map[selectedDate || ''] && (
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            className="btn-secondary w-1/4"
+                                        >
+                                            Delete
+                                        </button>
+                                    )
+                                );
+                            })()}
                         </div>
 
                         <button

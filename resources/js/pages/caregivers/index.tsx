@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
+import { useState, useRef, useEffect } from 'react';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
@@ -8,8 +8,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { useState, useRef, useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -97,12 +97,14 @@ function calculateAge(dateOfBirth: string): number {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
+
     if (
         monthDiff < 0 ||
         (monthDiff === 0 && today.getDate() < birthDate.getDate())
     ) {
         age--;
     }
+
     return age;
 }
 
@@ -126,23 +128,32 @@ export default function CaregiversIndex() {
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
+
         return () =>
             document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        if (debounceRef.current) {
+clearTimeout(debounceRef.current);
+}
+
         if (!value.trim()) {
             setSuggestions([]);
             setShowSuggestions(false);
+
             return;
         }
+
         if (value.trim().length < 2) {
             setSuggestions([]);
             setShowSuggestions(false);
+
             return;
         }
+
         setIsLoading(true);
         debounceRef.current = setTimeout(async () => {
             try {
@@ -468,7 +479,10 @@ export default function CaregiversIndex() {
                         </p>
                         <div className="flex gap-1">
                             {caregivers.links.map((link, index) => {
-                                if (link.label === '...') return null;
+                                if (link.label === '...') {
+return null;
+}
+
                                 const isPrev =
                                     link.label.includes('Previous') ||
                                     link.label.includes('&laquo;');

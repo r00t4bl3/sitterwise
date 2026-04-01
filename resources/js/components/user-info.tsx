@@ -6,9 +6,11 @@ function getAvatarUrl(user: User | null): string | undefined {
     if (!user || !user.profile_photo_path) {
         return undefined;
     }
+
     if (user.profile_photo_path === 'avatar.jpg') {
         return '/avatar.jpg';
     }
+
     return `/storage/${user.profile_photo_path}`;
 }
 

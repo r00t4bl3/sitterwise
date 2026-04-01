@@ -1,16 +1,18 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-import { SubmitEventHandler, useState, type FormEventHandler } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { DatePicker } from '@/components/ui/date-picker';
+import { useState  } from 'react';
+import type { SubmitEventHandler} from 'react';
+import type {FormEventHandler} from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ToasterMessage } from '@/components/toaster-message';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Spinner } from '@/components/ui/spinner';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -136,6 +138,7 @@ export default function CaregiverEdit() {
             );
             initial[def.id] = existing?.value === 'true' ? 'true' : 'false';
         });
+
         return initial;
     });
     const [certifications, setCertifications] = useState<Certification[]>(
@@ -157,6 +160,7 @@ export default function CaregiverEdit() {
     const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
         photoForm.setData('profile_photo', file);
+
         if (file && e.target.form) {
             photoForm.data.profile_photo = file;
             e.target.form.requestSubmit();
@@ -165,6 +169,7 @@ export default function CaregiverEdit() {
 
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();
+
         if (photoForm.data.profile_photo === null) {
             return;
         }
@@ -173,9 +178,11 @@ export default function CaregiverEdit() {
             onSuccess: (page) => {
                 const newPath = (page.props as any).caregiver?.user
                     ?.profile_photo_path;
+
                 if (newPath) {
                     setCurrentProfilePhoto(newPath);
                 }
+
                 photoForm.reset();
             },
         });
@@ -203,6 +210,7 @@ export default function CaregiverEdit() {
                 );
                 initial[def.id] = existing?.value === 'true' ? 'true' : 'false';
             });
+
             return initial;
         })(),
         certifications: caregiver.certifications,
@@ -644,6 +652,7 @@ export default function CaregiverEdit() {
                                                                 location.id,
                                                         ),
                                                     );
+
                                                     if (
                                                         preferredLocationId ===
                                                         location.id
