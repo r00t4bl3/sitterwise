@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\AttributeDefinition;
@@ -32,7 +33,7 @@ class ClientController extends Controller
         return Inertia::render('clients/index', [
             'clients' => $clients,
             'filters' => [
-                'search'      => $request->search,
+                'search' => $request->search,
                 'client_type' => $request->client_type,
             ],
         ]);
@@ -46,29 +47,29 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'first_name'       => 'required|string|max:255',
-            'last_name'        => 'required|string|max:255',
-            'email'            => 'required|email|unique:users,email',
-            'cell_phone'       => 'required|string|max:20',
-            'client_type'      => 'required|in:sd_resident,vacationer,invoiced',
-            'password'         => 'required|string|min:4|confirmed',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'cell_phone' => 'required|string|max:20',
+            'client_type' => 'required|in:sd_resident,vacationer,invoiced',
+            'password' => 'required|string|min:4|confirmed',
             'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
         ]);
 
         $user = User::create([
-            'name'     => $validated['first_name'] . ' ' . $validated['last_name'],
-            'email'    => $validated['email'],
+            'name' => $validated['first_name'].' '.$validated['last_name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => 'client',
+            'role' => 'client',
         ]);
 
         Client::create([
-            'user_id'          => $user->id,
-            'first_name'       => $validated['first_name'],
-            'last_name'        => $validated['last_name'],
-            'email'            => $validated['email'],
-            'cell_phone'       => $validated['cell_phone'],
-            'client_type'      => $validated['client_type'],
+            'user_id' => $user->id,
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'cell_phone' => $validated['cell_phone'],
+            'client_type' => $validated['client_type'],
             'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
         ]);
 
@@ -89,7 +90,11 @@ class ClientController extends Controller
             });
         }
 
-        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'email', 'cell_phone', 'client_type']);
+        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'email', 'cell_phone', 'client_type'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->first_name.' '.$c->last_name,
+            ]);
 
         return response()->json($clients);
     }
@@ -100,14 +105,14 @@ class ClientController extends Controller
 
         return response()->json([
             'client' => [
-                'id'        => $client->id,
-                'name'      => $client->user->name ?? $client->first_name . ' ' . $client->last_name,
-                'addresses' => $client->addresses->map(fn($a) => [
-                    'id'    => $a->id,
+                'id' => $client->id,
+                'name' => $client->user->name ?? $client->first_name.' '.$client->last_name,
+                'addresses' => $client->addresses->map(fn ($a) => [
+                    'id' => $a->id,
                     'line1' => $a->line1,
-                    'city'  => $a->city,
+                    'city' => $a->city,
                     'state' => $a->state,
-                    'zip'   => $a->zip,
+                    'zip' => $a->zip,
                 ]),
             ],
         ]);
@@ -122,72 +127,72 @@ class ClientController extends Controller
 
         return Inertia::render('clients/show', [
             'client' => [
-                'id'                     => $client->id,
-                'first_name'             => $client->first_name,
-                'last_name'              => $client->last_name,
-                'email'                  => $client->email,
-                'cell_phone'             => $client->cell_phone,
-                'client_type'            => $client->client_type,
-                'how_did_you_hear'       => $client->how_did_you_hear,
-                'sitter_preferences'     => $client->sitter_preferences,
-                'other_adults_in_home'   => $client->other_adults_in_home,
-                'medical_info'           => $client->medical_info,
+                'id' => $client->id,
+                'first_name' => $client->first_name,
+                'last_name' => $client->last_name,
+                'email' => $client->email,
+                'cell_phone' => $client->cell_phone,
+                'client_type' => $client->client_type,
+                'how_did_you_hear' => $client->how_did_you_hear,
+                'sitter_preferences' => $client->sitter_preferences,
+                'other_adults_in_home' => $client->other_adults_in_home,
+                'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
-                'caregiver_notes'        => $client->caregiver_notes,
-                'user'                   => [
+                'caregiver_notes' => $client->caregiver_notes,
+                'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
-                'addresses'              => $client->addresses->map(fn($a) => [
-                    'id'            => $a->id,
-                    'label'         => $a->label,
+                'addresses' => $client->addresses->map(fn ($a) => [
+                    'id' => $a->id,
+                    'label' => $a->label,
                     'location_type' => $a->location_type,
-                    'line1'         => $a->line1,
-                    'line2'         => $a->line2,
-                    'city'          => $a->city,
-                    'state'         => $a->state,
-                    'zip'           => $a->zip,
-                    'is_primary'    => $a->is_primary,
+                    'line1' => $a->line1,
+                    'line2' => $a->line2,
+                    'city' => $a->city,
+                    'state' => $a->state,
+                    'zip' => $a->zip,
+                    'is_primary' => $a->is_primary,
                 ]),
-                'children'               => $client->children->map(fn($c) => [
-                    'id'                  => $c->id,
-                    'name'                => $c->name,
-                    'gender'              => $c->gender,
-                    'birth_month'         => $c->birth_month,
-                    'birth_year'          => $c->birth_year,
-                    'special_needs'       => $c->special_needs,
+                'children' => $client->children->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'gender' => $c->gender,
+                    'birth_month' => $c->birth_month,
+                    'birth_year' => $c->birth_year,
+                    'special_needs' => $c->special_needs,
                     'special_needs_notes' => $c->special_needs_notes,
                 ]),
-                'pets'                   => $client->pets->map(fn($p) => [
-                    'id'    => $p->id,
-                    'name'  => $p->name,
-                    'type'  => $p->type,
+                'pets' => $client->pets->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'type' => $p->type,
                     'breed' => $p->breed,
                     'notes' => $p->notes,
                 ]),
-                'attributes'             => $client->attributes->map(fn($a) => [
-                    'id'                   => $a->id,
+                'attributes' => $client->attributes->map(fn ($a) => [
+                    'id' => $a->id,
                     'attribute_definition' => [
-                        'id'   => $a->id,
+                        'id' => $a->id,
                         'name' => $a->name,
                         'slug' => $a->slug,
                     ],
-                    'value'                => $a->pivot->value,
+                    'value' => $a->pivot->value,
                 ]),
-                'favorite_caregivers'    => $client->favoriteCaregivers->map(fn($c) => [
-                    'id'         => $c->id,
+                'favorite_caregivers' => $client->favoriteCaregivers->map(fn ($c) => [
+                    'id' => $c->id,
                     'first_name' => $c->first_name,
-                    'last_name'  => $c->last_name,
-                    'user'       => [
+                    'last_name' => $c->last_name,
+                    'user' => [
                         'profile_photo_path' => $c->user->profile_photo_path,
                     ],
                 ]),
-                'type_changes'           => $client->typeChanges->map(fn($tc) => [
-                    'id'            => $tc->id,
+                'type_changes' => $client->typeChanges->map(fn ($tc) => [
+                    'id' => $tc->id,
                     'previous_type' => $tc->previous_type,
-                    'new_type'      => $tc->new_type,
-                    'reason'        => $tc->reason,
-                    'changed_at'    => $tc->changed_at->toISOString(),
-                    'admin'         => $tc->admin ? [
+                    'new_type' => $tc->new_type,
+                    'reason' => $tc->reason,
+                    'changed_at' => $tc->changed_at->toISOString(),
+                    'admin' => $tc->admin ? [
                         'name' => $tc->admin->name,
                     ] : null,
                 ]),
@@ -203,119 +208,119 @@ class ClientController extends Controller
             ->forClients()
             ->where('type', 'boolean')
             ->get()
-            ->map(fn($a) => [
-                'id'   => $a->id,
+            ->map(fn ($a) => [
+                'id' => $a->id,
                 'name' => $a->name,
                 'slug' => $a->slug,
                 'type' => $a->type,
             ]);
 
         return Inertia::render('clients/edit', [
-            'client'                => [
-                'id'                     => $client->id,
-                'first_name'             => $client->first_name,
-                'last_name'              => $client->last_name,
-                'email'                  => $client->user->email,
-                'cell_phone'             => $client->cell_phone,
-                'client_type'            => $client->client_type,
-                'how_did_you_hear'       => $client->how_did_you_hear,
-                'sitter_preferences'     => $client->sitter_preferences,
-                'other_adults_in_home'   => $client->other_adults_in_home,
-                'medical_info'           => $client->medical_info,
+            'client' => [
+                'id' => $client->id,
+                'first_name' => $client->first_name,
+                'last_name' => $client->last_name,
+                'email' => $client->user->email,
+                'cell_phone' => $client->cell_phone,
+                'client_type' => $client->client_type,
+                'how_did_you_hear' => $client->how_did_you_hear,
+                'sitter_preferences' => $client->sitter_preferences,
+                'other_adults_in_home' => $client->other_adults_in_home,
+                'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
-                'caregiver_notes'        => $client->caregiver_notes,
-                'user'                   => [
+                'caregiver_notes' => $client->caregiver_notes,
+                'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
-                'addresses'              => $client->addresses->map(fn($a) => [
-                    'id'            => $a->id,
-                    'label'         => $a->label,
+                'addresses' => $client->addresses->map(fn ($a) => [
+                    'id' => $a->id,
+                    'label' => $a->label,
                     'location_type' => $a->location_type,
-                    'line1'         => $a->line1,
-                    'line2'         => $a->line2,
-                    'city'          => $a->city,
-                    'state'         => $a->state,
-                    'zip'           => $a->zip,
-                    'is_primary'    => $a->is_primary,
+                    'line1' => $a->line1,
+                    'line2' => $a->line2,
+                    'city' => $a->city,
+                    'state' => $a->state,
+                    'zip' => $a->zip,
+                    'is_primary' => $a->is_primary,
                 ]),
-                'children'               => $client->children->map(fn($c) => [
-                    'id'                  => $c->id,
-                    'name'                => $c->name,
-                    'gender'              => $c->gender,
-                    'birth_month'         => $c->birth_month,
-                    'birth_year'          => $c->birth_year,
-                    'special_needs'       => $c->special_needs,
+                'children' => $client->children->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'gender' => $c->gender,
+                    'birth_month' => $c->birth_month,
+                    'birth_year' => $c->birth_year,
+                    'special_needs' => $c->special_needs,
                     'special_needs_notes' => $c->special_needs_notes,
                 ]),
-                'pets'                   => $client->pets->map(fn($p) => [
-                    'id'    => $p->id,
-                    'name'  => $p->name,
-                    'type'  => $p->type,
+                'pets' => $client->pets->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'type' => $p->type,
                     'breed' => $p->breed,
                     'notes' => $p->notes,
                 ]),
-                'attributes'             => $client->attributes->map(fn($a) => [
-                    'id'    => $a->id,
-                    'name'  => $a->name,
-                    'slug'  => $a->slug,
-                    'type'  => $a->type,
+                'attributes' => $client->attributes->map(fn ($a) => [
+                    'id' => $a->id,
+                    'name' => $a->name,
+                    'slug' => $a->slug,
+                    'type' => $a->type,
                     'value' => $a->pivot->value,
                 ]),
             ],
             'attribute_definitions' => $attributeDefinitions,
-            'csrf_token'            => csrf_token(),
+            'csrf_token' => csrf_token(),
         ]);
     }
 
     public function update(Request $request, Client $client)
     {
         $validated = $request->validate([
-            'first_name'                     => 'required|string|max:255',
-            'last_name'                      => 'required|string|max:255',
-            'cell_phone'                     => 'required|string|max:20',
-            'client_type'                    => 'required|in:sd_resident,vacationer,invoiced',
-            'how_did_you_hear'               => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
-            'sitter_preferences'             => 'nullable|array',
-            'other_adults_in_home'           => 'nullable|string|max:10',
-            'medical_info'                   => 'nullable|string',
-            'emergency_instructions'         => 'nullable|string',
-            'caregiver_notes'                => 'nullable|string',
-            'attributes'                     => 'nullable|array',
-            'children'                       => 'nullable|array',
-            'children.*.name'                => 'nullable|string|max:255',
-            'children.*.gender'              => 'nullable|in:male,female,other',
-            'children.*.birth_month'         => 'nullable|integer|min:1|max:12',
-            'children.*.birth_year'          => 'nullable|integer|min:1900|max:2100',
-            'children.*.special_needs'       => 'nullable|boolean',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'cell_phone' => 'required|string|max:20',
+            'client_type' => 'required|in:sd_resident,vacationer,invoiced',
+            'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
+            'sitter_preferences' => 'nullable|array',
+            'other_adults_in_home' => 'nullable|string|max:10',
+            'medical_info' => 'nullable|string',
+            'emergency_instructions' => 'nullable|string',
+            'caregiver_notes' => 'nullable|string',
+            'attributes' => 'nullable|array',
+            'children' => 'nullable|array',
+            'children.*.name' => 'nullable|string|max:255',
+            'children.*.gender' => 'nullable|in:male,female,other',
+            'children.*.birth_month' => 'nullable|integer|min:1|max:12',
+            'children.*.birth_year' => 'nullable|integer|min:1900|max:2100',
+            'children.*.special_needs' => 'nullable|boolean',
             'children.*.special_needs_notes' => 'nullable|string',
-            'pets'                           => 'nullable|array',
-            'pets.*.name'                    => 'nullable|string|max:255',
-            'pets.*.type'                    => 'nullable|string|max:255',
-            'pets.*.breed'                   => 'nullable|string|max:255',
-            'pets.*.notes'                   => 'nullable|string',
-            'addresses'                      => 'nullable|array',
-            'addresses.*.id'                 => 'nullable|integer|exists:client_addresses,id',
-            'addresses.*.label'              => 'nullable|string|max:255',
-            'addresses.*.location_type'      => 'nullable|in:residence,hotel,vacation_rental,other',
-            'addresses.*.line1'              => 'nullable|string|max:255',
-            'addresses.*.line2'              => 'nullable|string|max:255',
-            'addresses.*.city'               => 'nullable|string|max:255',
-            'addresses.*.state'              => 'nullable|string|max:255',
-            'addresses.*.zip'                => 'nullable|string|max:20',
-            'addresses.*.is_primary'         => 'nullable|boolean',
+            'pets' => 'nullable|array',
+            'pets.*.name' => 'nullable|string|max:255',
+            'pets.*.type' => 'nullable|string|max:255',
+            'pets.*.breed' => 'nullable|string|max:255',
+            'pets.*.notes' => 'nullable|string',
+            'addresses' => 'nullable|array',
+            'addresses.*.id' => 'nullable|integer|exists:client_addresses,id',
+            'addresses.*.label' => 'nullable|string|max:255',
+            'addresses.*.location_type' => 'nullable|in:residence,hotel,vacation_rental,other',
+            'addresses.*.line1' => 'nullable|string|max:255',
+            'addresses.*.line2' => 'nullable|string|max:255',
+            'addresses.*.city' => 'nullable|string|max:255',
+            'addresses.*.state' => 'nullable|string|max:255',
+            'addresses.*.zip' => 'nullable|string|max:20',
+            'addresses.*.is_primary' => 'nullable|boolean',
         ]);
 
         $client->update($validated);
 
         $client->user->update([
-            'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+            'name' => $validated['first_name'].' '.$validated['last_name'],
         ]);
 
         if (isset($validated['attributes'])) {
             $attributesToSync = [];
             foreach ($validated['attributes'] as $attributeId => $value) {
                 $attributesToSync[$attributeId] = [
-                    'value'       => $value,
+                    'value' => $value,
                     'entity_type' => 'client',
                 ];
             }
@@ -323,7 +328,7 @@ class ClientController extends Controller
         }
 
         if (isset($validated['children'])) {
-            $existingChildIds  = $client->children()->pluck('id')->toArray();
+            $existingChildIds = $client->children()->pluck('id')->toArray();
             $submittedChildIds = [];
 
             foreach ($validated['children'] as $childData) {
@@ -331,22 +336,22 @@ class ClientController extends Controller
                     $child = $client->children()->find($childData['id']);
                     if ($child) {
                         $child->update([
-                            'name'                => $childData['name'] ?? null,
-                            'gender'              => $childData['gender'] ?? null,
-                            'birth_month'         => $childData['birth_month'] ?? null,
-                            'birth_year'          => $childData['birth_year'] ?? null,
-                            'special_needs'       => $childData['special_needs'] ?? false,
+                            'name' => $childData['name'] ?? null,
+                            'gender' => $childData['gender'] ?? null,
+                            'birth_month' => $childData['birth_month'] ?? null,
+                            'birth_year' => $childData['birth_year'] ?? null,
+                            'special_needs' => $childData['special_needs'] ?? false,
                             'special_needs_notes' => $childData['special_needs_notes'] ?? null,
                         ]);
                         $submittedChildIds[] = $childData['id'];
                     }
                 } else {
                     $newChild = $client->children()->create([
-                        'name'                => $childData['name'] ?? null,
-                        'gender'              => $childData['gender'] ?? null,
-                        'birth_month'         => $childData['birth_month'] ?? null,
-                        'birth_year'          => $childData['birth_year'] ?? null,
-                        'special_needs'       => $childData['special_needs'] ?? false,
+                        'name' => $childData['name'] ?? null,
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => $childData['birth_month'] ?? null,
+                        'birth_year' => $childData['birth_year'] ?? null,
+                        'special_needs' => $childData['special_needs'] ?? false,
                         'special_needs_notes' => $childData['special_needs_notes'] ?? null,
                     ]);
                     $submittedChildIds[] = $newChild->id;
@@ -357,7 +362,7 @@ class ClientController extends Controller
         }
 
         if (isset($validated['pets'])) {
-            $existingPetIds  = $client->pets()->pluck('id')->toArray();
+            $existingPetIds = $client->pets()->pluck('id')->toArray();
             $submittedPetIds = [];
 
             foreach ($validated['pets'] as $petData) {
@@ -365,8 +370,8 @@ class ClientController extends Controller
                     $pet = $client->pets()->find($petData['id']);
                     if ($pet) {
                         $pet->update([
-                            'name'  => $petData['name'] ?? null,
-                            'type'  => $petData['type'] ?? null,
+                            'name' => $petData['name'] ?? null,
+                            'type' => $petData['type'] ?? null,
                             'breed' => $petData['breed'] ?? null,
                             'notes' => $petData['notes'] ?? null,
                         ]);
@@ -374,8 +379,8 @@ class ClientController extends Controller
                     }
                 } else {
                     $newPet = $client->pets()->create([
-                        'name'  => $petData['name'] ?? null,
-                        'type'  => $petData['type'] ?? null,
+                        'name' => $petData['name'] ?? null,
+                        'type' => $petData['type'] ?? null,
                         'breed' => $petData['breed'] ?? null,
                         'notes' => $petData['notes'] ?? null,
                     ]);
@@ -387,7 +392,7 @@ class ClientController extends Controller
         }
 
         if (isset($validated['addresses'])) {
-            $existingAddressIds  = $client->addresses()->pluck('id')->toArray();
+            $existingAddressIds = $client->addresses()->pluck('id')->toArray();
             $submittedAddressIds = [];
 
             foreach ($validated['addresses'] as $addressData) {
@@ -395,27 +400,27 @@ class ClientController extends Controller
                     $address = $client->addresses()->find($addressData['id']);
                     if ($address) {
                         $address->update([
-                            'label'         => $addressData['label'] ?? null,
+                            'label' => $addressData['label'] ?? null,
                             'location_type' => $addressData['location_type'] ?? 'residence',
-                            'line1'         => $addressData['line1'] ?? '',
-                            'line2'         => $addressData['line2'] ?? null,
-                            'city'          => $addressData['city'] ?? '',
-                            'state'         => $addressData['state'] ?? '',
-                            'zip'           => $addressData['zip'] ?? '',
-                            'is_primary'    => $addressData['is_primary'] ?? false,
+                            'line1' => $addressData['line1'] ?? '',
+                            'line2' => $addressData['line2'] ?? null,
+                            'city' => $addressData['city'] ?? '',
+                            'state' => $addressData['state'] ?? '',
+                            'zip' => $addressData['zip'] ?? '',
+                            'is_primary' => $addressData['is_primary'] ?? false,
                         ]);
                         $submittedAddressIds[] = $addressData['id'];
                     }
                 } else {
                     $newAddress = $client->addresses()->create([
-                        'label'         => $addressData['label'] ?? null,
+                        'label' => $addressData['label'] ?? null,
                         'location_type' => $addressData['location_type'] ?? 'residence',
-                        'line1'         => $addressData['line1'] ?? '',
-                        'line2'         => $addressData['line2'] ?? null,
-                        'city'          => $addressData['city'] ?? '',
-                        'state'         => $addressData['state'] ?? '',
-                        'zip'           => $addressData['zip'] ?? '',
-                        'is_primary'    => $addressData['is_primary'] ?? false,
+                        'line1' => $addressData['line1'] ?? '',
+                        'line2' => $addressData['line2'] ?? null,
+                        'city' => $addressData['city'] ?? '',
+                        'state' => $addressData['state'] ?? '',
+                        'zip' => $addressData['zip'] ?? '',
+                        'is_primary' => $addressData['is_primary'] ?? false,
                     ]);
                     $submittedAddressIds[] = $newAddress->id;
                 }
@@ -435,9 +440,9 @@ class ClientController extends Controller
         ]);
 
         if ($request->hasFile('profile_photo')) {
-            $file     = $request->file('profile_photo');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path     = $file->storeAs('profile-photos', $filename, 'public');
+            $file = $request->file('profile_photo');
+            $filename = time().'_'.$file->getClientOriginalName();
+            $path = $file->storeAs('profile-photos', $filename, 'public');
             $client->user->update(['profile_photo_path' => $path]);
 
             return redirect()->route('clients.edit', $client->id)

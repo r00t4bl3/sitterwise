@@ -39,11 +39,11 @@ function getMonthName(month: number): string {
 function getIcon(slot: string) {
     switch (slot) {
         case 'morning':
-            return <Sunrise className="h-3 w-3" style={{ color: '#F9C74F' }} />;
+            return <Sunrise className="h-5 w-5" style={{ color: '#F9C74F' }} />;
         case 'afternoon':
-            return <Sun className="h-3 w-3" style={{ color: '#84D0D2' }} />;
+            return <Sun className="h-5 w-5" style={{ color: '#84D0D2' }} />;
         case 'evening':
-            return <Moon className="h-3 w-3" style={{ color: '#1B3A5C' }} />;
+            return <Moon className="h-5 w-5" style={{ color: '#1B3A5C' }} />;
         default:
             return null;
     }
@@ -133,17 +133,17 @@ export function AvailabilityCalendar({
                     return (
                         <div
                             key={day}
-                            className={`flex h-24 flex-col items-center justify-center gap-1 border border-border p-1 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
+                            className={`flex h-24 flex-col gap-1 border border-border p-2 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
                         >
                             <span
-                                className={`text-sm ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
+                                className={`text-sm font-medium ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
                             >
                                 {day}
                             </span>
                             {!isPast &&
                                 !isToday &&
                                 (hasAvailability ? (
-                                    <>
+                                    <div className="flex flex-1 flex-col items-center justify-center gap-1">
                                         <div className="flex items-center gap-0.5">
                                             {availability.time_slots.map(
                                                 (slot) => (
@@ -157,11 +157,11 @@ export function AvailabilityCalendar({
                                             )}
                                         </div>
                                         {availability.specific_time && (
-                                            <span className="truncate text-[8px] text-muted-foreground">
+                                            <span className="truncate text-xs text-muted-foreground">
                                                 {availability.specific_time}
                                             </span>
                                         )}
-                                    </>
+                                    </div>
                                 ) : null)}
                             {!isPast && !isToday && (
                                 <button

@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Booking extends Model
 {
@@ -33,12 +35,12 @@ class Booking extends Model
     ];
 
     protected $casts = [
-        'start_datetime'         => 'datetime',
-        'end_datetime'           => 'datetime',
+        'start_datetime' => 'datetime',
+        'end_datetime' => 'datetime',
         'special_considerations' => 'array',
-        'comped'                 => 'boolean',
-        'total_amount'           => 'decimal:2',
-        'requires_payment'       => 'boolean',
+        'comped' => 'boolean',
+        'total_amount' => 'decimal:2',
+        'requires_payment' => 'boolean',
     ];
 
     public function bookingGroup(): BelongsTo
@@ -69,5 +71,22 @@ class Booking extends Model
     public function address(): BelongsTo
     {
         return $this->belongsTo(ClientAddress::class, 'address_id');
+    }
+
+    public function bookingAddress(): BelongsTo
+    {
+        return $this->belongsTo(BookingAddress::class);
+    }
+
+    public function attributeDefinitions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            AttributeDefinition::class,
+            'entity_attribute_values',
+            'entity_id'
+        )
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'booking');
     }
 }

@@ -49,6 +49,10 @@ interface Hotel {
     id: number;
     name: string;
     city: string | null;
+    line1: string | null;
+    line2: string | null;
+    state: string | null;
+    zip: string | null;
 }
 
 interface Caregiver {
@@ -84,6 +88,12 @@ interface Booking {
     hotel_id: number | null;
     address_id: number | null;
     caregiver_id: number | null;
+    attributeDefinitions?: Array<{
+        pivot: {
+            attribute_definition_id: number;
+            value: string;
+        };
+    }>;
     client: {
         id: number;
         first_name: string;
@@ -100,6 +110,14 @@ interface Booking {
         id: number;
         first_name: string;
         last_name: string;
+    } | null;
+    booking_address: {
+        id: number;
+        line1: string;
+        line2: string | null;
+        city: string;
+        state: string;
+        zip: string;
     } | null;
 }
 
@@ -119,6 +137,13 @@ interface Props {
     booking_statuses: Array<{ value: string; label: string }>;
     payment_statuses: Array<{ value: string; label: string }>;
     special_consideration_options: Array<{ value: string; label: string }>;
+    booking_attributes: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        type: string;
+        options: string[];
+    }>;
 }
 
 const statusColors: Record<
@@ -223,18 +248,22 @@ function Autocomplete({
     loading,
     displayValue,
 }: AutocompleteProps) {
-    const [query, setQuery] = useState(displayValue || '');
+    const [query, setQuery] = useState(displayValue ?? '');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const selectedItem = suggestions.find((s) => s.id === value);
 
     useEffect(() => {
         if (displayValue !== undefined) {
             setQuery(displayValue);
         }
     }, [displayValue]);
+
+    useEffect(() => {
+        if (suggestions.length > 0) {
+            setShowSuggestions(true);
+        }
+    }, [suggestions]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -255,8 +284,8 @@ function Autocomplete({
         setQuery(value);
 
         if (debounceRef.current) {
-clearTimeout(debounceRef.current);
-}
+            clearTimeout(debounceRef.current);
+        }
 
         if (!value.trim()) {
             onChange(null);
@@ -273,7 +302,7 @@ clearTimeout(debounceRef.current);
         <div ref={wrapperRef} className="relative">
             <input
                 type="text"
-                value={query}
+                value={query ?? ''}
                 onChange={(e) => handleInputChange(e.target.value)}
                 onFocus={() =>
                     suggestions.length > 0 && setShowSuggestions(true)
@@ -294,7 +323,7 @@ clearTimeout(debounceRef.current);
                 </button>
             )}
             {showSuggestions && (
-                <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
+                <div className="absolute top-full right-0 left-0 z-[100] mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
                     {loading ? (
                         <div className="p-3 text-sm text-muted-foreground">
                             Loading...
@@ -313,7 +342,7 @@ clearTimeout(debounceRef.current);
                                     setQuery(item.name);
                                     setShowSuggestions(false);
                                 }}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
                             >
                                 {item.name}
                             </button>
@@ -337,6 +366,7 @@ export default function BookingsIndex() {
         booking_statuses,
         payment_statuses,
         special_consideration_options,
+        booking_attributes,
     } = usePage<Props>().props;
 
     const [currentMonth, setCurrentMonth] = useState(filters.month);
@@ -385,6 +415,14 @@ export default function BookingsIndex() {
         requires_payment: boolean;
         status: string;
         payment_status: string;
+        vacation_rental_platform: string;
+        booking_address: {
+            line1: string;
+            line2: string;
+            city: string;
+            state: string;
+            zip: string;
+        };
     }>({
         client_id: null,
         service_type: 'babysitter',
@@ -404,6 +442,14 @@ export default function BookingsIndex() {
         requires_payment: true,
         status: 'received',
         payment_status: 'pending',
+        vacation_rental_platform: '',
+        booking_address: {
+            line1: '',
+            line2: '',
+            city: '',
+            state: '',
+            zip: '',
+        },
     });
 
     const days = getDaysInMonth(currentYear, currentMonth);
@@ -585,6 +631,14 @@ export default function BookingsIndex() {
             requires_payment: true,
             status: 'received',
             payment_status: 'pending',
+            vacation_rental_platform: '',
+            booking_address: {
+                line1: '',
+                line2: '',
+                city: '',
+                state: '',
+                zip: '',
+            },
         } as unknown as Parameters<typeof form.reset>[0]);
         setClientAddresses([]);
         setIsSheetOpen(true);
@@ -621,6 +675,42 @@ export default function BookingsIndex() {
         form.setData('requires_payment', booking.requires_payment);
         form.setData('status', booking.status);
         form.setData('payment_status', booking.payment_status);
+
+        // Load vacation rental platform from attribute definitions
+        if (
+            booking.location_type === 'vacation_rental' &&
+            booking.attributeDefinitions
+        ) {
+            const platformAttr = booking.attributeDefinitions.find(
+                (attr: {
+                    pivot: { attribute_definition_id: number; value: string };
+                }) => {
+                    const attrDef = booking_attributes.find(
+                        (a: { id: number; slug: string }) =>
+                            a.id === attr.pivot.attribute_definition_id &&
+                            a.slug === 'vacation_rental_platform',
+                    );
+                    return !!attrDef;
+                },
+            );
+            if (platformAttr) {
+                form.setData(
+                    'vacation_rental_platform',
+                    platformAttr.pivot.value,
+                );
+            }
+        }
+
+        // Load booking address
+        if (booking.booking_address) {
+            form.setData('booking_address', {
+                line1: booking.booking_address.line1 || '',
+                line2: booking.booking_address.line2 || '',
+                city: booking.booking_address.city || '',
+                state: booking.booking_address.state || '',
+                zip: booking.booking_address.zip || '',
+            });
+        }
 
         if (booking.client_id) {
             const client = clients.find((c) => c.id === booking.client_id);
@@ -830,7 +920,7 @@ export default function BookingsIndex() {
                                                 onClick={() =>
                                                     openEditSheet(booking)
                                                 }
-                                                className={`flex items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
+                                                className={`flex cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
                                                     colors?.bg || 'bg-blue-100'
                                                 } ${
                                                     colors?.text ||
@@ -965,42 +1055,176 @@ export default function BookingsIndex() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {form.data.location_type === 'vacation_rental' && (
                                 <div>
                                     <label className="text-sm font-medium text-foreground">
-                                        Start DateTime{' '}
-                                        <span className="text-red-500">*</span>
+                                        Rental Platform
                                     </label>
-                                    <div className="mt-1">
-                                        <DateTimePicker
-                                            value={form.data.start_datetime}
-                                            onChange={(datetime) =>
+                                    <select
+                                        value={
+                                            form.data.vacation_rental_platform
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'vacation_rental_platform',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                    >
+                                        <option value="">
+                                            Select platform...
+                                        </option>
+                                        {booking_attributes
+                                            .filter(
+                                                (attr) =>
+                                                    attr.slug ===
+                                                    'vacation_rental_platform',
+                                            )
+                                            .flatMap(
+                                                (attr) => attr.options || [],
+                                            )
+                                            .map((option) => (
+                                                <option
+                                                    key={option}
+                                                    value={option}
+                                                >
+                                                    {option
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        option.slice(1)}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {form.data.location_type === 'vacation_rental' && (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-sm font-medium text-foreground">
+                                            Address Line 1
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={
+                                                form.data.booking_address.line1
+                                            }
+                                            onChange={(e) =>
                                                 form.setData(
-                                                    'start_datetime',
-                                                    datetime,
+                                                    'booking_address',
+                                                    {
+                                                        ...form.data
+                                                            .booking_address,
+                                                        line1: e.target.value,
+                                                    },
                                                 )
                                             }
+                                            placeholder="Street address"
+                                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                         />
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        End DateTime{' '}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="mt-1">
-                                        <DateTimePicker
-                                            value={form.data.end_datetime}
-                                            onChange={(datetime) =>
+                                    <div>
+                                        <label className="text-sm font-medium text-foreground">
+                                            Address Line 2
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={
+                                                form.data.booking_address.line2
+                                            }
+                                            onChange={(e) =>
                                                 form.setData(
-                                                    'end_datetime',
-                                                    datetime,
+                                                    'booking_address',
+                                                    {
+                                                        ...form.data
+                                                            .booking_address,
+                                                        line2: e.target.value,
+                                                    },
                                                 )
                                             }
+                                            placeholder="Apt, suite, etc. (optional)"
+                                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                         />
                                     </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="text-sm font-medium text-foreground">
+                                                City
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    form.data.booking_address
+                                                        .city
+                                                }
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'booking_address',
+                                                        {
+                                                            ...form.data
+                                                                .booking_address,
+                                                            city: e.target
+                                                                .value,
+                                                        },
+                                                    )
+                                                }
+                                                placeholder="City"
+                                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-foreground">
+                                                State
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    form.data.booking_address
+                                                        .state
+                                                }
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'booking_address',
+                                                        {
+                                                            ...form.data
+                                                                .booking_address,
+                                                            state: e.target
+                                                                .value,
+                                                        },
+                                                    )
+                                                }
+                                                placeholder="State"
+                                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-foreground">
+                                                Zip
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    form.data.booking_address
+                                                        .zip
+                                                }
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'booking_address',
+                                                        {
+                                                            ...form.data
+                                                                .booking_address,
+                                                            zip: e.target.value,
+                                                        },
+                                                    )
+                                                }
+                                                placeholder="Zip"
+                                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {form.data.location_type === 'hotel' && (
                                 <div>
@@ -1010,15 +1234,43 @@ export default function BookingsIndex() {
                                     <div className="mt-1">
                                         <Autocomplete
                                             value={form.data.hotel_id}
-                                            onChange={(id) =>
-                                                form.setData('hotel_id', id)
-                                            }
+                                            onChange={(id) => {
+                                                form.setData('hotel_id', id);
+                                                const hotel = hotels.find(
+                                                    (h) => h.id === id,
+                                                );
+                                                if (hotel) {
+                                                    setSelectedHotelName(
+                                                        hotel.name,
+                                                    );
+                                                }
+                                            }}
                                             suggestions={hotelSuggestions}
                                             onSearch={handleHotelSearch}
                                             placeholder="Search hotel..."
                                             displayValue={selectedHotelName}
                                         />
                                     </div>
+                                    {form.data.hotel_id && (
+                                        <div className="mt-2 rounded-[3px] bg-muted p-3 text-sm text-muted-foreground">
+                                            {(() => {
+                                                const hotel = hotels.find(
+                                                    (h) =>
+                                                        h.id ===
+                                                        form.data.hotel_id,
+                                                );
+                                                if (!hotel) return null;
+                                                const parts = [
+                                                    hotel.line1,
+                                                    hotel.line2,
+                                                    hotel.city,
+                                                    hotel.state,
+                                                    hotel.zip,
+                                                ].filter(Boolean);
+                                                return parts.join(', ');
+                                            })()}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1056,6 +1308,43 @@ export default function BookingsIndex() {
                                     </select>
                                 </div>
                             )}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">
+                                        Start DateTime{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="mt-1">
+                                        <DateTimePicker
+                                            value={form.data.start_datetime}
+                                            onChange={(datetime) =>
+                                                form.setData(
+                                                    'start_datetime',
+                                                    datetime,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">
+                                        End DateTime{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="mt-1">
+                                        <DateTimePicker
+                                            value={form.data.end_datetime}
+                                            onChange={(datetime) =>
+                                                form.setData(
+                                                    'end_datetime',
+                                                    datetime,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
                             <div>
                                 <label className="text-sm font-medium text-foreground">

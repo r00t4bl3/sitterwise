@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->enum('type', ['boolean', 'date', 'text', 'number', 'select'])->default('boolean');
+            $table->string('entity_type', 50)->default('caregiver');
             $table->json('options')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);

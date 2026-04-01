@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,7 +22,7 @@ class AttributeDefinition extends Model
     ];
 
     protected $casts = [
-        'options'   => 'array',
+        'options' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -38,14 +39,14 @@ class AttributeDefinition extends Model
 
     private static function generateSlug(string $name): string
     {
-        $slug         = Str::slug($name);
+        $slug = Str::slug($name);
         $originalSlug = $slug;
-        $counter      = 1;
+        $counter = 1;
 
         $query = self::where('slug', $slug);
 
         while ($query->exists()) {
-            $slug  = $originalSlug . '_' . $counter;
+            $slug = $originalSlug.'_'.$counter;
             $query = self::where('slug', $slug);
             $counter++;
         }
@@ -77,6 +78,18 @@ class AttributeDefinition extends Model
             ->wherePivot('entity_type', 'client');
     }
 
+    public function bookings(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Booking::class,
+            'entity_attribute_values',
+            'entity_id'
+        )
+            ->withPivot('value', 'entity_type')
+            ->withTimestamps()
+            ->wherePivot('entity_type', 'booking');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('sort_order');
@@ -90,5 +103,10 @@ class AttributeDefinition extends Model
     public function scopeForClients($query)
     {
         return $query->whereIn('entity_type', ['client', 'both']);
+    }
+
+    public function scopeForBookings($query)
+    {
+        return $query->whereIn('entity_type', ['booking', 'both']);
     }
 }

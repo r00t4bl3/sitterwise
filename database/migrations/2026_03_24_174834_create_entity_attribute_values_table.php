@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('caregiver_attributes', function (Blueprint $table) {
+        Schema::create('entity_attribute_values', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('caregiver_id')->constrained()->onDelete('cascade');
+            $table->foreignId('entity_id');
             $table->foreignId('attribute_definition_id')->constrained()->onDelete('cascade');
             $table->text('value')->nullable();
+            $table->string('entity_type', 50)->default('caregiver');
             $table->timestamps();
 
-            $table->unique(['caregiver_id', 'attribute_definition_id']);
+            $table->unique(['entity_id', 'attribute_definition_id', 'entity_type']);
         });
     }
 
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('caregiver_attributes');
+        Schema::dropIfExists('entity_attribute_values');
     }
 };
