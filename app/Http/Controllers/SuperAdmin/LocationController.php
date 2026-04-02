@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
@@ -20,10 +21,10 @@ class LocationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|unique:locations,name',
+            'name' => 'required|string|unique:locations,name',
             'description' => 'nullable|string',
-            'svg_icon'    => 'nullable|string',
-            'is_active'   => 'boolean',
+            'svg_icon' => 'nullable|string',
+            'is_active' => 'boolean',
         ]);
 
         Location::create($validated);
@@ -35,10 +36,10 @@ class LocationController extends Controller
     public function update(Request $request, Location $location)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|unique:locations,name,' . $location->id,
+            'name' => 'required|string|unique:locations,name,'.$location->id,
             'description' => 'nullable|string',
-            'svg_icon'    => 'nullable|string',
-            'is_active'   => 'boolean',
+            'svg_icon' => 'nullable|string',
+            'is_active' => 'boolean',
         ]);
 
         $location->update($validated);

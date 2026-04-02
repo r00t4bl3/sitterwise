@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Database\Factories\ClientFactory;
@@ -14,7 +15,7 @@ class Client extends Model
 
     protected static function newFactory(): ClientFactory
     {
-        return ClientFactory::new ();
+        return ClientFactory::new();
     }
 
     protected $fillable = [
@@ -35,7 +36,7 @@ class Client extends Model
 
     protected $casts = [
         'sitter_preferences' => 'array',
-        'special_needs'      => 'boolean',
+        'special_needs' => 'boolean',
     ];
 
     public function user(): BelongsTo

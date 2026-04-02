@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\Location;
@@ -17,9 +18,9 @@ class LocationFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'        => fake()->unique()->company() . ' Hotel',
+            'name' => fake()->unique()->company().' Hotel',
             'description' => fake()->sentence(),
-            'is_active'   => true,
+            'is_active' => true,
         ];
     }
 }

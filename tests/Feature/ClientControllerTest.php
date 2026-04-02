@@ -14,20 +14,20 @@ test('guests are redirected to login when accessing clients index', function () 
 });
 
 test('guests are redirected to login when accessing client show page', function () {
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.show', $client));
     $response->assertRedirect(route('login'));
 });
 
 test('guests cannot store a new client', function () {
     $response = $this->post(route('clients.store'), [
-        'first_name'            => 'Test',
-        'last_name'             => 'Client',
-        'email'                 => 'test@example.com',
-        'password'              => 'password123',
+        'first_name' => 'Test',
+        'last_name' => 'Client',
+        'email' => 'test@example.com',
+        'password' => 'password123',
         'password_confirmation' => 'password123',
-        'cell_phone'            => '1234567890',
-        'client_type'           => 'vacationer',
+        'cell_phone' => '1234567890',
+        'client_type' => 'vacationer',
     ]);
 
     $response->assertRedirect(route('login'));
@@ -39,7 +39,7 @@ test('guests cannot access search suggestions', function () {
 });
 
 test('guests cannot access client data endpoint', function () {
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.getClientData', $client));
     $response->assertRedirect(route('login'));
 });
@@ -57,7 +57,7 @@ test('regular users cannot view client show page', function () {
     $user = User::factory()->create(['role' => 'caregiver']);
     $this->actingAs($user);
 
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.show', $client));
     $response->assertForbidden();
 });
@@ -74,7 +74,7 @@ test('regular users cannot access client data endpoint - forbidden', function ()
     $user = User::factory()->create(['role' => 'caregiver']);
     $this->actingAs($user);
 
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.getClientData', $client));
     $response->assertForbidden();
 });
@@ -92,7 +92,7 @@ test('admin users can view client show page', function () {
     $user = User::factory()->create(['role' => 'admin']);
     $this->actingAs($user);
 
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.show', $client));
     $response->assertSuccessful();
 });
@@ -109,7 +109,7 @@ test('admin users can view client edit page', function () {
     $user = User::factory()->create(['role' => 'admin']);
     $this->actingAs($user);
 
-    $client   = Client::factory()->create();
+    $client = Client::factory()->create();
     $response = $this->get(route('clients.edit', $client));
     $response->assertSuccessful();
 });
@@ -119,13 +119,13 @@ test('admin users can create a client', function () {
     $this->actingAs($user);
 
     $response = $this->post(route('clients.store'), [
-        'first_name'            => 'Test',
-        'last_name'             => 'Client',
-        'email'                 => 'newclient@example.com',
-        'password'              => 'password123',
+        'first_name' => 'Test',
+        'last_name' => 'Client',
+        'email' => 'newclient@example.com',
+        'password' => 'password123',
         'password_confirmation' => 'password123',
-        'cell_phone'            => '1234567890',
-        'client_type'           => 'vacationer',
+        'cell_phone' => '1234567890',
+        'client_type' => 'vacationer',
     ]);
 
     $response->assertRedirect();
@@ -142,10 +142,10 @@ test('admin users can update a client', function () {
     $client = Client::factory()->create();
 
     $response = $this->patch(route('clients.update', $client), [
-        'first_name'  => 'UpdatedFirstName',
-        'last_name'   => $client->last_name,
-        'email'       => $client->email,
-        'cell_phone'  => $client->cell_phone,
+        'first_name' => 'UpdatedFirstName',
+        'last_name' => $client->last_name,
+        'email' => $client->email,
+        'cell_phone' => $client->cell_phone,
         'client_type' => $client->client_type,
     ]);
 
@@ -161,7 +161,7 @@ test('admin users can search clients', function () {
 
     $client = Client::factory()->create([
         'first_name' => 'SearchableName',
-        'last_name'  => 'Test',
+        'last_name' => 'Test',
     ]);
 
     $response = $this->get(route('clients.index', ['search' => 'Searchable']));
@@ -174,7 +174,7 @@ test('admin users can access search suggestions endpoint', function () {
 
     $client = Client::factory()->create([
         'first_name' => 'John',
-        'last_name'  => 'Doe',
+        'last_name' => 'Doe',
     ]);
 
     $response = $this->get(route('clients.searchSuggestions', ['q' => 'John']));
@@ -220,7 +220,7 @@ test('guests cannot reset client password', function () {
     $client = Client::factory()->create();
 
     $response = $this->post(route('clients.resetPassword', $client), [
-        'new_password'              => 'newpassword123',
+        'new_password' => 'newpassword123',
         'new_password_confirmation' => 'newpassword123',
     ]);
 
@@ -234,7 +234,7 @@ test('regular users cannot reset client password - forbidden', function () {
     $client = Client::factory()->create();
 
     $response = $this->post(route('clients.resetPassword', $client), [
-        'new_password'              => 'newpassword123',
+        'new_password' => 'newpassword123',
         'new_password_confirmation' => 'newpassword123',
     ]);
 
@@ -248,7 +248,7 @@ test('admin users can reset client password', function () {
     $client = Client::factory()->create();
 
     $response = $this->post(route('clients.resetPassword', $client), [
-        'new_password'              => 'newpassword123',
+        'new_password' => 'newpassword123',
         'new_password_confirmation' => 'newpassword123',
     ]);
 
@@ -262,11 +262,11 @@ test('admin users cannot reset client password with mismatched confirmation', fu
     $user = User::factory()->create(['role' => 'admin']);
     $this->actingAs($user);
 
-    $client      = Client::factory()->create();
+    $client = Client::factory()->create();
     $oldPassword = $client->user->password;
 
     $response = $this->post(route('clients.resetPassword', $client), [
-        'new_password'              => 'newpassword123',
+        'new_password' => 'newpassword123',
         'new_password_confirmation' => 'differentpassword123',
     ]);
 

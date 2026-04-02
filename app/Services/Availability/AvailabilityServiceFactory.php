@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Availability;
 
 use App\Services\Availability\Contracts\AvailabilityServiceInterface;
@@ -10,7 +11,7 @@ class AvailabilityServiceFactory
         return match (auth()->user()->role) {
             'admin', 'super_admin' => app(AdminAvailabilityService::class),
             'caregiver' => app(CaregiverAvailabilityService::class),
-            default     => abort(403, 'Unauthorized role'),
+            default => abort(403, 'Unauthorized role'),
         };
     }
 }

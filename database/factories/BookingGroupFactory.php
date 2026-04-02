@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Enums\SubmissionType;
@@ -13,23 +14,23 @@ class BookingGroupFactory extends Factory
     public function definition(): array
     {
         return [
-            'client_id'       => Client::factory(),
-            'submitted_at'    => now(),
+            'client_id' => Client::factory(),
+            'submitted_at' => now(),
             'submission_type' => SubmissionType::LoggedIn->value,
-            'is_split'        => false,
+            'is_split' => false,
         ];
     }
 
     public function guest(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'submission_type' => SubmissionType::Guest->value,
         ]);
     }
 
     public function admin(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'submission_type' => SubmissionType::Admin->value,
         ]);
     }

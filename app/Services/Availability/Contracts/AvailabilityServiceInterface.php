@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Availability\Contracts;
 
 use Illuminate\Http\Request;

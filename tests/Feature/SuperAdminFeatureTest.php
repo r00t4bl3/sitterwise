@@ -41,8 +41,8 @@ describe('CertificationTypeController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('certifications.store'), [
-            'name'             => 'First Aid',
-            'description'      => 'First aid certification',
+            'name' => 'First Aid',
+            'description' => 'First aid certification',
             'expires_required' => true,
         ]);
 
@@ -59,10 +59,10 @@ describe('CertificationTypeController', function () {
         $certification = CertificationType::factory()->create();
 
         $response = $this->patch(route('certifications.update', $certification), [
-            'name'             => 'Updated Name',
-            'description'      => 'Updated description',
+            'name' => 'Updated Name',
+            'description' => 'Updated description',
             'expires_required' => false,
-            'is_active'        => false,
+            'is_active' => false,
         ]);
 
         $response->assertRedirect();
@@ -117,7 +117,7 @@ describe('SpecialtyTypeController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('specialties.store'), [
-            'name'        => 'Newborn Care',
+            'name' => 'Newborn Care',
             'description' => 'Specializes in newborn care',
         ]);
 
@@ -134,7 +134,7 @@ describe('SpecialtyTypeController', function () {
         $specialty = SpecialtyType::factory()->create();
 
         $response = $this->patch(route('specialties.update', $specialty), [
-            'name'        => 'Updated Specialty',
+            'name' => 'Updated Specialty',
             'description' => 'Updated description',
         ]);
 
@@ -262,8 +262,8 @@ describe('AttributeDefinitionController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('attributes.store'), [
-            'name'        => 'Pet Allergies',
-            'type'        => 'text',
+            'name' => 'Pet Allergies',
+            'type' => 'text',
             'entity_type' => 'client',
         ]);
 
@@ -283,8 +283,8 @@ describe('AttributeDefinitionController', function () {
         ]);
 
         $response = $this->patch(route('attributes.update', $attribute), [
-            'name'        => 'UpdatedName',
-            'type'        => 'text',
+            'name' => 'UpdatedName',
+            'type' => 'text',
             'entity_type' => 'client',
         ]);
 
@@ -340,18 +340,18 @@ describe('HotelController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('hotels.store'), [
-            'name'                 => 'Luxury Hotel',
-            'line1'                => '123 Main St',
-            'line2'                => '',
-            'city'                 => 'Los Angeles',
-            'state'                => 'CA',
-            'zip'                  => '90001',
+            'name' => 'Luxury Hotel',
+            'line1' => '123 Main St',
+            'line2' => '',
+            'city' => 'Los Angeles',
+            'state' => 'CA',
+            'zip' => '90001',
             'parking_instructions' => 'Valet parking available',
-            'hourly_rate'          => 25.00,
-            'resort_fee'           => null,
-            'contact_name'         => '',
-            'contact_phone'        => '',
-            'admin_notes'          => '',
+            'hourly_rate' => 25.00,
+            'resort_fee' => null,
+            'contact_name' => '',
+            'contact_phone' => '',
+            'admin_notes' => '',
         ]);
 
         $response->assertRedirect();
@@ -367,14 +367,14 @@ describe('HotelController', function () {
         $hotel = Hotel::factory()->create();
 
         $response = $this->patch(route('hotels.update', $hotel), [
-            'name'                 => 'Updated Hotel',
-            'line1'                => $hotel->line1,
-            'line2'                => '',
-            'city'                 => $hotel->city,
-            'state'                => $hotel->state,
-            'zip'                  => $hotel->zip,
+            'name' => 'Updated Hotel',
+            'line1' => $hotel->line1,
+            'line2' => '',
+            'city' => $hotel->city,
+            'state' => $hotel->state,
+            'zip' => $hotel->zip,
             'parking_instructions' => 'Test',
-            'hourly_rate'          => 25.00,
+            'hourly_rate' => 25.00,
         ]);
 
         $response->assertRedirect();

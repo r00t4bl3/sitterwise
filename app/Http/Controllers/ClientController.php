@@ -30,7 +30,7 @@ class ClientController extends Controller
 
         $clients = $query->orderBy('last_name')->paginate(20);
 
-        return Inertia::render('clients/index', [
+        return Inertia::render('admin/clients/index', [
             'clients' => $clients,
             'filters' => [
                 'search' => $request->search,
@@ -41,7 +41,7 @@ class ClientController extends Controller
 
     public function create()
     {
-        return Inertia::render('clients/create');
+        return Inertia::render('admin/clients/create');
     }
 
     public function store(Request $request)
@@ -146,7 +146,7 @@ class ClientController extends Controller
             $query->withPivot('value');
         }]);
 
-        return Inertia::render('clients/show', [
+        return Inertia::render('admin/clients/show', [
             'client' => [
                 'id' => $client->id,
                 'first_name' => $client->first_name,
@@ -236,7 +236,7 @@ class ClientController extends Controller
                 'type' => $a->type,
             ]);
 
-        return Inertia::render('clients/edit', [
+        return Inertia::render('admin/clients/edit', [
             'client' => [
                 'id' => $client->id,
                 'first_name' => $client->first_name,

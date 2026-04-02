@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,7 @@ class CertificationType extends Model
 
     protected $casts = [
         'expires_required' => 'boolean',
-        'is_active'        => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function caregivers(): BelongsToMany

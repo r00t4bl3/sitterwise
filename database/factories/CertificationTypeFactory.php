@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\CertificationType;
@@ -17,10 +18,10 @@ class CertificationTypeFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'             => fake()->unique()->word() . ' Certification',
-            'description'      => fake()->sentence(),
+            'name' => fake()->unique()->word().' Certification',
+            'description' => fake()->sentence(),
             'expires_required' => fake()->boolean(),
-            'is_active'        => true,
+            'is_active' => true,
         ];
     }
 }

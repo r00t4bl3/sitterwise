@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,7 @@ class BookingGroup extends Model
 
     protected $casts = [
         'submitted_at' => 'datetime',
-        'is_split'     => 'boolean',
+        'is_split' => 'boolean',
     ];
 
     public function client(): BelongsTo

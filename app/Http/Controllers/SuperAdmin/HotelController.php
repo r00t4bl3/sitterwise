@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
@@ -20,18 +21,18 @@ class HotelController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'                 => 'required|string',
-            'line1'                => 'required|string',
-            'line2'                => 'nullable|string',
-            'city'                 => 'required|string',
-            'state'                => 'required|string',
-            'zip'                  => 'required|string',
+            'name' => 'required|string',
+            'line1' => 'required|string',
+            'line2' => 'nullable|string',
+            'city' => 'required|string',
+            'state' => 'required|string',
+            'zip' => 'required|string',
             'parking_instructions' => 'required|string',
-            'hourly_rate'          => 'required|numeric|min:0',
-            'resort_fee'           => 'nullable|numeric|min:0',
-            'contact_name'         => 'nullable|string',
-            'contact_phone'        => 'nullable|string',
-            'admin_notes'          => 'nullable|string',
+            'hourly_rate' => 'required|numeric|min:0',
+            'resort_fee' => 'nullable|numeric|min:0',
+            'contact_name' => 'nullable|string',
+            'contact_phone' => 'nullable|string',
+            'admin_notes' => 'nullable|string',
         ]);
 
         Hotel::create($validated);
@@ -43,19 +44,19 @@ class HotelController extends Controller
     public function update(Request $request, Hotel $hotel)
     {
         $validated = $request->validate([
-            'name'                 => 'required|string',
-            'line1'                => 'required|string',
-            'line2'                => 'nullable|string',
-            'city'                 => 'required|string',
-            'state'                => 'required|string',
-            'zip'                  => 'required|string',
+            'name' => 'required|string',
+            'line1' => 'required|string',
+            'line2' => 'nullable|string',
+            'city' => 'required|string',
+            'state' => 'required|string',
+            'zip' => 'required|string',
             'parking_instructions' => 'required|string',
-            'hourly_rate'          => 'required|numeric|min:0',
-            'resort_fee'           => 'nullable|numeric|min:0',
-            'contact_name'         => 'nullable|string',
-            'contact_phone'        => 'nullable|string',
-            'admin_notes'          => 'nullable|string',
-            'is_active'            => 'boolean',
+            'hourly_rate' => 'required|numeric|min:0',
+            'resort_fee' => 'nullable|numeric|min:0',
+            'contact_name' => 'nullable|string',
+            'contact_phone' => 'nullable|string',
+            'admin_notes' => 'nullable|string',
+            'is_active' => 'boolean',
         ]);
 
         $hotel->update($validated);

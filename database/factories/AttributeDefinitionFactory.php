@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Factories;
 
 use App\Models\AttributeDefinition;
@@ -17,12 +18,12 @@ class AttributeDefinitionFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'        => fake()->unique()->word() . ' Attribute',
-            'slug'        => fake()->unique()->slug(),
-            'type'        => 'text',
+            'name' => fake()->unique()->word().' Attribute',
+            'slug' => fake()->unique()->slug(),
+            'type' => 'text',
             'entity_type' => 'client',
-            'is_active'   => true,
-            'sort_order'  => fake()->numberBetween(1, 100),
+            'is_active' => true,
+            'sort_order' => fake()->numberBetween(1, 100),
         ];
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Availability;
 
 use App\Enums\TimeSlot;
@@ -32,9 +33,9 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             ]);
 
         return Inertia::render('admin/availabilities/index', [
-            'caregivers' => Inertia::scroll(fn() => $caregivers->paginate($perPage)),
-            'timeSlots'  => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'caregivers' => Inertia::scroll(fn () => $caregivers->paginate($perPage)),
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 TimeSlot::cases()
             ),
         ]);
@@ -44,19 +45,19 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
     {
         $caregiver = Caregiver::findOrFail($id);
         $validated = $request->validate([
-            'date'          => 'required|date|after_or_equal:today',
-            'time_slots'    => 'required|array|min:1',
-            'time_slots.*'  => 'required|in:morning,afternoon,evening',
+            'date' => 'required|date|after_or_equal:today',
+            'time_slots' => 'required|array|min:1',
+            'time_slots.*' => 'required|in:morning,afternoon,evening',
             'specific_time' => 'nullable|string|max:255',
         ]);
 
         Availability::updateOrCreate(
             [
                 'caregiver_id' => $caregiver->id,
-                'date'         => Carbon::parse($validated['date'])->toDateTimeString(),
+                'date' => Carbon::parse($validated['date'])->toDateTimeString(),
             ],
             [
-                'time_slots'    => $validated['time_slots'],
+                'time_slots' => $validated['time_slots'],
                 'specific_time' => $validated['specific_time'] ?? null,
             ]
         );
@@ -74,25 +75,25 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
 
     public function show($id)
     {
-        $caregiver      = Caregiver::findOrFail($id);
+        $caregiver = Caregiver::findOrFail($id);
         $availabilities = $caregiver->availabilities()
             ->inTheFuture()
             ->orderBy('date')
             ->get()
             ->map(function ($availability) {
                 return [
-                    'id'            => $availability->id,
-                    'date'          => $availability->date->format('Y-m-d'),
-                    'time_slots'    => $availability->time_slots,
+                    'id' => $availability->id,
+                    'date' => $availability->date->format('Y-m-d'),
+                    'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
                 ];
             });
 
         return Inertia::render('admin/availabilities/show', [
-            'caregiver'      => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
+            'caregiver' => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
             'availabilities' => $availabilities,
-            'timeSlots'      => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 TimeSlot::cases()
             ),
         ]);

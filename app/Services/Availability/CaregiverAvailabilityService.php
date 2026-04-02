@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Availability;
 
 use App\Models\Availability;
@@ -22,26 +23,26 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
     public function update(Request $request, $id)
     {
         $caregiver = Caregiver::findOrFail($id);
-        $user      = auth()->user();
+        $user = auth()->user();
 
         if (! $user->caregiver) {
             return back()->with('error', 'You are not a caregiver.');
         }
 
         $validated = $request->validate([
-            'date'          => 'required|date|after_or_equal:today',
-            'time_slots'    => 'required|array|min:1',
-            'time_slots.*'  => 'in:morning,afternoon,evening',
+            'date' => 'required|date|after_or_equal:today',
+            'time_slots' => 'required|array|min:1',
+            'time_slots.*' => 'in:morning,afternoon,evening',
             'specific_time' => 'nullable|string|max:255',
         ]);
 
         Availability::updateOrCreate(
             [
                 'caregiver_id' => $caregiver->id,
-                'date'         => Carbon::parse($validated['date'])->toDateTimeString(),
+                'date' => Carbon::parse($validated['date'])->toDateTimeString(),
             ],
             [
-                'time_slots'    => $validated['time_slots'],
+                'time_slots' => $validated['time_slots'],
                 'specific_time' => $validated['specific_time'] ?? null,
             ]
         );
@@ -52,7 +53,7 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
     public function destroy($id)
     {
         $caregiver = Caregiver::findOrFail($id);
-        $user      = auth()->user();
+        $user = auth()->user();
 
         if (! $user->caregiver) {
             return back()->with('error', 'You are not a caregiver.');

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
@@ -20,13 +21,13 @@ class AttributeDefinitionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string',
-            'type'        => 'required|in:boolean,date,text,number,select',
+            'name' => 'required|string',
+            'type' => 'required|in:boolean,date,text,number,select',
             'entity_type' => 'required|in:caregiver,client,both',
-            'options'     => 'nullable|array',
+            'options' => 'nullable|array',
         ]);
 
-        $maxOrder                = AttributeDefinition::max('sort_order') ?? 0;
+        $maxOrder = AttributeDefinition::max('sort_order') ?? 0;
         $validated['sort_order'] = $maxOrder + 1;
 
         $attribute = new AttributeDefinition;
@@ -41,12 +42,12 @@ class AttributeDefinitionController extends Controller
     public function update(Request $request, AttributeDefinition $attribute)
     {
         $validated = $request->validate([
-            'name'        => 'required|string',
-            'type'        => 'required|in:boolean,date,text,number,select',
+            'name' => 'required|string',
+            'type' => 'required|in:boolean,date,text,number,select',
             'entity_type' => 'required|in:caregiver,client,both',
-            'options'     => 'nullable|array',
-            'is_active'   => 'boolean',
-            'sort_order'  => 'integer',
+            'options' => 'nullable|array',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
         ]);
 
         $attribute->slug = $validated['name'];
