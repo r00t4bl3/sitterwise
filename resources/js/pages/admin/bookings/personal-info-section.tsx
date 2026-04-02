@@ -1134,7 +1134,7 @@ export function PersonalInfoSection({
                         className="h-4 w-4 rounded border-input"
                     />
                     <span className="text-sm text-foreground">
-                        Save changes to your profile
+                        Save changes to client profile
                     </span>
                 </label>
             </div>

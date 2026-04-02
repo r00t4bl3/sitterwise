@@ -94,6 +94,7 @@ class ClientController extends Controller
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->first_name.' '.$c->last_name,
+                'client_type' => $c->client_type,
             ]);
 
         return response()->json($clients);

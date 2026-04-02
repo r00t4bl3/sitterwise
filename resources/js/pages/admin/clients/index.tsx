@@ -100,12 +100,16 @@ export default function ClientsIndex() {
             const response = await fetch(
                 `/clients/search-suggestions?${params}`,
             );
-            const data: Client[] = await response.json();
+            const data: Array<{
+                id: number;
+                name: string;
+                client_type?: string;
+            }> = await response.json();
             setSuggestions(
                 data.map((c) => ({
                     id: c.id,
-                    name: `${c.first_name} ${c.last_name}`,
-                    client_type: c.client_type,
+                    name: c.name,
+                    client_type: c.client_type || '',
                 })),
             );
         } catch (error) {
