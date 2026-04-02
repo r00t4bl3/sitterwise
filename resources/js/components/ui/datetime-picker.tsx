@@ -16,12 +16,14 @@ interface DateTimePickerProps {
     value?: string
     onChange?: (datetime: string) => void
     placeholder?: string
+    error?: string
 }
 
 export function DateTimePicker({
     value,
     onChange,
     placeholder = "Pick date and time",
+    error,
 }: DateTimePickerProps) {
     const [date, setDate] = React.useState<Date | undefined>(
         value ? new Date(value) : undefined
@@ -68,7 +70,9 @@ export function DateTimePicker({
                     <Button
                         variant="outline"
                         data-empty={!date}
-                        className="flex-1 justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+                        className={`flex-1 justify-start text-left font-normal data-[empty=true]:text-muted-foreground ${
+                            error ? "border-red-500" : ""
+                        }`}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? format(date, "MMM d, yyyy") : <span>{placeholder}</span>}
@@ -88,7 +92,9 @@ export function DateTimePicker({
                 type="time"
                 value={time}
                 onChange={handleTimeChange}
-                className="h-10 w-28 rounded-[3px] border border-input bg-background px-3 text-sm"
+                className={`h-10 w-28 rounded-[3px] border bg-background px-3 text-sm ${
+                    error ? "border-red-500" : "border-input"
+                }`}
             />
         </div>
     )

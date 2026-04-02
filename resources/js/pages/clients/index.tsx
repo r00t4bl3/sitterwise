@@ -1,7 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Search } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import type { BreadcrumbItem } from '@/types';
 
 function ClientTypeBadge({ type }: { type: string }) {
@@ -82,64 +82,38 @@ export default function ClientsIndex() {
     const { clients, filters } = usePage<Props>().props;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [suggestions, setSuggestions] = useState<Client[]>([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestions, setSuggestions] = useState<
+        Array<{ id: number; name: string; client_type: string }>
+    >([]);
     const [isLoading, setIsLoading] = useState(false);
-    const searchRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(
+        null,
+    );
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (
-                searchRef.current &&
-                !searchRef.current.contains(event.target as Node)
-            ) {
-                setShowSuggestions(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleSearchChange = (value: string) => {
-        setSearchQuery(value);
-
-        if (debounceRef.current) {
-clearTimeout(debounceRef.current);
-}
-
-        if (!value.trim()) {
+    const handleClientSearch = async (query: string) => {
+        if (query.trim().length < 2) {
             setSuggestions([]);
-            setShowSuggestions(false);
-
             return;
         }
-
-        if (value.trim().length < 2) {
-            setSuggestions([]);
-            setShowSuggestions(false);
-
-            return;
-        }
-
         setIsLoading(true);
-        debounceRef.current = setTimeout(async () => {
-            try {
-                const params = new URLSearchParams({ q: value });
-                const response = await fetch(
-                    `/clients/search-suggestions?${params}`,
-                );
-                const data = await response.json();
-                setSuggestions(data);
-                setShowSuggestions(true);
-            } catch (error) {
-                console.error('Search error:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        }, 300);
+        try {
+            const params = new URLSearchParams({ q: query });
+            const response = await fetch(
+                `/clients/search-suggestions?${params}`,
+            );
+            const data: Client[] = await response.json();
+            setSuggestions(
+                data.map((c) => ({
+                    id: c.id,
+                    name: `${c.first_name} ${c.last_name}`,
+                    client_type: c.client_type,
+                })),
+            );
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -162,60 +136,36 @@ clearTimeout(debounceRef.current);
 
                 <div className="flex gap-4">
                     <form method="get" className="flex flex-1 gap-2">
-                        <div
-                            className="relative max-w-md flex-1"
-                            ref={searchRef}
-                        >
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                name="search"
-                                autoComplete="off"
-                                value={searchQuery}
-                                onChange={(e) =>
-                                    handleSearchChange(e.target.value)
-                                }
-                                onFocus={() =>
-                                    suggestions.length > 0 &&
-                                    setShowSuggestions(true)
-                                }
+                        <div className="relative max-w-md flex-1">
+                            <Autocomplete
+                                value={selectedClientId}
+                                onChange={setSelectedClientId}
+                                suggestions={suggestions}
+                                onSearch={handleClientSearch}
                                 placeholder="Search by name or email..."
-                                className="h-10 w-full rounded-[3px] border border-input bg-background px-10 pr-4 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                loading={isLoading}
+                                displayValue={searchQuery}
+                                onItemClick={(item) => {
+                                    window.location.href = `/clients/${item.id}`;
+                                }}
+                                renderItem={(item) => {
+                                    const client = item as {
+                                        id: number;
+                                        name: string;
+                                        client_type: string;
+                                    };
+                                    return (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-foreground">
+                                                {item.name}
+                                            </span>
+                                            <ClientTypeBadge
+                                                type={client.client_type}
+                                            />
+                                        </div>
+                                    );
+                                }}
                             />
-                            {showSuggestions && (
-                                <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
-                                    {isLoading ? (
-                                        <div className="p-3 text-sm text-muted-foreground">
-                                            Loading...
-                                        </div>
-                                    ) : suggestions.length > 0 ? (
-                                        <ul>
-                                            {suggestions.map((client) => (
-                                                <li key={client.id}>
-                                                    <Link
-                                                        href={`/clients/${client.id}`}
-                                                        className="flex items-center justify-between px-3 py-2 hover:bg-accent"
-                                                    >
-                                                        <span className="text-sm text-foreground">
-                                                            {client.first_name}{' '}
-                                                            {client.last_name}
-                                                        </span>
-                                                        <ClientTypeBadge
-                                                            type={
-                                                                client.client_type
-                                                            }
-                                                        />
-                                                    </Link>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <div className="p-3 text-sm text-muted-foreground">
-                                            No results found
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
                         <select
                             name="client_type"

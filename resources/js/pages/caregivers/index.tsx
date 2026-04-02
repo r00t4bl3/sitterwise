@@ -1,6 +1,6 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
@@ -8,6 +8,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -112,64 +113,38 @@ export default function CaregiversIndex() {
     const { caregivers, statuses, filters } = usePage<Props>().props;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [suggestions, setSuggestions] = useState<Caregiver[]>([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestions, setSuggestions] = useState<
+        Array<{ id: number; name: string; status: Status | null }>
+    >([]);
     const [isLoading, setIsLoading] = useState(false);
-    const searchRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [selectedCaregiverId, setSelectedCaregiverId] = useState<
+        number | null
+    >(null);
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (
-                searchRef.current &&
-                !searchRef.current.contains(event.target as Node)
-            ) {
-                setShowSuggestions(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleSearchChange = (value: string) => {
-        setSearchQuery(value);
-
-        if (debounceRef.current) {
-clearTimeout(debounceRef.current);
-}
-
-        if (!value.trim()) {
+    const handleCaregiverSearch = async (query: string) => {
+        if (query.trim().length < 2) {
             setSuggestions([]);
-            setShowSuggestions(false);
-
             return;
         }
-
-        if (value.trim().length < 2) {
-            setSuggestions([]);
-            setShowSuggestions(false);
-
-            return;
-        }
-
         setIsLoading(true);
-        debounceRef.current = setTimeout(async () => {
-            try {
-                const params = new URLSearchParams({ q: value });
-                const response = await fetch(
-                    `/caregivers/search-suggestions?${params}`,
-                );
-                const data = await response.json();
-                setSuggestions(data);
-                setShowSuggestions(true);
-            } catch (error) {
-                console.error('Search error:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        }, 300);
+        try {
+            const params = new URLSearchParams({ q: query });
+            const response = await fetch(
+                `/caregivers/search-suggestions?${params}`,
+            );
+            const data: Caregiver[] = await response.json();
+            setSuggestions(
+                data.map((c) => ({
+                    id: c.id,
+                    name: `${c.first_name} ${c.last_name}`,
+                    status: c.status,
+                })),
+            );
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -192,66 +167,38 @@ clearTimeout(debounceRef.current);
 
                 <div className="flex gap-4">
                     <form method="get" className="flex flex-1 gap-2">
-                        <div
-                            className="relative max-w-md flex-1"
-                            ref={searchRef}
-                        >
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                name="search"
-                                autoComplete="off"
-                                value={searchQuery}
-                                onChange={(e) =>
-                                    handleSearchChange(e.target.value)
-                                }
-                                onFocus={() =>
-                                    suggestions.length > 0 &&
-                                    setShowSuggestions(true)
-                                }
+                        <div className="relative max-w-md flex-1">
+                            <Autocomplete
+                                value={selectedCaregiverId}
+                                onChange={setSelectedCaregiverId}
+                                suggestions={suggestions}
+                                onSearch={handleCaregiverSearch}
                                 placeholder="Search by name..."
-                                className="h-10 w-full rounded-[3px] border border-input bg-background px-10 pr-4 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                loading={isLoading}
+                                displayValue={searchQuery}
+                                onItemClick={(item) => {
+                                    window.location.href = `/caregivers/${item.id}`;
+                                }}
+                                renderItem={(item) => {
+                                    const caregiver = item as {
+                                        id: number;
+                                        name: string;
+                                        status: Status | null;
+                                    };
+                                    return (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-foreground">
+                                                {item.name}
+                                            </span>
+                                            {caregiver.status && (
+                                                <StatusBadge
+                                                    status={caregiver.status}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                }}
                             />
-                            {showSuggestions && (
-                                <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
-                                    {isLoading ? (
-                                        <div className="p-3 text-sm text-muted-foreground">
-                                            Loading...
-                                        </div>
-                                    ) : suggestions.length > 0 ? (
-                                        <ul>
-                                            {suggestions.map((caregiver) => (
-                                                <li key={caregiver.id}>
-                                                    <Link
-                                                        href={`/caregivers/${caregiver.id}`}
-                                                        className="flex items-center justify-between px-3 py-2 hover:bg-accent"
-                                                    >
-                                                        <span className="text-sm text-foreground">
-                                                            {
-                                                                caregiver.first_name
-                                                            }{' '}
-                                                            {
-                                                                caregiver.last_name
-                                                            }
-                                                        </span>
-                                                        {caregiver.status && (
-                                                            <StatusBadge
-                                                                status={
-                                                                    caregiver.status
-                                                                }
-                                                            />
-                                                        )}
-                                                    </Link>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <div className="p-3 text-sm text-muted-foreground">
-                                            No results found
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
                         <select
                             name="status"
@@ -480,8 +427,8 @@ clearTimeout(debounceRef.current);
                         <div className="flex gap-1">
                             {caregivers.links.map((link, index) => {
                                 if (link.label === '...') {
-return null;
-}
+                                    return null;
+                                }
 
                                 const isPrev =
                                     link.label.includes('Previous') ||

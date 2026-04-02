@@ -101,7 +101,7 @@ class ClientController extends Controller
 
     public function getClientData(Client $client)
     {
-        $client->load('addresses');
+        $client->load(['addresses', 'children', 'pets']);
 
         return response()->json([
             'client' => [
@@ -114,6 +114,27 @@ class ClientController extends Controller
                     'state' => $a->state,
                     'zip' => $a->zip,
                 ]),
+                'children' => $client->children->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'gender' => $c->gender,
+                    'birth_month' => $c->birth_month,
+                    'birth_year' => $c->birth_year,
+                    'special_needs' => $c->special_needs,
+                    'special_needs_notes' => $c->special_needs_notes,
+                ]),
+                'pets' => $client->pets->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'type' => $p->type,
+                    'breed' => $p->breed,
+                    'notes' => $p->notes,
+                ]),
+                'how_did_you_hear' => $client->how_did_you_hear,
+                'sitter_preferences' => $client->sitter_preferences,
+                'other_adults_in_home' => $client->other_adults_in_home,
+                'medical_info' => $client->medical_info,
+                'emergency_instructions' => $client->emergency_instructions,
             ],
         ]);
     }

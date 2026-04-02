@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Seeders;
 
 use App\Models\Hotel;
@@ -18,20 +17,14 @@ class HotelSeeder extends Seeder
         while (($row = fgetcsv($handle, 0, ',', '"', '')) !== false) {
             $hourlyRate = $this->determineHourlyRate($row[3]);
 
-            Hotel::create([
-                'name' => $row[0],
-                'line1' => $row[1],
-                'line2' => $row[2] ?: null,
-                'city' => $row[3],
-                'state' => $row[4],
-                'zip' => $row[5],
-                'parking_instructions' => null,
+            Hotel::factory()->create([
+                'name'        => $row[0],
+                'line1'       => $row[1],
+                'line2'       => $row[2] ?: null,
+                'city'        => $row[3],
+                'state'       => $row[4],
+                'zip'         => $row[5],
                 'hourly_rate' => $hourlyRate,
-                'resort_fee' => null,
-                'contact_name' => null,
-                'contact_phone' => null,
-                'admin_notes' => null,
-                'is_active' => true,
             ]);
         }
 
@@ -42,7 +35,7 @@ class HotelSeeder extends Seeder
     {
         return match ($city) {
             'La Jolla', 'Del Mar', 'Rancho Santa Fe' => 28.00,
-            'Coronado', 'Carlsbad' => 22.00,
+            'Coronado', 'Carlsbad'   => 22.00,
             'Oceanside', 'Escondido' => 18.00,
             default => 22.00,
         };

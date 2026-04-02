@@ -12,7 +12,9 @@ use App\Models\BookingAddress;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
+use App\Models\ClientAddress;
 use App\Models\Hotel;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -128,7 +130,7 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => 'required_without:new_client.first_name|nullable|exists:clients,id',
             'service_type' => 'required|string',
             'location_type' => 'required|string',
             'start_datetime' => 'required|date',
@@ -141,8 +143,12 @@ class BookingController extends Controller
             'notes_to_sitterwise' => 'nullable|string',
             'admin_notes' => 'nullable|string',
             'corporate_id' => 'nullable|string',
+            'how_did_you_hear' => 'nullable|string',
+            'sitter_preferences' => 'nullable|string',
+            'other_adults_in_home' => 'nullable|string',
+            'medical_info' => 'nullable|string',
+            'emergency_instructions' => 'nullable|string',
             'comped' => 'nullable|boolean',
-            'total_amount' => 'required|numeric|min:0',
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',
             'payment_status' => 'required|string',
@@ -152,10 +158,58 @@ class BookingController extends Controller
             'booking_address.city' => 'nullable|string',
             'booking_address.state' => 'nullable|string',
             'booking_address.zip' => 'nullable|string',
+            'new_client.first_name' => 'required_without:client_id|string',
+            'new_client.last_name' => 'required_with:new_client.first_name|string',
+            'new_client.email' => 'required_with:new_client.first_name|email|unique:users,email',
+            'new_client.cell_phone' => 'nullable|string',
+            'new_client.client_type' => 'required_with:new_client.first_name|string',
         ]);
 
+        $clientId = $validated['client_id'] ?? null;
+
+        // Create new client if new_client data provided
+        if (! empty($validated['new_client']['first_name'])) {
+            $user = User::create([
+                'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
+                'email' => $validated['new_client']['email'],
+                'password' => \Hash::make(\Str::random(16)),
+                'role' => 'client',
+            ]);
+
+            $client = Client::create([
+                'user_id' => $user->id,
+                'first_name' => $validated['new_client']['first_name'],
+                'last_name' => $validated['new_client']['last_name'],
+                'email' => $validated['new_client']['email'],
+                'cell_phone' => $validated['new_client']['cell_phone'] ?? null,
+                'client_type' => $validated['new_client']['client_type'] ?? 'individual',
+                'corporate_id' => $validated['corporate_id'] ?? null,
+                'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
+                'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+                'other_adults_in_home' => $validated['other_adults_in_home'] ?? null,
+                'medical_info' => $validated['medical_info'] ?? null,
+                'emergency_instructions' => $validated['emergency_instructions'] ?? null,
+                'caregiver_notes' => $validated['caregiver_notes'] ?? null,
+            ]);
+
+            $clientId = $client->id;
+
+            // Create client address if private_home and new address provided
+            if ($validated['location_type'] === 'private_home' &&
+                ! empty($validated['booking_address']['line1'])) {
+                ClientAddress::create([
+                    'client_id' => $client->id,
+                    'line1' => $validated['booking_address']['line1'],
+                    'line2' => $validated['booking_address']['line2'] ?? null,
+                    'city' => $validated['booking_address']['city'],
+                    'state' => $validated['booking_address']['state'],
+                    'zip' => $validated['booking_address']['zip'],
+                ]);
+            }
+        }
+
         $bookingGroup = BookingGroup::create([
-            'client_id' => $validated['client_id'],
+            'client_id' => $clientId,
             'submitted_at' => now(),
             'submission_type' => 'admin',
             'is_split' => false,
@@ -163,7 +217,7 @@ class BookingController extends Controller
 
         $booking = Booking::create([
             'booking_group_id' => $bookingGroup->id,
-            'client_id' => $validated['client_id'],
+            'client_id' => $clientId,
             'caregiver_id' => $validated['caregiver_id'] ?? null,
             'availability_id' => null,
             'hotel_id' => $validated['hotel_id'] ?? null,
@@ -179,7 +233,7 @@ class BookingController extends Controller
             'admin_notes' => $validated['admin_notes'] ?? null,
             'corporate_id' => $validated['corporate_id'] ?? null,
             'comped' => $validated['comped'] ?? false,
-            'total_amount' => $validated['total_amount'],
+            'total_amount' => 0,
             'payment_status' => $validated['payment_status'],
             'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
