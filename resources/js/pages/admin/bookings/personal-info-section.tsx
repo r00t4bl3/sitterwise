@@ -1,6 +1,24 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { Autocomplete } from '@/components/ui/autocomplete';
+
+interface NewChild {
+    tempId: string;
+    name: string;
+    gender: string;
+    birth_month: string;
+    birth_year: string;
+    special_needs: boolean;
+    special_needs_notes: string;
+}
+
+interface NewPet {
+    tempId: string;
+    name: string;
+    type: string;
+    breed: string;
+    notes: string;
+}
 
 interface PersonalInfoSectionProps {
     form: any;
@@ -35,6 +53,20 @@ interface PersonalInfoSectionProps {
         breed: string | null;
         notes: string | null;
     }>;
+    newChildren: NewChild[];
+    newPets: NewPet[];
+    onAddChild: () => void;
+    onRemoveChild: (tempId: string, id?: number) => void;
+    onUpdateChild: (
+        tempId: string,
+        field: string,
+        value: string | boolean,
+    ) => void;
+    onAddPet: () => void;
+    onRemovePet: (tempId: string, id?: number) => void;
+    onUpdatePet: (tempId: string, field: string, value: string) => void;
+    saveChildrenPetsToProfile: boolean;
+    onSaveChildrenPetsToProfileChange: (checked: boolean) => void;
     loadingSuggestions: boolean;
     selectedClientName: string;
     handleClientSearch: (query: string) => void;
@@ -63,6 +95,10 @@ interface PersonalInfoSectionProps {
     }>;
     selectedHotelName: string;
     handleHotelSearch: (query: string) => void;
+    calculateAge: (
+        birthYear: number | null,
+        birthMonth: number | null,
+    ) => string;
 }
 
 export function PersonalInfoSection({
@@ -75,6 +111,16 @@ export function PersonalInfoSection({
     clientAddresses,
     clientChildren,
     clientPets,
+    newChildren,
+    newPets,
+    onAddChild,
+    onRemoveChild,
+    onUpdateChild,
+    onAddPet,
+    onRemovePet,
+    onUpdatePet,
+    saveChildrenPetsToProfile,
+    onSaveChildrenPetsToProfileChange,
     loadingSuggestions,
     selectedClientName,
     handleClientSearch,
@@ -85,6 +131,7 @@ export function PersonalInfoSection({
     hotelSuggestions,
     selectedHotelName,
     handleHotelSearch,
+    calculateAge,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -713,107 +760,383 @@ export function PersonalInfoSection({
                     </div>
                 )}
 
-                {clientChildren.length > 0 && (
-                    <div>
+                <div>
+                    <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-foreground">
                             Children
                         </label>
-                        <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Gender
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Birth Date
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Special Needs
-                                        </th>
+                        <button
+                            type="button"
+                            onClick={onAddChild}
+                            className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
+                        >
+                            <Plus className="h-3 w-3" />
+                            Add Child
+                        </button>
+                    </div>
+                    <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted">
+                                <tr>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Name
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Gender
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Age
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Special Needs
+                                    </th>
+                                    <th className="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clientChildren.map((child) => (
+                                    <tr
+                                        key={child.id}
+                                        className="border-t border-border"
+                                    >
+                                        <td className="px-3 py-2">
+                                            {child.name}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {child.gender || '-'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {calculateAge(
+                                                child.birth_year,
+                                                child.birth_month,
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {child.special_needs ? 'Yes' : 'No'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    onRemoveChild('', child.id)
+                                                }
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {clientChildren.map((child) => (
-                                        <tr
-                                            key={child.id}
-                                            className="border-t border-border"
-                                        >
-                                            <td className="px-3 py-2">
-                                                {child.name}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {child.gender || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {child.birth_year
-                                                    ? `${child.birth_month || ''} ${child.birth_year}`
-                                                    : '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {child.special_needs
-                                                    ? 'Yes'
-                                                    : 'No'}
+                                ))}
+                                {newChildren.map((child) => (
+                                    <tr
+                                        key={child.tempId}
+                                        className="border-t border-border bg-muted/50"
+                                    >
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="text"
+                                                value={child.name}
+                                                onChange={(e) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'name',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Name"
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <select
+                                                value={child.gender}
+                                                onChange={(e) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'gender',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            >
+                                                <option value="">Select</option>
+                                                <option value="male">
+                                                    Male
+                                                </option>
+                                                <option value="female">
+                                                    Female
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <div className="flex gap-1">
+                                                <select
+                                                    value={child.birth_month}
+                                                    onChange={(e) =>
+                                                        onUpdateChild(
+                                                            child.tempId,
+                                                            'birth_month',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-8 w-20 rounded-[3px] border border-input bg-background px-1 text-sm"
+                                                >
+                                                    <option value="">
+                                                        Month
+                                                    </option>
+                                                    {[
+                                                        'Jan',
+                                                        'Feb',
+                                                        'Mar',
+                                                        'Apr',
+                                                        'May',
+                                                        'Jun',
+                                                        'Jul',
+                                                        'Aug',
+                                                        'Sep',
+                                                        'Oct',
+                                                        'Nov',
+                                                        'Dec',
+                                                    ].map((m, i) => (
+                                                        <option
+                                                            key={m}
+                                                            value={String(
+                                                                i + 1,
+                                                            )}
+                                                        >
+                                                            {m}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <input
+                                                    type="text"
+                                                    value={child.birth_year}
+                                                    onChange={(e) =>
+                                                        onUpdateChild(
+                                                            child.tempId,
+                                                            'birth_year',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Year"
+                                                    className="h-8 w-16 rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={child.special_needs}
+                                                onChange={(e) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'special_needs',
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                                className="h-4 w-4 rounded border-input"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    onRemoveChild(child.tempId)
+                                                }
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {clientChildren.length === 0 &&
+                                    newChildren.length === 0 && (
+                                        <tr className="border-t border-border">
+                                            <td
+                                                colSpan={5}
+                                                className="px-3 py-4 text-center text-muted-foreground"
+                                            >
+                                                No children added
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
+                </div>
 
-                {clientPets.length > 0 && (
-                    <div>
+                <div>
+                    <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-foreground">
                             Pets
                         </label>
-                        <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Type
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Breed
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Notes
-                                        </th>
+                        <button
+                            type="button"
+                            onClick={onAddPet}
+                            className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
+                        >
+                            <Plus className="h-3 w-3" />
+                            Add Pet
+                        </button>
+                    </div>
+                    <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted">
+                                <tr>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Name
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Type
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Breed
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-medium">
+                                        Notes
+                                    </th>
+                                    <th className="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clientPets.map((pet) => (
+                                    <tr
+                                        key={pet.id}
+                                        className="border-t border-border"
+                                    >
+                                        <td className="px-3 py-2">
+                                            {pet.name}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {pet.type || '-'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {pet.breed || '-'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {pet.notes || '-'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    onRemovePet('', pet.id)
+                                                }
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {clientPets.map((pet) => (
-                                        <tr
-                                            key={pet.id}
-                                            className="border-t border-border"
-                                        >
-                                            <td className="px-3 py-2">
-                                                {pet.name}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {pet.type || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {pet.breed || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                {pet.notes || '-'}
+                                ))}
+                                {newPets.map((pet) => (
+                                    <tr
+                                        key={pet.tempId}
+                                        className="border-t border-border bg-muted/50"
+                                    >
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="text"
+                                                value={pet.name}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'name',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Name"
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="text"
+                                                value={pet.type}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'type',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Type"
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="text"
+                                                value={pet.breed}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'breed',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Breed"
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <input
+                                                type="text"
+                                                value={pet.notes}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'notes',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Notes"
+                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    onRemovePet(pet.tempId)
+                                                }
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {clientPets.length === 0 &&
+                                    newPets.length === 0 && (
+                                        <tr className="border-t border-border">
+                                            <td
+                                                colSpan={5}
+                                                className="px-3 py-4 text-center text-muted-foreground"
+                                            >
+                                                No pets added
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
+                </div>
+
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={saveChildrenPetsToProfile}
+                        onChange={(e) =>
+                            onSaveChildrenPetsToProfileChange(e.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-input"
+                    />
+                    <span className="text-sm text-foreground">
+                        Save changes to your profile
+                    </span>
+                </label>
             </div>
         </details>
     );

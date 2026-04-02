@@ -13,7 +13,7 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Client::with(['user']);
+        $query = Client::with(['user'])->withCount(['children', 'pets']);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;

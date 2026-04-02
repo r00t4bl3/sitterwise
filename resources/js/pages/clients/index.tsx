@@ -1,4 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -52,10 +53,8 @@ interface Client {
     user: {
         profile_photo_path: string | null;
     };
-    _count?: {
-        children: number;
-        pets: number;
-    };
+    children_count?: number;
+    pets_count?: number;
 }
 
 interface Props {
@@ -188,19 +187,25 @@ export default function ClientsIndex() {
                         <thead>
                             <tr className="bg-foreground">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    ID
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Name
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Type
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Children
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Pets
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Email
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Phone
-                                </th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Type
-                                </th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Photo
                                 </th>
                                 <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Actions
@@ -213,29 +218,12 @@ export default function ClientsIndex() {
                                     key={client.id}
                                     className="border-b border-border transition hover:bg-blush"
                                 >
-                                    <td className="px-4 py-3">
-                                        <Link
-                                            href={`/clients/${client.id}`}
-                                            className="text-sm font-medium text-ring hover:text-foreground hover:underline"
-                                        >
-                                            {client.first_name}{' '}
-                                            {client.last_name}
-                                        </Link>
-                                    </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {client.email}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-foreground">
-                                        {client.cell_phone}
+                                        {client.id}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <ClientTypeBadge
-                                            type={client.client_type}
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {client.user.profile_photo_path ? (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                                        <div className="flex items-center gap-2">
+                                            {client.user.profile_photo_path ? (
                                                 <img
                                                     src={
                                                         client.user
@@ -244,18 +232,42 @@ export default function ClientsIndex() {
                                                             ? '/avatar.jpg'
                                                             : `/storage/${client.user.profile_photo_path}`
                                                     }
-                                                    alt={`${client.first_name} ${client.last_name}`}
-                                                    className="h-10 w-10 rounded-full object-cover"
+                                                    alt=""
+                                                    className="h-8 w-8 rounded-full object-cover"
                                                 />
-                                            </div>
-                                        ) : (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                                                <span className="text-lg font-medium text-amber-600">
-                                                    {client.first_name[0]}
-                                                    {client.last_name[0]}
-                                                </span>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                                                    <span className="text-xs font-medium text-amber-600">
+                                                        {client.first_name[0]}
+                                                        {client.last_name[0]}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <Link
+                                                href={`/clients/${client.id}`}
+                                                className="text-sm font-medium text-ring hover:text-foreground hover:underline"
+                                            >
+                                                {client.first_name}{' '}
+                                                {client.last_name}
+                                            </Link>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <ClientTypeBadge
+                                            type={client.client_type}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {client.children_count ?? 0}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {client.pets_count ?? 0}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {client.email}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {client.cell_phone}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <Link
@@ -276,6 +288,40 @@ export default function ClientsIndex() {
                         <p className="text-sm text-muted-foreground">
                             Page {clients.current_page} of {clients.last_page}
                         </p>
+                        <div className="flex gap-1">
+                            {clients.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-foreground text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

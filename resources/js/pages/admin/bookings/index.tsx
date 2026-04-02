@@ -128,6 +128,35 @@ function formatDateTimeLocal(date: Date): string {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function calculateAge(
+    birthYear: number | null,
+    birthMonth: number | null,
+): string {
+    if (!birthYear) return '-';
+
+    const today = new Date();
+    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    if (age < 1) {
+        const months =
+            (today.getFullYear() - birthDate.getFullYear()) * 12 +
+            today.getMonth() -
+            birthDate.getMonth();
+        return `${months}mo`;
+    }
+
+    return `${age}yr`;
+}
+
 export default function BookingsIndex() {
     const {
         bookings,
@@ -174,6 +203,32 @@ export default function BookingsIndex() {
     const [selectedCaregiverName, setSelectedCaregiverName] =
         useState<string>('');
 
+    const [deletedChildIds, setDeletedChildIds] = useState<number[]>([]);
+    const [deletedPetIds, setDeletedPetIds] = useState<number[]>([]);
+
+    const [newChildren, setNewChildren] = useState<
+        Array<{
+            tempId: string;
+            name: string;
+            gender: string;
+            birth_month: string;
+            birth_year: string;
+            special_needs: boolean;
+            special_needs_notes: string;
+        }>
+    >([]);
+    const [newPets, setNewPets] = useState<
+        Array<{
+            tempId: string;
+            name: string;
+            type: string;
+            breed: string;
+            notes: string;
+        }>
+    >([]);
+    const [saveChildrenPetsToProfile, setSaveChildrenPetsToProfile] =
+        useState(true);
+
     const form = useForm<{
         client_id: number | null;
         service_type: string;
@@ -212,6 +267,23 @@ export default function BookingsIndex() {
             cell_phone: string;
             client_type: string;
         };
+        new_children: Array<{
+            name: string;
+            gender: string;
+            birth_month: string;
+            birth_year: string;
+            special_needs: boolean;
+            special_needs_notes: string;
+        }>;
+        new_pets: Array<{
+            name: string;
+            type: string;
+            breed: string;
+            notes: string;
+        }>;
+        deleted_child_ids: number[];
+        deleted_pet_ids: number[];
+        save_children_pets_to_profile: boolean;
     }>({
         client_id: null,
         service_type: 'babysitter',
@@ -250,6 +322,11 @@ export default function BookingsIndex() {
             cell_phone: '',
             client_type: 'individual',
         },
+        new_children: [],
+        new_pets: [],
+        deleted_child_ids: [],
+        deleted_pet_ids: [],
+        save_children_pets_to_profile: true,
     });
 
     const days = getDaysInMonth(currentYear, currentMonth);
@@ -467,6 +544,11 @@ export default function BookingsIndex() {
         setClientAddresses([]);
         setClientChildren([]);
         setClientPets([]);
+        setNewChildren([]);
+        setNewPets([]);
+        setDeletedChildIds([]);
+        setDeletedPetIds([]);
+        setSaveChildrenPetsToProfile(true);
         setAddressMode('select');
         setClientMode('select');
         setIsSheetOpen(true);
@@ -573,6 +655,15 @@ export default function BookingsIndex() {
     };
 
     const handleSubmit = () => {
+        form.setData('new_children', newChildren);
+        form.setData('new_pets', newPets);
+        form.setData('deleted_child_ids', deletedChildIds);
+        form.setData('deleted_pet_ids', deletedPetIds);
+        form.setData(
+            'save_children_pets_to_profile',
+            saveChildrenPetsToProfile,
+        );
+
         if (editingBooking) {
             form.put(`/admin/bookings/${editingBooking.id}`, {
                 onSuccess: () => {
@@ -618,6 +709,72 @@ export default function BookingsIndex() {
                 form.data.special_considerations.filter((s) => s !== option),
             );
         }
+    };
+
+    const handleAddChild = () => {
+        setNewChildren([
+            ...newChildren,
+            {
+                tempId: `new-${Date.now()}`,
+                name: '',
+                gender: '',
+                birth_month: '',
+                birth_year: '',
+                special_needs: false,
+                special_needs_notes: '',
+            },
+        ]);
+    };
+
+    const handleRemoveChild = (tempId: string, id?: number) => {
+        if (id) {
+            setDeletedChildIds([...deletedChildIds, id]);
+            setClientChildren(clientChildren.filter((c) => c.id !== id));
+        } else {
+            setNewChildren(newChildren.filter((c) => c.tempId !== tempId));
+        }
+    };
+
+    const handleUpdateChild = (
+        tempId: string,
+        field: string,
+        value: string | boolean,
+    ) => {
+        setNewChildren(
+            newChildren.map((c) =>
+                c.tempId === tempId ? { ...c, [field]: value } : c,
+            ),
+        );
+    };
+
+    const handleAddPet = () => {
+        setNewPets([
+            ...newPets,
+            {
+                tempId: `new-${Date.now()}`,
+                name: '',
+                type: '',
+                breed: '',
+                notes: '',
+            },
+        ]);
+    };
+
+    const handleRemovePet = (tempId: string, id?: number) => {
+        if (id) {
+            setDeletedPetIds([...deletedPetIds, id]);
+            setClientPets(clientPets.filter((p) => p.id !== id));
+        } else {
+            setNewPets(newPets.filter((p) => p.tempId !== tempId));
+        }
+    };
+
+    const handleUpdatePet = (tempId: string, field: string, value: string) => {
+        setNewPets(
+            newPets.map((p) =>
+                p.tempId === tempId ? { ...p, [field]: value } : p,
+            ),
+        );
     };
 
     return (
@@ -819,6 +976,20 @@ export default function BookingsIndex() {
                                 clientAddresses={clientAddresses}
                                 clientChildren={clientChildren}
                                 clientPets={clientPets}
+                                newChildren={newChildren}
+                                newPets={newPets}
+                                onAddChild={handleAddChild}
+                                onRemoveChild={handleRemoveChild}
+                                onUpdateChild={handleUpdateChild}
+                                onAddPet={handleAddPet}
+                                onRemovePet={handleRemovePet}
+                                onUpdatePet={handleUpdatePet}
+                                saveChildrenPetsToProfile={
+                                    saveChildrenPetsToProfile
+                                }
+                                onSaveChildrenPetsToProfileChange={
+                                    setSaveChildrenPetsToProfile
+                                }
                                 loadingSuggestions={loadingSuggestions}
                                 selectedClientName={selectedClientName}
                                 handleClientSearch={handleClientSearch}
@@ -829,6 +1000,7 @@ export default function BookingsIndex() {
                                 hotelSuggestions={hotelSuggestions}
                                 selectedHotelName={selectedHotelName}
                                 handleHotelSearch={handleHotelSearch}
+                                calculateAge={calculateAge}
                             />
 
                             <BookingDetailsSection

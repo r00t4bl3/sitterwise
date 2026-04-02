@@ -223,6 +223,9 @@ export default function CaregiversIndex() {
                         <thead>
                             <tr className="bg-foreground">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    ID
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Name
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -240,9 +243,6 @@ export default function CaregiversIndex() {
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Certified
                                 </th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Photo
-                                </th>
                                 <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Actions
                                 </th>
@@ -254,14 +254,43 @@ export default function CaregiversIndex() {
                                     key={caregiver.id}
                                     className="border-b border-border transition hover:bg-blush"
                                 >
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {caregiver.id}
+                                    </td>
                                     <td className="px-4 py-3">
-                                        <Link
-                                            href={`/caregivers/${caregiver.id}`}
-                                            className="text-sm font-medium text-ring hover:text-foreground hover:underline"
-                                        >
-                                            {caregiver.first_name}{' '}
-                                            {caregiver.last_name}
-                                        </Link>
+                                        <div className="flex items-center gap-2">
+                                            {caregiver.user
+                                                .profile_photo_path ? (
+                                                <img
+                                                    src={
+                                                        caregiver.user
+                                                            .profile_photo_path ===
+                                                        'avatar.jpg'
+                                                            ? '/avatar.jpg'
+                                                            : `/storage/${caregiver.user.profile_photo_path}`
+                                                    }
+                                                    alt=""
+                                                    className="h-8 w-8 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                                                    <span className="text-xs font-medium text-amber-600">
+                                                        {
+                                                            caregiver
+                                                                .first_name[0]
+                                                        }
+                                                        {caregiver.last_name[0]}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <Link
+                                                href={`/caregivers/${caregiver.id}`}
+                                                className="text-sm font-medium text-ring hover:text-foreground hover:underline"
+                                            >
+                                                {caregiver.first_name}{' '}
+                                                {caregiver.last_name}
+                                            </Link>
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3">
                                         {caregiver.rating ? (
@@ -378,30 +407,6 @@ export default function CaregiversIndex() {
                                             <span className="text-xs text-muted-foreground">
                                                 —
                                             </span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {caregiver.user.profile_photo_path ? (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                                                <img
-                                                    src={
-                                                        caregiver.user
-                                                            .profile_photo_path ===
-                                                        'avatar.jpg'
-                                                            ? '/avatar.jpg'
-                                                            : `/storage/${caregiver.user.profile_photo_path}`
-                                                    }
-                                                    alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                                                    className="h-10 w-10 rounded-full object-cover"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                                                <span className="text-lg font-medium text-amber-600">
-                                                    {caregiver.first_name[0]}
-                                                    {caregiver.last_name[0]}
-                                                </span>
-                                            </div>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-right">

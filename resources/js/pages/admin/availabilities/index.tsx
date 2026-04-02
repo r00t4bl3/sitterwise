@@ -206,32 +206,35 @@ export default function AvailabilitiesIndex() {
                         )
                     }
                 >
-                    <div className="overflow-x-auto rounded-[6px] border border-border bg-card">
+                    <div className="overflow-x-auto border border-border bg-card">
                         <table className="w-full min-w-[800px]">
                             <thead>
                                 <tr className="bg-foreground">
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                        ID
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Name
                                     </th>
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Rating
                                     </th>
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Age
                                     </th>
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Area
                                     </th>
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Expertise
                                     </th>
-                                    <th className="px-3 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase">
                                         Cert
                                     </th>
                                     {dateHeaders.map((dh) => (
                                         <th
                                             key={dh.isoDate}
-                                            className="px-2 py-3 text-center text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase"
+                                            className="px-4 py-3 text-center text-[11px] font-semibold tracking-wider whitespace-nowrap text-white uppercase"
                                         >
                                             <div className="flex flex-col">
                                                 <span>{dh.day}</span>
@@ -247,7 +250,7 @@ export default function AvailabilitiesIndex() {
                                 {caregivers.data.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={6 + dateHeaders.length}
+                                            colSpan={7 + dateHeaders.length}
                                             className="px-4 py-8 text-center text-muted-foreground"
                                         >
                                             No availability records found
@@ -273,7 +276,10 @@ export default function AvailabilitiesIndex() {
                                                 key={caregiver.id}
                                                 className="border-b border-border transition hover:bg-blush"
                                             >
-                                                <td className="px-3 py-3">
+                                                <td className="px-4 py-3 text-sm text-foreground">
+                                                    {caregiver.id}
+                                                </td>
+                                                <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
                                                         {caregiver.user
                                                             .profile_photo_path ? (
@@ -316,7 +322,7 @@ export default function AvailabilitiesIndex() {
                                                         </Link>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="px-4 py-3">
                                                     {caregiver.rating ? (
                                                         <span className="text-sm text-foreground">
                                                             {Number(
@@ -329,14 +335,14 @@ export default function AvailabilitiesIndex() {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-3 text-sm whitespace-nowrap text-foreground">
+                                                <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                     {caregiver.date_of_birth
                                                         ? calculateAge(
                                                               caregiver.date_of_birth,
                                                           )
                                                         : '—'}
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="px-4 py-3">
                                                     <div className="flex flex-wrap gap-1">
                                                         {caregiver.locations
                                                             .slice(0, 3)
@@ -406,7 +412,7 @@ export default function AvailabilitiesIndex() {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="px-4 py-3">
                                                     <div className="flex flex-wrap gap-1">
                                                         {caregiver.specialty_types
                                                             .slice(0, 2)
@@ -431,7 +437,7 @@ export default function AvailabilitiesIndex() {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="px-4 py-3">
                                                     {caregiver.certifications.some(
                                                         (c) => c.id === 4,
                                                     ) ? (
@@ -453,7 +459,7 @@ export default function AvailabilitiesIndex() {
                                                     return (
                                                         <td
                                                             key={dh.isoDate}
-                                                            className="px-2 py-3 text-center"
+                                                            className="px-4 py-3 text-center"
                                                         >
                                                             {av &&
                                                             av.time_slots

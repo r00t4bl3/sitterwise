@@ -302,9 +302,62 @@ class BookingController extends Controller
             'booking_address.city' => 'nullable|string',
             'booking_address.state' => 'nullable|string',
             'booking_address.zip' => 'nullable|string',
+            'deleted_child_ids' => 'nullable|array',
+            'deleted_child_ids.*' => 'integer|exists:client_children,id',
+            'deleted_pet_ids' => 'nullable|array',
+            'deleted_pet_ids.*' => 'integer|exists:client_pets,id',
+            'new_children' => 'nullable|array',
+            'new_pets' => 'nullable|array',
+            'save_children_pets_to_profile' => 'nullable|boolean',
         ]);
 
         $booking->update($validated);
+
+        // Handle deleted children
+        if (! empty($validated['deleted_child_ids'])) {
+            ClientChild::whereIn('id', $validated['deleted_child_ids'])->delete();
+        }
+
+        // Handle deleted pets
+        if (! empty($validated['deleted_pet_ids'])) {
+            ClientPet::whereIn('id', $validated['deleted_pet_ids'])->delete();
+        }
+
+        // Handle new children - save to client profile
+        if (
+            ! empty($validated['new_children']) &&
+            $validated['save_children_pets_to_profile'] &&
+            $booking->client_id
+        ) {
+            foreach ($validated['new_children'] as $childData) {
+                ClientChild::create([
+                    'client_id' => $booking->client_id,
+                    'name' => $childData['name'] ?? null,
+                    'gender' => $childData['gender'] ?? null,
+                    'birth_month' => $childData['birth_month'] ? (int) $childData['birth_month'] : null,
+                    'birth_year' => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
+                    'special_needs' => $childData['special_needs'] ?? false,
+                    'special_needs_notes' => $childData['special_needs_notes'] ?? null,
+                ]);
+            }
+        }
+
+        // Handle new pets - save to client profile
+        if (
+            ! empty($validated['new_pets']) &&
+            $validated['save_children_pets_to_profile'] &&
+            $booking->client_id
+        ) {
+            foreach ($validated['new_pets'] as $petData) {
+                ClientPet::create([
+                    'client_id' => $booking->client_id,
+                    'name' => $petData['name'] ?? null,
+                    'type' => $petData['type'] ?? null,
+                    'breed' => $petData['breed'] ?? null,
+                    'notes' => $petData['notes'] ?? null,
+                ]);
+            }
+        }
 
         // Update vacation rental platform attribute
         if ($validated['location_type'] === 'vacation_rental') {
