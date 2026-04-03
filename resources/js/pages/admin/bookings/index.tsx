@@ -646,6 +646,32 @@ export default function BookingsIndex() {
     };
 
     const handleSubmit = () => {
+        // Validate start/end datetime
+        const start = form.data.start_datetime;
+        const end = form.data.end_datetime;
+
+        if (!start || !end) {
+            return; // Inline error will show via useEffect
+        }
+
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const now = new Date();
+
+        if (startDate < now) {
+            return; // Inline error will show
+        }
+
+        if (endDate <= startDate) {
+            return; // Inline error will show
+        }
+
+        const diffMs = endDate.getTime() - startDate.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        if (diffHours < 4) {
+            return; // Inline error will show
+        }
+
         form.setData('new_children', newChildren);
         form.setData('new_pets', newPets);
         form.setData('deleted_child_ids', deletedChildIds);

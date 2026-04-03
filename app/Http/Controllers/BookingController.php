@@ -16,6 +16,7 @@ use App\Models\ClientAddress;
 use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class BookingController extends Controller
@@ -133,7 +134,7 @@ class BookingController extends Controller
             'client_id' => 'required_without:new_client.first_name|nullable|exists:clients,id',
             'service_type' => 'required|string',
             'location_type' => 'required|string',
-            'start_datetime' => 'required|date',
+            'start_datetime' => 'required|date|after:now',
             'end_datetime' => 'required|date|after:start_datetime',
             'hotel_id' => 'nullable|exists:hotels,id',
             'address_id' => 'nullable|exists:client_addresses,id',
@@ -163,6 +164,16 @@ class BookingController extends Controller
             'new_client.phone' => 'nullable|string',
             'new_client.client_type' => 'required_with:new_client.first_name|string',
         ]);
+
+        // Validate minimum 4-hour duration
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
+        $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
+        if ($diffHours < 4) {
+            throw ValidationException::withMessages([
+                'end_datetime' => 'Booking must be at least 4 hours long.',
+            ]);
+        }
 
         $clientId = $validated['client_id'] ?? null;
 
@@ -277,7 +288,7 @@ class BookingController extends Controller
         $validated = $request->validate([
             'service_type' => 'required|string',
             'location_type' => 'required|string',
-            'start_datetime' => 'required|date',
+            'start_datetime' => 'required|date|after:now',
             'end_datetime' => 'required|date|after:start_datetime',
             'hotel_id' => 'nullable|exists:hotels,id',
             'address_id' => 'nullable|exists:client_addresses,id',
@@ -305,6 +316,16 @@ class BookingController extends Controller
             'new_pets' => 'nullable|array',
             'save_children_pets_to_profile' => 'nullable|boolean',
         ]);
+
+        // Validate minimum 4-hour duration
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
+        $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
+        if ($diffHours < 4) {
+            throw ValidationException::withMessages([
+                'end_datetime' => 'Booking must be at least 4 hours long.',
+            ]);
+        }
 
         $booking->update($validated);
 
