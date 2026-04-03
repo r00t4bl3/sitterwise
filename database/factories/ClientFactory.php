@@ -24,7 +24,6 @@ class ClientFactory extends Factory
             'user_id' => User::factory(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->phoneNumber(),
             'client_type' => fake()->randomElement(['sd_resident', 'vacationer', 'invoiced']),
             'corporate_id' => null,
@@ -33,7 +32,6 @@ class ClientFactory extends Factory
             'other_adults_in_home' => fake()->numberBetween(0, 5),
             'medical_info' => fake()->optional()->paragraph(),
             'emergency_instructions' => fake()->optional()->paragraph(),
-            'caregiver_notes' => fake()->optional()->paragraph(),
             'special_needs' => fake()->boolean(20),
             'special_needs_notes' => fake()->optional()->paragraph(),
         ];

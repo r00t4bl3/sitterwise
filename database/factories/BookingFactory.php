@@ -40,7 +40,6 @@ class BookingFactory extends Factory
             'notes_to_sitterwise' => null,
             'admin_notes' => null,
             'corporate_id' => null,
-            'comped' => false,
             'total_amount' => rand(50, 200),
             'payment_status' => BookingPaymentStatus::Pending->value,
             'requires_payment' => true,
@@ -67,7 +66,6 @@ class BookingFactory extends Factory
     public function comped(): static
     {
         return $this->state(fn (array $attributes) => [
-            'comped' => true,
             'requires_payment' => false,
             'service_type' => ServiceType::Comped->value,
         ]);

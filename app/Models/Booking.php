@@ -28,7 +28,6 @@ class Booking extends Model
         'notes_to_sitterwise',
         'admin_notes',
         'corporate_id',
-        'comped',
         'total_amount',
         'payment_status',
         'requires_payment',
@@ -38,7 +37,6 @@ class Booking extends Model
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
         'special_considerations' => 'array',
-        'comped' => 'boolean',
         'total_amount' => 'decimal:2',
         'requires_payment' => 'boolean',
     ];

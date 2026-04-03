@@ -54,7 +54,6 @@ class BookingTest extends TestCase
         $booking = Booking::factory()->create([
             'start_datetime' => $startDateTime,
             'end_datetime' => $endDateTime,
-            'comped' => true,
             'total_amount' => 150.50,
             'requires_payment' => false,
         ]);
@@ -63,7 +62,6 @@ class BookingTest extends TestCase
         $this->assertEquals($startDateTime->timestamp, $booking->start_datetime->timestamp);
         $this->assertInstanceOf(CarbonImmutable::class, $booking->end_datetime);
         $this->assertEquals($endDateTime->timestamp, $booking->end_datetime->timestamp);
-        $this->assertTrue($booking->comped);
         $this->assertEquals(150.50, $booking->total_amount);
         $this->assertFalse($booking->requires_payment);
     }

@@ -62,7 +62,6 @@ interface Client {
     other_adults_in_home: string | null;
     medical_info: string | null;
     emergency_instructions: string | null;
-    caregiver_notes: string | null;
     special_needs: boolean;
     special_needs_notes: string | null;
     user: {
@@ -165,7 +164,6 @@ export default function ClientEdit() {
         other_adults_in_home: client.other_adults_in_home || '',
         medical_info: client.medical_info || '',
         emergency_instructions: client.emergency_instructions || '',
-        caregiver_notes: client.caregiver_notes || '',
         special_needs: client.special_needs || false,
         special_needs_notes: client.special_needs_notes || '',
         attributes: attributeValues,
@@ -1140,23 +1138,6 @@ export default function ClientEdit() {
                                     rows={3}
                                     className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     placeholder="Emergency instructions for caregivers..."
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Admin Notes
-                                </label>
-                                <textarea
-                                    value={form.data.caregiver_notes}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'caregiver_notes',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={3}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
-                                    placeholder="Internal notes about this client..."
                                 />
                             </div>
                         </div>

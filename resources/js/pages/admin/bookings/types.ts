@@ -56,7 +56,6 @@ export interface Booking {
     notes_to_sitterwise: string | null;
     admin_notes: string | null;
     corporate_id: string | null;
-    comped: boolean;
     total_amount: number;
     payment_status: string;
     requires_payment: boolean;
@@ -140,7 +139,6 @@ export interface BookingFormData {
     other_adults_in_home: string;
     medical_info: string;
     emergency_instructions: string;
-    comped: boolean;
     requires_payment: boolean;
     status: string;
     payment_status: string;

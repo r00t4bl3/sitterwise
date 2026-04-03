@@ -42,7 +42,6 @@ Core profile record. One row per client, regardless of job history.
 | `other_adults_in_home`   | `string`          | No       |                                                                                                  |
 | `medical_info`           | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `emergency_instructions` | `text`            | No       | Caregiver-visible before acceptance                                                              |
-| `caregiver_notes`        | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `special_needs`          | `boolean`         | No       | Client-wide special needs flag                                                                   |
 | `special_needs_notes`    | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `created_at`             | `timestamp`       | Yes      |                                                                                                  |
@@ -221,7 +220,6 @@ One row per individual job. Always belongs to a `JOB_GROUP`, even if the group c
 | `notes_to_sitterwise`    | `text`            | No       | Internal only                                                                                                |
 | `admin_notes`            | `text`            | No       | Internal only                                                                                                |
 | `corporate_id`           | `string`          | No       | Invoiced clients only                                                                                        |
-| `comped`                 | `boolean`         | Yes      | Defaults false. Caregiver still paid by Sitterwise                                                           |
 | `total_amount`           | `decimal`         | Yes      | Total expected charge                                                                                        |
 | `payment_status`         | `enum`            | Yes      | `pending` · `paid` · `failed` · `refunded`                                                                   |
 | `requires_payment`       | `boolean`         | Yes      | False for invoiced/comped                                                                                    |

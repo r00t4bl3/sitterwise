@@ -27,7 +27,6 @@ class ClientTest extends TestCase
             'user_id' => $user->id,
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'email' => 'john@example.com',
             'phone' => '123-456-7890',
             'client_type' => 'sd_resident',
             'how_did_you_hear' => 'google',
@@ -35,7 +34,6 @@ class ClientTest extends TestCase
 
         $this->assertEquals('John', $client->first_name);
         $this->assertEquals('Doe', $client->last_name);
-        $this->assertEquals('john@example.com', $client->email);
         $this->assertEquals('123-456-7890', $client->phone);
         $this->assertEquals('sd_resident', $client->client_type);
         $this->assertEquals('google', $client->how_did_you_hear);

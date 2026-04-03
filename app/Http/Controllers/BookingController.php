@@ -62,10 +62,10 @@ class BookingController extends Controller
 
         $bookings = $query->get();
 
-        $clients = Client::all()->map(fn ($c) => [
+        $clients = Client::with('user')->get()->map(fn ($c) => [
             'id' => $c->id,
             'name' => $c->first_name.' '.$c->last_name,
-            'email' => $c->email,
+            'email' => $c->user->email,
         ]);
 
         $hotels = Hotel::where('is_active', true)->get()->map(fn ($h) => [
@@ -148,7 +148,6 @@ class BookingController extends Controller
             'other_adults_in_home' => 'nullable|string',
             'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
-            'comped' => 'nullable|boolean',
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',
             'payment_status' => 'required|string',
@@ -180,7 +179,6 @@ class BookingController extends Controller
                 'user_id' => $user->id,
                 'first_name' => $validated['new_client']['first_name'],
                 'last_name' => $validated['new_client']['last_name'],
-                'email' => $validated['new_client']['email'],
                 'phone' => $validated['new_client']['phone'] ?? null,
                 'client_type' => $validated['new_client']['client_type'] ?? 'individual',
                 'corporate_id' => $validated['corporate_id'] ?? null,
@@ -189,7 +187,6 @@ class BookingController extends Controller
                 'other_adults_in_home' => $validated['other_adults_in_home'] ?? null,
                 'medical_info' => $validated['medical_info'] ?? null,
                 'emergency_instructions' => $validated['emergency_instructions'] ?? null,
-                'caregiver_notes' => $validated['caregiver_notes'] ?? null,
             ]);
 
             $clientId = $client->id;
@@ -232,7 +229,6 @@ class BookingController extends Controller
             'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
             'admin_notes' => $validated['admin_notes'] ?? null,
             'corporate_id' => $validated['corporate_id'] ?? null,
-            'comped' => $validated['comped'] ?? false,
             'total_amount' => 0,
             'payment_status' => $validated['payment_status'],
             'requires_payment' => $validated['requires_payment'] ?? true,
@@ -291,7 +287,6 @@ class BookingController extends Controller
             'notes_to_sitterwise' => 'nullable|string',
             'admin_notes' => 'nullable|string',
             'corporate_id' => 'nullable|string',
-            'comped' => 'nullable|boolean',
             'total_amount' => 'required|numeric|min:0',
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',

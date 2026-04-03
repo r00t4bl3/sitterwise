@@ -215,17 +215,6 @@ export function BookingDetailsSection({
                     <label className="flex items-center gap-2">
                         <input
                             type="checkbox"
-                            checked={form.data.comped}
-                            onChange={(e) =>
-                                form.setData('comped', e.target.checked)
-                            }
-                            className="h-4 w-4 rounded border-input"
-                        />
-                        <span className="text-sm text-foreground">Comped</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
                             checked={form.data.requires_payment}
                             onChange={(e) =>
                                 form.setData(

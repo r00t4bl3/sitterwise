@@ -100,7 +100,6 @@ interface Client {
     other_adults_in_home: string | null;
     medical_info: string | null;
     emergency_instructions: string | null;
-    caregiver_notes: string | null;
     special_needs: boolean;
     special_needs_notes: string | null;
     user: {
@@ -660,17 +659,6 @@ export default function ClientShow() {
                                     </div>
                                 </div>
                             )}
-
-                        {client.caregiver_notes && (
-                            <div className="rounded-[6px] border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Admin Notes
-                                </h2>
-                                <p className="text-sm text-foreground">
-                                    {client.caregiver_notes}
-                                </p>
-                            </div>
-                        )}
 
                         {client.special_needs && (
                             <div className="rounded-[6px] border border-red-200 bg-red-50 p-6">

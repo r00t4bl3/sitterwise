@@ -26,7 +26,6 @@ return new class extends Migration
             $table->text('notes_to_sitterwise')->nullable();
             $table->text('admin_notes')->nullable();
             $table->string('corporate_id')->nullable();
-            $table->boolean('comped')->default(false);
             $table->decimal('total_amount', 10, 2);
             $table->string('payment_status');
             $table->boolean('requires_payment')->default(true);

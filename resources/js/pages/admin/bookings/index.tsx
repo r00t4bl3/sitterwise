@@ -90,7 +90,6 @@ const serviceTypeIcons: Record<string, React.ElementType> = {
     companion_care: User,
     group_childcare_invoiced: Users,
     corporate_invoiced: Building,
-    comped: CalendarIcon,
 };
 
 function getDaysInMonth(year: number, month: number): (number | null)[] {
@@ -246,7 +245,6 @@ export default function BookingsIndex() {
         other_adults_in_home: string;
         medical_info: string;
         emergency_instructions: string;
-        comped: boolean;
         requires_payment: boolean;
         status: string;
         payment_status: string;
@@ -299,7 +297,6 @@ export default function BookingsIndex() {
         other_adults_in_home: '',
         medical_info: '',
         emergency_instructions: '',
-        comped: false,
         requires_payment: true,
         status: 'received',
         payment_status: 'pending',
@@ -517,7 +514,6 @@ export default function BookingsIndex() {
             other_adults_in_home: '',
             medical_info: '',
             emergency_instructions: '',
-            comped: false,
             requires_payment: true,
             status: 'received',
             payment_status: 'pending',
@@ -575,7 +571,6 @@ export default function BookingsIndex() {
         form.setData('notes_to_sitterwise', booking.notes_to_sitterwise || '');
         form.setData('admin_notes', booking.admin_notes || '');
         form.setData('corporate_id', booking.corporate_id || '');
-        form.setData('comped', booking.comped);
         form.setData('requires_payment', booking.requires_payment);
         form.setData('status', booking.status);
         form.setData('payment_status', booking.payment_status);

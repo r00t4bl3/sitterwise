@@ -22,7 +22,6 @@ class Client extends Model
         'user_id',
         'first_name',
         'last_name',
-        'email',
         'phone',
         'client_type',
         'corporate_id',
@@ -31,7 +30,6 @@ class Client extends Model
         'other_adults_in_home',
         'medical_info',
         'emergency_instructions',
-        'caregiver_notes',
         'special_needs',
         'special_needs_notes',
     ];

@@ -67,7 +67,6 @@ class ClientController extends Controller
             'user_id' => $user->id,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
-            'email' => $validated['email'],
             'phone' => $validated['phone'],
             'client_type' => $validated['client_type'],
             'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
@@ -90,7 +89,7 @@ class ClientController extends Controller
             });
         }
 
-        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'email', 'phone', 'client_type'])
+        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'phone', 'client_type'])
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->first_name.' '.$c->last_name,
@@ -150,7 +149,7 @@ class ClientController extends Controller
                 'id' => $client->id,
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
-                'email' => $client->email,
+                'email' => $client->user->email,
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
@@ -158,7 +157,6 @@ class ClientController extends Controller
                 'other_adults_in_home' => $client->other_adults_in_home,
                 'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
-                'caregiver_notes' => $client->caregiver_notes,
                 'special_needs' => $client->special_needs,
                 'special_needs_notes' => $client->special_needs_notes,
                 'user' => [
@@ -248,7 +246,6 @@ class ClientController extends Controller
                 'other_adults_in_home' => $client->other_adults_in_home,
                 'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
-                'caregiver_notes' => $client->caregiver_notes,
                 'special_needs' => $client->special_needs,
                 'special_needs_notes' => $client->special_needs_notes,
                 'user' => [
@@ -304,7 +301,6 @@ class ClientController extends Controller
             'other_adults_in_home' => 'nullable|string|max:10',
             'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
-            'caregiver_notes' => 'nullable|string',
             'special_needs' => 'nullable|boolean',
             'special_needs_notes' => 'nullable|string',
             'attributes' => 'nullable|array',

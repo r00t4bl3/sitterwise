@@ -144,7 +144,6 @@ test('admin users can update a client', function () {
     $response = $this->patch(route('clients.update', $client), [
         'first_name' => 'UpdatedFirstName',
         'last_name' => $client->last_name,
-        'email' => $client->email,
         'phone' => $client->phone,
         'client_type' => $client->client_type,
     ]);

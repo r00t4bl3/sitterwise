@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('email')->unique();
             $table->string('phone');
             $table->enum('client_type', ['sd_resident', 'vacationer', 'invoiced'])->default('vacationer');
             $table->string('corporate_id')->nullable();
@@ -25,12 +24,10 @@ return new class extends Migration
             $table->string('other_adults_in_home')->nullable();
             $table->text('medical_info')->nullable();
             $table->text('emergency_instructions')->nullable();
-            $table->text('caregiver_notes')->nullable();
             $table->boolean('special_needs')->default(false);
             $table->text('special_needs_notes')->nullable();
             $table->timestamps();
 
-            $table->index('email');
             $table->index('client_type');
         });
     }
