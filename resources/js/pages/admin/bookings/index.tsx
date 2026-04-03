@@ -213,8 +213,6 @@ export default function BookingsIndex() {
             gender: string;
             birth_month: string;
             birth_year: string;
-            special_needs: boolean;
-            special_needs_notes: string;
         }>
     >([]);
     const [newPets, setNewPets] = useState<
@@ -272,8 +270,6 @@ export default function BookingsIndex() {
             gender: string;
             birth_month: string;
             birth_year: string;
-            special_needs: boolean;
-            special_needs_notes: string;
         }>;
         new_pets: Array<{
             name: string;
@@ -720,8 +716,6 @@ export default function BookingsIndex() {
                 gender: '',
                 birth_month: '',
                 birth_year: '',
-                special_needs: false,
-                special_needs_notes: '',
             },
         ]);
     };

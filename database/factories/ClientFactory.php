@@ -34,6 +34,8 @@ class ClientFactory extends Factory
             'medical_info' => fake()->optional()->paragraph(),
             'emergency_instructions' => fake()->optional()->paragraph(),
             'caregiver_notes' => fake()->optional()->paragraph(),
+            'special_needs' => fake()->boolean(20),
+            'special_needs_notes' => fake()->optional()->paragraph(),
         ];
     }
 }

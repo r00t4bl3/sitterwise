@@ -24,8 +24,6 @@ class ClientChildFactory extends Factory
             'gender' => fake()->randomElement(['male', 'female', 'other']),
             'birth_month' => fake()->numberBetween(1, 12),
             'birth_year' => fake()->numberBetween(2010, 2024),
-            'special_needs' => fake()->boolean(10),
-            'special_needs_notes' => fake()->optional()->sentence(),
         ];
     }
 }

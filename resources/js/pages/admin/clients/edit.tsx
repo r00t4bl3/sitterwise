@@ -1,7 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState  } from 'react';
-import type {SubmitEventHandler} from 'react';
+import { useState } from 'react';
+import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
@@ -40,8 +40,6 @@ interface Child {
     gender: string | null;
     birth_month: number | null;
     birth_year: number | null;
-    special_needs: boolean;
-    special_needs_notes: string | null;
 }
 
 interface Pet {
@@ -65,6 +63,8 @@ interface Client {
     medical_info: string | null;
     emergency_instructions: string | null;
     caregiver_notes: string | null;
+    special_needs: boolean;
+    special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
     };
@@ -166,6 +166,8 @@ export default function ClientEdit() {
         medical_info: client.medical_info || '',
         emergency_instructions: client.emergency_instructions || '',
         caregiver_notes: client.caregiver_notes || '',
+        special_needs: client.special_needs || false,
+        special_needs_notes: client.special_needs_notes || '',
         attributes: attributeValues,
         children: client.children,
         pets: client.pets,
@@ -409,6 +411,44 @@ export default function ClientEdit() {
                                 </select>
                             </div>
                             <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            form.data.special_needs || false
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'special_needs',
+                                                e.target.checked,
+                                            )
+                                        }
+                                        className="h-4 w-4 rounded border-input text-primary"
+                                    />
+                                    Special Needs
+                                </label>
+                            </div>
+                            {form.data.special_needs && (
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-sm font-medium text-foreground">
+                                        Special Needs Notes
+                                    </label>
+                                    <textarea
+                                        value={
+                                            form.data.special_needs_notes || ''
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'special_needs_notes',
+                                                e.target.value,
+                                            )
+                                        }
+                                        rows={3}
+                                        className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                    />
+                                </div>
+                            )}
+                            <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">
                                     Other Adults in Home
                                 </label>
@@ -508,8 +548,6 @@ export default function ClientEdit() {
                                             gender: null,
                                             birth_month: null,
                                             birth_year: null,
-                                            special_needs: false,
-                                            special_needs_notes: null,
                                         },
                                     ]);
                                 }}
@@ -651,64 +689,6 @@ export default function ClientEdit() {
                                                 className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="flex items-center gap-1 text-xs">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        child.special_needs
-                                                    }
-                                                    onChange={(e) => {
-                                                        const updated = [
-                                                            ...form.data
-                                                                .children,
-                                                        ];
-                                                        updated[index] = {
-                                                            ...child,
-                                                            special_needs:
-                                                                e.target
-                                                                    .checked,
-                                                        };
-                                                        form.setData(
-                                                            'children',
-                                                            updated,
-                                                        );
-                                                    }}
-                                                    className="h-4 w-4 rounded border-input"
-                                                />
-                                                Spec. needs
-                                            </label>
-                                        </div>
-                                        {child.special_needs && (
-                                            <div className="sm:col-span-2">
-                                                <input
-                                                    type="text"
-                                                    value={
-                                                        child.special_needs_notes ||
-                                                        ''
-                                                    }
-                                                    onChange={(e) => {
-                                                        const updated = [
-                                                            ...form.data
-                                                                .children,
-                                                        ];
-                                                        updated[index] = {
-                                                            ...child,
-                                                            special_needs_notes:
-                                                                e.target
-                                                                    .value ||
-                                                                null,
-                                                        };
-                                                        form.setData(
-                                                            'children',
-                                                            updated,
-                                                        );
-                                                    }}
-                                                    placeholder="Special needs notes"
-                                                    className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
-                                                />
-                                            </div>
-                                        )}
                                         <div className="flex items-center justify-end">
                                             <button
                                                 type="button"

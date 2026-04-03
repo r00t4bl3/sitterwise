@@ -25,24 +25,12 @@ class ClientChildTest extends TestCase
             'gender' => 'female',
             'birth_month' => 5,
             'birth_year' => 2018,
-            'special_needs' => true,
-            'special_needs_notes' => 'Requires medication',
         ]);
 
         $this->assertEquals('Emma', $child->name);
         $this->assertEquals('female', $child->gender);
         $this->assertEquals(5, $child->birth_month);
         $this->assertEquals(2018, $child->birth_year);
-        $this->assertTrue($child->special_needs);
-        $this->assertEquals('Requires medication', $child->special_needs_notes);
-    }
-
-    public function test_casts_special_needs_as_boolean()
-    {
-        $child = ClientChild::factory()->create(['special_needs' => true]);
-
-        $this->assertTrue($child->special_needs);
-        $this->assertIsBool($child->special_needs);
     }
 
     public function test_defines_client_relationship()

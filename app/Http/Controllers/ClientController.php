@@ -121,8 +121,6 @@ class ClientController extends Controller
                     'gender' => $c->gender,
                     'birth_month' => $c->birth_month,
                     'birth_year' => $c->birth_year,
-                    'special_needs' => $c->special_needs,
-                    'special_needs_notes' => $c->special_needs_notes,
                 ]),
                 'pets' => $client->pets->map(fn ($p) => [
                     'id' => $p->id,
@@ -161,6 +159,8 @@ class ClientController extends Controller
                 'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
                 'caregiver_notes' => $client->caregiver_notes,
+                'special_needs' => $client->special_needs,
+                'special_needs_notes' => $client->special_needs_notes,
                 'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
@@ -181,8 +181,6 @@ class ClientController extends Controller
                     'gender' => $c->gender,
                     'birth_month' => $c->birth_month,
                     'birth_year' => $c->birth_year,
-                    'special_needs' => $c->special_needs,
-                    'special_needs_notes' => $c->special_needs_notes,
                 ]),
                 'pets' => $client->pets->map(fn ($p) => [
                     'id' => $p->id,
@@ -251,6 +249,8 @@ class ClientController extends Controller
                 'medical_info' => $client->medical_info,
                 'emergency_instructions' => $client->emergency_instructions,
                 'caregiver_notes' => $client->caregiver_notes,
+                'special_needs' => $client->special_needs,
+                'special_needs_notes' => $client->special_needs_notes,
                 'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
@@ -271,8 +271,6 @@ class ClientController extends Controller
                     'gender' => $c->gender,
                     'birth_month' => $c->birth_month,
                     'birth_year' => $c->birth_year,
-                    'special_needs' => $c->special_needs,
-                    'special_needs_notes' => $c->special_needs_notes,
                 ]),
                 'pets' => $client->pets->map(fn ($p) => [
                     'id' => $p->id,
@@ -307,14 +305,14 @@ class ClientController extends Controller
             'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
             'caregiver_notes' => 'nullable|string',
+            'special_needs' => 'nullable|boolean',
+            'special_needs_notes' => 'nullable|string',
             'attributes' => 'nullable|array',
             'children' => 'nullable|array',
             'children.*.name' => 'nullable|string|max:255',
             'children.*.gender' => 'nullable|in:male,female,other',
             'children.*.birth_month' => 'nullable|integer|min:1|max:12',
             'children.*.birth_year' => 'nullable|integer|min:1900|max:2100',
-            'children.*.special_needs' => 'nullable|boolean',
-            'children.*.special_needs_notes' => 'nullable|string',
             'pets' => 'nullable|array',
             'pets.*.name' => 'nullable|string|max:255',
             'pets.*.type' => 'nullable|string|max:255',
@@ -362,8 +360,6 @@ class ClientController extends Controller
                             'gender' => $childData['gender'] ?? null,
                             'birth_month' => $childData['birth_month'] ?? null,
                             'birth_year' => $childData['birth_year'] ?? null,
-                            'special_needs' => $childData['special_needs'] ?? false,
-                            'special_needs_notes' => $childData['special_needs_notes'] ?? null,
                         ]);
                         $submittedChildIds[] = $childData['id'];
                     }
@@ -373,8 +369,6 @@ class ClientController extends Controller
                         'gender' => $childData['gender'] ?? null,
                         'birth_month' => $childData['birth_month'] ?? null,
                         'birth_year' => $childData['birth_year'] ?? null,
-                        'special_needs' => $childData['special_needs'] ?? false,
-                        'special_needs_notes' => $childData['special_needs_notes'] ?? null,
                     ]);
                     $submittedChildIds[] = $newChild->id;
                 }

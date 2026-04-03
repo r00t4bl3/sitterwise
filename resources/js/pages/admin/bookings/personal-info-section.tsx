@@ -8,8 +8,6 @@ interface NewChild {
     gender: string;
     birth_month: string;
     birth_year: string;
-    special_needs: boolean;
-    special_needs_notes: string;
 }
 
 interface NewPet {
@@ -44,7 +42,6 @@ interface PersonalInfoSectionProps {
         gender: string | null;
         birth_year: number | null;
         birth_month: number | null;
-        special_needs: boolean;
     }>;
     clientPets: Array<{
         id: number;
@@ -787,9 +784,6 @@ export function PersonalInfoSection({
                                     <th className="px-3 py-2 text-left font-medium">
                                         Age
                                     </th>
-                                    <th className="px-3 py-2 text-left font-medium">
-                                        Special Needs
-                                    </th>
                                     <th className="w-10"></th>
                                 </tr>
                             </thead>
@@ -810,9 +804,6 @@ export function PersonalInfoSection({
                                                 child.birth_year,
                                                 child.birth_month,
                                             )}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            {child.special_needs ? 'Yes' : 'No'}
                                         </td>
                                         <td className="px-3 py-2">
                                             <button
@@ -924,20 +915,6 @@ export function PersonalInfoSection({
                                             </div>
                                         </td>
                                         <td className="px-3 py-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={child.special_needs}
-                                                onChange={(e) =>
-                                                    onUpdateChild(
-                                                        child.tempId,
-                                                        'special_needs',
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="h-4 w-4 rounded border-input"
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2">
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -954,7 +931,7 @@ export function PersonalInfoSection({
                                     newChildren.length === 0 && (
                                         <tr className="border-t border-border">
                                             <td
-                                                colSpan={5}
+                                                colSpan={4}
                                                 className="px-3 py-4 text-center text-muted-foreground"
                                             >
                                                 No children added
@@ -1112,7 +1089,7 @@ export function PersonalInfoSection({
                                     newPets.length === 0 && (
                                         <tr className="border-t border-border">
                                             <td
-                                                colSpan={5}
+                                                colSpan={4}
                                                 className="px-3 py-4 text-center text-muted-foreground"
                                             >
                                                 No pets added

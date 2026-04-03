@@ -26,6 +26,8 @@ return new class extends Migration
             $table->text('medical_info')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->text('caregiver_notes')->nullable();
+            $table->boolean('special_needs')->default(false);
+            $table->text('special_needs_notes')->nullable();
             $table->timestamps();
 
             $table->index('email');

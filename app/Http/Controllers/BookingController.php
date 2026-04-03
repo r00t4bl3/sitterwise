@@ -336,8 +336,6 @@ class BookingController extends Controller
                     'gender' => $childData['gender'] ?? null,
                     'birth_month' => $childData['birth_month'] ? (int) $childData['birth_month'] : null,
                     'birth_year' => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
-                    'special_needs' => $childData['special_needs'] ?? false,
-                    'special_needs_notes' => $childData['special_needs_notes'] ?? null,
                 ]);
             }
         }

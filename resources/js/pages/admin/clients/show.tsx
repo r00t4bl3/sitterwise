@@ -46,8 +46,6 @@ interface Child {
     gender: string | null;
     birth_month: number | null;
     birth_year: number | null;
-    special_needs: boolean;
-    special_needs_notes: string | null;
 }
 
 interface Pet {
@@ -103,6 +101,8 @@ interface Client {
     medical_info: string | null;
     emergency_instructions: string | null;
     caregiver_notes: string | null;
+    special_needs: boolean;
+    special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
     };
@@ -512,11 +512,6 @@ export default function ClientShow() {
                                                 <span className="font-medium text-foreground">
                                                     {child.name || 'Unnamed'}
                                                 </span>
-                                                {child.special_needs && (
-                                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                                                        Special Needs
-                                                    </span>
-                                                )}
                                             </div>
                                             <p className="text-sm text-muted-foreground">
                                                 {child.gender ||
@@ -527,11 +522,6 @@ export default function ClientShow() {
                                                     child.birth_year,
                                                 )}
                                             </p>
-                                            {child.special_needs_notes && (
-                                                <p className="mt-1 text-sm text-foreground">
-                                                    {child.special_needs_notes}
-                                                </p>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -679,6 +669,19 @@ export default function ClientShow() {
                                 <p className="text-sm text-foreground">
                                     {client.caregiver_notes}
                                 </p>
+                            </div>
+                        )}
+
+                        {client.special_needs && (
+                            <div className="rounded-[6px] border border-red-200 bg-red-50 p-6">
+                                <h2 className="mb-2 font-serif text-lg font-semibold text-red-800">
+                                    Special Needs
+                                </h2>
+                                {client.special_needs_notes && (
+                                    <p className="text-sm text-red-700">
+                                        {client.special_needs_notes}
+                                    </p>
+                                )}
                             </div>
                         )}
 

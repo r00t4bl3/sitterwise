@@ -18,8 +18,6 @@ return new class extends Migration
             $table->string('gender')->nullable();
             $table->integer('birth_month')->nullable();
             $table->integer('birth_year')->nullable();
-            $table->boolean('special_needs')->default(false);
-            $table->text('special_needs_notes')->nullable();
             $table->timestamps();
 
             $table->index('client_id');

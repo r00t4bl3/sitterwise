@@ -33,8 +33,6 @@ export interface ClientChild {
     gender: string | null;
     birth_month: number | null;
     birth_year: number | null;
-    special_needs: boolean;
-    special_needs_notes: string | null;
 }
 
 export interface ClientPet {

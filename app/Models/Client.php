@@ -32,6 +32,8 @@ class Client extends Model
         'medical_info',
         'emergency_instructions',
         'caregiver_notes',
+        'special_needs',
+        'special_needs_notes',
     ];
 
     protected $casts = [

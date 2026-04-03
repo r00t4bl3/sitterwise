@@ -22,13 +22,9 @@ class ClientChild extends Model
         'gender',
         'birth_month',
         'birth_year',
-        'special_needs',
-        'special_needs_notes',
     ];
 
-    protected $casts = [
-        'special_needs' => 'boolean',
-    ];
+    protected $casts = [];
 
     public function client(): BelongsTo
     {
