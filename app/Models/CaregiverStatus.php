@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\CaregiverStatusFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CaregiverStatus extends Model
 {
+    /** @use HasFactory<CaregiverStatusFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'description',

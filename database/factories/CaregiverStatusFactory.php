@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\CaregiverStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CaregiverStatusFactory extends Factory
 {
+    protected $model = CaregiverStatus::class;
+
     public function definition(): array
     {
         return [

@@ -1,0 +1,77 @@
+<?php
+
+use App\Models\Client;
+use App\Models\ClientChild;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ClientChildTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_can_be_instantiated()
+    {
+        $child = ClientChild::factory()->make();
+
+        $this->assertInstanceOf(ClientChild::class, $child);
+    }
+
+    public function test_has_correct_fillable_fields()
+    {
+        $client = Client::factory()->create();
+        $child = ClientChild::factory()->create([
+            'client_id' => $client->id,
+            'name' => 'Emma',
+            'gender' => 'female',
+            'birth_month' => 5,
+            'birth_year' => 2018,
+            'special_needs' => true,
+            'special_needs_notes' => 'Requires medication',
+        ]);
+
+        $this->assertEquals('Emma', $child->name);
+        $this->assertEquals('female', $child->gender);
+        $this->assertEquals(5, $child->birth_month);
+        $this->assertEquals(2018, $child->birth_year);
+        $this->assertTrue($child->special_needs);
+        $this->assertEquals('Requires medication', $child->special_needs_notes);
+    }
+
+    public function test_casts_special_needs_as_boolean()
+    {
+        $child = ClientChild::factory()->create(['special_needs' => true]);
+
+        $this->assertTrue($child->special_needs);
+        $this->assertIsBool($child->special_needs);
+    }
+
+    public function test_defines_client_relationship()
+    {
+        $client = Client::factory()->create();
+        $child = ClientChild::factory()->create(['client_id' => $client->id]);
+
+        $this->assertInstanceOf(Client::class, $child->client);
+        $this->assertEquals($client->id, $child->client->id);
+    }
+
+    public function test_returns_age_when_birth_data_available()
+    {
+        $child = ClientChild::factory()->make([
+            'birth_month' => 1,
+            'birth_year' => now()->subYears(5)->year,
+        ]);
+
+        $this->assertIsInt($child->age);
+        $this->assertGreaterThanOrEqual(4, $child->age);
+    }
+
+    public function test_returns_null_age_when_birth_data_missing()
+    {
+        $child = ClientChild::factory()->make([
+            'birth_month' => null,
+            'birth_year' => null,
+        ]);
+
+        $this->assertNull($child->age);
+    }
+}
