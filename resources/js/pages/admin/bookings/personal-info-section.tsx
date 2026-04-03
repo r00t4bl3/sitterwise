@@ -229,11 +229,11 @@ export function PersonalInfoSection({
                             </label>
                             <input
                                 type="text"
-                                value={form.data.new_client.cell_phone}
+                                value={form.data.new_client.phone}
                                 onChange={(e) =>
                                     form.setData('new_client', {
                                         ...form.data.new_client,
-                                        cell_phone: e.target.value,
+                                        phone: e.target.value,
                                     })
                                 }
                                 placeholder="Cell Phone"
@@ -266,7 +266,7 @@ export function PersonalInfoSection({
                                     first_name: '',
                                     last_name: '',
                                     email: '',
-                                    cell_phone: '',
+                                    phone: '',
                                     client_type: 'individual',
                                 });
                             }}

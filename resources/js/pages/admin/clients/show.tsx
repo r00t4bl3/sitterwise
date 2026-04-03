@@ -93,7 +93,7 @@ interface Client {
     first_name: string;
     last_name: string;
     email: string;
-    cell_phone: string;
+    phone: string;
     client_type: string;
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
@@ -446,7 +446,7 @@ export default function ClientShow() {
                                     Phone
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {client.cell_phone}
+                                    {client.phone}
                                 </p>
                             </div>
                             <div>

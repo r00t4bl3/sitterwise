@@ -26,7 +26,7 @@ test('guests cannot store a new client', function () {
         'email' => 'test@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'cell_phone' => '1234567890',
+        'phone' => '1234567890',
         'client_type' => 'vacationer',
     ]);
 
@@ -124,7 +124,7 @@ test('admin users can create a client', function () {
         'email' => 'newclient@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'cell_phone' => '1234567890',
+        'phone' => '1234567890',
         'client_type' => 'vacationer',
     ]);
 
@@ -145,7 +145,7 @@ test('admin users can update a client', function () {
         'first_name' => 'UpdatedFirstName',
         'last_name' => $client->last_name,
         'email' => $client->email,
-        'cell_phone' => $client->cell_phone,
+        'phone' => $client->phone,
         'client_type' => $client->client_type,
     ]);
 

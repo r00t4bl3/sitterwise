@@ -55,7 +55,7 @@ interface Client {
     first_name: string;
     last_name: string;
     email: string;
-    cell_phone: string;
+    phone: string;
     client_type: string;
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
@@ -158,7 +158,7 @@ export default function ClientEdit() {
     const form = useForm({
         first_name: client.first_name,
         last_name: client.last_name,
-        cell_phone: client.cell_phone,
+        phone: client.phone,
         client_type: client.client_type,
         how_did_you_hear: client.how_did_you_hear || '',
         sitter_preferences: client.sitter_preferences || [],
@@ -347,12 +347,9 @@ export default function ClientEdit() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={form.data.cell_phone}
+                                    value={form.data.phone}
                                     onChange={(e) =>
-                                        form.setData(
-                                            'cell_phone',
-                                            e.target.value,
-                                        )
+                                        form.setData('phone', e.target.value)
                                     }
                                     className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required

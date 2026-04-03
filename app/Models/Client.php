@@ -23,7 +23,7 @@ class Client extends Model
         'first_name',
         'last_name',
         'email',
-        'cell_phone',
+        'phone',
         'client_type',
         'corporate_id',
         'how_did_you_hear',

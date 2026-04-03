@@ -50,7 +50,7 @@ class ClientController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'cell_phone' => 'required|string|max:20',
+            'phone' => 'required|string|max:20',
             'client_type' => 'required|in:sd_resident,vacationer,invoiced',
             'password' => 'required|string|min:4|confirmed',
             'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
@@ -68,7 +68,7 @@ class ClientController extends Controller
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
-            'cell_phone' => $validated['cell_phone'],
+            'phone' => $validated['phone'],
             'client_type' => $validated['client_type'],
             'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
         ]);
@@ -90,7 +90,7 @@ class ClientController extends Controller
             });
         }
 
-        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'email', 'cell_phone', 'client_type'])
+        $clients = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'email', 'phone', 'client_type'])
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->first_name.' '.$c->last_name,
@@ -151,7 +151,7 @@ class ClientController extends Controller
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
                 'email' => $client->email,
-                'cell_phone' => $client->cell_phone,
+                'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
                 'sitter_preferences' => $client->sitter_preferences,
@@ -241,7 +241,7 @@ class ClientController extends Controller
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
                 'email' => $client->user->email,
-                'cell_phone' => $client->cell_phone,
+                'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
                 'sitter_preferences' => $client->sitter_preferences,
@@ -297,7 +297,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'cell_phone' => 'required|string|max:20',
+            'phone' => 'required|string|max:20',
             'client_type' => 'required|in:sd_resident,vacationer,invoiced',
             'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
             'sitter_preferences' => 'nullable|array',

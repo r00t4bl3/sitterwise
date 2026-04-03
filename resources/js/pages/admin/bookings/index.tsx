@@ -262,7 +262,7 @@ export default function BookingsIndex() {
             first_name: string;
             last_name: string;
             email: string;
-            cell_phone: string;
+            phone: string;
             client_type: string;
         };
         new_children: Array<{
@@ -315,7 +315,7 @@ export default function BookingsIndex() {
             first_name: '',
             last_name: '',
             email: '',
-            cell_phone: '',
+            phone: '',
             client_type: 'individual',
         },
         new_children: [],
@@ -533,7 +533,7 @@ export default function BookingsIndex() {
                 first_name: '',
                 last_name: '',
                 email: '',
-                cell_phone: '',
+                phone: '',
                 client_type: 'individual',
             },
         });

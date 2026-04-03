@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->unique();
-            $table->string('cell_phone');
+            $table->string('phone');
             $table->enum('client_type', ['sd_resident', 'vacationer', 'invoiced'])->default('vacationer');
             $table->string('corporate_id')->nullable();
             $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();

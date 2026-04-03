@@ -25,7 +25,7 @@ export default function ClientCreate() {
         first_name: '',
         last_name: '',
         email: '',
-        cell_phone: '',
+        phone: '',
         client_type: 'vacationer',
         password: '',
         password_confirmation: '',
@@ -130,24 +130,21 @@ export default function ClientCreate() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">
-                                    Cell Phone{' '}
+                                    Phone{' '}
                                     <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    value={form.data.cell_phone}
+                                    value={form.data.phone}
                                     onChange={(e) =>
-                                        form.setData(
-                                            'cell_phone',
-                                            e.target.value,
-                                        )
+                                        form.setData('phone', e.target.value)
                                     }
                                     className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
-                                {form.errors.cell_phone && (
+                                {form.errors.phone && (
                                     <p className="text-sm text-destructive">
-                                        {form.errors.cell_phone}
+                                        {form.errors.phone}
                                     </p>
                                 )}
                             </div>

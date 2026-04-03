@@ -13,7 +13,7 @@ class CaregiverSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = User::factory()->count(51)->create();
+        $users = User::factory()->count(21)->create();
 
         foreach ($users as $user) {
             $user->role = 'caregiver';

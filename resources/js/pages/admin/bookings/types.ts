@@ -156,7 +156,7 @@ export interface BookingFormData {
         first_name: string;
         last_name: string;
         email: string;
-        cell_phone: string;
+        phone: string;
         client_type: string;
     };
 }
@@ -165,6 +165,6 @@ export interface NewClientData {
     first_name: string;
     last_name: string;
     email: string;
-    cell_phone: string;
+    phone: string;
     client_type: string;
 }

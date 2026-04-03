@@ -34,7 +34,7 @@ Core profile record. One row per client, regardless of job history.
 | `first_name`             | `string`          | Yes      |                                                                                                  |
 | `last_name`              | `string`          | Yes      |                                                                                                  |
 | `email`                  | `string`          | Yes      | Unique. Used as duplicate-check ID on guest checkout                                             |
-| `cell_phone`             | `string`          | Yes      | International format                                                                             |
+| `phone`                  | `string`          | Yes      | International format                                                                             |
 | `client_type`            | `enum`            | Yes      | `sd_resident` · `vacationer` · `invoiced`                                                        |
 | `corporate_id`           | `string`          | No       | Invoiced clients only                                                                            |
 | `how_did_you_hear`       | `enum`            | No       | `concierge` · `friend_family` · `google` · `returning_client` · `care_com` · `other`             |
@@ -43,6 +43,8 @@ Core profile record. One row per client, regardless of job history.
 | `medical_info`           | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `emergency_instructions` | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `caregiver_notes`        | `text`            | No       | Caregiver-visible before acceptance                                                              |
+| `special_needs`          | `boolean`         | No       | Client-wide special needs flag                                                                   |
+| `special_needs_notes`    | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `created_at`             | `timestamp`       | Yes      |                                                                                                  |
 | `updated_at`             | `timestamp`       | Yes      |                                                                                                  |
 
@@ -84,18 +86,16 @@ Multiple addresses per client. Powers the Address Book on the job form.
 
 One row per child. Replaces the legacy free-text "Kids" field.
 
-| Field                 | Type              | Required | Notes                                             |
-| --------------------- | ----------------- | -------- | ------------------------------------------------- |
-| `id`                  | `unsigned bigint` | Yes      | Primary key. Auto-increment                       |
-| `client_id`           | `unsigned bigint` | Yes      | FK → `CLIENT.id`                                  |
-| `name`                | `string`          | No       | Optional — some clients may prefer not to provide |
-| `gender`              | `string`          | No       |                                                   |
-| `birth_month`         | `integer`         | No       | 1–12. Required if `birth_year` is set             |
-| `birth_year`          | `integer`         | No       | Used to calculate current age dynamically         |
-| `special_needs`       | `boolean`         | No       |                                                   |
-| `special_needs_notes` | `text`            | No       | Caregiver-visible before acceptance               |
-| `created_at`          | `timestamp`       | Yes      |                                                   |
-| `updated_at`          | `timestamp`       | Yes      |                                                   |
+| Field         | Type              | Required | Notes                                             |
+| ------------- | ----------------- | -------- | ------------------------------------------------- |
+| `id`          | `unsigned bigint` | Yes      | Primary key. Auto-increment                       |
+| `client_id`   | `unsigned bigint` | Yes      | FK → `CLIENT.id`                                  |
+| `name`        | `string`          | No       | Optional — some clients may prefer not to provide |
+| `gender`      | `string`          | No       |                                                   |
+| `birth_month` | `integer`         | No       | 1–12. Required if `birth_year` is set             |
+| `birth_year`  | `integer`         | No       | Used to calculate current age dynamically         |
+| `created_at`  | `timestamp`       | Yes      |                                                   |
+| `updated_at`  | `timestamp`       | Yes      |                                                   |
 
 **Notes:**
 

@@ -161,7 +161,7 @@ class BookingController extends Controller
             'new_client.first_name' => 'required_without:client_id|string',
             'new_client.last_name' => 'required_with:new_client.first_name|string',
             'new_client.email' => 'required_with:new_client.first_name|email|unique:users,email',
-            'new_client.cell_phone' => 'nullable|string',
+            'new_client.phone' => 'nullable|string',
             'new_client.client_type' => 'required_with:new_client.first_name|string',
         ]);
 
@@ -181,7 +181,7 @@ class BookingController extends Controller
                 'first_name' => $validated['new_client']['first_name'],
                 'last_name' => $validated['new_client']['last_name'],
                 'email' => $validated['new_client']['email'],
-                'cell_phone' => $validated['new_client']['cell_phone'] ?? null,
+                'phone' => $validated['new_client']['phone'] ?? null,
                 'client_type' => $validated['new_client']['client_type'] ?? 'individual',
                 'corporate_id' => $validated['corporate_id'] ?? null,
                 'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,

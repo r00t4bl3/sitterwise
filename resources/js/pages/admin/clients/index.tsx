@@ -48,7 +48,7 @@ interface Client {
     first_name: string;
     last_name: string;
     email: string;
-    cell_phone: string;
+    phone: string;
     client_type: string;
     user: {
         profile_photo_path: string | null;
@@ -271,7 +271,7 @@ export default function ClientsIndex() {
                                         {client.email}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {client.cell_phone}
+                                        {client.phone}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <Link

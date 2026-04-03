@@ -12,19 +12,15 @@ class BookingSeeder extends Seeder
     {
         foreach (BookingStatus::cases() as $status) {
             Booking::factory()
-                ->count(3)
+                ->count(rand(1, 3))
                 ->state(['status' => $status->value])
                 ->create();
         }
 
         Booking::factory()
-            ->count(5)
+            ->count(7)
             ->confirmed()
-            ->create();
-
-        Booking::factory()
-            ->count(3)
-            ->completed()
+            ->hotel()
             ->create();
     }
 }

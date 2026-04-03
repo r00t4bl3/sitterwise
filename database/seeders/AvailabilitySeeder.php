@@ -35,16 +35,20 @@ class AvailabilitySeeder extends Seeder
 
         foreach ($caregivers as $index => $caregiver) {
             for ($i = 0; $i < 7; $i++) {
+
                 $date = $startDate->copy()->addDays($i);
                 $timeSlots = $timeSlotOptions[array_rand($timeSlotOptions)];
                 $specificTime = $specificTimes[array_rand($specificTimes)];
 
-                Availability::create([
-                    'caregiver_id' => $caregiver->id,
-                    'date' => $date->toDateString(),
-                    'time_slots' => $timeSlots,
-                    'specific_time' => $specificTime,
-                ]);
+                // Create randomly some days without availability for the caregiver
+                if ($i != rand(0, 6)) {
+                    Availability::create([
+                        'caregiver_id' => $caregiver->id,
+                        'date' => $date->toDateString(),
+                        'time_slots' => $timeSlots,
+                        'specific_time' => $specificTime,
+                    ]);
+                }
             }
         }
     }

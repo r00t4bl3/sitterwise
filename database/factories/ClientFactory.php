@@ -25,7 +25,7 @@ class ClientFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
-            'cell_phone' => fake()->phoneNumber(),
+            'phone' => fake()->phoneNumber(),
             'client_type' => fake()->randomElement(['sd_resident', 'vacationer', 'invoiced']),
             'corporate_id' => null,
             'how_did_you_hear' => fake()->randomElement(['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other']),
