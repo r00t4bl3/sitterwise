@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { toast } from "sonner"
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function FlashMessage() {
@@ -14,7 +14,7 @@ export function FlashMessage() {
     }
 
     if (flash.success) {
-        toast.success("Event has been created")
+        toast.success('Event has been created');
     }
 
     return (

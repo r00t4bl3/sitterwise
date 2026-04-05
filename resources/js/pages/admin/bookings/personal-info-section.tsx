@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import { Autocomplete } from '@/components/ui/autocomplete';
+import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
+import { Autocomplete } from '@/components/ui/autocomplete';
 
 interface NewChild {
     tempId: string;
@@ -214,6 +214,7 @@ export function PersonalInfoSection({
                                 />
                             </div>
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-foreground">
                                 Email <span className="text-red-500">*</span>
@@ -263,6 +264,7 @@ export function PersonalInfoSection({
                                         ...form.data.new_client,
                                         client_type: newType,
                                     });
+
                                     if (newType === 'resident') {
                                         form.setData(
                                             'location_type',
@@ -320,15 +322,18 @@ export function PersonalInfoSection({
                                     clientMode === 'select'
                                         ? selectedClientType
                                         : form.data.new_client?.client_type;
+
                                 if (clientType === 'resident') {
                                     return type.value === 'private_home';
                                 }
+
                                 if (clientType === 'vacationer') {
                                     return (
                                         type.value === 'hotel' ||
                                         type.value === 'vacation_rental'
                                     );
                                 }
+
                                 return true;
                             })
                             .map((type) => (
@@ -363,6 +368,7 @@ export function PersonalInfoSection({
                                         const addr = clientAddresses.find(
                                             (a) => a.id === addrId,
                                         );
+
                                         if (addr) {
                                             form.setData(
                                                 'address_line1',
@@ -451,6 +457,7 @@ export function PersonalInfoSection({
                                     const hotel = hotels.find(
                                         (h) => h.id === id,
                                     );
+
                                     if (hotel) {
                                         form.setData(
                                             'address_line1',
@@ -678,6 +685,54 @@ export function PersonalInfoSection({
                 </div>
 
                 <div>
+                    <label className="text-sm font-medium text-foreground">
+                        Special Needs / Allergies
+                    </label>
+                    <textarea
+                        value={form.data.special_needs_notes || ''}
+                        onChange={(e) =>
+                            form.setData('special_needs_notes', e.target.value)
+                        }
+                        placeholder="Special needs notes"
+                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
+                        rows={3}
+                    />
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground">
+                        Medical / Medications
+                    </label>
+                    <textarea
+                        value={form.data.medical_info || ''}
+                        onChange={(e) =>
+                            form.setData('medical_info', e.target.value)
+                        }
+                        placeholder="Medical information"
+                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
+                        rows={3}
+                    />
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground">
+                        Emergency Instructions
+                    </label>
+                    <textarea
+                        value={form.data.emergency_instructions || ''}
+                        onChange={(e) =>
+                            form.setData(
+                                'emergency_instructions',
+                                e.target.value,
+                            )
+                        }
+                        placeholder="Emergency instructions"
+                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
+                        rows={3}
+                    />
+                </div>
+
+                <div>
                     <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-foreground">
                             Pets
@@ -834,6 +889,72 @@ export function PersonalInfoSection({
                         </table>
                     </div>
                 </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground">
+                        Other Adults Present
+                    </label>
+                    <input
+                        type="text"
+                        value={form.data.other_adults || ''}
+                        onChange={(e) =>
+                            form.setData('other_adults', e.target.value)
+                        }
+                        placeholder="Other adults in home"
+                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                    />
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground">
+                        Sitter Preferences
+                    </label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {sitter_preference_options.map((option) => (
+                            <label
+                                key={option.value}
+                                className="flex items-center gap-2"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={form.data.sitter_preferences.includes(option.value)}
+                                    onChange={(e) => {
+                                        const newPrefs = e.target.checked
+                                            ? [...form.data.sitter_preferences, option.value]
+                                            : form.data.sitter_preferences.filter((pref: string) => pref !== option.value);
+                                        form.setData('sitter_preferences', newPrefs);
+                                    }}
+                                    className="h-4 w-4 rounded border-input"
+                                />
+                    <span className="text-sm text-foreground">
+                        {option.label}
+                    </span>
+                    </label>
+                        ))}
+                    </div>
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-foreground">
+                        How Did You Hear
+                    </label>
+                    <select
+                        value={form.data.how_did_you_hear || ''}
+                        onChange={(e) =>
+                            form.setData('how_did_you_hear', e.target.value)
+                        }
+                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                    >
+                        <option value="">Select...</option>
+                        <option value="concierge">Concierge</option>
+                        <option value="friend_family">Friend/Family</option>
+                        <option value="google">Google</option>
+                        <option value="returning_client">Returning Client</option>
+                        <option value="care_com">Care.com</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
 
                 <label className="flex items-center gap-2">
                     <input

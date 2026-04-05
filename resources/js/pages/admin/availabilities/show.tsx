@@ -243,7 +243,10 @@ export default function ManageAvailability() {
                                     : 'Availability'}
                             </SheetTitle>
                             <SheetDescription>
-                                Manage availability for {selectedDate ? formatDate(selectedDate) : 'the selected date'}
+                                Manage availability for{' '}
+                                {selectedDate
+                                    ? formatDate(selectedDate)
+                                    : 'the selected date'}
                             </SheetDescription>
                         </SheetHeader>
 

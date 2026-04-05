@@ -1,8 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-import { useState  } from 'react';
-import type { SubmitEventHandler} from 'react';
-import type {FormEventHandler} from 'react';
+import { useState } from 'react';
+import type { SubmitEventHandler } from 'react';
+import type { FormEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Checkbox } from '@/components/ui/checkbox';
 import {

@@ -1,8 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 function ClientTypeBadge({ type }: { type: string }) {
@@ -92,9 +92,12 @@ export default function ClientsIndex() {
     const handleClientSearch = async (query: string) => {
         if (query.trim().length < 2) {
             setSuggestions([]);
+
             return;
         }
+
         setIsLoading(true);
+
         try {
             const params = new URLSearchParams({ q: query });
             const response = await fetch(
@@ -157,6 +160,7 @@ export default function ClientsIndex() {
                                         name: string;
                                         client_type: string;
                                     };
+
                                     return (
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-foreground">

@@ -72,6 +72,7 @@ export interface Booking {
     other_adults: string | null;
     medical_info: string | null;
     emergency_instructions: string | null;
+    special_needs_notes: string | null;
     attributeDefinitions?: Array<{
         pivot: {
             attribute_definition_id: number;
@@ -141,6 +142,7 @@ export interface BookingFormData {
     other_adults: string;
     medical_info: string;
     emergency_instructions: string;
+    special_needs_notes: string;
     requires_payment: boolean;
     status: string;
     payment_status: string;

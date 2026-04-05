@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
@@ -8,7 +9,6 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Autocomplete } from '@/components/ui/autocomplete';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -124,9 +124,12 @@ export default function CaregiversIndex() {
     const handleCaregiverSearch = async (query: string) => {
         if (query.trim().length < 2) {
             setSuggestions([]);
+
             return;
         }
+
         setIsLoading(true);
+
         try {
             const params = new URLSearchParams({ q: query });
             const response = await fetch(
@@ -185,6 +188,7 @@ export default function CaregiversIndex() {
                                         name: string;
                                         status: Status | null;
                                     };
+
                                     return (
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-foreground">

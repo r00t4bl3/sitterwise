@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { PersonalInfoSection } from './personal-info-section';
 import { BookingDetailsSection } from './booking-details-section';
+import { PersonalInfoSection } from './personal-info-section';
 import type {
     Client,
     Hotel,
@@ -131,7 +131,9 @@ function calculateAge(
     birthYear: number | null,
     birthMonth: number | null,
 ): string {
-    if (!birthYear) return '-';
+    if (!birthYear) {
+        return '-';
+    }
 
     const today = new Date();
     const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
@@ -150,6 +152,7 @@ function calculateAge(
             (today.getFullYear() - birthDate.getFullYear()) * 12 +
             today.getMonth() -
             birthDate.getMonth();
+
         return `${months}mo`;
     }
 
@@ -271,6 +274,7 @@ export default function BookingsIndex() {
         other_adults: string;
         medical_info: string;
         emergency_instructions: string;
+        special_needs_notes: string;
         requires_payment: boolean;
         status: string;
         payment_status: string;
@@ -321,6 +325,7 @@ export default function BookingsIndex() {
         other_adults: '',
         medical_info: '',
         emergency_instructions: '',
+        special_needs_notes: '',
         requires_payment: true,
         status: 'received',
         payment_status: 'pending',
@@ -410,6 +415,7 @@ export default function BookingsIndex() {
     const handleClientSearch = async (query: string) => {
         if (!query.trim()) {
             setClientSuggestions([]);
+
             return;
         }
 
@@ -437,6 +443,7 @@ export default function BookingsIndex() {
                     [key: string]: unknown;
                 }>,
             );
+
             return;
         }
 
@@ -461,6 +468,7 @@ export default function BookingsIndex() {
                     [key: string]: unknown;
                 }>,
             );
+
             return;
         }
 
@@ -502,11 +510,27 @@ export default function BookingsIndex() {
 
                 // Auto-set location_type based on client_type
                 const clientType = data.client.client_type;
+
                 if (clientType === 'resident') {
                     form.setData('location_type', 'private_home');
                 } else if (clientType === 'vacationer') {
                     form.setData('location_type', 'hotel');
                 }
+
+                // Populate client fields
+                form.setData('medical_info', data.client.medical_info || '');
+                form.setData(
+                    'emergency_instructions',
+                    data.client.emergency_instructions || '',
+                );
+                form.setData(
+                    'special_needs_notes',
+                    data.client.special_needs_notes || '',
+                );
+                form.setData(
+                    'sitter_preferences',
+                    data.client.sitter_preferences || [],
+                );
             } catch (error) {
                 console.error('Error fetching client data:', error);
             }
@@ -555,6 +579,7 @@ export default function BookingsIndex() {
             other_adults: '',
             medical_info: '',
             emergency_instructions: '',
+            special_needs_notes: '',
             requires_payment: true,
             status: 'received',
             payment_status: 'pending',
@@ -617,6 +642,7 @@ export default function BookingsIndex() {
             'emergency_instructions',
             booking.emergency_instructions || '',
         );
+        form.setData('special_needs_notes', booking.special_needs_notes || '');
         form.setData('requires_payment', booking.requires_payment);
         form.setData('status', booking.status);
         form.setData('payment_status', booking.payment_status);
@@ -690,6 +716,7 @@ export default function BookingsIndex() {
 
         const diffMs = endDate.getTime() - startDate.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
+
         if (diffHours < 4) {
             return; // Inline error will show
         }

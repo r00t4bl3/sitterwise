@@ -9,7 +9,7 @@ export function BookingAddressFields({ form }: Props) {
         <div className="space-y-3">
             <div>
                 <label className="text-sm font-medium text-foreground">
-                    Address Line 1
+                    Address Line 1 <span className="text-red-500">*</span>
                 </label>
                 <input
                     type="text"
@@ -19,6 +19,7 @@ export function BookingAddressFields({ form }: Props) {
                     }
                     placeholder="Street address"
                     className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                    required
                 />
             </div>
             <div>
