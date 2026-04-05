@@ -86,7 +86,7 @@ class ProfileControllerTest extends TestCase
         ]);
 
         $response->assertRedirect('/');
-        $this->assertNull($user->fresh());
+        $this->assertSoftDeleted('users', ['id' => $user->id]);
         $this->assertGuest();
     }
 

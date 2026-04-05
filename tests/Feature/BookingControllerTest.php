@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\ClientAddress;
@@ -161,7 +160,7 @@ describe('BookingController', function () {
         ]);
     });
 
-    test('admin can create a booking with vacation rental and save platform attribute', function () {
+    test('admin can create a booking with vacation rental and save rental platform', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('bookings.store'), [
@@ -173,42 +172,24 @@ describe('BookingController', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'vacation_rental_platform' => 'airbnb',
-            'booking_address' => [
-                'line1' => '123 Beach House Way',
-                'line2' => '',
-                'city' => 'Malibu',
-                'state' => 'CA',
-                'zip' => '90265',
-            ],
+            'rental_platform' => 'airbnb',
+            'address_line1' => '123 Beach House Way',
+            'address_line2' => '',
+            'address_city' => 'Malibu',
+            'address_state' => 'CA',
+            'address_zip' => '90265',
         ]);
 
         $response->assertRedirect();
 
-        $booking = Booking::latest('id')->first();
-
         $this->assertDatabaseHas('bookings', [
             'client_id' => $this->client->id,
             'location_type' => 'vacation_rental',
-        ]);
-
-        $this->assertDatabaseHas('booking_addresses', [
-            'booking_id' => $booking->id,
-            'line1' => '123 Beach House Way',
-            'city' => 'Malibu',
-            'state' => 'CA',
-            'zip' => '90265',
-        ]);
-
-        $attribute = AttributeDefinition::where('slug', 'vacation_rental_platform')->first();
-
-        $this->assertNotNull($attribute, 'vacation_rental_platform attribute should exist');
-
-        $this->assertDatabaseHas('entity_attribute_values', [
-            'entity_id' => $booking->id,
-            'attribute_definition_id' => $attribute->id,
-            'entity_type' => 'booking',
-            'value' => 'airbnb',
+            'rental_platform' => 'airbnb',
+            'address_line1' => '123 Beach House Way',
+            'address_city' => 'Malibu',
+            'address_state' => 'CA',
+            'address_zip' => '90265',
         ]);
     });
 
@@ -281,33 +262,21 @@ describe('BookingController', function () {
             'total_amount' => '200',
             'status' => 'confirmed',
             'payment_status' => 'paid',
-            'vacation_rental_platform' => 'vrbo',
-            'booking_address' => [
-                'line1' => '456 Mountain Cabin',
-                'line2' => '',
-                'city' => 'Lake Tahoe',
-                'state' => 'CA',
-                'zip' => '96150',
-            ],
+            'rental_platform' => 'vrbo',
+            'address_line1' => '456 Mountain Cabin',
+            'address_line2' => '',
+            'address_city' => 'Lake Tahoe',
+            'address_state' => 'CA',
+            'address_zip' => '96150',
         ]);
 
         $response->assertRedirect();
 
-        $this->assertDatabaseHas('booking_addresses', [
-            'booking_id' => $booking->id,
-            'line1' => '456 Mountain Cabin',
-            'city' => 'Lake Tahoe',
-        ]);
-
-        $attribute = AttributeDefinition::where('slug', 'vacation_rental_platform')->first();
-
-        $this->assertNotNull($attribute, 'vacation_rental_platform attribute should exist');
-
-        $this->assertDatabaseHas('entity_attribute_values', [
-            'entity_id' => $booking->id,
-            'attribute_definition_id' => $attribute->id,
-            'entity_type' => 'booking',
-            'value' => 'vrbo',
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'rental_platform' => 'vrbo',
+            'address_line1' => '456 Mountain Cabin',
+            'address_city' => 'Lake Tahoe',
         ]);
     });
 
@@ -320,7 +289,7 @@ describe('BookingController', function () {
 
         $response->assertRedirect();
 
-        $this->assertDatabaseMissing('bookings', [
+        $this->assertSoftDeleted('bookings', [
             'id' => $booking->id,
         ]);
     });

@@ -8,7 +8,6 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
-use App\Models\BookingAddress;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -51,7 +50,6 @@ class BookingController extends Controller
             'hotel',
             'caregiver.user',
             'address',
-            'bookingAddress',
             'attributeDefinitions',
         ])
             ->whereBetween('start_datetime', [$startDate, $endDate])
@@ -152,12 +150,12 @@ class BookingController extends Controller
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',
             'payment_status' => 'required|string',
-            'vacation_rental_platform' => 'nullable|string',
-            'booking_address.line1' => 'nullable|string',
-            'booking_address.line2' => 'nullable|string',
-            'booking_address.city' => 'nullable|string',
-            'booking_address.state' => 'nullable|string',
-            'booking_address.zip' => 'nullable|string',
+            'rental_platform' => 'nullable|string',
+            'address_line1' => 'nullable|string',
+            'address_line2' => 'nullable|string',
+            'address_city' => 'nullable|string',
+            'address_state' => 'nullable|string',
+            'address_zip' => 'nullable|string',
             'new_client.first_name' => 'required_without:client_id|string',
             'new_client.last_name' => 'required_with:new_client.first_name|string',
             'new_client.email' => 'required_with:new_client.first_name|email|unique:users,email',
@@ -191,7 +189,7 @@ class BookingController extends Controller
                 'first_name' => $validated['new_client']['first_name'],
                 'last_name' => $validated['new_client']['last_name'],
                 'phone' => $validated['new_client']['phone'] ?? null,
-                'client_type' => $validated['new_client']['client_type'] ?? 'individual',
+                'client_type' => $validated['new_client']['client_type'] ?? 'vacationer',
                 'corporate_id' => $validated['corporate_id'] ?? null,
                 'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
                 'sitter_preferences' => $validated['sitter_preferences'] ?? null,
@@ -204,14 +202,14 @@ class BookingController extends Controller
 
             // Create client address if private_home and new address provided
             if ($validated['location_type'] === 'private_home' &&
-                ! empty($validated['booking_address']['line1'])) {
+                ! empty($validated['address_line1'])) {
                 ClientAddress::create([
                     'client_id' => $client->id,
-                    'line1' => $validated['booking_address']['line1'],
-                    'line2' => $validated['booking_address']['line2'] ?? null,
-                    'city' => $validated['booking_address']['city'],
-                    'state' => $validated['booking_address']['state'],
-                    'zip' => $validated['booking_address']['zip'],
+                    'line1' => $validated['address_line1'],
+                    'line2' => $validated['address_line2'] ?? null,
+                    'city' => $validated['address_city'],
+                    'state' => $validated['address_state'],
+                    'zip' => $validated['address_zip'],
                 ]);
             }
         }
@@ -230,8 +228,14 @@ class BookingController extends Controller
             'availability_id' => null,
             'hotel_id' => $validated['hotel_id'] ?? null,
             'address_id' => $validated['address_id'] ?? null,
+            'address_line1' => $validated['address_line1'] ?? null,
+            'address_line2' => $validated['address_line2'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+            'address_state' => $validated['address_state'] ?? null,
+            'address_zip' => $validated['address_zip'] ?? null,
             'service_type' => $validated['service_type'],
             'location_type' => $validated['location_type'],
+            'rental_platform' => $validated['rental_platform'] ?? null,
             'start_datetime' => $validated['start_datetime'],
             'end_datetime' => $validated['end_datetime'],
             'status' => $validated['status'],
@@ -240,45 +244,14 @@ class BookingController extends Controller
             'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
             'admin_notes' => $validated['admin_notes'] ?? null,
             'corporate_id' => $validated['corporate_id'] ?? null,
+            'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+            'other_adults' => $validated['other_adults_in_home'] ?? null,
+            'medical_info' => $validated['medical_info'] ?? null,
+            'emergency_instructions' => $validated['emergency_instructions'] ?? null,
             'total_amount' => 0,
             'payment_status' => $validated['payment_status'],
             'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
-
-        // Save vacation rental platform attribute
-        if (
-            $validated['location_type'] === 'vacation_rental' &&
-            ! empty($validated['vacation_rental_platform'])
-        ) {
-            $attribute = AttributeDefinition::where(
-                'slug',
-                'vacation_rental_platform'
-            )->first();
-
-            if ($attribute) {
-                Booking::find($booking->id)
-                    ->attributeDefinitions()
-                    ->attach($attribute->id, [
-                        'value' => $validated['vacation_rental_platform'],
-                        'entity_type' => 'booking',
-                    ]);
-            }
-        }
-
-        // Save booking address for vacation rental
-        if (
-            $validated['location_type'] === 'vacation_rental' &&
-            ! empty($validated['booking_address']['line1'])
-        ) {
-            BookingAddress::create([
-                'booking_id' => $booking->id,
-                'line1' => $validated['booking_address']['line1'],
-                'line2' => $validated['booking_address']['line2'] ?? null,
-                'city' => $validated['booking_address']['city'],
-                'state' => $validated['booking_address']['state'],
-                'zip' => $validated['booking_address']['zip'],
-            ]);
-        }
 
         return back()->with('success', 'Booking created successfully.');
     }
@@ -298,16 +271,20 @@ class BookingController extends Controller
             'notes_to_sitterwise' => 'nullable|string',
             'admin_notes' => 'nullable|string',
             'corporate_id' => 'nullable|string',
+            'sitter_preferences' => 'nullable|array',
+            'other_adults' => 'nullable|string',
+            'medical_info' => 'nullable|string',
+            'emergency_instructions' => 'nullable|string',
             'total_amount' => 'required|numeric|min:0',
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',
             'payment_status' => 'required|string',
-            'vacation_rental_platform' => 'nullable|string',
-            'booking_address.line1' => 'nullable|string',
-            'booking_address.line2' => 'nullable|string',
-            'booking_address.city' => 'nullable|string',
-            'booking_address.state' => 'nullable|string',
-            'booking_address.zip' => 'nullable|string',
+            'rental_platform' => 'nullable|string',
+            'address_line1' => 'nullable|string',
+            'address_line2' => 'nullable|string',
+            'address_city' => 'nullable|string',
+            'address_state' => 'nullable|string',
+            'address_zip' => 'nullable|string',
             'deleted_child_ids' => 'nullable|array',
             'deleted_child_ids.*' => 'integer|exists:client_children,id',
             'deleted_pet_ids' => 'nullable|array',
@@ -371,52 +348,6 @@ class BookingController extends Controller
                     'notes' => $petData['notes'] ?? null,
                 ]);
             }
-        }
-
-        // Update vacation rental platform attribute
-        if ($validated['location_type'] === 'vacation_rental') {
-            $attribute = AttributeDefinition::where(
-                'slug',
-                'vacation_rental_platform'
-            )->first();
-
-            if ($attribute) {
-                // Detach existing and attach new if provided
-                $booking->attributeDefinitions()->detach($attribute->id);
-
-                if (! empty($validated['vacation_rental_platform'])) {
-                    $booking->attributeDefinitions()->attach($attribute->id, [
-                        'value' => $validated['vacation_rental_platform'],
-                        'entity_type' => 'booking',
-                    ]);
-                }
-            }
-
-            // Update or create booking address
-            if (! empty($validated['booking_address']['line1'])) {
-                BookingAddress::updateOrCreate(
-                    ['booking_id' => $booking->id],
-                    [
-                        'line1' => $validated['booking_address']['line1'],
-                        'line2' => $validated['booking_address']['line2'] ?? null,
-                        'city' => $validated['booking_address']['city'],
-                        'state' => $validated['booking_address']['state'],
-                        'zip' => $validated['booking_address']['zip'],
-                    ]
-                );
-            }
-        } else {
-            // If not vacation rental, delete associated data
-            $attribute = AttributeDefinition::where(
-                'slug',
-                'vacation_rental_platform'
-            )->first();
-
-            if ($attribute) {
-                $booking->attributeDefinitions()->detach($attribute->id);
-            }
-
-            $booking->bookingAddress()->delete();
         }
 
         return back()->with('success', 'Booking updated successfully.');

@@ -62,6 +62,16 @@ export interface Booking {
     hotel_id: number | null;
     address_id: number | null;
     caregiver_id: number | null;
+    address_line1: string | null;
+    address_line2: string | null;
+    address_city: string | null;
+    address_state: string | null;
+    address_zip: string | null;
+    rental_platform: string | null;
+    sitter_preferences: string[] | null;
+    other_adults: string | null;
+    medical_info: string | null;
+    emergency_instructions: string | null;
     attributeDefinitions?: Array<{
         pivot: {
             attribute_definition_id: number;
@@ -84,14 +94,6 @@ export interface Booking {
         id: number;
         first_name: string;
         last_name: string;
-    } | null;
-    booking_address: {
-        id: number;
-        line1: string;
-        line2: string | null;
-        city: string;
-        state: string;
-        zip: string;
     } | null;
 }
 
@@ -135,21 +137,19 @@ export interface BookingFormData {
     admin_notes: string;
     corporate_id: string;
     how_did_you_hear: string;
-    sitter_preferences: string;
-    other_adults_in_home: string;
+    sitter_preferences: string[];
+    other_adults: string;
     medical_info: string;
     emergency_instructions: string;
     requires_payment: boolean;
     status: string;
     payment_status: string;
-    vacation_rental_platform: string;
-    booking_address: {
-        line1: string;
-        line2: string;
-        city: string;
-        state: string;
-        zip: string;
-    };
+    rental_platform: string | null;
+    address_line1: string;
+    address_line2: string;
+    address_city: string;
+    address_state: string;
+    address_zip: string;
     new_client: {
         first_name: string;
         last_name: string;

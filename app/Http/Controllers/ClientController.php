@@ -107,6 +107,7 @@ class ClientController extends Controller
             'client' => [
                 'id' => $client->id,
                 'name' => $client->user->name ?? $client->first_name.' '.$client->last_name,
+                'client_type' => $client->client_type,
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,
                     'line1' => $a->line1,

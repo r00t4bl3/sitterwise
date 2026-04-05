@@ -16,8 +16,14 @@ return new class extends Migration
             $table->foreignId('availability_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('hotel_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('address_id')->nullable()->constrained('client_addresses')->nullOnDelete();
+            $table->string('address_line1')->nullable();
+            $table->string('address_line2')->nullable();
+            $table->string('address_city')->nullable();
+            $table->string('address_state')->nullable();
+            $table->string('address_zip')->nullable();
             $table->string('service_type');
             $table->string('location_type');
+            $table->string('rental_platform')->nullable();
             $table->timestamp('start_datetime');
             $table->timestamp('end_datetime');
             $table->string('status');
@@ -26,9 +32,14 @@ return new class extends Migration
             $table->text('notes_to_sitterwise')->nullable();
             $table->text('admin_notes')->nullable();
             $table->string('corporate_id')->nullable();
+            $table->json('sitter_preferences')->nullable();
+            $table->string('other_adults')->nullable();
+            $table->text('medical_info')->nullable();
+            $table->text('emergency_instructions')->nullable();
             $table->decimal('total_amount', 10, 2);
             $table->string('payment_status');
             $table->boolean('requires_payment')->default(true);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

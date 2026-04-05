@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ClientType;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,7 +26,7 @@ class ClientFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'phone' => fake()->phoneNumber(),
-            'client_type' => fake()->randomElement(['sd_resident', 'vacationer', 'invoiced']),
+            'client_type' => fake()->randomElement([ClientType::Resident->value, ClientType::Vacationer->value, ClientType::Invoiced->value]),
             'corporate_id' => null,
             'how_did_you_hear' => fake()->randomElement(['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other']),
             'sitter_preferences' => fake()->randomElements($preferences, fake()->numberBetween(0, 3)),

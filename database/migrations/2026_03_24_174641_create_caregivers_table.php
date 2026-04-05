@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('rating', 3, 2)->nullable();
             $table->text('biography')->nullable();
             $table->text('notes')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index('first_name');

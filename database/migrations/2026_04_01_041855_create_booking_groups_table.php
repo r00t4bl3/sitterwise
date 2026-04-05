@@ -14,6 +14,7 @@ return new class extends Migration
             $table->timestamp('submitted_at');
             $table->string('submission_type');
             $table->boolean('is_split')->default(false);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

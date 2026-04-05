@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('gender')->nullable();
             $table->integer('birth_month')->nullable();
             $table->integer('birth_year')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index('client_id');

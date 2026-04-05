@@ -167,9 +167,32 @@ export default function BookingsIndex() {
         location_types,
         booking_statuses,
         payment_statuses,
-        special_consideration_options,
         booking_attributes,
     } = usePage<Props>().props;
+
+    const sitter_preference_options = [
+        { value: 'college_aged', label: 'College Aged' },
+        { value: 'seasoned', label: 'Seasoned' },
+        { value: 'baby_specialist', label: 'Baby Specialist' },
+        { value: 'special_needs_exp', label: 'Special Needs Experience' },
+        { value: 'willing_to_swim', label: 'Willing to Swim' },
+    ];
+
+    const client_type_options = [
+        { value: 'resident', label: 'San Diego Resident' },
+        { value: 'vacationer', label: 'Vacationer' },
+        { value: 'invoiced', label: 'Invoiced' },
+    ];
+
+    const special_consideration_options =
+        booking_attributes
+            .find((attr) => attr.slug === 'special_considerations')
+            ?.options.map((opt) => ({
+                value: opt,
+                label: opt
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+            })) || [];
 
     const [currentMonth, setCurrentMonth] = useState(filters.month);
     const [currentYear, setCurrentYear] = useState(filters.year);
@@ -195,6 +218,9 @@ export default function BookingsIndex() {
         'select',
     );
     const [clientMode, setClientMode] = useState<'select' | 'input'>('select');
+    const [selectedClientType, setSelectedClientType] = useState<string | null>(
+        null,
+    );
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
     const [selectedClientName, setSelectedClientName] = useState<string>('');
@@ -241,21 +267,19 @@ export default function BookingsIndex() {
         admin_notes: string;
         corporate_id: string;
         how_did_you_hear: string;
-        sitter_preferences: string;
-        other_adults_in_home: string;
+        sitter_preferences: string[];
+        other_adults: string;
         medical_info: string;
         emergency_instructions: string;
         requires_payment: boolean;
         status: string;
         payment_status: string;
-        vacation_rental_platform: string;
-        booking_address: {
-            line1: string;
-            line2: string;
-            city: string;
-            state: string;
-            zip: string;
-        };
+        rental_platform: string | null;
+        address_line1: string;
+        address_line2: string;
+        address_city: string;
+        address_state: string;
+        address_zip: string;
         new_client: {
             first_name: string;
             last_name: string;
@@ -293,21 +317,19 @@ export default function BookingsIndex() {
         admin_notes: '',
         corporate_id: '',
         how_did_you_hear: '',
-        sitter_preferences: '',
-        other_adults_in_home: '',
+        sitter_preferences: [],
+        other_adults: '',
         medical_info: '',
         emergency_instructions: '',
         requires_payment: true,
         status: 'received',
         payment_status: 'pending',
-        vacation_rental_platform: '',
-        booking_address: {
-            line1: '',
-            line2: '',
-            city: '',
-            state: '',
-            zip: '',
-        },
+        rental_platform: null,
+        address_line1: '',
+        address_line2: '',
+        address_city: '',
+        address_state: '',
+        address_zip: '',
         new_client: {
             first_name: '',
             last_name: '',
@@ -467,6 +489,24 @@ export default function BookingsIndex() {
                 setClientAddresses(data.client.addresses || []);
                 setClientChildren(data.client.children || []);
                 setClientPets(data.client.pets || []);
+
+                // Store client_type for location type filtering
+                setSelectedClientType(data.client.client_type || null);
+
+                // Reset address fields
+                form.setData('address_line1', '');
+                form.setData('address_line2', '');
+                form.setData('address_city', '');
+                form.setData('address_state', '');
+                form.setData('address_zip', '');
+
+                // Auto-set location_type based on client_type
+                const clientType = data.client.client_type;
+                if (clientType === 'resident') {
+                    form.setData('location_type', 'private_home');
+                } else if (clientType === 'vacationer') {
+                    form.setData('location_type', 'hotel');
+                }
             } catch (error) {
                 console.error('Error fetching client data:', error);
             }
@@ -474,6 +514,7 @@ export default function BookingsIndex() {
             setClientAddresses([]);
             setClientChildren([]);
             setClientPets([]);
+            setSelectedClientType(null);
         }
     };
 
@@ -510,27 +551,25 @@ export default function BookingsIndex() {
             admin_notes: '',
             corporate_id: '',
             how_did_you_hear: '',
-            sitter_preferences: '',
-            other_adults_in_home: '',
+            sitter_preferences: [],
+            other_adults: '',
             medical_info: '',
             emergency_instructions: '',
             requires_payment: true,
             status: 'received',
             payment_status: 'pending',
-            vacation_rental_platform: '',
-            booking_address: {
-                line1: '',
-                line2: '',
-                city: '',
-                state: '',
-                zip: '',
-            },
+            rental_platform: null,
+            address_line1: '',
+            address_line2: '',
+            address_city: '',
+            address_state: '',
+            address_zip: '',
             new_client: {
                 first_name: '',
                 last_name: '',
                 email: '',
                 phone: '',
-                client_type: 'individual',
+                client_type: 'vacationer',
             },
         });
         setClientAddresses([]);
@@ -571,44 +610,27 @@ export default function BookingsIndex() {
         form.setData('notes_to_sitterwise', booking.notes_to_sitterwise || '');
         form.setData('admin_notes', booking.admin_notes || '');
         form.setData('corporate_id', booking.corporate_id || '');
+        form.setData('sitter_preferences', booking.sitter_preferences || []);
+        form.setData('other_adults', booking.other_adults || '');
+        form.setData('medical_info', booking.medical_info || '');
+        form.setData(
+            'emergency_instructions',
+            booking.emergency_instructions || '',
+        );
         form.setData('requires_payment', booking.requires_payment);
         form.setData('status', booking.status);
         form.setData('payment_status', booking.payment_status);
 
-        if (
-            booking.location_type === 'vacation_rental' &&
-            booking.attributeDefinitions
-        ) {
-            const platformAttr = booking.attributeDefinitions.find(
-                (attr: {
-                    pivot: { attribute_definition_id: number; value: string };
-                }) => {
-                    const attrDef = booking_attributes.find(
-                        (a: { id: number; slug: string }) =>
-                            a.id === attr.pivot.attribute_definition_id &&
-                            a.slug === 'vacation_rental_platform',
-                    );
-
-                    return !!attrDef;
-                },
-            );
-
-            if (platformAttr) {
-                form.setData(
-                    'vacation_rental_platform',
-                    platformAttr.pivot.value,
-                );
-            }
+        if (booking.rental_platform) {
+            form.setData('rental_platform', booking.rental_platform);
         }
 
-        if (booking.booking_address) {
-            form.setData('booking_address', {
-                line1: booking.booking_address.line1 || '',
-                line2: booking.booking_address.line2 || '',
-                city: booking.booking_address.city || '',
-                state: booking.booking_address.state || '',
-                zip: booking.booking_address.zip || '',
-            });
+        if (booking.address_line1) {
+            form.setData('address_line1', booking.address_line1);
+            form.setData('address_line2', booking.address_line2 || '');
+            form.setData('address_city', booking.address_city || '');
+            form.setData('address_state', booking.address_state || '');
+            form.setData('address_zip', booking.address_zip || '');
         }
 
         if (booking.client_id) {
@@ -1009,7 +1031,12 @@ export default function BookingsIndex() {
                                 selectedClientName={selectedClientName}
                                 handleClientSearch={handleClientSearch}
                                 handleClientChange={handleClientChange}
+                                selectedClientType={selectedClientType}
                                 location_types={location_types}
+                                sitter_preference_options={
+                                    sitter_preference_options
+                                }
+                                client_type_options={client_type_options}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}
                                 hotelSuggestions={hotelSuggestions}

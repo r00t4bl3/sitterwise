@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('state');
             $table->string('zip');
             $table->boolean('is_primary')->default(false);
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index('client_id');

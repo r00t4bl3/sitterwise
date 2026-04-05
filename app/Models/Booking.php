@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Booking extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'booking_group_id',
@@ -18,8 +19,14 @@ class Booking extends Model
         'availability_id',
         'hotel_id',
         'address_id',
+        'address_line1',
+        'address_line2',
+        'address_city',
+        'address_state',
+        'address_zip',
         'service_type',
         'location_type',
+        'rental_platform',
         'start_datetime',
         'end_datetime',
         'status',
@@ -28,6 +35,10 @@ class Booking extends Model
         'notes_to_sitterwise',
         'admin_notes',
         'corporate_id',
+        'sitter_preferences',
+        'other_adults',
+        'medical_info',
+        'emergency_instructions',
         'total_amount',
         'payment_status',
         'requires_payment',
@@ -37,6 +48,7 @@ class Booking extends Model
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
         'special_considerations' => 'array',
+        'sitter_preferences' => 'array',
         'total_amount' => 'decimal:2',
         'requires_payment' => 'boolean',
     ];
@@ -69,11 +81,6 @@ class Booking extends Model
     public function address(): BelongsTo
     {
         return $this->belongsTo(ClientAddress::class, 'address_id');
-    }
-
-    public function bookingAddress(): BelongsTo
-    {
-        return $this->belongsTo(BookingAddress::class);
     }
 
     public function attributeDefinitions(): BelongsToMany

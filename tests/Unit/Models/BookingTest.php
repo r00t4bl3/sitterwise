@@ -2,14 +2,12 @@
 
 use App\Models\Availability;
 use App\Models\Booking;
-use App\Models\BookingAddress;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\Hotel;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -138,16 +136,21 @@ class BookingTest extends TestCase
         $this->assertEquals($address->id, $relatedAddress->id);
     }
 
-    public function test_defines_booking_address_relationship()
+    public function test_has_address_fields()
     {
-        // The bookingAddress() relationship uses belongsTo which expects a booking_address_id
-        // foreign key on the bookings table. Since that column doesn't exist,
-        // we verify the relationship method returns the correct type.
-        $booking = Booking::factory()->make();
-        $relation = $booking->bookingAddress();
+        $booking = Booking::factory()->make([
+            'address_line1' => '123 Test St',
+            'address_line2' => 'Apt 4B',
+            'address_city' => 'Test City',
+            'address_state' => 'TS',
+            'address_zip' => '12345',
+        ]);
 
-        $this->assertInstanceOf(BelongsTo::class, $relation);
-        $this->assertInstanceOf(BookingAddress::class, $relation->getRelated());
+        $this->assertEquals('123 Test St', $booking->address_line1);
+        $this->assertEquals('Apt 4B', $booking->address_line2);
+        $this->assertEquals('Test City', $booking->address_city);
+        $this->assertEquals('TS', $booking->address_state);
+        $this->assertEquals('12345', $booking->address_zip);
     }
 
     public function test_defines_attribute_definitions_relationship()

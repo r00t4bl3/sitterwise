@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('type', ['dog', 'cat', 'other']);
             $table->string('breed')->nullable();
             $table->text('notes')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index('client_id');

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('phone');
-            $table->enum('client_type', ['sd_resident', 'vacationer', 'invoiced'])->default('vacationer');
+            $table->string('client_type')->default('vacationer');
             $table->string('corporate_id')->nullable();
             $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();
             $table->json('sitter_preferences')->nullable();
@@ -26,6 +26,7 @@ return new class extends Migration
             $table->text('emergency_instructions')->nullable();
             $table->boolean('special_needs')->default(false);
             $table->text('special_needs_notes')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index('client_type');

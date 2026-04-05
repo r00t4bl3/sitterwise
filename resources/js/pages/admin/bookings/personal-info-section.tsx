@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { BookingAddressFields } from '@/components/booking-address-fields';
 
 interface NewChild {
     tempId: string;
@@ -32,6 +33,7 @@ interface PersonalInfoSectionProps {
     clientAddresses: Array<{
         id: number;
         line1: string;
+        line2?: string;
         city: string;
         state: string;
         zip: string;
@@ -66,9 +68,12 @@ interface PersonalInfoSectionProps {
     onSaveChildrenPetsToProfileChange: (checked: boolean) => void;
     loadingSuggestions: boolean;
     selectedClientName: string;
+    selectedClientType: string | null;
     handleClientSearch: (query: string) => void;
     handleClientChange: (clientId: number | null) => void;
     location_types: Array<{ value: string; label: string }>;
+    sitter_preference_options: Array<{ value: string; label: string }>;
+    client_type_options: Array<{ value: string; label: string }>;
     booking_attributes: Array<{
         id: number;
         name: string;
@@ -120,9 +125,12 @@ export function PersonalInfoSection({
     onSaveChildrenPetsToProfileChange,
     loadingSuggestions,
     selectedClientName,
+    selectedClientType,
     handleClientSearch,
     handleClientChange,
     location_types,
+    sitter_preference_options,
+    client_type_options,
     booking_attributes,
     hotels,
     hotelSuggestions,
@@ -225,7 +233,8 @@ export function PersonalInfoSection({
                         </div>
                         <div>
                             <label className="text-sm font-medium text-foreground">
-                                Cell Phone
+                                Cell Phone{' '}
+                                <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -238,24 +247,39 @@ export function PersonalInfoSection({
                                 }
                                 placeholder="Cell Phone"
                                 className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                required
                             />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-foreground">
-                                Client Type
+                                Client Type{' '}
+                                <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={form.data.new_client.client_type}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const newType = e.target.value;
                                     form.setData('new_client', {
                                         ...form.data.new_client,
-                                        client_type: e.target.value,
-                                    })
-                                }
+                                        client_type: newType,
+                                    });
+                                    if (newType === 'resident') {
+                                        form.setData(
+                                            'location_type',
+                                            'private_home',
+                                        );
+                                    } else if (newType === 'vacationer') {
+                                        form.setData('location_type', 'hotel');
+                                    }
+                                }}
                                 className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                required
                             >
-                                <option value="individual">Individual</option>
-                                <option value="corporate">Corporate</option>
+                                {client_type_options.map((type) => (
+                                    <option key={type.value} value={type.value}>
+                                        {type.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <button
@@ -267,7 +291,7 @@ export function PersonalInfoSection({
                                     last_name: '',
                                     email: '',
                                     phone: '',
-                                    client_type: 'individual',
+                                    client_type: 'vacationer',
                                 });
                             }}
                             className="text-sm text-ring hover:text-foreground"
@@ -287,304 +311,33 @@ export function PersonalInfoSection({
                             form.setData('location_type', e.target.value)
                         }
                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                        required
                     >
-                        {location_types.map((type) => (
-                            <option key={type.value} value={type.value}>
-                                {type.label}
-                            </option>
-                        ))}
+                        {location_types
+                            .filter((type) => {
+                                const clientType =
+                                    form.data.client_id &&
+                                    clientMode === 'select'
+                                        ? selectedClientType
+                                        : form.data.new_client?.client_type;
+                                if (clientType === 'resident') {
+                                    return type.value === 'private_home';
+                                }
+                                if (clientType === 'vacationer') {
+                                    return (
+                                        type.value === 'hotel' ||
+                                        type.value === 'vacation_rental'
+                                    );
+                                }
+                                return true;
+                            })
+                            .map((type) => (
+                                <option key={type.value} value={type.value}>
+                                    {type.label}
+                                </option>
+                            ))}
                     </select>
                 </div>
-
-                {form.data.location_type === 'vacation_rental' && (
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
-                            Rental Platform
-                        </label>
-                        <select
-                            value={form.data.vacation_rental_platform}
-                            onChange={(e) =>
-                                form.setData(
-                                    'vacation_rental_platform',
-                                    e.target.value,
-                                )
-                            }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                        >
-                            <option value="">Select platform...</option>
-                            {booking_attributes
-                                .filter(
-                                    (attr) =>
-                                        attr.slug ===
-                                        'vacation_rental_platform',
-                                )
-                                .flatMap((attr) => attr.options || [])
-                                .map((option) => (
-                                    <option key={option} value={option}>
-                                        {option.charAt(0).toUpperCase() +
-                                            option.slice(1)}
-                                    </option>
-                                ))}
-                        </select>
-                    </div>
-                )}
-
-                {form.data.location_type === 'vacation_rental' && (
-                    <div className="space-y-3">
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address Line 1
-                            </label>
-                            <input
-                                type="text"
-                                value={form.data.booking_address.line1}
-                                onChange={(e) =>
-                                    form.setData('booking_address', {
-                                        ...form.data.booking_address,
-                                        line1: e.target.value,
-                                    })
-                                }
-                                placeholder="Street address"
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address Line 2
-                            </label>
-                            <input
-                                type="text"
-                                value={form.data.booking_address.line2}
-                                onChange={(e) =>
-                                    form.setData('booking_address', {
-                                        ...form.data.booking_address,
-                                        line2: e.target.value,
-                                    })
-                                }
-                                placeholder="Apt, suite, etc. (optional)"
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                            />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    City
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.city}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            city: e.target.value,
-                                        })
-                                    }
-                                    placeholder="City"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    State
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.state}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            state: e.target.value,
-                                        })
-                                    }
-                                    placeholder="State"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Zip
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.zip}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            zip: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Zip"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {form.data.location_type === 'event_venue' && (
-                    <div className="space-y-3">
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address Line 1
-                            </label>
-                            <input
-                                type="text"
-                                value={form.data.booking_address.line1}
-                                onChange={(e) =>
-                                    form.setData('booking_address', {
-                                        ...form.data.booking_address,
-                                        line1: e.target.value,
-                                    })
-                                }
-                                placeholder="Street address"
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address Line 2
-                            </label>
-                            <input
-                                type="text"
-                                value={form.data.booking_address.line2}
-                                onChange={(e) =>
-                                    form.setData('booking_address', {
-                                        ...form.data.booking_address,
-                                        line2: e.target.value,
-                                    })
-                                }
-                                placeholder="Apt, suite, etc. (optional)"
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                            />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    City
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.city}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            city: e.target.value,
-                                        })
-                                    }
-                                    placeholder="City"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    State
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.state}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            state: e.target.value,
-                                        })
-                                    }
-                                    placeholder="State"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Zip
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.zip}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            zip: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Zip"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {form.data.location_type === 'private_home' &&
-                    clientAddresses.length === 0 && (
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address
-                            </label>
-                            <div className="mt-1 space-y-3">
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.line1}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            line1: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Address Line 1"
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.line2}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            line2: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Address Line 2 (optional)"
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                                <div className="grid grid-cols-3 gap-3">
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.city}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                city: e.target.value,
-                                            })
-                                        }
-                                        placeholder="City"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.state}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                state: e.target.value,
-                                            })
-                                        }
-                                        placeholder="State"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.zip}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                zip: e.target.value,
-                                            })
-                                        }
-                                        placeholder="Zip"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                 {form.data.location_type === 'private_home' &&
                     clientAddresses.length > 0 &&
@@ -599,13 +352,46 @@ export function PersonalInfoSection({
                                     if (e.target.value === 'add_new') {
                                         setAddressMode('input');
                                         form.setData('address_id', null);
-                                    } else {
-                                        form.setData(
-                                            'address_id',
-                                            e.target.value
-                                                ? Number(e.target.value)
-                                                : null,
+                                        form.setData('address_line1', '');
+                                        form.setData('address_line2', '');
+                                        form.setData('address_city', '');
+                                        form.setData('address_state', '');
+                                        form.setData('address_zip', '');
+                                    } else if (e.target.value) {
+                                        const addrId = Number(e.target.value);
+                                        form.setData('address_id', addrId);
+                                        const addr = clientAddresses.find(
+                                            (a) => a.id === addrId,
                                         );
+                                        if (addr) {
+                                            form.setData(
+                                                'address_line1',
+                                                addr.line1,
+                                            );
+                                            form.setData(
+                                                'address_line2',
+                                                addr.line2 || '',
+                                            );
+                                            form.setData(
+                                                'address_city',
+                                                addr.city,
+                                            );
+                                            form.setData(
+                                                'address_state',
+                                                addr.state,
+                                            );
+                                            form.setData(
+                                                'address_zip',
+                                                addr.zip,
+                                            );
+                                        }
+                                    } else {
+                                        form.setData('address_id', null);
+                                        form.setData('address_line1', '');
+                                        form.setData('address_line2', '');
+                                        form.setData('address_city', '');
+                                        form.setData('address_state', '');
+                                        form.setData('address_zip', '');
                                     }
                                 }}
                                 className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
@@ -624,95 +410,33 @@ export function PersonalInfoSection({
                         </div>
                     )}
 
-                {form.data.location_type === 'private_home' &&
-                    clientAddresses.length > 0 &&
-                    addressMode === 'input' && (
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Address
-                            </label>
-                            <div className="mt-1 space-y-3">
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.line1}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            line1: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Address Line 1"
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                                <input
-                                    type="text"
-                                    value={form.data.booking_address.line2}
-                                    onChange={(e) =>
-                                        form.setData('booking_address', {
-                                            ...form.data.booking_address,
-                                            line2: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Address Line 2 (optional)"
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                />
-                                <div className="grid grid-cols-3 gap-3">
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.city}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                city: e.target.value,
-                                            })
-                                        }
-                                        placeholder="City"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.state}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                state: e.target.value,
-                                            })
-                                        }
-                                        placeholder="State"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={form.data.booking_address.zip}
-                                        onChange={(e) =>
-                                            form.setData('booking_address', {
-                                                ...form.data.booking_address,
-                                                zip: e.target.value,
-                                            })
-                                        }
-                                        placeholder="Zip"
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setAddressMode('select');
-                                        form.setData('booking_address', {
-                                            line1: '',
-                                            line2: '',
-                                            city: '',
-                                            state: '',
-                                            zip: '',
-                                        });
-                                    }}
-                                    className="text-sm text-ring hover:text-foreground"
-                                >
-                                    Cancel and select existing address
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                {form.data.location_type === 'vacation_rental' && (
+                    <div>
+                        <label className="text-sm font-medium text-foreground">
+                            Rental Platform
+                        </label>
+                        <select
+                            value={form.data.rental_platform}
+                            onChange={(e) =>
+                                form.setData('rental_platform', e.target.value)
+                            }
+                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                        >
+                            <option value="">Select platform...</option>
+                            {booking_attributes
+                                .filter(
+                                    (attr) => attr.slug === 'rental_platform',
+                                )
+                                .flatMap((attr) => attr.options || [])
+                                .map((option) => (
+                                    <option key={option} value={option}>
+                                        {option.charAt(0).toUpperCase() +
+                                            option.slice(1)}
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
+                )}
 
                 {form.data.location_type === 'hotel' && (
                     <div>
@@ -724,6 +448,31 @@ export function PersonalInfoSection({
                                 value={form.data.hotel_id}
                                 onChange={(id) => {
                                     form.setData('hotel_id', id);
+                                    const hotel = hotels.find(
+                                        (h) => h.id === id,
+                                    );
+                                    if (hotel) {
+                                        form.setData(
+                                            'address_line1',
+                                            hotel.line1 || '',
+                                        );
+                                        form.setData(
+                                            'address_line2',
+                                            hotel.line2 || '',
+                                        );
+                                        form.setData(
+                                            'address_city',
+                                            hotel.city || '',
+                                        );
+                                        form.setData(
+                                            'address_state',
+                                            hotel.state || '',
+                                        );
+                                        form.setData(
+                                            'address_zip',
+                                            hotel.zip || '',
+                                        );
+                                    }
                                 }}
                                 suggestions={hotelSuggestions}
                                 onSearch={handleHotelSearch}
@@ -731,31 +480,10 @@ export function PersonalInfoSection({
                                 displayValue={selectedHotelName}
                             />
                         </div>
-                        {form.data.hotel_id && (
-                            <div className="mt-2 rounded-[3px] bg-muted p-3 text-sm text-muted-foreground">
-                                {(() => {
-                                    const hotel = hotels.find(
-                                        (h) => h.id === form.data.hotel_id,
-                                    );
-
-                                    if (!hotel) {
-                                        return null;
-                                    }
-
-                                    const parts = [
-                                        hotel.line1,
-                                        hotel.line2,
-                                        hotel.city,
-                                        hotel.state,
-                                        hotel.zip,
-                                    ].filter(Boolean);
-
-                                    return parts.join(', ');
-                                })()}
-                            </div>
-                        )}
                     </div>
                 )}
+
+                <BookingAddressFields form={form} />
 
                 <div>
                     <div className="flex items-center justify-between">
@@ -941,6 +669,12 @@ export function PersonalInfoSection({
                             </tbody>
                         </table>
                     </div>
+                    {clientChildren.length === 0 &&
+                        newChildren.length === 0 && (
+                            <p className="text-sm text-destructive">
+                                At least one child is required.
+                            </p>
+                        )}
                 </div>
 
                 <div>

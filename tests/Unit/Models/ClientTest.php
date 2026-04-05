@@ -28,14 +28,14 @@ class ClientTest extends TestCase
             'first_name' => 'John',
             'last_name' => 'Doe',
             'phone' => '123-456-7890',
-            'client_type' => 'sd_resident',
+            'client_type' => 'vacationer',
             'how_did_you_hear' => 'google',
         ]);
 
         $this->assertEquals('John', $client->first_name);
         $this->assertEquals('Doe', $client->last_name);
         $this->assertEquals('123-456-7890', $client->phone);
-        $this->assertEquals('sd_resident', $client->client_type);
+        $this->assertEquals('vacationer', $client->client_type);
         $this->assertEquals('google', $client->how_did_you_hear);
     }
 
