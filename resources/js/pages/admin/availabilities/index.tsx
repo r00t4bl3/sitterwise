@@ -146,13 +146,13 @@ export default function AvailabilitiesIndex() {
         switch (slot) {
             case 'morning':
                 return (
-                    <Sunrise className="h-3 w-3" style={{ color: '#F9C74F' }} />
+                    <Sunrise className="h-4 w-4" style={{ color: '#F9C74F' }} />
                 );
             case 'afternoon':
-                return <Sun className="h-3 w-3" style={{ color: '#84D0D2' }} />;
+                return <Sun className="h-4 w-4" style={{ color: '#84D0D2' }} />;
             case 'evening':
                 return (
-                    <Moon className="h-3 w-3" style={{ color: '#1B3A5C' }} />
+                    <Moon className="h-4 w-4" style={{ color: '#1B3A5C' }} />
                 );
             default:
                 return null;

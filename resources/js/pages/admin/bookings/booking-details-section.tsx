@@ -89,6 +89,15 @@ export function BookingDetailsSection({
         setDatetimeError(error);
     }, [startDatetime, endDatetime]);
 
+    useEffect(() => {
+        const serviceType = form.data.service_type;
+        const requiresPayment =
+            serviceType === 'babysitter' ||
+            serviceType === 'petsitter' ||
+            serviceType === 'companion_care';
+        form.setData('requires_payment', requiresPayment);
+    }, [form.data.service_type]);
+
     return (
         <details
             className="rounded-[3px] border border-border bg-card"
@@ -249,78 +258,89 @@ export function BookingDetailsSection({
                     />
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Corporate ID
-                    </label>
-                    <input
-                        type="text"
-                        value={form.data.corporate_id}
-                        onChange={(e) =>
-                            form.setData('corporate_id', e.target.value)
-                        }
-                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                    />
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
+                {form.data.service_type === 'corporate_invoiced' && (
+                    <div>
+                        <label className="text-sm font-medium text-foreground">
+                            Corporate ID
+                        </label>
                         <input
-                            type="checkbox"
-                            checked={form.data.requires_payment}
+                            type="text"
+                            value={form.data.corporate_id}
                             onChange={(e) =>
-                                form.setData(
-                                    'requires_payment',
-                                    e.target.checked,
-                                )
+                                form.setData('corporate_id', e.target.value)
                             }
-                            className="h-4 w-4 rounded border-input"
+                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                         />
-                        <span className="text-sm text-foreground">
-                            Requires Payment
-                        </span>
-                    </label>
-                </div>
+                    </div>
+                )}
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
-                            Status <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={form.data.status}
-                            onChange={(e) =>
-                                form.setData('status', e.target.value)
-                            }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                        >
-                            {booking_statuses.map((status) => (
-                                <option key={status.value} value={status.value}>
-                                    {status.label}
-                                </option>
-                            ))}
-                        </select>
+                <input
+                    type="hidden"
+                    name="requires_payment"
+                    value={form.data.requires_payment ? '1' : '0'}
+                />
+
+                {!editingBooking && (
+                    <>
+                        <input type="hidden" name="status" value="received" />
+                        <input
+                            type="hidden"
+                            name="payment_status"
+                            value="pending"
+                        />
+                    </>
+                )}
+
+                {editingBooking && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Status <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={form.data.status}
+                                onChange={(e) =>
+                                    form.setData('status', e.target.value)
+                                }
+                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                            >
+                                {booking_statuses.map((status) => (
+                                    <option
+                                        key={status.value}
+                                        value={status.value}
+                                    >
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Payment Status{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={form.data.payment_status}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'payment_status',
+                                        e.target.value,
+                                    )
+                                }
+                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                            >
+                                {payment_statuses.map((status) => (
+                                    <option
+                                        key={status.value}
+                                        value={status.value}
+                                    >
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
-                            Payment Status{' '}
-                            <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={form.data.payment_status}
-                            onChange={(e) =>
-                                form.setData('payment_status', e.target.value)
-                            }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                        >
-                            {payment_statuses.map((status) => (
-                                <option key={status.value} value={status.value}>
-                                    {status.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                )}
 
                 <div className="flex gap-2 pt-4">
                     <button
