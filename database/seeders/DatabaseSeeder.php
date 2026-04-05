@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\Caregiver;
@@ -29,21 +30,21 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'name'  => 'Super Admin',
+            'name' => 'Super Admin',
             'email' => 'superadmin@example.test',
-            'role'  => 'super_admin',
+            'role' => 'super_admin',
         ]);
 
         User::factory()->create([
-            'name'  => 'Admin',
+            'name' => 'Admin',
             'email' => 'admin@example.test',
-            'role'  => 'admin',
+            'role' => 'admin',
         ]);
 
         $caregiver = User::factory()->create([
-            'name'  => 'Caregiver User',
+            'name' => 'Caregiver User',
             'email' => 'caregiver@example.test',
-            'role'  => 'caregiver',
+            'role' => 'caregiver',
         ]);
 
         Caregiver::factory()->create([
@@ -51,9 +52,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $client = User::factory()->create([
-            'name'  => 'Client User',
+            'name' => 'Client User',
             'email' => 'client@example.test',
-            'role'  => 'client',
+            'role' => 'client',
         ]);
 
         Client::factory()->create([

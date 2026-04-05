@@ -73,6 +73,7 @@ export interface Booking {
     medical_info: string | null;
     emergency_instructions: string | null;
     special_needs_notes: string | null;
+    how_did_you_hear: string | null;
     attributeDefinitions?: Array<{
         pivot: {
             attribute_definition_id: number;

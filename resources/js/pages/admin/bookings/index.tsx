@@ -531,6 +531,14 @@ export default function BookingsIndex() {
                     'sitter_preferences',
                     data.client.sitter_preferences || [],
                 );
+                form.setData(
+                    'other_adults',
+                    data.client.other_adults_in_home || '',
+                );
+                form.setData(
+                    'how_did_you_hear',
+                    data.client.how_did_you_hear || '',
+                );
             } catch (error) {
                 console.error('Error fetching client data:', error);
             }
@@ -643,6 +651,7 @@ export default function BookingsIndex() {
             booking.emergency_instructions || '',
         );
         form.setData('special_needs_notes', booking.special_needs_notes || '');
+        form.setData('how_did_you_hear', booking.how_did_you_hear || '');
         form.setData('requires_payment', booking.requires_payment);
         form.setData('status', booking.status);
         form.setData('payment_status', booking.payment_status);

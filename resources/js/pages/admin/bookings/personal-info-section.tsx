@@ -726,7 +726,7 @@ export function PersonalInfoSection({
                                 e.target.value,
                             )
                         }
-                        placeholder="Emergency instructions"
+                        placeholder="What should your caregiver do in an emergency?"
                         className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
                         rows={3}
                     />
@@ -910,27 +910,41 @@ export function PersonalInfoSection({
                         Sitter Preferences
                     </label>
                     <div className="mt-2 flex flex-wrap gap-2">
-                        {sitter_preference_options.map((option) => (
-                            <label
-                                key={option.value}
-                                className="flex items-center gap-2"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.sitter_preferences.includes(option.value)}
-                                    onChange={(e) => {
-                                        const newPrefs = e.target.checked
-                                            ? [...form.data.sitter_preferences, option.value]
-                                            : form.data.sitter_preferences.filter((pref: string) => pref !== option.value);
-                                        form.setData('sitter_preferences', newPrefs);
-                                    }}
-                                    className="h-4 w-4 rounded border-input"
-                                />
-                    <span className="text-sm text-foreground">
-                        {option.label}
-                    </span>
-                    </label>
-                        ))}
+                        <div className="grid grid-cols-3 gap-4">
+                            {sitter_preference_options.map((option) => (
+                                <label
+                                    key={option.value}
+                                    className="flex items-center gap-2"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={form.data.sitter_preferences.includes(
+                                            option.value,
+                                        )}
+                                        onChange={(e) => {
+                                            const newPrefs = e.target.checked
+                                                ? [
+                                                      ...form.data
+                                                          .sitter_preferences,
+                                                      option.value,
+                                                  ]
+                                                : form.data.sitter_preferences.filter(
+                                                      (pref: string) =>
+                                                          pref !== option.value,
+                                                  );
+                                            form.setData(
+                                                'sitter_preferences',
+                                                newPrefs,
+                                            );
+                                        }}
+                                        className="h-4 w-4 rounded border-input"
+                                    />
+                                    <span className="text-sm text-foreground">
+                                        {option.label}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -949,12 +963,13 @@ export function PersonalInfoSection({
                         <option value="concierge">Concierge</option>
                         <option value="friend_family">Friend/Family</option>
                         <option value="google">Google</option>
-                        <option value="returning_client">Returning Client</option>
+                        <option value="returning_client">
+                            Returning Client
+                        </option>
                         <option value="care_com">Care.com</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
-
 
                 <label className="flex items-center gap-2">
                     <input
