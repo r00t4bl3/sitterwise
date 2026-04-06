@@ -17,6 +17,7 @@
         "pest-testing",
         "inertia-react-development",
         "tailwindcss-development",
-        "fortify-development"
+        "fortify-development",
+        "laravel-specialist"
     ]
 }
