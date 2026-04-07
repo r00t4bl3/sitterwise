@@ -69,7 +69,7 @@ export interface Booking {
     address_zip: string | null;
     rental_platform: string | null;
     sitter_preferences: string[] | null;
-    other_adults: string | null;
+    other_adults_present: string | null;
     emergency_instructions: string | null;
     special_needs_notes: string | null;
     how_did_you_hear: string | null;
@@ -139,7 +139,7 @@ export interface BookingFormData {
     corporate_id: string;
     how_did_you_hear: string;
     sitter_preferences: string[];
-    other_adults: string;
+    other_adults_present: string;
     emergency_instructions: string;
     special_needs_notes: string;
     requires_payment: boolean;

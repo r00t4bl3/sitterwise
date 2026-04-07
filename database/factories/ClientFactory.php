@@ -30,9 +30,8 @@ class ClientFactory extends Factory
             'corporate_id' => null,
             'how_did_you_hear' => fake()->randomElement(['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other']),
             'sitter_preferences' => fake()->randomElements($preferences, fake()->numberBetween(0, 3)),
-            'other_adults_in_home' => fake()->numberBetween(0, 5),
+            'other_adults_present' => fake()->numberBetween(0, 5),
             'emergency_instructions' => fake()->optional()->paragraph(),
-            'special_needs' => fake()->boolean(20),
             'special_needs_notes' => fake()->optional()->paragraph(),
         ];
     }

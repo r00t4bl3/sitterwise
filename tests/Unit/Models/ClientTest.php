@@ -101,12 +101,17 @@ class ClientTest extends TestCase
         $this->assertEquals('John Doe', $client->full_name);
     }
 
-    public function test_casts_special_needs_as_boolean()
+    public function test_special_needs_is_inferred_from_notes()
     {
-        $client = Client::factory()->create(['special_needs' => true]);
+        $clientWithNotes = Client::factory()->create([
+            'special_needs_notes' => 'Client requires special accommodations',
+        ]);
+        $this->assertTrue($clientWithNotes->special_needs);
 
-        $this->assertTrue($client->special_needs);
-        $this->assertIsBool($client->special_needs);
+        $clientWithoutNotes = Client::factory()->create([
+            'special_needs_notes' => null,
+        ]);
+        $this->assertFalse($clientWithoutNotes->special_needs);
     }
 
     public function test_has_special_needs_notes_field()

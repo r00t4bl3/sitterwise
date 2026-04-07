@@ -39,10 +39,9 @@ Core profile record. One row per client, regardless of job history.
 | `corporate_id`           | `string`          | No       | Invoiced clients only                                                                            |
 | `how_did_you_hear`       | `enum`            | No       | `concierge` · `friend_family` · `google` · `returning_client` · `care_com` · `other`             |
 | `sitter_preferences`     | `json`            | No       | Array: `college_aged` · `seasoned` · `baby_specialist` · `special_needs_exp` · `willing_to_swim` |
-| `other_adults_in_home`   | `string`          | No       |                                                                                                  |
+| `other_adults_present`   | `string`          | No       |                                                                                                  |
 | `emergency_instructions` | `text`            | No       | Caregiver-visible before acceptance                                                              |
-| `special_needs`          | `boolean`         | No       | Client-wide special needs flag                                                                   |
-| `special_needs_notes`    | `text`            | No       | Caregiver-visible before acceptance                                                              |
+| `special_needs_notes`    | `text`            | No       | Inferred: if filled, `special_needs` is `true`. Caregiver-visible before acceptance              |
 | `created_at`             | `timestamp`       | Yes      |                                                                                                  |
 | `updated_at`             | `timestamp`       | Yes      |                                                                                                  |
 

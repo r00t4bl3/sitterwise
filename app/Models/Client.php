@@ -28,15 +28,13 @@ class Client extends Model
         'corporate_id',
         'how_did_you_hear',
         'sitter_preferences',
-        'other_adults_in_home',
+        'other_adults_present',
         'emergency_instructions',
-        'special_needs',
         'special_needs_notes',
     ];
 
     protected $casts = [
         'sitter_preferences' => 'array',
-        'special_needs' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -94,5 +92,10 @@ class Client extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getSpecialNeedsAttribute(): bool
+    {
+        return ! empty($this->special_needs_notes);
     }
 }

@@ -187,15 +187,7 @@ export default function BookingsIndex() {
         { value: 'invoiced', label: 'Invoiced' },
     ];
 
-    const special_consideration_options =
-        booking_attributes
-            .find((attr) => attr.slug === 'special_considerations')
-            ?.options.map((opt) => ({
-                value: opt,
-                label: opt
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, (c) => c.toUpperCase()),
-            })) || [];
+    const special_consideration_options = props.special_consideration_options;
 
     const [currentMonth, setCurrentMonth] = useState(filters.month);
     const [currentYear, setCurrentYear] = useState(filters.year);
@@ -271,7 +263,7 @@ export default function BookingsIndex() {
         corporate_id: string;
         how_did_you_hear: string;
         sitter_preferences: string[];
-        other_adults: string;
+        other_adults_present: string;
         emergency_instructions: string;
         special_needs_notes: string;
         requires_payment: boolean;
@@ -321,7 +313,7 @@ export default function BookingsIndex() {
         corporate_id: '',
         how_did_you_hear: '',
         sitter_preferences: [],
-        other_adults: '',
+        other_adults_present: '',
         emergency_instructions: '',
         special_needs_notes: '',
         requires_payment: true,
@@ -529,8 +521,8 @@ export default function BookingsIndex() {
                     data.client.sitter_preferences || [],
                 );
                 form.setData(
-                    'other_adults',
-                    data.client.other_adults_in_home || '',
+                    'other_adults_present',
+                    data.client.other_adults_present || '',
                 );
                 form.setData(
                     'how_did_you_hear',
@@ -581,7 +573,7 @@ export default function BookingsIndex() {
             corporate_id: '',
             how_did_you_hear: '',
             sitter_preferences: [],
-            other_adults: '',
+            other_adults_present: '',
             emergency_instructions: '',
             special_needs_notes: '',
             requires_payment: true,
@@ -640,7 +632,10 @@ export default function BookingsIndex() {
         form.setData('admin_notes', booking.admin_notes || '');
         form.setData('corporate_id', booking.corporate_id || '');
         form.setData('sitter_preferences', booking.sitter_preferences || []);
-        form.setData('other_adults', booking.other_adults || '');
+        form.setData(
+            'other_adults_present',
+            booking.other_adults_present || '',
+        );
         form.setData(
             'emergency_instructions',
             booking.emergency_instructions || '',

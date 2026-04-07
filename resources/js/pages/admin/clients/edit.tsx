@@ -59,9 +59,8 @@ interface Client {
     client_type: string;
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
-    other_adults_in_home: string | null;
+    other_adults_present: string | null;
     emergency_instructions: string | null;
-    special_needs: boolean;
     special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
@@ -160,9 +159,8 @@ export default function ClientEdit() {
         client_type: client.client_type,
         how_did_you_hear: client.how_did_you_hear || '',
         sitter_preferences: client.sitter_preferences || [],
-        other_adults_in_home: client.other_adults_in_home || '',
+        other_adults_present: client.other_adults_present || '',
         emergency_instructions: client.emergency_instructions || '',
-        special_needs: client.special_needs || false,
         special_needs_notes: client.special_needs_notes || '',
         attributes: attributeValues,
         children: client.children,
@@ -403,54 +401,32 @@ export default function ClientEdit() {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                    <input
-                                        type="checkbox"
-                                        checked={
-                                            form.data.special_needs || false
-                                        }
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'special_needs',
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="h-4 w-4 rounded border-input text-primary"
-                                    />
-                                    Special Needs
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-medium text-foreground">
+                                    Special Needs Notes
                                 </label>
+                                <textarea
+                                    value={form.data.special_needs_notes || ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'special_needs_notes',
+                                            e.target.value,
+                                        )
+                                    }
+                                    rows={3}
+                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                />
                             </div>
-                            {form.data.special_needs && (
-                                <div className="space-y-2 md:col-span-2">
-                                    <label className="text-sm font-medium text-foreground">
-                                        Special Needs Notes
-                                    </label>
-                                    <textarea
-                                        value={
-                                            form.data.special_needs_notes || ''
-                                        }
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'special_needs_notes',
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={3}
-                                        className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
-                                    />
-                                </div>
-                            )}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">
                                     Other Adults in Home
                                 </label>
                                 <input
                                     type="text"
-                                    value={form.data.other_adults_in_home}
+                                    value={form.data.other_adults_present}
                                     onChange={(e) =>
                                         form.setData(
-                                            'other_adults_in_home',
+                                            'other_adults_present',
                                             e.target.value,
                                         )
                                     }

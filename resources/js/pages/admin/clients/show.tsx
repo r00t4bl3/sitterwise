@@ -97,9 +97,8 @@ interface Client {
     client_type: string;
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
-    other_adults_in_home: string | null;
+    other_adults_present: string | null;
     emergency_instructions: string | null;
-    special_needs: boolean;
     special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
@@ -470,7 +469,7 @@ export default function ClientShow() {
                                     Other Adults in Home
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {client.other_adults_in_home || '—'}
+                                    {client.other_adults_present || '—'}
                                 </p>
                             </div>
                             {client.emergency_instructions && (
@@ -649,16 +648,14 @@ export default function ClientShow() {
                                 </div>
                             )}
 
-                        {client.special_needs && (
+                        {client.special_needs_notes && (
                             <div className="rounded-[6px] border border-red-200 bg-red-50 p-6">
                                 <h2 className="mb-2 font-serif text-lg font-semibold text-red-800">
                                     Special Needs
                                 </h2>
-                                {client.special_needs_notes && (
-                                    <p className="text-sm text-red-700">
-                                        {client.special_needs_notes}
-                                    </p>
-                                )}
+                                <p className="text-sm text-red-700">
+                                    {client.special_needs_notes}
+                                </p>
                             </div>
                         )}
 

@@ -21,10 +21,9 @@ return new class extends Migration
             $table->string('corporate_id')->nullable();
             $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();
             $table->json('sitter_preferences')->nullable();
-            $table->string('other_adults_in_home')->nullable();
-            $table->text('emergency_instructions')->nullable();
-            $table->boolean('special_needs')->default(false);
+            $table->string('other_adults_present')->nullable();
             $table->text('special_needs_notes')->nullable();
+            $table->text('emergency_instructions')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

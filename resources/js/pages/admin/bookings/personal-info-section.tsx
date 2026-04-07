@@ -3,6 +3,22 @@ import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 
+const MONTH_ABBR = [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+];
+
 interface NewChild {
     tempId: string;
     name: string;
@@ -517,7 +533,7 @@ export function PersonalInfoSection({
                                         Gender
                                     </th>
                                     <th className="px-3 py-2 text-left font-medium">
-                                        Age
+                                        Birth (Age)
                                     </th>
                                     <th className="w-10"></th>
                                 </tr>
@@ -535,10 +551,13 @@ export function PersonalInfoSection({
                                             {child.gender || '-'}
                                         </td>
                                         <td className="px-3 py-2">
-                                            {calculateAge(
-                                                child.birth_year,
-                                                child.birth_month,
-                                            )}
+                                            {child.birth_month &&
+                                            child.birth_year
+                                                ? `${MONTH_ABBR[child.birth_month]} ${child.birth_year} (${calculateAge(
+                                                      child.birth_year,
+                                                      child.birth_month,
+                                                  )})`
+                                                : '-'}
                                         </td>
                                         <td className="px-3 py-2">
                                             <button
@@ -699,23 +718,25 @@ export function PersonalInfoSection({
                     />
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Emergency Instructions
-                    </label>
-                    <textarea
-                        value={form.data.emergency_instructions || ''}
-                        onChange={(e) =>
-                            form.setData(
-                                'emergency_instructions',
-                                e.target.value,
-                            )
-                        }
-                        placeholder="What should your caregiver do in an emergency?"
-                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                        rows={3}
-                    />
-                </div>
+                {form.data.special_needs_notes && (
+                    <div>
+                        <label className="text-sm font-medium text-foreground">
+                            Emergency Instructions
+                        </label>
+                        <textarea
+                            value={form.data.emergency_instructions || ''}
+                            onChange={(e) =>
+                                form.setData(
+                                    'emergency_instructions',
+                                    e.target.value,
+                                )
+                            }
+                            placeholder="What should your caregiver do in an emergency?"
+                            className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
+                            rows={3}
+                        />
+                    </div>
+                )}
 
                 <div>
                     <div className="flex items-center justify-between">
@@ -881,11 +902,11 @@ export function PersonalInfoSection({
                     </label>
                     <input
                         type="text"
-                        value={form.data.other_adults || ''}
+                        value={form.data.other_adults_present || ''}
                         onChange={(e) =>
-                            form.setData('other_adults', e.target.value)
+                            form.setData('other_adults_present', e.target.value)
                         }
-                        placeholder="Other adults in home"
+                        placeholder="Other adults present"
                         className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                     />
                 </div>
