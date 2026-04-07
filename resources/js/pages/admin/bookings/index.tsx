@@ -170,6 +170,7 @@ export default function BookingsIndex() {
         location_types,
         booking_statuses,
         payment_statuses,
+        special_consideration_options,
         booking_attributes,
     } = usePage<Props>().props;
 
@@ -187,7 +188,8 @@ export default function BookingsIndex() {
         { value: 'invoiced', label: 'Invoiced' },
     ];
 
-    const special_consideration_options = props.special_consideration_options;
+    // TODO: Pull special_consideration_options from booking_attributes
+    // in the database once the 'special_considerations' attribute definition exists.
 
     const [currentMonth, setCurrentMonth] = useState(filters.month);
     const [currentYear, setCurrentYear] = useState(filters.year);
