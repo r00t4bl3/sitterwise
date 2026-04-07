@@ -701,21 +701,6 @@ export function PersonalInfoSection({
 
                 <div>
                     <label className="text-sm font-medium text-foreground">
-                        Medical / Medications
-                    </label>
-                    <textarea
-                        value={form.data.medical_info || ''}
-                        onChange={(e) =>
-                            form.setData('medical_info', e.target.value)
-                        }
-                        placeholder="Medical information"
-                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                        rows={3}
-                    />
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium text-foreground">
                         Emergency Instructions
                     </label>
                     <textarea

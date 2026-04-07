@@ -98,7 +98,6 @@ interface Client {
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
     other_adults_in_home: string | null;
-    medical_info: string | null;
     emergency_instructions: string | null;
     special_needs: boolean;
     special_needs_notes: string | null;
@@ -474,16 +473,6 @@ export default function ClientShow() {
                                     {client.other_adults_in_home || '—'}
                                 </p>
                             </div>
-                            {client.medical_info && (
-                                <div className="sm:col-span-2">
-                                    <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Medical Info
-                                    </p>
-                                    <p className="text-sm text-foreground">
-                                        {client.medical_info}
-                                    </p>
-                                </div>
-                            )}
                             {client.emergency_instructions && (
                                 <div className="sm:col-span-2">
                                     <p className="text-xs tracking-wider text-muted-foreground uppercase">

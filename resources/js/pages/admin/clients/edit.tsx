@@ -60,7 +60,6 @@ interface Client {
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
     other_adults_in_home: string | null;
-    medical_info: string | null;
     emergency_instructions: string | null;
     special_needs: boolean;
     special_needs_notes: string | null;
@@ -162,7 +161,6 @@ export default function ClientEdit() {
         how_did_you_hear: client.how_did_you_hear || '',
         sitter_preferences: client.sitter_preferences || [],
         other_adults_in_home: client.other_adults_in_home || '',
-        medical_info: client.medical_info || '',
         emergency_instructions: client.emergency_instructions || '',
         special_needs: client.special_needs || false,
         special_needs_notes: client.special_needs_notes || '',
@@ -1106,23 +1104,6 @@ export default function ClientEdit() {
                             Additional Information
                         </h2>
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Medical Info
-                                </label>
-                                <textarea
-                                    value={form.data.medical_info}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'medical_info',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={3}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
-                                    placeholder="Any medical information caregivers should know..."
-                                />
-                            </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">
                                     Emergency Instructions

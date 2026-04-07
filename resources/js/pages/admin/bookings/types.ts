@@ -70,7 +70,6 @@ export interface Booking {
     rental_platform: string | null;
     sitter_preferences: string[] | null;
     other_adults: string | null;
-    medical_info: string | null;
     emergency_instructions: string | null;
     special_needs_notes: string | null;
     how_did_you_hear: string | null;
@@ -141,7 +140,6 @@ export interface BookingFormData {
     how_did_you_hear: string;
     sitter_preferences: string[];
     other_adults: string;
-    medical_info: string;
     emergency_instructions: string;
     special_needs_notes: string;
     requires_payment: boolean;

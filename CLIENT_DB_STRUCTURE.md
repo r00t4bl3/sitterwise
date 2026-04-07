@@ -40,7 +40,6 @@ Core profile record. One row per client, regardless of job history.
 | `how_did_you_hear`       | `enum`            | No       | `concierge` · `friend_family` · `google` · `returning_client` · `care_com` · `other`             |
 | `sitter_preferences`     | `json`            | No       | Array: `college_aged` · `seasoned` · `baby_specialist` · `special_needs_exp` · `willing_to_swim` |
 | `other_adults_in_home`   | `string`          | No       |                                                                                                  |
-| `medical_info`           | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `emergency_instructions` | `text`            | No       | Caregiver-visible before acceptance                                                              |
 | `special_needs`          | `boolean`         | No       | Client-wide special needs flag                                                                   |
 | `special_needs_notes`    | `text`            | No       | Caregiver-visible before acceptance                                                              |
@@ -318,7 +317,6 @@ Immutable record of all context-sensitive data at the moment a job is confirmed.
 | `hotel`                         | `json`            | No       | Full hotel object including rate, resort fee, parking instructions. Null for non-hotel jobs |
 | `children`                      | `json`            | Yes      | Array of child objects: name, gender, calculated age at job date, special needs notes       |
 | `pets`                          | `json`            | No       | Array of pet objects: type, breed, notes. Null if no pets                                   |
-| `client_medical_info`           | `text`            | No       | Copy of `CLIENT.medical_info` at time of job                                                |
 | `client_emergency_instructions` | `text`            | No       | Copy of `CLIENT.emergency_instructions` at time of job                                      |
 | `client_house_notes`            | `text`            | No       | Copy of `CLIENT.house_notes` at time of job                                                 |
 | `caregiver_name`                | `string`          | No       | Full name of assigned caregiver. Set after assignment                                       |

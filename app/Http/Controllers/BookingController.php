@@ -145,7 +145,6 @@ class BookingController extends Controller
             'how_did_you_hear' => 'nullable|string',
             'sitter_preferences' => 'nullable|string',
             'other_adults_in_home' => 'nullable|string',
-            'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
             'requires_payment' => 'nullable|boolean',
             'status' => 'required|string',
@@ -194,7 +193,6 @@ class BookingController extends Controller
                 'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
                 'sitter_preferences' => $validated['sitter_preferences'] ?? null,
                 'other_adults_in_home' => $validated['other_adults_in_home'] ?? null,
-                'medical_info' => $validated['medical_info'] ?? null,
                 'emergency_instructions' => $validated['emergency_instructions'] ?? null,
             ]);
 
@@ -246,7 +244,6 @@ class BookingController extends Controller
             'corporate_id' => $validated['corporate_id'] ?? null,
             'sitter_preferences' => $validated['sitter_preferences'] ?? null,
             'other_adults' => $validated['other_adults_in_home'] ?? null,
-            'medical_info' => $validated['medical_info'] ?? null,
             'emergency_instructions' => $validated['emergency_instructions'] ?? null,
             'total_amount' => 0,
             'payment_status' => $validated['payment_status'],
@@ -273,7 +270,6 @@ class BookingController extends Controller
             'corporate_id' => 'nullable|string',
             'sitter_preferences' => 'nullable|array',
             'other_adults' => 'nullable|string',
-            'medical_info' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
             'total_amount' => 'required|numeric|min:0',
             'requires_payment' => 'nullable|boolean',

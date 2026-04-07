@@ -22,7 +22,6 @@ return new class extends Migration
             $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();
             $table->json('sitter_preferences')->nullable();
             $table->string('other_adults_in_home')->nullable();
-            $table->text('medical_info')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->boolean('special_needs')->default(false);
             $table->text('special_needs_notes')->nullable();

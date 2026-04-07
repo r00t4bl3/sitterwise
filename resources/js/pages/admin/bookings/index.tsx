@@ -272,7 +272,6 @@ export default function BookingsIndex() {
         how_did_you_hear: string;
         sitter_preferences: string[];
         other_adults: string;
-        medical_info: string;
         emergency_instructions: string;
         special_needs_notes: string;
         requires_payment: boolean;
@@ -323,7 +322,6 @@ export default function BookingsIndex() {
         how_did_you_hear: '',
         sitter_preferences: [],
         other_adults: '',
-        medical_info: '',
         emergency_instructions: '',
         special_needs_notes: '',
         requires_payment: true,
@@ -518,7 +516,6 @@ export default function BookingsIndex() {
                 }
 
                 // Populate client fields
-                form.setData('medical_info', data.client.medical_info || '');
                 form.setData(
                     'emergency_instructions',
                     data.client.emergency_instructions || '',
@@ -585,7 +582,6 @@ export default function BookingsIndex() {
             how_did_you_hear: '',
             sitter_preferences: [],
             other_adults: '',
-            medical_info: '',
             emergency_instructions: '',
             special_needs_notes: '',
             requires_payment: true,
@@ -645,7 +641,6 @@ export default function BookingsIndex() {
         form.setData('corporate_id', booking.corporate_id || '');
         form.setData('sitter_preferences', booking.sitter_preferences || []);
         form.setData('other_adults', booking.other_adults || '');
-        form.setData('medical_info', booking.medical_info || '');
         form.setData(
             'emergency_instructions',
             booking.emergency_instructions || '',

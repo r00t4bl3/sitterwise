@@ -48,7 +48,6 @@ class BookingFactory extends Factory
             'corporate_id' => null,
             'sitter_preferences' => null,
             'other_adults' => null,
-            'medical_info' => null,
             'emergency_instructions' => null,
             'total_amount' => rand(50, 200),
             'payment_status' => BookingPaymentStatus::Pending->value,

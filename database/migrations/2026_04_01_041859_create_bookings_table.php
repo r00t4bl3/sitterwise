@@ -34,7 +34,6 @@ return new class extends Migration
             $table->string('corporate_id')->nullable();
             $table->json('sitter_preferences')->nullable();
             $table->string('other_adults')->nullable();
-            $table->text('medical_info')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->decimal('total_amount', 10, 2);
             $table->string('payment_status');

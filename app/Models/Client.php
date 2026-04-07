@@ -29,7 +29,6 @@ class Client extends Model
         'how_did_you_hear',
         'sitter_preferences',
         'other_adults_in_home',
-        'medical_info',
         'emergency_instructions',
         'special_needs',
         'special_needs_notes',

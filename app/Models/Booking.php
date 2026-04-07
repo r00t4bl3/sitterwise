@@ -37,7 +37,6 @@ class Booking extends Model
         'corporate_id',
         'sitter_preferences',
         'other_adults',
-        'medical_info',
         'emergency_instructions',
         'total_amount',
         'payment_status',
