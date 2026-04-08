@@ -9,8 +9,8 @@ import {
     Building,
     Users,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { ToasterMessage } from '@/components/toaster-message';
+import { useState, useMemo, useEffect } from 'react';
+import { ToasterMessage, Message } from '@/components/toaster-message';
 import {
     Sheet,
     SheetContent,
@@ -159,7 +159,7 @@ function calculateAge(
     return `${age}yr`;
 }
 
-export default function BookingsIndex() {
+export default function BookingsTest() {
     const {
         bookings,
         filters,
@@ -224,6 +224,34 @@ export default function BookingsIndex() {
     const [selectedHotelName, setSelectedHotelName] = useState<string>('');
     const [selectedCaregiverName, setSelectedCaregiverName] =
         useState<string>('');
+
+    const [message, setMessage] = useState<Message | null>(null);
+
+    // Handle flash messages from server
+    const flash = (usePage().props as Record<string, unknown>).flash as Record<
+        string,
+        string
+    > | null;
+
+    useEffect(() => {
+        // Prioritize flash messages over existing messages
+        if (flash?.success) {
+            setMessage({ type: 'success', content: flash.success });
+        } else if (flash?.error) {
+            setMessage({ type: 'error', content: flash.error });
+        }
+    }, [flash]);
+
+    // Clear message after it has been displayed (with debounce to prevent clearing new messages)
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => {
+                setMessage(null);
+            }, 5000); // Clear after 5 seconds to allow user to see the message
+
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
     const [deletedChildIds, setDeletedChildIds] = useState<number[]>([]);
     const [deletedPetIds, setDeletedPetIds] = useState<number[]>([]);
@@ -384,7 +412,9 @@ export default function BookingsIndex() {
             params.set('status', statusFilter);
         }
 
-        window.location.href = `/admin/bookings?${params}`;
+        console.log('Applying filters with params:', params.toString());
+
+        // window.location.href = `/bookings?${params}`;
     };
 
     const bookingsByDate = useMemo(() => {
@@ -732,16 +762,24 @@ export default function BookingsIndex() {
         );
 
         if (editingBooking) {
-            form.put(`/admin/bookings/${editingBooking.id}`, {
+            form.put(`/bookings/${editingBooking.id}`, {
                 onSuccess: () => {
                     setIsSheetOpen(false);
                 },
+                onError: (errors) => {
+                    const errorMessage = Object.values(errors).join(', ');
+                    setMessage({ type: 'error', content: errorMessage });
+                },
             });
         } else {
-            form.post('/admin/bookings', {
+            form.post('/bookings', {
                 onSuccess: () => {
                     setIsSheetOpen(false);
-                    applyFilters();
+                    // applyFilters();
+                },
+                onError: (errors) => {
+                    const errorMessage = Object.values(errors).join(', ');
+                    setMessage({ type: 'error', content: errorMessage });
                 },
             });
         }
@@ -752,10 +790,14 @@ export default function BookingsIndex() {
             editingBooking &&
             confirm('Are you sure you want to delete this booking?')
         ) {
-            form.delete(`/admin/bookings/${editingBooking.id}`, {
+            form.delete(`/bookings/${editingBooking.id}`, {
                 onSuccess: () => {
                     setIsSheetOpen(false);
                     applyFilters();
+                },
+                onError: (errors) => {
+                    const errorMessage = Object.values(errors).join(', ');
+                    setMessage({ type: 'error', content: errorMessage });
                 },
             });
         }
@@ -845,7 +887,7 @@ export default function BookingsIndex() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Bookings" />
-            <ToasterMessage />
+            <ToasterMessage message={message} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>

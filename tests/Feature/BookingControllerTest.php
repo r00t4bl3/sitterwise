@@ -148,6 +148,11 @@ describe('BookingController', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_line2' => '',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
         ]);
 
         $response->assertRedirect();
@@ -208,6 +213,11 @@ describe('BookingController', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'address_line1' => '123 Home Way',
+            'address_line2' => '',
+            'address_city' => 'Home City',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
         ]);
 
         $response->assertRedirect();

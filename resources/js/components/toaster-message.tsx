@@ -1,30 +1,39 @@
-import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-export function ToasterMessage() {
-    const flash = (usePage().props as Record<string, unknown>).flash as Record<
-        string,
-        string
-    > | null;
+export interface Message {
+    type: 'success' | 'error' | 'info' | 'warning';
+    content: string;
+}
 
-    const previousFlashRef = useRef<string | null>(null);
+interface ToasterMessageProps {
+    message?: Message | null;
+}
+
+export function ToasterMessage({ message }: ToasterMessageProps) {
+    const previousMessageRef = useRef<string | null>(null);
 
     useEffect(() => {
-        const flashKey = flash?.success || flash?.error || null;
+        // Handle prop messages
+        if (message && message.content !== previousMessageRef.current) {
+            previousMessageRef.current = message.content;
 
-        if (flashKey && flashKey !== previousFlashRef.current) {
-            previousFlashRef.current = flashKey;
-
-            if (flash?.success) {
-                toast.success(flash.success, { position: 'top-center' });
-            }
-
-            if (flash?.error) {
-                toast.error(flash.error, { position: 'top-center' });
+            switch (message.type) {
+                case 'success':
+                    toast.success(message.content, { position: 'top-center' });
+                    break;
+                case 'error':
+                    toast.error(message.content, { position: 'top-center' });
+                    break;
+                case 'info':
+                    toast.info(message.content, { position: 'top-center' });
+                    break;
+                case 'warning':
+                    toast.warning(message.content, { position: 'top-center' });
+                    break;
             }
         }
-    }, [flash]);
+    }, [message]);
 
     return null;
 }

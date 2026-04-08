@@ -145,7 +145,7 @@ class BookingController extends Controller
             'admin_notes' => 'nullable|string',
             'corporate_id' => 'nullable|string',
             'how_did_you_hear' => 'nullable|string',
-            'sitter_preferences' => 'nullable|string',
+            'sitter_preferences' => 'nullable|array',
             'other_adults_present' => 'nullable|string',
             'special_needs_notes' => 'nullable|string',
             'emergency_instructions' => 'nullable|string',
@@ -153,16 +153,17 @@ class BookingController extends Controller
             'status' => 'required|string',
             'payment_status' => 'required|string',
             'rental_platform' => 'nullable|string',
-            'address_line1' => 'nullable|string',
+            'address_line1' => 'required|string',
             'address_line2' => 'nullable|string',
-            'address_city' => 'nullable|string',
-            'address_state' => 'nullable|string',
-            'address_zip' => 'nullable|string',
-            'new_client.first_name' => 'required_without:client_id|string',
-            'new_client.last_name' => 'required_with:new_client.first_name|string',
-            'new_client.email' => 'required_with:new_client.first_name|email|unique:users,email',
+            'address_city' => 'required|string',
+            'address_state' => 'required|string',
+            'address_zip' => 'required|string',
+            'new_client' => 'nullable|array',
+            'new_client.first_name' => 'required_without:client_id|nullable|string',
+            'new_client.last_name' => 'nullable|string',
+            'new_client.email' => 'nullable|email',
             'new_client.phone' => 'nullable|string',
-            'new_client.client_type' => 'required_with:new_client.first_name|string',
+            'new_client.client_type' => 'nullable|string',
         ]);
 
         // Validate minimum 4-hour duration
@@ -254,7 +255,7 @@ class BookingController extends Controller
             'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
 
-        return back()->with('success', 'Booking created successfully.');
+        return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
     }
 
     public function update(Request $request, Booking $booking)
@@ -351,7 +352,7 @@ class BookingController extends Controller
             }
         }
 
-        return back()->with('success', 'Booking updated successfully.');
+        return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
     }
 
     public function destroy(Booking $booking)
@@ -359,6 +360,6 @@ class BookingController extends Controller
         $booking->bookingGroup->delete();
         $booking->delete();
 
-        return back()->with('success', 'Booking deleted successfully.');
+        return redirect()->route('bookings.index')->with('success', 'Booking deleted successfully.');
     }
 }
