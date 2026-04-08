@@ -28,6 +28,7 @@ class ClientFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'client_type' => fake()->randomElement([ClientType::Resident->value, ClientType::Vacationer->value, ClientType::Invoiced->value]),
             'corporate_id' => null,
+            'stripe_customer_id' => null,
             'how_did_you_hear' => fake()->randomElement(['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other']),
             'sitter_preferences' => fake()->randomElements($preferences, fake()->numberBetween(0, 3)),
             'other_adults_present' => fake()->numberBetween(0, 5),

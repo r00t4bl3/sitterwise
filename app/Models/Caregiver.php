@@ -40,6 +40,7 @@ class Caregiver extends Model
         'rating',
         'biography',
         'notes',
+        'stripe_account_id',
     ];
 
     protected $casts = [
@@ -116,6 +117,11 @@ class Caregiver extends Model
     {
         // return $this->hasManyThrough(Booking::class);
         return $this->hasMany(Booking::class);
+    }
+
+    public function payoutMethods(): HasMany
+    {
+        return $this->hasMany(CaregiverPayoutMethod::class);
     }
 
     public function getFullNameAttribute(): string

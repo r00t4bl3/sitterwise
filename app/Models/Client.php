@@ -26,6 +26,7 @@ class Client extends Model
         'phone',
         'client_type',
         'corporate_id',
+        'stripe_customer_id',
         'how_did_you_hear',
         'sitter_preferences',
         'other_adults_present',
@@ -75,6 +76,11 @@ class Client extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(ClientPaymentMethod::class);
     }
 
     public function attributes(): BelongsToMany

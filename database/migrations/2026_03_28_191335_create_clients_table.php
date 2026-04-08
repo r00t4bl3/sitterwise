@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone');
             $table->string('client_type')->default('vacationer');
             $table->string('corporate_id')->nullable();
+            $table->string('stripe_customer_id')->nullable();
             $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();
             $table->json('sitter_preferences')->nullable();
             $table->string('other_adults_present')->nullable();

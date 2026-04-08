@@ -67,6 +67,7 @@ class CaregiverFactory extends Factory
             'rating' => $this->faker->randomFloat(2, 3.5, 5.0),
             'biography' => $this->faker->optional()->paragraph(),
             'notes' => $this->faker->optional()->sentence(),
+            'stripe_account_id' => null,
             'status_id' => $this->faker->randomElement($statusIds),
         ];
     }

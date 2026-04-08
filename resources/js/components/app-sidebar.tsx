@@ -12,6 +12,7 @@ import {
     Star,
     Users,
     User,
+    CircleDollarSign,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -39,22 +40,27 @@ const baseNavItems: NavItem[] = [
 
 const caregiverNavItems: NavItem[] = [
     {
-        title: 'My Availability',
-        href: '/my-availability',
-        icon: Calendar,
+        title: 'Jobs',
+        href: '/jobs',
+        icon: ClipboardList,
+    },
+    {
+        title: 'Payments',
+        href: '#',
+        icon: CircleDollarSign,
     },
 ];
 
 const clientNavItems: NavItem[] = [
     {
-        title: 'Find Caregiver',
-        href: '#',
-        icon: Search,
+        title: 'Bookings',
+        href: '/bookings',
+        icon: ClipboardList,
     },
     {
-        title: 'My Bookings',
+        title: 'Payments',
         href: '#',
-        icon: Calendar,
+        icon: CircleDollarSign,
     },
 ];
 
@@ -78,6 +84,11 @@ const adminNavItems: NavItem[] = [
         title: 'Bookings',
         href: '/bookings',
         icon: ClipboardList,
+    },
+    {
+        title: 'Payments',
+        href: '#',
+        icon: CircleDollarSign,
     },
 ];
 
@@ -117,7 +128,7 @@ export function AppSidebar() {
     const roleBasedItems = (() => {
         switch (auth.user.role) {
             case 'caregiver':
-                return [...baseNavItems];
+                return [...baseNavItems, ...caregiverNavItems];
             case 'super_admin':
                 return [...baseNavItems, ...superAdminNavItems];
             case 'admin':
