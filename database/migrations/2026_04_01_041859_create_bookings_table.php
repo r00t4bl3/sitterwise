@@ -37,7 +37,13 @@ return new class extends Migration
             $table->text('special_needs_notes')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->decimal('total_amount', 10, 2);
+            $table->decimal('reimbursement', 10, 2)->nullable()->default(null);
+            $table->decimal('tip', 10, 2)->nullable()->default(null);
             $table->string('payment_status');
+            $table->string('stripe_payment_intent_id')->nullable();
+            $table->decimal('actual_amount', 10, 2)->nullable();
+            $table->integer('charge_attempt_count')->default(0);
+            $table->timestamp('last_charge_attempt_at')->nullable();
             $table->boolean('requires_payment')->default(true);
             $table->softDeletes();
             $table->timestamps();

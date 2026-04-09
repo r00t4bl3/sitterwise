@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Booking extends Model
@@ -40,16 +41,27 @@ class Booking extends Model
         'special_needs_notes',
         'emergency_instructions',
         'total_amount',
+        'reimbursement',
+        'tip',
         'payment_status',
+        'stripe_payment_intent_id',
+        'actual_amount',
+        'charge_attempt_count',
+        'last_charge_attempt_at',
         'requires_payment',
     ];
 
     protected $casts = [
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
+        'last_charge_attempt_at' => 'datetime',
         'special_considerations' => 'array',
         'sitter_preferences' => 'array',
         'total_amount' => 'decimal:2',
+        'reimbursement' => 'decimal:2',
+        'tip' => 'decimal:2',
+        'actual_amount' => 'decimal:2',
+        'charge_attempt_count' => 'integer',
         'requires_payment' => 'boolean',
     ];
 
@@ -81,6 +93,11 @@ class Booking extends Model
     public function address(): BelongsTo
     {
         return $this->belongsTo(ClientAddress::class, 'address_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ClientPayment::class);
     }
 
     public function attributeDefinitions(): BelongsToMany

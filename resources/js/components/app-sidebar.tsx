@@ -59,7 +59,7 @@ const clientNavItems: NavItem[] = [
     },
     {
         title: 'Payments',
-        href: '#',
+        href: '/payments',
         icon: CircleDollarSign,
     },
 ];

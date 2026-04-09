@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
 class Client extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected static function newFactory(): ClientFactory
     {
@@ -83,6 +84,11 @@ class Client extends Model
         return $this->hasMany(ClientPaymentMethod::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ClientPayment::class);
+    }
+
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -103,5 +109,10 @@ class Client extends Model
     public function getSpecialNeedsAttribute(): bool
     {
         return ! empty($this->special_needs_notes);
+    }
+
+    public function routeNotificationForDatabase(): string
+    {
+        return 'client-notifications-'.$this->id;
     }
 }

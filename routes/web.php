@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\ChargeBookingController;
+use App\Http\Controllers\Admin\ChargingController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SuperAdmin\AttributeDefinitionController;
 use App\Http\Controllers\SuperAdmin\CertificationTypeController;
 use App\Http\Controllers\SuperAdmin\HotelController;
@@ -17,8 +21,16 @@ Route::inertia('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
+Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/payments', [ClientPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/setup-intent', [ClientPaymentController::class, 'getSetupIntent'])->name('payments.setupIntent');
+    Route::post('/payments/methods', [ClientPaymentController::class, 'storePaymentMethod'])->name('payments.methods.store');
+    Route::patch('/payments/methods/{paymentMethod}/default', [ClientPaymentController::class, 'setDefault'])->name('payments.methods.default');
+    Route::delete('/payments/methods/{paymentMethod}', [ClientPaymentController::class, 'destroy'])->name('payments.methods.destroy');
 
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
 
@@ -26,6 +38,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('bookings', BookingController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::middleware('admin')->group(function () {
+        Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
+        Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');
+        Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
+
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
         Route::get('clients/{client}/data', [ClientController::class, 'getClientData'])->name('clients.getClientData');
         Route::post('clients/{client}/profile-photo', [ClientController::class, 'updateProfilePhoto'])->name('clients.updateProfilePhoto');

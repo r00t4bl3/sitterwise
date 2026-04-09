@@ -8,6 +8,7 @@ import {
     User,
     Building,
     Users,
+    CreditCard,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { ToasterMessage, Message } from '@/components/toaster-message';
@@ -1002,34 +1003,57 @@ export default function BookingsTest() {
                                             serviceTypeIcons[
                                                 booking.service_type
                                             ] || CalendarIcon;
+                                        const canCharge =
+                                            (statusKey === 'completed' ||
+                                                statusKey === 'pending') &&
+                                            booking.payment_status !== 'paid';
 
                                         return (
-                                            <button
+                                            <div
                                                 key={booking.id}
-                                                onClick={() =>
-                                                    openEditSheet(booking)
-                                                }
-                                                className={`flex cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
-                                                    colors?.bg || 'bg-blue-100'
-                                                } ${
-                                                    colors?.text ||
-                                                    'text-blue-800'
-                                                } ${
-                                                    colors?.border ||
-                                                    'border-blue-300'
-                                                }`}
+                                                className="group relative"
                                             >
-                                                <ServiceIcon className="h-3 w-3 flex-shrink-0" />
-                                                <span className="truncate">
-                                                    {formatTime(
-                                                        booking.start_datetime,
-                                                    )}
-                                                    -
-                                                    {formatTime(
-                                                        booking.end_datetime,
-                                                    )}
-                                                </span>
-                                            </button>
+                                                <button
+                                                    onClick={() =>
+                                                        openEditSheet(booking)
+                                                    }
+                                                    className={`flex w-full cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
+                                                        colors?.bg ||
+                                                        'bg-blue-100'
+                                                    } ${
+                                                        colors?.text ||
+                                                        'text-blue-800'
+                                                    } ${
+                                                        colors?.border ||
+                                                        'border-blue-300'
+                                                    }`}
+                                                >
+                                                    <ServiceIcon className="h-3 w-3 flex-shrink-0" />
+                                                    <span className="truncate">
+                                                        {formatTime(
+                                                            booking.start_datetime,
+                                                        )}
+                                                        -
+                                                        {formatTime(
+                                                            booking.end_datetime,
+                                                        )}
+                                                    </span>
+                                                </button>
+                                                {canCharge && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.location.href =
+                                                                '/admin/bookings/charge?booking_id=' +
+                                                                booking.id;
+                                                        }}
+                                                        className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white group-hover:flex hover:bg-green-700"
+                                                        title="Charge"
+                                                    >
+                                                        <CreditCard className="h-2.5 w-2.5" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         );
                                     })}
                                     {remainingCount > 0 && (

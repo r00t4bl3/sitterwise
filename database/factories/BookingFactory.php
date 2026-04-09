@@ -52,6 +52,10 @@ class BookingFactory extends Factory
             'emergency_instructions' => null,
             'total_amount' => rand(50, 200),
             'payment_status' => BookingPaymentStatus::Pending->value,
+            'stripe_payment_intent_id' => null,
+            'actual_amount' => null,
+            'charge_attempt_count' => 0,
+            'last_charge_attempt_at' => null,
             'requires_payment' => true,
         ];
     }
