@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCertificationTypeRequest;
+use App\Http\Requests\UpdateCertificationTypeRequest;
 use App\Models\CertificationType;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CertificationTypeController extends Controller
@@ -17,13 +18,9 @@ class CertificationTypeController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreCertificationTypeRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:certification_types,name',
-            'description' => 'nullable|string',
-            'expires_required' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         CertificationType::create($validated);
 
@@ -31,14 +28,9 @@ class CertificationTypeController extends Controller
             ->with('success', 'Certification created successfully');
     }
 
-    public function update(Request $request, CertificationType $certification)
+    public function update(UpdateCertificationTypeRequest $request, CertificationType $certification)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:certification_types,name,'.$certification->id,
-            'description' => 'nullable|string',
-            'expires_required' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $certification->update($validated);
 

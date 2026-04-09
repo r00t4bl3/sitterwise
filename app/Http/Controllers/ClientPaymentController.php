@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePaymentMethodRequest;
 use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Illuminate\Http\Request;
 
@@ -34,17 +35,11 @@ class ClientPaymentController extends Controller
         return response()->json($this->service->createSetupIntent());
     }
 
-    public function storePaymentMethod(Request $request)
+    public function storePaymentMethod(StorePaymentMethodRequest $request)
     {
-        $request->validate([
-            'payment_method_id' => 'required|string',
-            'brand' => 'required|string',
-            'last4' => 'required|string',
-            'exp_month' => 'required|integer',
-            'exp_year' => 'required|integer',
-        ]);
+        $validated = $request->validated();
 
-        return response()->json($this->service->storePaymentMethod($request->all()));
+        return response()->json($this->service->storePaymentMethod($validated));
     }
 
     public function setDefault(Request $request, int $paymentMethodId)

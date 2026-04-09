@@ -6,12 +6,16 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Http\Requests\StoreBookingRequest;
+use App\Http\Requests\UpdateBookingRequest;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
+use App\Models\ClientChild;
+use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -128,43 +132,9 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBookingRequest $request)
     {
-        $validated = $request->validate([
-            'client_id' => 'required_without:new_client.first_name|nullable|exists:clients,id',
-            'service_type' => 'required|string',
-            'location_type' => 'required|string',
-            'start_datetime' => 'required|date|after:now',
-            'end_datetime' => 'required|date|after:start_datetime',
-            'hotel_id' => 'nullable|exists:hotels,id',
-            'address_id' => 'nullable|exists:client_addresses,id',
-            'caregiver_id' => 'nullable|exists:caregivers,id',
-            'special_considerations' => 'nullable|array',
-            'caregiver_notes' => 'nullable|string',
-            'notes_to_sitterwise' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-            'corporate_id' => 'nullable|string',
-            'how_did_you_hear' => 'nullable|string',
-            'sitter_preferences' => 'nullable|array',
-            'other_adults_present' => 'nullable|string',
-            'special_needs_notes' => 'nullable|string',
-            'emergency_instructions' => 'nullable|string',
-            'requires_payment' => 'nullable|boolean',
-            'status' => 'required|string',
-            'payment_status' => 'required|string',
-            'rental_platform' => 'nullable|string',
-            'address_line1' => 'required|string',
-            'address_line2' => 'nullable|string',
-            'address_city' => 'required|string',
-            'address_state' => 'required|string',
-            'address_zip' => 'required|string',
-            'new_client' => 'nullable|array',
-            'new_client.first_name' => 'required_without:client_id|nullable|string',
-            'new_client.last_name' => 'nullable|string',
-            'new_client.email' => 'nullable|email',
-            'new_client.phone' => 'nullable|string',
-            'new_client.client_type' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // Validate minimum 4-hour duration
         $start = new \DateTime($validated['start_datetime']);
@@ -258,43 +228,9 @@ class BookingController extends Controller
         return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
     }
 
-    public function update(Request $request, Booking $booking)
+    public function update(UpdateBookingRequest $request, Booking $booking)
     {
-        $validated = $request->validate([
-            'service_type' => 'required|string',
-            'location_type' => 'required|string',
-            'start_datetime' => 'required|date|after:now',
-            'end_datetime' => 'required|date|after:start_datetime',
-            'hotel_id' => 'nullable|exists:hotels,id',
-            'address_id' => 'nullable|exists:client_addresses,id',
-            'caregiver_id' => 'nullable|exists:caregivers,id',
-            'special_considerations' => 'nullable|array',
-            'caregiver_notes' => 'nullable|string',
-            'notes_to_sitterwise' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-            'corporate_id' => 'nullable|string',
-            'sitter_preferences' => 'nullable|array',
-            'other_adults_present' => 'nullable|string',
-            'special_needs_notes' => 'nullable|string',
-            'emergency_instructions' => 'nullable|string',
-            'total_amount' => 'required|numeric|min:0',
-            'requires_payment' => 'nullable|boolean',
-            'status' => 'required|string',
-            'payment_status' => 'required|string',
-            'rental_platform' => 'nullable|string',
-            'address_line1' => 'nullable|string',
-            'address_line2' => 'nullable|string',
-            'address_city' => 'nullable|string',
-            'address_state' => 'nullable|string',
-            'address_zip' => 'nullable|string',
-            'deleted_child_ids' => 'nullable|array',
-            'deleted_child_ids.*' => 'integer|exists:client_children,id',
-            'deleted_pet_ids' => 'nullable|array',
-            'deleted_pet_ids.*' => 'integer|exists:client_pets,id',
-            'new_children' => 'nullable|array',
-            'new_pets' => 'nullable|array',
-            'save_children_pets_to_profile' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         // Validate minimum 4-hour duration
         $start = new \DateTime($validated['start_datetime']);

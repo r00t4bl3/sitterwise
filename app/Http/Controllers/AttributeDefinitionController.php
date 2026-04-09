@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAttributeDefinitionRequest;
+use App\Http\Requests\UpdateAttributeDefinitionRequest;
 use App\Models\AttributeDefinition;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AttributeDefinitionController extends Controller
@@ -17,14 +18,9 @@ class AttributeDefinitionController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAttributeDefinitionRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'type' => 'required|in:boolean,date,text,number,select',
-            'entity_type' => 'required|in:caregiver,client,both',
-            'options' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         $maxOrder = AttributeDefinition::max('sort_order') ?? 0;
         $validated['sort_order'] = $maxOrder + 1;
@@ -38,16 +34,9 @@ class AttributeDefinitionController extends Controller
             ->with('success', 'Attribute created successfully');
     }
 
-    public function update(Request $request, AttributeDefinition $attribute)
+    public function update(UpdateAttributeDefinitionRequest $request, AttributeDefinition $attribute)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'type' => 'required|in:boolean,date,text,number,select',
-            'entity_type' => 'required|in:caregiver,client,both',
-            'options' => 'nullable|array',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-        ]);
+        $validated = $request->validated();
 
         $attribute->slug = $validated['name'];
         $attribute->fill($validated);

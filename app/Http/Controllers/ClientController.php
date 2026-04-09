@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ResetClientPasswordRequest;
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientProfilePhotoRequest;
+use App\Http\Requests\UpdateClientRequest;
 use App\Models\AttributeDefinition;
 use App\Models\Client;
 use App\Models\User;
@@ -44,17 +48,9 @@ class ClientController extends Controller
         return Inertia::render('admin/clients/create');
     }
 
-    public function store(Request $request)
+    public function store(StoreClientRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'client_type' => 'required|in:sd_resident,vacationer,invoiced',
-            'password' => 'required|string|min:4|confirmed',
-            'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['first_name'].' '.$validated['last_name'],
@@ -285,40 +281,9 @@ class ClientController extends Controller
         ]);
     }
 
-    public function update(Request $request, Client $client)
+    public function update(UpdateClientRequest $request, Client $client)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'client_type' => 'required|in:sd_resident,vacationer,invoiced',
-            'how_did_you_hear' => 'nullable|in:concierge,friend_family,google,returning_client,care_com,other',
-            'sitter_preferences' => 'nullable|array',
-            'other_adults_present' => 'nullable|string|max:10',
-            'emergency_instructions' => 'nullable|string',
-            'special_needs_notes' => 'nullable|string',
-            'attributes' => 'nullable|array',
-            'children' => 'nullable|array',
-            'children.*.name' => 'nullable|string|max:255',
-            'children.*.gender' => 'nullable|in:male,female,other',
-            'children.*.birth_month' => 'nullable|integer|min:1|max:12',
-            'children.*.birth_year' => 'nullable|integer|min:1900|max:2100',
-            'pets' => 'nullable|array',
-            'pets.*.name' => 'nullable|string|max:255',
-            'pets.*.type' => 'nullable|string|max:255',
-            'pets.*.breed' => 'nullable|string|max:255',
-            'pets.*.notes' => 'nullable|string',
-            'addresses' => 'nullable|array',
-            'addresses.*.id' => 'nullable|integer|exists:client_addresses,id',
-            'addresses.*.label' => 'nullable|string|max:255',
-            'addresses.*.location_type' => 'nullable|in:residence,hotel,vacation_rental,other',
-            'addresses.*.line1' => 'required|string|max:255',
-            'addresses.*.line2' => 'nullable|string|max:255',
-            'addresses.*.city' => 'required|string|max:255',
-            'addresses.*.state' => 'required|string|max:255',
-            'addresses.*.zip' => 'required|string|max:20',
-            'addresses.*.is_primary' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $client->update($validated);
 
@@ -439,12 +404,8 @@ class ClientController extends Controller
             ->with('success', 'Client updated successfully');
     }
 
-    public function updateProfilePhoto(Request $request, Client $client)
+    public function updateProfilePhoto(UpdateClientProfilePhotoRequest $request, Client $client)
     {
-        $request->validate([
-            'profile_photo' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-        ]);
-
         if ($request->hasFile('profile_photo')) {
             $file = $request->file('profile_photo');
             $filename = time().'_'.$file->getClientOriginalName();
@@ -458,11 +419,9 @@ class ClientController extends Controller
         return response()->json(['success' => false], 422);
     }
 
-    public function resetPassword(Request $request, Client $client)
+    public function resetPassword(ResetClientPasswordRequest $request, Client $client)
     {
-        $request->validate([
-            'new_password' => 'required|string|min:4|confirmed',
-        ]);
+        $validated = $request->validated();
 
         if (! $client->user) {
             return redirect()->route('clients.show', $client->id)
@@ -470,7 +429,7 @@ class ClientController extends Controller
         }
 
         $client->user->update([
-            'password' => Hash::make($request->new_password),
+            'password' => Hash::make($validated['new_password']),
         ]);
 
         return redirect()->route('clients.show', $client->id)

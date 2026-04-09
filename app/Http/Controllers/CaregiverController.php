@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ResetCaregiverPasswordRequest;
 use App\Http\Requests\StoreCaregiverRequest;
 use App\Http\Requests\UpdateCaregiverProfilePhotoRequest;
 use App\Http\Requests\UpdateCaregiverRequest;
@@ -214,11 +215,9 @@ class CaregiverController extends Controller
             ->with('success', 'Profile photo updated successfully');
     }
 
-    public function resetPassword(Request $request, Caregiver $caregiver): RedirectResponse
+    public function resetPassword(ResetCaregiverPasswordRequest $request, Caregiver $caregiver): RedirectResponse
     {
-        $request->validate([
-            'new_password' => 'required|string|min:4|confirmed',
-        ]);
+        $validated = $request->validated();
 
         if (! $caregiver->user) {
             return redirect()->route('caregivers.show', $caregiver->id)
@@ -226,7 +225,7 @@ class CaregiverController extends Controller
         }
 
         $caregiver->user->update([
-            'password' => Hash::make($request->new_password),
+            'password' => Hash::make($validated['new_password']),
         ]);
 
         return redirect()->route('caregivers.show', $caregiver->id)

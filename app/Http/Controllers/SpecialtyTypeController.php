@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreSpecialtyTypeRequest;
+use App\Http\Requests\UpdateSpecialtyTypeRequest;
 use App\Models\SpecialtyType;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SpecialtyTypeController extends Controller
@@ -17,12 +18,9 @@ class SpecialtyTypeController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSpecialtyTypeRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:specialty_types,name',
-            'description' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $maxOrder = SpecialtyType::max('sort_order') ?? 0;
         $validated['sort_order'] = $maxOrder + 1;
@@ -33,14 +31,9 @@ class SpecialtyTypeController extends Controller
             ->with('success', 'Specialty created successfully');
     }
 
-    public function update(Request $request, SpecialtyType $specialty)
+    public function update(UpdateSpecialtyTypeRequest $request, SpecialtyType $specialty)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:specialty_types,name,'.$specialty->id,
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer',
-        ]);
+        $validated = $request->validated();
 
         $specialty->update($validated);
 

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreHotelRequest;
+use App\Http\Requests\UpdateHotelRequest;
 use App\Models\Hotel;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class HotelController extends Controller
@@ -17,22 +18,9 @@ class HotelController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreHotelRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'line1' => 'required|string',
-            'line2' => 'nullable|string',
-            'city' => 'required|string',
-            'state' => 'required|string',
-            'zip' => 'required|string',
-            'parking_instructions' => 'required|string',
-            'hourly_rate' => 'required|numeric|min:0',
-            'resort_fee' => 'nullable|numeric|min:0',
-            'contact_name' => 'nullable|string',
-            'contact_phone' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         Hotel::create($validated);
 
@@ -40,23 +28,9 @@ class HotelController extends Controller
             ->with('success', 'Hotel created successfully');
     }
 
-    public function update(Request $request, Hotel $hotel)
+    public function update(UpdateHotelRequest $request, Hotel $hotel)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'line1' => 'required|string',
-            'line2' => 'nullable|string',
-            'city' => 'required|string',
-            'state' => 'required|string',
-            'zip' => 'required|string',
-            'parking_instructions' => 'required|string',
-            'hourly_rate' => 'required|numeric|min:0',
-            'resort_fee' => 'nullable|numeric|min:0',
-            'contact_name' => 'nullable|string',
-            'contact_phone' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $hotel->update($validated);
 

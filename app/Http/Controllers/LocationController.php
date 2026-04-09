@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreLocationRequest;
+use App\Http\Requests\UpdateLocationRequest;
 use App\Models\Location;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class LocationController extends Controller
@@ -17,14 +18,9 @@ class LocationController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreLocationRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:locations,name',
-            'description' => 'nullable|string',
-            'svg_icon' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         Location::create($validated);
 
@@ -32,14 +28,9 @@ class LocationController extends Controller
             ->with('success', 'Location created successfully');
     }
 
-    public function update(Request $request, Location $location)
+    public function update(UpdateLocationRequest $request, Location $location)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:locations,name,'.$location->id,
-            'description' => 'nullable|string',
-            'svg_icon' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $location->update($validated);
 

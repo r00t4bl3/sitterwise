@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChargeBookingRequest;
 use App\Models\Booking;
 use App\Services\Billing\JobBillingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ChargingController extends Controller
 {
@@ -13,13 +13,9 @@ class ChargingController extends Controller
         protected JobBillingService $billingService
     ) {}
 
-    public function charge(Request $request, Booking $booking): JsonResponse
+    public function charge(ChargeBookingRequest $request, Booking $booking): JsonResponse
     {
-        $request->validate([
-            'reimbursement' => 'nullable|numeric|min:0',
-            'tip' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if ($booking->payment_status === 'charged' || $booking->payment_status === 'captured') {
             return response()->json([
@@ -35,9 +31,9 @@ class ChargingController extends Controller
             ], 400);
         }
 
-        $reimbursement = $request->input('reimbursement', 0);
-        $tip = $request->input('tip', 0);
-        $notes = $request->input('notes');
+        $reimbursement = $validated['reimbursement'] ?? 0;
+        $tip = $validated['tip'] ?? 0;
+        $notes = $validated['notes'] ?? null;
 
         $booking->update([
             'reimbursement' => $reimbursement,
