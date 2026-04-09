@@ -1,19 +1,19 @@
 <?php
 
-use App\Http\Controllers\Admin\ChargeBookingController;
-use App\Http\Controllers\Admin\ChargingController;
+use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\CertificationTypeController;
+use App\Http\Controllers\ChargeBookingController;
+use App\Http\Controllers\ChargingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HotelController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
-use App\Http\Controllers\SuperAdmin\AttributeDefinitionController;
-use App\Http\Controllers\SuperAdmin\CertificationTypeController;
-use App\Http\Controllers\SuperAdmin\HotelController;
-use App\Http\Controllers\SuperAdmin\LocationController;
-use App\Http\Controllers\SuperAdmin\SpecialtyTypeController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
