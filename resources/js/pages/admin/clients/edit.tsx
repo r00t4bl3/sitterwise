@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -506,7 +507,8 @@ export default function ClientEdit() {
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Children ({form.data.children.length})
                             </h2>
-                            <button
+                            <Button
+                                variant="link"
                                 type="button"
                                 onClick={() => {
                                     form.setData('children', [
@@ -520,10 +522,9 @@ export default function ClientEdit() {
                                         },
                                     ]);
                                 }}
-                                className="text-sm text-ring hover:text-foreground"
                             >
                                 + Add Child
-                            </button>
+                            </Button>
                         </div>
                         {form.data.children.length > 0 ? (
                             <div className="space-y-4">
@@ -659,7 +660,9 @@ export default function ClientEdit() {
                                             />
                                         </div>
                                         <div className="flex items-center justify-end">
-                                            <button
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -671,10 +674,10 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
-                                                className="text-sm text-destructive hover:text-destructive"
+                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -691,7 +694,8 @@ export default function ClientEdit() {
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Pets ({form.data.pets.length})
                             </h2>
-                            <button
+                            <Button
+                                variant="link"
                                 type="button"
                                 onClick={() => {
                                     form.setData('pets', [
@@ -705,10 +709,9 @@ export default function ClientEdit() {
                                         },
                                     ]);
                                 }}
-                                className="text-sm text-ring hover:text-foreground"
                             >
                                 + Add Pet
-                            </button>
+                            </Button>
                         </div>
                         {form.data.pets.length > 0 ? (
                             <div className="space-y-4">
@@ -825,8 +828,7 @@ export default function ClientEdit() {
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Addresses ({form.data.addresses.length})
                             </h2>
-                            <button
-                                type="button"
+                            <Button
                                 onClick={() => {
                                     form.setData('addresses', [
                                         ...form.data.addresses,
@@ -845,10 +847,10 @@ export default function ClientEdit() {
                                         },
                                     ]);
                                 }}
-                                className="text-sm text-ring hover:text-foreground"
+                                variant="link"
                             >
                                 + Add Address
-                            </button>
+                            </Button>
                         </div>
                         {form.data.addresses.length > 0 ? (
                             <div className="space-y-4">
@@ -1049,8 +1051,9 @@ export default function ClientEdit() {
                                             />
                                         </div>
                                         <div className="flex items-center justify-end sm:col-span-2 lg:col-span-3">
-                                            <button
-                                                type="button"
+                                            <Button
+                                                variant="link"
+                                                size="sm"
                                                 onClick={() => {
                                                     form.setData(
                                                         'addresses',
@@ -1060,10 +1063,9 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
-                                                className="text-sm text-destructive hover:text-destructive"
                                             >
                                                 Remove
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -1101,20 +1103,19 @@ export default function ClientEdit() {
                     </div>
 
                     <div className="flex justify-end gap-2">
-                        <Link
-                            href={`/clients/${client.id}`}
-                            className="btn-secondary"
+                        <Button
+                            variant="secondary"
+                            type="button"
+                            onClick={() =>
+                                (window.location.href = `/clients/${client.id}`)
+                            }
                         >
                             Cancel
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="btn-primary"
-                        >
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
                             {form.processing ? <Spinner /> : null}
                             {form.processing ? 'Saving...' : 'Save Changes'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

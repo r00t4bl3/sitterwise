@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Shield, Eye, EyeOff } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
 import {
     Sheet,
@@ -254,12 +255,12 @@ export default function CaregiverShow() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button
+                        <Button
                             onClick={() => setIsPasswordSheetOpen(true)}
-                            className="btn-secondary"
+                            variant="secondary"
                         >
                             Reset Password
-                        </button>
+                        </Button>
                         <Link
                             href={`/caregivers/${caregiver.id}/edit`}
                             className="btn-primary"
@@ -354,24 +355,25 @@ export default function CaregiverShow() {
                                 )}
                             </div>
                             <div>
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={passwordForm.processing}
-                                    className="btn-primary w-full"
+                                    className="w-full"
                                 >
                                     {passwordForm.processing
                                         ? 'Resetting...'
                                         : 'Reset Password'}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={() =>
                                         setIsPasswordSheetOpen(false)
                                     }
-                                    className="btn-secondary mt-2 w-full"
+                                    variant="outline"
+                                    className="mt-2 w-full"
                                 >
                                     Cancel
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </SheetContent>
@@ -598,17 +600,16 @@ export default function CaregiverShow() {
                                         </p>
                                     )}
                                 </label>
-                                <button
-                                    type="button"
+                                <Button
                                     onClick={handleStatusUpdate}
                                     disabled={statusForm.processing}
-                                    className="btn-primary w-full"
+                                    className="w-full"
                                 >
                                     {isStatusUpdating ? <Spinner /> : null}
                                     {isStatusUpdating
                                         ? 'Updating...'
                                         : 'Update Status'}
-                                </button>
+                                </Button>
                             </div>
                         </div>
 

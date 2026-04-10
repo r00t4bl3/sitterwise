@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { InfiniteScroll } from '@inertiajs/react';
 import { Sunrise, Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -180,28 +181,30 @@ export default function AvailabilitiesIndex() {
                     previous={({ loading, fetch, hasMore }) =>
                         hasMore && (
                             <div className="py-4">
-                                <button
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
                                     onClick={fetch}
                                     disabled={loading}
-                                    className="flex h-10 w-full items-center justify-center gap-2 rounded-[3px] border border-input bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent disabled:opacity-50"
                                 >
                                     {loading ? <Spinner /> : null}
                                     {loading ? 'Loading...' : 'Load Previous'}
-                                </button>
+                                </Button>
                             </div>
                         )
                     }
                     next={({ loading, fetch, hasMore }) =>
                         hasMore && (
                             <div className="py-4">
-                                <button
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
                                     onClick={fetch}
                                     disabled={loading}
-                                    className="flex h-10 w-full items-center justify-center gap-2 rounded-[3px] border border-input bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent disabled:opacity-50"
                                 >
                                     {loading ? <Spinner /> : null}
                                     {loading ? 'Loading...' : 'Load More'}
-                                </button>
+                                </Button>
                             </div>
                         )
                     }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import type { FormEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Collapsible,
@@ -785,15 +786,15 @@ export default function CaregiverEdit() {
                                                     ),
                                                 )}
                                             </select>
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() =>
                                                     removeCertification(cert.id)
                                                 }
-                                                className="text-xs text-destructive hover:underline"
+                                                variant="link"
                                             >
                                                 Remove
-                                            </button>
+                                            </Button>
                                         </div>
                                         <div className="flex gap-4">
                                             <div className="flex-1">
@@ -841,32 +842,31 @@ export default function CaregiverEdit() {
                                         </div>
                                     </div>
                                 ))}
-                                <button
+                                <Button
+                                    variant="link"
                                     type="button"
                                     onClick={addCertification}
-                                    className="text-sm text-primary hover:underline"
                                 >
                                     + Add Certification
-                                </button>
+                                </Button>
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
 
                     <div className="mt-4 flex justify-end gap-3">
-                        <Link
-                            href={`/caregivers/${caregiver.id}`}
-                            className="btn-secondary"
+                        <Button
+                            variant="secondary"
+                            type="button"
+                            onClick={() =>
+                                (window.location.href = `/caregivers/${caregiver.id}`)
+                            }
                         >
                             Cancel
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="btn-primary"
-                        >
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
                             {form.processing ? <Spinner /> : null}
                             {form.processing ? 'Saving...' : 'Save Changes'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

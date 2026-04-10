@@ -2,6 +2,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -311,21 +312,20 @@ export default function CaregiverCreate() {
                     </div>
 
                     <div className="flex justify-end gap-4">
-                        <Link
-                            href="/caregivers"
-                            className="flex h-10 items-center justify-center rounded-[3px] border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-accent"
+                        <Button
+                            variant="secondary"
+                            type="button"
+                            onClick={() =>
+                                (window.location.href = '/caregivers')
+                            }
                         >
                             Cancel
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="h-10 rounded-[3px] bg-primary px-6 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
-                        >
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
                             {form.processing
                                 ? 'Creating...'
                                 : 'Create Caregiver'}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

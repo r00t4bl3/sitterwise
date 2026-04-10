@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -356,10 +357,10 @@ export function BookingDetailsSection({
                 )}
 
                 <div className="flex gap-2 pt-4">
-                    <button
+                    <Button
                         onClick={handleSubmit}
                         disabled={form.processing}
-                        className="btn-primary flex-1"
+                        className="flex-1"
                     >
                         {form.processing && <Spinner className="size-4" />}
                         {form.processing
@@ -367,24 +368,26 @@ export function BookingDetailsSection({
                             : editingBooking
                               ? 'Update'
                               : 'Create'}
-                    </button>
+                    </Button>
                     {editingBooking && (
-                        <button
+                        <Button
                             onClick={handleDelete}
                             disabled={form.processing}
-                            className="btn-secondary w-1/4"
+                            variant="destructive"
+                            className="w-1/4"
                         >
                             Delete
-                        </button>
+                        </Button>
                     )}
                 </div>
 
-                <button
+                <Button
                     onClick={() => setIsSheetOpen(false)}
-                    className="btn-secondary mt-2 w-full"
+                    variant="outline"
+                    className="mt-2 w-full"
                 >
                     Cancel
-                </button>
+                </Button>
             </div>
         </details>
     );

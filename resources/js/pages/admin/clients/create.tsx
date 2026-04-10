@@ -2,6 +2,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -242,12 +243,13 @@ export default function ClientCreate() {
                     </div>
 
                     <div className="flex justify-end gap-2">
-                        <Link href="/clients" className="btn-secondary">
+                        <Button
+                            variant="secondary"
+                            onClick={() => (window.location.href = '/clients')}
+                        >
                             Cancel
-                        </Link>
-                        <button type="submit" className="btn-primary">
-                            Create Client
-                        </button>
+                        </Button>
+                        <Button type="submit">Create Client</Button>
                     </div>
                 </form>
             </div>

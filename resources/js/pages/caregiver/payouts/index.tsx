@@ -1,5 +1,4 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import {
     CircleDollarSign,
     AlertCircle,
@@ -9,6 +8,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -103,7 +103,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function PayoutMethodBadge({ method }: { method: PayoutMethod | null }) {
-    if (!method) return <span className="text-muted-foreground">—</span>;
+    if (!method) {
+return <span className="text-muted-foreground">—</span>;
+}
 
     return (
         <div className="flex items-center gap-1">
@@ -252,7 +254,10 @@ export default function CaregiverPayoutsIndex() {
     };
 
     const formatDate = (dateString: string | null) => {
-        if (!dateString) return '—';
+        if (!dateString) {
+return '—';
+}
+
         return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',

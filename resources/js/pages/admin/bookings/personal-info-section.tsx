@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { Button } from '@/components/ui/button';
 
 const MONTH_ABBR = [
     '',
@@ -300,8 +301,7 @@ export function PersonalInfoSection({
                                 ))}
                             </select>
                         </div>
-                        <button
-                            type="button"
+                        <Button
                             onClick={() => {
                                 setClientMode('select');
                                 form.setData('new_client', {
@@ -312,10 +312,11 @@ export function PersonalInfoSection({
                                     client_type: 'vacationer',
                                 });
                             }}
-                            className="text-sm text-ring hover:text-foreground"
+                            variant="outline"
+                            className="text-sm"
                         >
                             Cancel and select existing client
-                        </button>
+                        </Button>
                     </div>
                 )}
 

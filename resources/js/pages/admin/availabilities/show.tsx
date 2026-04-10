@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -298,36 +299,38 @@ export default function ManageAvailability() {
                             </div>
 
                             <div className="flex gap-2 pt-4">
-                                <button
+                                <Button
                                     onClick={handleSave}
                                     disabled={
                                         processing ||
                                         data.time_slots.length === 0
                                     }
-                                    className="btn-primary flex-1"
+                                    className="flex-1"
                                 >
                                     {processing && (
                                         <Spinner className="size-4" />
                                     )}
                                     {processing ? 'Saving...' : 'Save'}
-                                </button>
+                                </Button>
                                 {availabilityMap[selectedDate || ''] && (
-                                    <button
+                                    <Button
                                         onClick={handleDelete}
                                         disabled={processing}
-                                        className="btn-secondary w-1/4"
+                                        variant="secondary"
+                                        className="w-1/4"
                                     >
                                         Delete
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
 
-                            <button
+                            <Button
                                 onClick={() => setIsSheetOpen(false)}
-                                className="btn-secondary mt-2 w-full"
+                                variant="outline"
+                                className="mt-2 w-full"
                             >
                                 Cancel
-                            </button>
+                            </Button>
                         </div>
                     </SheetContent>
                 </Sheet>

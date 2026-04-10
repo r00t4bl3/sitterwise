@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -301,12 +302,12 @@ export default function ClientShow() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => setIsPasswordSheetOpen(true)}
-                            className="btn-secondary"
                         >
                             Reset Password
-                        </button>
+                        </Button>
                         <Link
                             href={`/clients/${client.id}/edit`}
                             className="btn-primary"
@@ -401,24 +402,25 @@ export default function ClientShow() {
                                 )}
                             </div>
                             <div>
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={passwordForm.processing}
-                                    className="btn-primary w-full"
+                                    className="w-full"
                                 >
                                     {passwordForm.processing
                                         ? 'Resetting...'
                                         : 'Reset Password'}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
+                                    variant="secondary"
                                     onClick={() =>
                                         setIsPasswordSheetOpen(false)
                                     }
-                                    className="btn-secondary mt-2 w-full"
+                                    className="mt-2 w-full"
                                 >
                                     Cancel
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </SheetContent>

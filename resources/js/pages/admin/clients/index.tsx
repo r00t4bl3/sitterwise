@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -184,9 +185,7 @@ export default function ClientsIndex() {
                             <option value="vacationer">Vacationer</option>
                             <option value="invoiced">Invoiced</option>
                         </select>
-                        <button type="submit" className="btn-primary">
-                            Filter
-                        </button>
+                        <Button type="submit">Filter</Button>
                     </form>
                 </div>
 
@@ -277,13 +276,14 @@ export default function ClientsIndex() {
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {client.phone}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Link
-                                            href={`/clients/${client.id}`}
-                                            className="text-sm font-medium text-ring hover:text-foreground"
-                                        >
-                                            View
-                                        </Link>
+                                    <td className="flex justify-end gap-x-2 px-4 py-3">
+                                        <Button asChild className="h-8">
+                                            <Link
+                                                href={`/clients/${client.id}`}
+                                            >
+                                                View
+                                            </Link>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}

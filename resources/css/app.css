@@ -146,6 +146,7 @@
     border-radius: 0;
     align-items: center;
     justify-content: center;
+    height: calc(var(--spacing) * 10);
 }
 
 .btn-primary:hover {
@@ -167,6 +168,7 @@
     border-radius: 0;
     align-items: center;
     justify-content: center;
+    height: calc(var(--spacing) * 10);
 }
 
 .btn-secondary:hover {

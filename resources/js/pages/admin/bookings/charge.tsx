@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import { CreditCard, DollarSign, Receipt, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +60,9 @@ export default function ChargeBooking() {
     const total = baseAmount + reimbursementValue + tipValue;
 
     const handleCharge = async () => {
-        if (!booking) return;
+        if (!booking) {
+return;
+}
 
         setIsLoading(true);
         setResult(null);

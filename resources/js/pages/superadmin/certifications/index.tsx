@@ -1,6 +1,7 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -104,9 +105,7 @@ export default function CertificationsIndex() {
                             Manage certifications visible to caregivers
                         </p>
                     </div>
-                    <button onClick={openCreateSheet} className="btn-primary">
-                        Add Certification
-                    </button>
+                    <Button onClick={openCreateSheet}>Add Certification</Button>
                 </div>
 
                 <div className="rounded-[6px] border border-border bg-card">
@@ -158,21 +157,22 @@ export default function CertificationsIndex() {
                                                 : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <button
+                                    <td className="flex justify-end gap-x-2 px-4 py-3">
+                                        <Button
                                             onClick={() => openEditSheet(cert)}
-                                            className="mr-3 text-sm font-medium text-ring hover:text-foreground"
+                                            className="h-8"
                                         >
                                             Edit
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
                                             onClick={() =>
                                                 handleDelete(cert.id)
                                             }
-                                            className="text-sm font-medium text-destructive hover:text-destructive"
+                                            className="h-8"
                                         >
                                             Delete
-                                        </button>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -266,17 +266,18 @@ export default function CertificationsIndex() {
                                     Active
                                 </label>
                             </div>
-                            <div className="flex justify-end gap-2 pt-4">
-                                <button
+                            <div className="gap-2 pt-4">
+                                <Button type="submit" className="w-full">
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
                                     type="button"
                                     onClick={() => setIsSheetOpen(false)}
-                                    className="btn-secondary"
+                                    className="mt-2 w-full"
                                 >
                                     Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    {form.processing ? 'Saving...' : 'Save'}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </SheetContent>

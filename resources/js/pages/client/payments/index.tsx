@@ -1,6 +1,8 @@
 import { Head, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import { CreditCard, Plus, Trash2, Star } from 'lucide-react';
+import { useState } from 'react';
+import { StripeCheckout } from '@/components/stripe/stripe-checkout';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -8,8 +10,6 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -94,7 +94,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function PaymentMethodBadge({ method }: { method: PaymentMethod | null }) {
-    if (!method) return <span className="text-muted-foreground">—</span>;
+    if (!method) {
+return <span className="text-muted-foreground">—</span>;
+}
 
     return (
         <div className="flex items-center gap-1">
@@ -124,6 +126,7 @@ function PaymentMethodCard({
 
     const handleDelete = async () => {
         setIsDeleting(true);
+
         try {
             await onDelete(method.id);
         } finally {
@@ -153,22 +156,27 @@ function PaymentMethodCard({
                         <Star className="h-3 w-3 fill-amber-600" /> Default
                     </span>
                 ) : (
-                    <button
-                        type="button"
-                        onClick={() => onSetDefault(method.id)}
-                        className="text-xs text-ring hover:text-foreground"
-                    >
-                        Set as default
-                    </button>
+                    <>
+                        <Button
+                            variant="link"
+                            size="sm"
+                            type="button"
+                            onClick={() => onSetDefault(method.id)}
+                        >
+                            Set as default
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </>
                 )}
-                <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="rounded p-1 text-muted-foreground hover:bg-red-50 hover:text-red-600"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </button>
             </div>
         </div>
     );
@@ -193,7 +201,10 @@ export default function ClientPaymentsIndex() {
     };
 
     const formatDate = (dateString: string | null) => {
-        if (!dateString) return '—';
+        if (!dateString) {
+return '—';
+}
+
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -203,6 +214,7 @@ export default function ClientPaymentsIndex() {
 
     const handleAddCardClick = async () => {
         setIsLoading(true);
+
         try {
             const response = await fetch('/payments/setup-intent', {
                 method: 'GET',
@@ -228,6 +240,7 @@ export default function ClientPaymentsIndex() {
                     'Content-Type': 'application/json',
                 },
             });
+
             if (response.ok) {
                 setPaymentMethods((methods) =>
                     methods.map((m) => ({
@@ -249,6 +262,7 @@ export default function ClientPaymentsIndex() {
                     'Content-Type': 'application/json',
                 },
             });
+
             if (response.ok) {
                 setPaymentMethods((methods) =>
                     methods.filter((m) => m.id !== id),
@@ -278,14 +292,10 @@ export default function ClientPaymentsIndex() {
                             {payments.total} transactions total
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsModalOpen(true)}
-                        className="btn-primary flex items-center gap-2"
-                    >
+                    <Button onClick={() => setIsModalOpen(true)}>
                         <Plus className="h-4 w-4" />
                         Manage Payment Methods
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="rounded-[6px] border border-border bg-card">

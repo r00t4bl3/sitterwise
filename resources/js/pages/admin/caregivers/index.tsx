@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
@@ -216,9 +217,7 @@ export default function CaregiversIndex() {
                                 </option>
                             ))}
                         </select>
-                        <button type="submit" className="btn-primary">
-                            Filter
-                        </button>
+                        <Button type="submit">Filter</Button>
                     </form>
                 </div>
 
@@ -413,13 +412,14 @@ export default function CaregiversIndex() {
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Link
-                                            href={`/caregivers/${caregiver.id}`}
-                                            className="text-sm font-medium text-ring hover:text-foreground"
-                                        >
-                                            View
-                                        </Link>
+                                    <td className="flex justify-end gap-x-2 px-4 py-3">
+                                        <Button asChild className="h-8">
+                                            <Link
+                                                href={`/caregivers/${caregiver.id}`}
+                                            >
+                                                View
+                                            </Link>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}

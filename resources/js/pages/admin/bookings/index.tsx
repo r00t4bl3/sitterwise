@@ -11,7 +11,9 @@ import {
     CreditCard,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { ToasterMessage, Message } from '@/components/toaster-message';
+import type { Message } from '@/components/toaster-message';
+import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -899,28 +901,27 @@ export default function BookingsTest() {
                             {monthNames[currentMonth - 1]} {currentYear}
                         </p>
                     </div>
-                    <button
-                        onClick={() => openCreateSheet()}
-                        className="btn-primary"
-                    >
+                    <Button onClick={() => openCreateSheet()}>
                         Create Booking
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
                             onClick={prevMonth}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
                             onClick={nextMonth}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronRight className="h-4 w-4" />
-                        </button>
+                        </Button>
                     </div>
                     <select
                         value={statusFilter || ''}
@@ -936,9 +937,9 @@ export default function BookingsTest() {
                             </option>
                         ))}
                     </select>
-                    <button onClick={applyFilters} className="btn-secondary">
+                    <Button variant="secondary" onClick={applyFilters}>
                         Apply
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="flex flex-wrap gap-3 text-xs">
