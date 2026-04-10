@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Services\CaregiverPayout;
+
+use App\Models\Caregiver;
+use App\Models\CaregiverPayout;
+use App\Models\CaregiverPayoutMethod;
+use Stripe\StripeClient;
+
+class CaregiverPayoutService
+{
+    protected StripeClient $stripe;
+
+    public function __construct()
+    {
+        $this->stripe = new StripeClient(config('services.stripe.secret'));
+    }
+
+    public function createConnectAccount(Caregiver $caregiver): string
+    {
+        $account = $this->stripe->accounts->create([
+            'type' => 'express',
+            'country' => 'US',
+            'business_type' => 'individual',
+            'individual' => [
+                'first_name' => $caregiver->first_name,
+                'last_name' => $caregiver->last_name,
+                'email' => $caregiver->user->email,
+                'phone' => $caregiver->phone,
+                'address' => [
+                    'line1' => $caregiver->address ?? '',
+                    'city' => '',
+                    'state' => '',
+                    'postal_code' => '',
+                ],
+            ],
+            'capabilities' => [
+                'card_payments' => ['requested' => true],
+                'transfers' => ['requested' => true],
+            ],
+        ]);
+
+        $caregiver->update(['stripe_account_id' => $account->id]);
+
+        return $account->id;
+    }
+
+    public function createAccountLink(Caregiver $caregiver): array
+    {
+        if (! $caregiver->stripe_account_id) {
+            $this->createConnectAccount($caregiver);
+        }
+
+        $accountLink = $this->stripe->accountLinks->create([
+            'account' => $caregiver->stripe_account_id,
+            'refresh_url' => config('app.url').'/payouts/stripe/refresh?caregiver_id='.$caregiver->id,
+            'return_url' => config('app.url').'/payouts/stripe/return?caregiver_id='.$caregiver->id,
+            'type' => 'account_onboarding',
+        ]);
+
+        return [
+            'url' => $accountLink->url,
+        ];
+    }
+
+    public function getAccountStatus(Caregiver $caregiver): array
+    {
+        if (! $caregiver->stripe_account_id) {
+            return [
+                'connected' => false,
+                'status' => null,
+                'details_submitted' => false,
+                'charges_enabled' => false,
+                'payouts_enabled' => false,
+            ];
+        }
+
+        $account = $this->stripe->accounts->retrieve($caregiver->stripe_account_id);
+
+        return [
+            'connected' => true,
+            'status' => $account->charges_enabled ? 'active' : 'pending',
+            'details_submitted' => $account->details_submitted ?? false,
+            'charges_enabled' => $account->charges_enabled ?? false,
+            'payouts_enabled' => $account->payouts_enabled ?? false,
+            'requirements' => $account->requirements ?? null,
+        ];
+    }
+
+    public function handleStripeReturn(Caregiver $caregiver): void
+    {
+        if ($caregiver->stripe_account_id) {
+            $status = $this->getAccountStatus($caregiver);
+
+            if ($status['charges_enabled'] && $status['payouts_enabled']) {
+                $this->syncPayoutMethods($caregiver);
+            }
+        }
+    }
+
+    protected function syncPayoutMethods(Caregiver $caregiver): void
+    {
+        try {
+            $account = $this->stripe->accounts->retrieve($caregiver->stripe_account_id, [
+                'expand' => ['external_accounts'],
+            ]);
+            $externalAccounts = $account->external_accounts->data ?? [];
+        } catch (\Exception $e) {
+            return;
+        }
+
+        foreach ($externalAccounts as $bankAccount) {
+            $existingMethod = CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)
+                ->where('provider_method_id', $bankAccount->id)
+                ->first();
+
+            if (! $existingMethod) {
+                CaregiverPayoutMethod::create([
+                    'caregiver_id' => $caregiver->id,
+                    'provider' => 'stripe_connect',
+                    'provider_method_id' => $bankAccount->id,
+                    'account_type' => $bankAccount->object ?? 'bank_account',
+                    'bank_name' => $bankAccount->bank_name ?? 'Bank Account',
+                    'last4' => $bankAccount->last4 ?? '',
+                    'status' => 'active',
+                    'is_default' => CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)->count() === 0,
+                ]);
+            }
+        }
+    }
+
+    public function getPayoutMethods(Caregiver $caregiver): array
+    {
+        return CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)
+            ->orderBy('is_default', 'desc')
+            ->get()
+            ->map(fn ($method) => [
+                'id' => $method->id,
+                'bank_name' => $method->bank_name,
+                'last4' => $method->last4,
+                'account_type' => $method->account_type,
+                'is_default' => $method->is_default,
+                'status' => $method->status,
+            ])
+            ->toArray();
+    }
+
+    public function getPayoutHistory(Caregiver $caregiver)
+    {
+        return CaregiverPayout::where('caregiver_id', $caregiver->id)
+            ->with('payoutMethod')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+    }
+}

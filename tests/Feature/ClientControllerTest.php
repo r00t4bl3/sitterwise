@@ -9,7 +9,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create(['role' => 'admin']);
-    $this->client = Client::factory()->hasAddresses()->create();
+    $this->client = Client::factory()->create();
 });
 
 describe('ClientController', function () {
@@ -141,7 +141,6 @@ describe('ClientController', function () {
         ]);
 
         $response->assertRedirect();
-
         $this->client->refresh();
         expect($this->client->first_name)->toBe('UpdatedFirstName');
     });

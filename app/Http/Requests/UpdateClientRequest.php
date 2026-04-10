@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ClientType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateClientRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class UpdateClientRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'client_type' => ['required', 'in:sd_resident,vacationer,invoiced'],
+            'client_type' => ['required', Rule::enum(ClientType::class)],
             'how_did_you_hear' => ['nullable', 'in:concierge,friend_family,google,returning_client,care_com,other'],
             'sitter_preferences' => ['nullable', 'array'],
             'other_adults_present' => ['nullable', 'string', 'max:10'],

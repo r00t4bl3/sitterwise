@@ -45,8 +45,8 @@ const caregiverNavItems: NavItem[] = [
         icon: ClipboardList,
     },
     {
-        title: 'Payments',
-        href: '#',
+        title: 'Payouts',
+        href: '/payouts',
         icon: CircleDollarSign,
     },
 ];

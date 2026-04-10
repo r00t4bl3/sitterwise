@@ -4,6 +4,7 @@ use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\CaregiverPayoutController;
 use App\Http\Controllers\CertificationTypeController;
 use App\Http\Controllers\ChargeBookingController;
 use App\Http\Controllers\ChargingController;
@@ -31,6 +32,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payments/methods', [ClientPaymentController::class, 'storePaymentMethod'])->name('payments.methods.store');
     Route::patch('/payments/methods/{paymentMethod}/default', [ClientPaymentController::class, 'setDefault'])->name('payments.methods.default');
     Route::delete('/payments/methods/{paymentMethod}', [ClientPaymentController::class, 'destroy'])->name('payments.methods.destroy');
+
+    Route::get('/payouts', [CaregiverPayoutController::class, 'index'])->name('payouts.index');
+    Route::post('/payouts/stripe/connect', [CaregiverPayoutController::class, 'connect'])->name('payouts.stripe.connect');
+    Route::get('/payouts/stripe/onboarding', [CaregiverPayoutController::class, 'onboarding'])->name('payouts.stripe.onboarding');
+    Route::get('/payouts/stripe/status', [CaregiverPayoutController::class, 'status'])->name('payouts.stripe.status');
+    Route::get('/payouts/stripe/return', [CaregiverPayoutController::class, 'return'])->name('payouts.stripe.return');
+    Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
 
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
 
