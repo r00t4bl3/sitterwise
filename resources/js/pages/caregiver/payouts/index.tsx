@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     CircleDollarSign,
@@ -6,6 +6,8 @@ import {
     CheckCircle2,
     ExternalLink,
     CreditCard,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -231,8 +233,11 @@ function PayoutMethodCard({ method }: { method: PayoutMethod }) {
 }
 
 export default function CaregiverPayoutsIndex() {
-    const { stripeStatus: initialStatus, payoutMethods, payouts } =
-        usePage<Props>().props;
+    const {
+        stripeStatus: initialStatus,
+        payoutMethods,
+        payouts,
+    } = usePage<Props>().props;
     const [stripeStatus, setStripeStatus] =
         useState<StripeStatus>(initialStatus);
 
@@ -248,10 +253,13 @@ export default function CaregiverPayoutsIndex() {
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return '—';
-        return new Date(dateString).toLocaleDateString('en-US', {
+        return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
         });
     };
 
@@ -321,132 +329,174 @@ export default function CaregiverPayoutsIndex() {
                         </p>
                     </div>
 
-                    {stripeStatus.connected &&
-                        stripeStatus.payouts_enabled && (
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button className="gap-2">
-                                        <CreditCard className="h-4 w-4" />
-                                        Payout Methods
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent className="sm:max-w-md">
-                                    <SheetHeader>
-                                        <SheetTitle>Payout Methods</SheetTitle>
-                                        <SheetDescription>
-                                            Manage the bank accounts used to receive your payouts.
-                                        </SheetDescription>
-                                    </SheetHeader>
-                                    <div className="mt-4 space-y-4 px-4">
-                                        {payoutMethods.length > 0 ? (
-                                            <div className="space-y-2">
-                                                {payoutMethods.map((method) => (
-                                                    <PayoutMethodCard
-                                                        key={method.id}
-                                                        method={method}
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                                                <p className="text-sm text-muted-foreground">
-                                                    No payout methods added yet.
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                        )}
+                    {stripeStatus.connected && stripeStatus.payouts_enabled && (
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button className="gap-2">
+                                    <CreditCard className="h-4 w-4" />
+                                    Payout Methods
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent className="sm:max-w-md">
+                                <SheetHeader>
+                                    <SheetTitle>Payout Methods</SheetTitle>
+                                    <SheetDescription>
+                                        Manage the bank accounts used to receive
+                                        your payouts.
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <div className="mt-4 space-y-4 px-4">
+                                    {payoutMethods.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {payoutMethods.map((method) => (
+                                                <PayoutMethodCard
+                                                    key={method.id}
+                                                    method={method}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                                            <p className="text-sm text-muted-foreground">
+                                                No payout methods added yet.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    )}
                 </div>
 
                 {renderStatus()}
 
-                {stripeStatus.connected &&
-                    stripeStatus.payouts_enabled && (
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-foreground">
-                                    Payout History
-                                </h2>
-                                <span className="text-xs text-muted-foreground">
-                                    {payouts.total} transactions total
-                                </span>
-                            </div>
-
-                            <div className="rounded-[6px] border border-border bg-card">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-foreground">
-                                            <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Date
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Amount
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Status
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Method
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Transfer ID
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {payouts.data.map((payout) => (
-                                            <tr
-                                                key={payout.id}
-                                                className="border-b border-border transition hover:bg-blush"
-                                            >
-                                                <td className="px-4 py-3 text-sm text-foreground">
-                                                    {formatDate(payout.payout_date || payout.created_at)}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                                    {formatCurrency(
-                                                        payout.amount,
-                                                        payout.currency,
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <StatusBadge status={payout.status} />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <PayoutMethodBadge
-                                                        method={payout.payout_method}
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-foreground">
-                                                    {payout.provider_transfer_id || '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {payouts.data.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={5}
-                                                    className="px-4 py-8 text-center text-muted-foreground"
-                                                >
-                                                    No payout history found.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {payouts.last_page > 1 && (
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-muted-foreground">
-                                        Page {payouts.current_page} of {payouts.last_page}
-                                    </p>
-                                </div>
-                            )}
+                {stripeStatus.connected && stripeStatus.payouts_enabled && (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-foreground">
+                                Payout History
+                            </h2>
+                            <span className="text-xs text-muted-foreground">
+                                {payouts.total} transactions total
+                            </span>
                         </div>
-                    )}
-                </div>
+
+                        <div className="rounded-[6px] border border-border bg-card">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-foreground">
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Date
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Amount
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Method
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Transfer ID
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {payouts.data.map((payout) => (
+                                        <tr
+                                            key={payout.id}
+                                            className="border-b border-border transition hover:bg-blush"
+                                        >
+                                            <td className="px-4 py-3 text-sm text-foreground">
+                                                {formatDate(
+                                                    payout.payout_date ||
+                                                        payout.created_at,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                                {formatCurrency(
+                                                    payout.amount,
+                                                    payout.currency,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <StatusBadge
+                                                    status={payout.status}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <PayoutMethodBadge
+                                                    method={
+                                                        payout.payout_method
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-foreground">
+                                                {payout.provider_transfer_id ||
+                                                    '—'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {payouts.data.length === 0 && (
+                                        <tr>
+                                            <td
+                                                colSpan={5}
+                                                className="px-4 py-8 text-center text-muted-foreground"
+                                            >
+                                                No payout history found.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {payouts.last_page > 1 && (
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">
+                                    Page {payouts.current_page} of{' '}
+                                    {payouts.last_page}
+                                </p>
+                                <div className="flex gap-1">
+                                    {payouts.links.map((link, index) => {
+                                        if (link.label === '...') {
+                                            return null;
+                                        }
+
+                                        const isPrev =
+                                            link.label.includes('Previous') ||
+                                            link.label.includes('&laquo;');
+                                        const isNext =
+                                            link.label.includes('Next') ||
+                                            link.label.includes('&raquo;');
+
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url || '#'}
+                                                className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                                    link.active
+                                                        ? 'bg-foreground text-white'
+                                                        : 'border border-border text-muted-foreground hover:bg-accent'
+                                                } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                            >
+                                                {isPrev ? (
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                ) : isNext ? (
+                                                    <ChevronRight className="h-4 w-4" />
+                                                ) : (
+                                                    link.label
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
         </AppLayout>
     );
 }

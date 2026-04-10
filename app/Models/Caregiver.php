@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Database\Factories\CaregiverFactory;
@@ -16,7 +15,7 @@ class Caregiver extends Model
 
     protected static function newFactory(): CaregiverFactory
     {
-        return CaregiverFactory::new();
+        return CaregiverFactory::new ();
     }
 
     // Sync system's user name with caregiver's first and last name
@@ -45,7 +44,7 @@ class Caregiver extends Model
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'rating' => 'decimal:2',
+        'rating'        => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -122,6 +121,11 @@ class Caregiver extends Model
     public function payoutMethods(): HasMany
     {
         return $this->hasMany(CaregiverPayoutMethod::class);
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(CaregiverPayout::class);
     }
 
     public function getFullNameAttribute(): string
