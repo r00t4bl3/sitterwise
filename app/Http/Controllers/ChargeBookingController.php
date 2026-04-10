@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\CaregiverPayoutMethod;
 use Illuminate\Http\Request;
 
 class ChargeBookingController extends Controller
@@ -12,8 +13,27 @@ class ChargeBookingController extends Controller
         $bookingId = $request->query('booking_id');
 
         if ($bookingId) {
-            $booking = Booking::with('client')
+            $booking = Booking::with(['client', 'caregiver'])
                 ->findOrFail($bookingId);
+
+            $payoutMethods = [];
+            $defaultPayoutMethod = null;
+
+            if ($booking->caregiver) {
+                $payoutMethods = CaregiverPayoutMethod::where('caregiver_id', $booking->caregiver_id)
+                    ->where('status', 'active')
+                    ->orderBy('is_default', 'desc')
+                    ->get()
+                    ->map(fn ($method) => [
+                        'id' => $method->id,
+                        'bank_name' => $method->bank_name,
+                        'last4' => $method->last4,
+                        'is_default' => $method->is_default,
+                    ])
+                    ->toArray();
+
+                $defaultPayoutMethod = collect($payoutMethods)->firstWhere('is_default', true);
+            }
 
             return inertia('admin/bookings/charge', [
                 'booking' => [
@@ -25,9 +45,17 @@ class ChargeBookingController extends Controller
                     'client' => [
                         'full_name' => $booking->client->full_name,
                     ],
+                    'caregiver' => $booking->caregiver
+                        ? [
+                            'id' => $booking->caregiver->id,
+                            'name' => $booking->caregiver->full_name,
+                        ]
+                        : null,
                     'service_type' => $booking->service_type,
                     'start_datetime' => $booking->start_datetime,
                 ],
+                'payout_methods' => $payoutMethods,
+                'default_payout_method' => $defaultPayoutMethod,
             ]);
         }
 

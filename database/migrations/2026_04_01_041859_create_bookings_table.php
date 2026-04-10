@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('rental_platform')->nullable();
             $table->timestamp('start_datetime');
             $table->timestamp('end_datetime');
+            $table->timestamp('checkout_at')->nullable();
+            $table->decimal('total_working_hour', 5, 2)->nullable();
             $table->string('status');
             $table->json('special_considerations')->nullable();
             $table->text('caregiver_notes')->nullable();

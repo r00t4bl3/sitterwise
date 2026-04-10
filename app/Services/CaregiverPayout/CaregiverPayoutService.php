@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Services\CaregiverPayout;
 
 use App\Models\Caregiver;
+use App\Models\CaregiverPayout;
 use App\Models\CaregiverPayoutMethod;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
 class CaregiverPayoutService
@@ -17,24 +20,24 @@ class CaregiverPayoutService
     public function createConnectAccount(Caregiver $caregiver): string
     {
         $account = $this->stripe->accounts->create([
-            'type'          => 'express',
-            'country'       => 'US',
+            'type' => 'express',
+            'country' => 'US',
             'business_type' => 'individual',
-            'individual'    => [
+            'individual' => [
                 'first_name' => $caregiver->first_name,
-                'last_name'  => $caregiver->last_name,
-                'email'      => $caregiver->user->email,
-                'phone'      => $caregiver->phone,
-                'address'    => [
-                    'line1'       => $caregiver->address ?? '',
-                    'city'        => '',
-                    'state'       => '',
+                'last_name' => $caregiver->last_name,
+                'email' => $caregiver->user->email,
+                'phone' => $caregiver->phone,
+                'address' => [
+                    'line1' => $caregiver->address ?? '',
+                    'city' => '',
+                    'state' => '',
                     'postal_code' => '',
                 ],
             ],
-            'capabilities'  => [
+            'capabilities' => [
                 'card_payments' => ['requested' => true],
-                'transfers'     => ['requested' => true],
+                'transfers' => ['requested' => true],
             ],
         ]);
 
@@ -50,10 +53,10 @@ class CaregiverPayoutService
         }
 
         $accountLink = $this->stripe->accountLinks->create([
-            'account'     => $caregiver->stripe_account_id,
-            'refresh_url' => config('app.url') . '/payouts/stripe/refresh?caregiver_id=' . $caregiver->id,
-            'return_url'  => config('app.url') . '/payouts/stripe/return?caregiver_id=' . $caregiver->id,
-            'type'        => 'account_onboarding',
+            'account' => $caregiver->stripe_account_id,
+            'refresh_url' => config('app.url').'/payouts/stripe/refresh?caregiver_id='.$caregiver->id,
+            'return_url' => config('app.url').'/payouts/stripe/return?caregiver_id='.$caregiver->id,
+            'type' => 'account_onboarding',
         ]);
 
         return [
@@ -65,23 +68,23 @@ class CaregiverPayoutService
     {
         if (! $caregiver->stripe_account_id) {
             return [
-                'connected'         => false,
-                'status'            => null,
+                'connected' => false,
+                'status' => null,
                 'details_submitted' => false,
-                'charges_enabled'   => false,
-                'payouts_enabled'   => false,
+                'charges_enabled' => false,
+                'payouts_enabled' => false,
             ];
         }
 
         $account = $this->stripe->accounts->retrieve($caregiver->stripe_account_id);
 
         return [
-            'connected'         => true,
-            'status'            => $account->charges_enabled ? 'active' : 'pending',
+            'connected' => true,
+            'status' => $account->charges_enabled ? 'active' : 'pending',
             'details_submitted' => $account->details_submitted ?? false,
-            'charges_enabled'   => $account->charges_enabled ?? false,
-            'payouts_enabled'   => $account->payouts_enabled ?? false,
-            'requirements'      => $account->requirements ?? null,
+            'charges_enabled' => $account->charges_enabled ?? false,
+            'payouts_enabled' => $account->payouts_enabled ?? false,
+            'requirements' => $account->requirements ?? null,
         ];
     }
 
@@ -114,14 +117,14 @@ class CaregiverPayoutService
 
             if (! $existingMethod) {
                 CaregiverPayoutMethod::create([
-                    'caregiver_id'       => $caregiver->id,
-                    'provider'           => 'stripe_connect',
+                    'caregiver_id' => $caregiver->id,
+                    'provider' => 'stripe_connect',
                     'provider_method_id' => $bankAccount->id,
-                    'account_type'       => $bankAccount->object ?? 'bank_account',
-                    'bank_name'          => $bankAccount->bank_name ?? 'Bank Account',
-                    'last4'              => $bankAccount->last4 ?? '',
-                    'status'             => 'active',
-                    'is_default'         => CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)->count() === 0,
+                    'account_type' => $bankAccount->object ?? 'bank_account',
+                    'bank_name' => $bankAccount->bank_name ?? 'Bank Account',
+                    'last4' => $bankAccount->last4 ?? '',
+                    'status' => 'active',
+                    'is_default' => CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)->count() === 0,
                 ]);
             }
         }
@@ -132,26 +135,95 @@ class CaregiverPayoutService
         return CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)
             ->orderBy('is_default', 'desc')
             ->get()
-            ->map(fn($method) => [
-                'id'           => $method->id,
-                'bank_name'    => $method->bank_name,
-                'last4'        => $method->last4,
+            ->map(fn ($method) => [
+                'id' => $method->id,
+                'bank_name' => $method->bank_name,
+                'last4' => $method->last4,
                 'account_type' => $method->account_type,
-                'is_default'   => $method->is_default,
-                'status'       => $method->status,
+                'is_default' => $method->is_default,
+                'status' => $method->status,
             ])
             ->toArray();
     }
 
     public function getPayoutHistory(Caregiver $caregiver)
     {
-        // return CaregiverPayout::where('caregiver_id', $caregiver->id)
-        //     ->with('payoutMethod')
-        //     ->orderBy('payout_date', 'desc')
-        //     ->paginate(10);
         return $caregiver->payouts()
             ->with('payoutMethod')
             ->orderBy('payout_date', 'desc')
             ->paginate(10);
+    }
+
+    public function transferFunds(Caregiver $caregiver, int $amount, ?int $payoutMethodId = null): array
+    {
+        $payoutMethod = $payoutMethodId
+            ? CaregiverPayoutMethod::where('id', $payoutMethodId)
+                ->where('caregiver_id', $caregiver->id)
+                ->first()
+            : CaregiverPayoutMethod::where('caregiver_id', $caregiver->id)
+                ->where('is_default', true)
+                ->where('status', 'active')
+                ->first();
+
+        if (! $payoutMethod) {
+            return [
+                'success' => false,
+                'message' => 'No active payout method found for caregiver',
+            ];
+        }
+
+        if (! $caregiver->stripe_account_id) {
+            return [
+                'success' => false,
+                'message' => 'Caregiver does not have a Stripe connected account',
+            ];
+        }
+
+        $amountInCents = $amount;
+
+        try {
+            $transfer = $this->stripe->transfers->create([
+                'amount' => $amountInCents,
+                'currency' => 'usd',
+                'destination' => $caregiver->stripe_account_id,
+                'transfer_group' => "booking_payout_{$caregiver->id}",
+                'metadata' => [
+                    'caregiver_id' => $caregiver->id,
+                    'payout_method_id' => $payoutMethod->id,
+                ],
+            ]);
+
+            $payout = CaregiverPayout::create([
+                'caregiver_id' => $caregiver->id,
+                'caregiver_payout_method_id' => $payoutMethod->id,
+                'amount' => $amount / 100,
+                'currency' => 'usd',
+                'status' => 'paid',
+                'provider_transfer_id' => $transfer->id,
+                'payout_date' => now(),
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Payout successful',
+                'transfer_id' => $transfer->id,
+                'payout_id' => $payout->id,
+            ];
+        } catch (ApiErrorException $e) {
+            CaregiverPayout::create([
+                'caregiver_id' => $caregiver->id,
+                'caregiver_payout_method_id' => $payoutMethod->id,
+                'amount' => $amount / 100,
+                'currency' => 'usd',
+                'status' => 'failed',
+                'provider_transfer_id' => null,
+                'payout_date' => now(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 }

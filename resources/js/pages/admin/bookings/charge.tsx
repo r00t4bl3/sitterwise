@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
-import { CreditCard, DollarSign, Receipt, Loader2 } from 'lucide-react';
+import { CreditCard, DollarSign, Receipt, Loader2, User } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,17 +31,31 @@ interface Booking {
     client: {
         full_name: string;
     };
+    caregiver: {
+        id: number;
+        name: string;
+    } | null;
     service_type: string;
     start_datetime: string;
+}
+
+interface PayoutMethod {
+    id: number;
+    bank_name: string;
+    last4: string;
+    is_default: boolean;
 }
 
 interface Props {
     [key: string]: unknown;
     booking?: Booking;
+    payout_methods?: PayoutMethod[];
+    default_payout_method?: PayoutMethod | null;
 }
 
 export default function ChargeBooking() {
-    const { booking } = usePage<Props>().props;
+    const { booking, payout_methods, default_payout_method } =
+        usePage<Props>().props;
 
     const [reimbursement, setReimbursement] = useState<string>(
         booking?.reimbursement?.toString() || '0',
@@ -59,10 +73,14 @@ export default function ChargeBooking() {
     const tipValue = parseFloat(tip) || 0;
     const total = baseAmount + reimbursementValue + tipValue;
 
+    const PLATFORM_FEE = 12;
+    const caregiverGross = baseAmount + reimbursementValue;
+    const caregiverNet = Math.max(0, caregiverGross - PLATFORM_FEE);
+
     const handleCharge = async () => {
         if (!booking) {
-return;
-}
+            return;
+        }
 
         setIsLoading(true);
         setResult(null);
@@ -123,9 +141,17 @@ return;
         client: {
             full_name: 'John Smith',
         },
+        caregiver: {
+            id: 1,
+            name: 'Jane Doe',
+        },
         service_type: 'babysitter',
         start_datetime: '2026-04-15T10:00:00',
     };
+
+    const dummyPayoutMethods = [
+        { id: 1, bank_name: 'Chase Bank', last4: '4242', is_default: true },
+    ];
 
     const displayBooking = booking || dummyBooking;
     const displayReimbursement = booking
@@ -134,6 +160,10 @@ return;
     const displayTip = booking ? tipValue : tipValue;
     const displayTotal =
         (displayBooking.total_amount || 0) + displayReimbursement + displayTip;
+    const displayCaregiver = displayBooking.caregiver;
+    const displayPayoutMethods = payout_methods || dummyPayoutMethods;
+    const displayDefaultMethod =
+        default_payout_method || displayPayoutMethods[0];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -194,6 +224,67 @@ return;
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="rounded-[6px] border border-border bg-card p-6">
+                    <h2 className="mb-4 text-lg font-semibold text-foreground">
+                        Caregiver Payout Summary
+                    </h2>
+
+                    {displayCaregiver ? (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-muted-foreground">
+                                    <User className="h-4 w-4" />
+                                    Caregiver
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    {displayCaregiver.name}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                    Gross Payout
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    {formatCurrency(caregiverGross)}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                    Platform Fee
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    - {formatCurrency(PLATFORM_FEE)}
+                                </span>
+                            </div>
+
+                            <div className="border-t pt-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-lg font-semibold text-foreground">
+                                        Net Payout
+                                    </span>
+                                    <span className="text-lg font-bold text-green-600">
+                                        {formatCurrency(caregiverNet)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {displayDefaultMethod && (
+                                <div className="mt-3 rounded bg-gray-50 p-2 text-xs text-muted-foreground">
+                                    Will be transferred to{' '}
+                                    {displayDefaultMethod.bank_name} ***
+                                    {displayDefaultMethod.last4}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">
+                            No caregiver assigned to this booking.
+                        </p>
+                    )}
                 </div>
 
                 <div className="rounded-[6px] border border-border bg-card p-6">
@@ -305,7 +396,7 @@ return;
                             <Loader2 className="h-4 w-4 animate-spin" />
                         )}
                         <CreditCard className="h-4 w-4" />
-                        {isLoading ? 'Processing...' : 'Charge Client'}
+                        {isLoading ? 'Processing...' : 'Process Payment'}
                     </Button>
                 </div>
             </div>

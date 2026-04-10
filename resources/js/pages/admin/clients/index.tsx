@@ -8,14 +8,14 @@ import type { BreadcrumbItem } from '@/types';
 
 function ClientTypeBadge({ type }: { type: string }) {
     const colors: Record<string, { bg: string; text: string }> = {
-        sd_resident: { bg: '#DBEAFE', text: '#1E40AF' },
-        vacationer: { bg: '#FEF3C7', text: '#B45309' },
-        invoiced: { bg: '#E0E7FF', text: '#3730A3' },
+        resident: { bg: '#E0F7FA', text: '#006064' },
+        vacationer: { bg: '#E8F5E9', text: '#2E7D32' },
+        invoiced: { bg: '#FFF3E0', text: '#E65100' },
     };
 
     const style = colors[type] || { bg: '#F3F4F6', text: '#374151' };
     const labels: Record<string, string> = {
-        sd_resident: 'SD Resident',
+        resident: 'SD Resident',
         vacationer: 'Vacationer',
         invoiced: 'Invoiced',
     };
