@@ -23,11 +23,19 @@ class AttributeDefinitionController extends Controller
         $validated = $request->validated();
 
         $maxOrder = AttributeDefinition::max('sort_order') ?? 0;
-        $validated['sort_order'] = $maxOrder + 1;
 
         $attribute = new AttributeDefinition;
-        $attribute->fill($validated);
+        $attribute->name = $validated['name'];
         $attribute->slug = $validated['name'];
+        $attribute->type = $validated['type'];
+        $attribute->entity_type = $validated['entity_type'];
+        $attribute->is_active = true;
+        $attribute->sort_order = $maxOrder + 1;
+
+        if ($validated['type'] === 'select' && ! empty($validated['options'])) {
+            $attribute->options = $validated['options'];
+        }
+
         $attribute->save();
 
         return redirect()->route('attributes.index')
@@ -38,8 +46,18 @@ class AttributeDefinitionController extends Controller
     {
         $validated = $request->validated();
 
+        $attribute->name = $validated['name'];
         $attribute->slug = $validated['name'];
-        $attribute->fill($validated);
+        $attribute->type = $validated['type'];
+        $attribute->entity_type = $validated['entity_type'];
+        $attribute->is_active = $validated['is_active'] ?? true;
+
+        if ($validated['type'] === 'select' && ! empty($validated['options'])) {
+            $attribute->options = $validated['options'];
+        } else {
+            $attribute->options = null;
+        }
+
         $attribute->save();
 
         return redirect()->route('attributes.index')

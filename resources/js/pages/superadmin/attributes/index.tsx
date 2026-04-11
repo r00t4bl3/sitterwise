@@ -31,6 +31,7 @@ interface Attribute {
     entity_type: string;
     is_active: boolean;
     sort_order: number;
+    options: string[] | null;
 }
 
 interface Props {
@@ -48,11 +49,13 @@ export default function AttributesIndex() {
         type: string;
         entity_type: string;
         is_active: boolean;
+        options: string | string[];
     }>({
         name: '',
         type: 'boolean',
         entity_type: 'caregiver',
         is_active: true,
+        options: '',
     });
 
     const openCreateSheet = () => {
@@ -61,6 +64,7 @@ export default function AttributesIndex() {
         form.setData('type', 'boolean');
         form.setData('entity_type', 'caregiver');
         form.setData('is_active', true);
+        form.setData('options', '');
         setIsSheetOpen(true);
     };
 
@@ -70,11 +74,33 @@ export default function AttributesIndex() {
         form.setData('type', attr.type);
         form.setData('entity_type', attr.entity_type);
         form.setData('is_active', attr.is_active);
+        form.setData(
+            'options',
+            Array.isArray(attr.options) ? attr.options.join(', ') : '',
+        );
         setIsSheetOpen(true);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        const optionsValue = form.data.options;
+
+        if (
+            form.data.type === 'select' &&
+            typeof optionsValue === 'string' &&
+            optionsValue.trim()
+        ) {
+            form.setData(
+                'options',
+                optionsValue
+                    .split(',')
+                    .map((o) => o.trim())
+                    .filter(Boolean),
+            );
+        } else {
+            form.setData('options', []);
+        }
 
         if (editingId) {
             form.patch(`/attributes/${editingId}`, {
@@ -99,8 +125,8 @@ export default function AttributesIndex() {
                 return 'Caregiver';
             case 'client':
                 return 'Client';
-            case 'both':
-                return 'Both';
+            case 'booking':
+                return 'Booking';
             default:
                 return type;
         }
@@ -268,9 +294,33 @@ export default function AttributesIndex() {
                                 >
                                     <option value="caregiver">Caregiver</option>
                                     <option value="client">Client</option>
-                                    <option value="both">Both</option>
+                                    <option value="booking">Booking</option>
                                 </select>
                             </div>
+                            {form.data.type === 'select' && (
+                                <div>
+                                    <label className="text-sm font-medium text-foreground">
+                                        Options (comma-separated)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={
+                                            typeof form.data.options ===
+                                            'string'
+                                                ? form.data.options
+                                                : ''
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'options',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Option 1, Option 2, Option 3"
+                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                    />
+                                </div>
+                            )}
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"

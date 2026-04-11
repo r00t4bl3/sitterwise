@@ -40,7 +40,7 @@ class AttributeDefinitionSeeder extends Seeder
 
         // Booking attributes
         $bookingAttributes = [
-            ['name' => 'Vacation Rental Platform', 'slug' => 'vacation_rental_platform', 'type' => 'select', 'entity_type' => 'booking', 'sort_order' => 1, 'options' => json_encode(['airbnb', 'vrbo', 'booking.com', 'expedia', 'other'])],
+            ['name' => 'Vacation Rental Platform', 'slug' => 'vacation_rental_platform', 'type' => 'select', 'entity_type' => 'booking', 'sort_order' => 1, 'options' => ['airbnb', 'vrbo', 'booking.com', 'expedia', 'other']],
         ];
 
         foreach ($bookingAttributes as $attr) {

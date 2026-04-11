@@ -203,30 +203,30 @@ export function BookingDetailsSection({
                     <label className="text-sm font-medium text-foreground">
                         Special Considerations
                     </label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {special_consideration_options.map((option) => (
-                            <label
-                                key={option.value}
-                                className="flex items-center gap-2"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.special_considerations.includes(
-                                        option.value,
-                                    )}
-                                    onChange={(e) =>
-                                        handleSpecialConsiderationChange(
+                        <div className="mt-2 grid grid-cols-2 gap-4">
+                            {special_consideration_options.map((option) => (
+                                <label
+                                    key={option.value}
+                                    className="flex items-center gap-2"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={form.data.special_considerations.includes(
                                             option.value,
-                                            e.target.checked,
-                                        )
-                                    }
-                                    className="h-4 w-4 rounded border-input"
-                                />
-                                <span className="text-sm text-foreground">
-                                    {option.label}
-                                </span>
-                            </label>
-                        ))}
+                                        )}
+                                        onChange={(e) =>
+                                            handleSpecialConsiderationChange(
+                                                option.value,
+                                                e.target.checked,
+                                            )
+                                        }
+                                        className="h-4 w-4 rounded border-input"
+                                    />
+                                    <span className="text-sm text-foreground">
+                                        {option.label}
+                                    </span>
+                                </label>
+                            ))}
                     </div>
                 </div>
 

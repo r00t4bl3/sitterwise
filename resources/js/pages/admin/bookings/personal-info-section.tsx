@@ -448,7 +448,9 @@ export function PersonalInfoSection({
                             <option value="">Select platform...</option>
                             {booking_attributes
                                 .filter(
-                                    (attr) => attr.slug === 'rental_platform',
+                                    (attr) =>
+                                        attr.slug ===
+                                        'vacation_rental_platform',
                                 )
                                 .flatMap((attr) => attr.options || [])
                                 .map((option) => (

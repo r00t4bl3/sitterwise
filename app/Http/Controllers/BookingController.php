@@ -6,6 +6,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
 use App\Models\AttributeDefinition;
@@ -114,11 +115,10 @@ class BookingController extends Controller
             ),
             // TODO: Move special_consideration_options to booking_attributes table
             // and derive dynamically once the 'special_considerations' attribute definition exists.
-            'special_consideration_options' => [
-                ['value' => 'infant_care', 'label' => 'Infant Care'],
-                ['value' => 'dogs_cats', 'label' => 'Dogs/Cats'],
-                ['value' => 'pool', 'label' => 'Pool'],
-            ],
+            'special_consideration_options' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                SpecialConsideration::cases(),
+            ),
             'booking_attributes' => AttributeDefinition::active()
                 ->forBookings()
                 ->get()
