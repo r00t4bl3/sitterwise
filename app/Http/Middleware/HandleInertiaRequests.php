@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'google_places_api_key' => config('services.google_places.api_key'),
             'auth' => [
                 'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'profile_photo_path']),
             ],

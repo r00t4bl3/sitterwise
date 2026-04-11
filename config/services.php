@@ -51,4 +51,8 @@ return [
         'phone_number' => env('TWILIO_PHONE_NUMBER'),
     ],
 
+    'google_places' => [
+        'api_key' => env('GOOGLE_PLACE_API_KEY'),
+    ],
+
 ];

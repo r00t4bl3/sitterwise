@@ -118,6 +118,12 @@ interface PersonalInfoSectionProps {
         birthYear: number | null,
         birthMonth: number | null,
     ) => string;
+    isAddressLocked: boolean;
+    setIsAddressLocked: (locked: boolean) => void;
+    showManualAddressInput: boolean;
+    setShowManualAddressInput: (show: boolean) => void;
+    addressValue: string;
+    setAddressValue: (value: string) => void;
 }
 
 export function PersonalInfoSection({
@@ -154,6 +160,12 @@ export function PersonalInfoSection({
     selectedHotelName,
     handleHotelSearch,
     calculateAge,
+    isAddressLocked,
+    setIsAddressLocked,
+    showManualAddressInput,
+    setShowManualAddressInput,
+    addressValue,
+    setAddressValue,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -363,7 +375,7 @@ export function PersonalInfoSection({
 
                 {form.data.location_type === 'private_home' &&
                     clientAddresses.length > 0 &&
-                    addressMode === 'select' && (
+                    !showManualAddressInput && (
                         <div>
                             <label className="text-sm font-medium text-foreground">
                                 Address
@@ -372,13 +384,15 @@ export function PersonalInfoSection({
                                 value={form.data.address_id || ''}
                                 onChange={(e) => {
                                     if (e.target.value === 'add_new') {
-                                        setAddressMode('input');
+                                        setShowManualAddressInput(true);
                                         form.setData('address_id', null);
                                         form.setData('address_line1', '');
                                         form.setData('address_line2', '');
                                         form.setData('address_city', '');
                                         form.setData('address_state', '');
                                         form.setData('address_zip', '');
+                                        setAddressValue('');
+                                        setIsAddressLocked(false);
                                     } else if (e.target.value) {
                                         const addrId = Number(e.target.value);
                                         form.setData('address_id', addrId);
@@ -407,6 +421,14 @@ export function PersonalInfoSection({
                                                 'address_zip',
                                                 addr.zip,
                                             );
+                                            setAddressValue(
+                                                `${addr.line1}${
+                                                    addr.line2
+                                                        ? `, ${addr.line2}`
+                                                        : ''
+                                                }, ${addr.city}, ${addr.state} ${addr.zip}`,
+                                            );
+                                            setIsAddressLocked(true);
                                         }
                                     } else {
                                         form.setData('address_id', null);
@@ -415,13 +437,15 @@ export function PersonalInfoSection({
                                         form.setData('address_city', '');
                                         form.setData('address_state', '');
                                         form.setData('address_zip', '');
+                                        setIsAddressLocked(false);
+                                        setAddressValue('');
                                     }
                                 }}
                                 className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                             >
                                 <option value="">Select address...</option>
                                 <option value="add_new">
-                                    + Add new address
+                                    + Enter manually
                                 </option>
                                 {clientAddresses.map((addr) => (
                                     <option key={addr.id} value={addr.id}>
@@ -430,6 +454,14 @@ export function PersonalInfoSection({
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                    )}
+
+                {form.data.location_type === 'private_home' &&
+                    clientAddresses.length === 0 &&
+                    !isAddressLocked && (
+                        <div className="text-sm text-muted-foreground">
+                            No saved addresses. Please enter address below.
                         </div>
                     )}
 
@@ -460,6 +492,12 @@ export function PersonalInfoSection({
                                     </option>
                                 ))}
                         </select>
+                    </div>
+                )}
+
+                {form.data.location_type === 'event_venue' && (
+                    <div className="text-sm text-muted-foreground">
+                        Please enter event venue address below.
                     </div>
                 )}
 
@@ -498,6 +536,14 @@ export function PersonalInfoSection({
                                             'address_zip',
                                             hotel.zip || '',
                                         );
+                                        setAddressValue(
+                                            `${hotel.line1 || ''}${
+                                                hotel.line2
+                                                    ? `, ${hotel.line2}`
+                                                    : ''
+                                            }, ${hotel.city || ''}, ${hotel.state || ''} ${hotel.zip || ''}`.trim(),
+                                        );
+                                        setIsAddressLocked(true);
                                     }
                                 }}
                                 suggestions={hotelSuggestions}
@@ -509,7 +555,27 @@ export function PersonalInfoSection({
                     </div>
                 )}
 
-                <BookingAddressFields form={form} />
+                {(form.data.location_type !== 'private_home' ||
+                    clientAddresses.length === 0 ||
+                    showManualAddressInput) && (
+                    <BookingAddressFields
+                        form={form}
+                        isAddressLocked={isAddressLocked}
+                        addressValue={addressValue}
+                        onAddressLock={(locked, newAddressValue) => {
+                            setIsAddressLocked(locked);
+
+                            if (locked && newAddressValue) {
+                                setAddressValue(newAddressValue);
+                            }
+
+                            if (!locked) {
+                                setAddressValue('');
+                                setShowManualAddressInput(false);
+                            }
+                        }}
+                    />
+                )}
 
                 <div>
                     <div className="flex items-center justify-between">

@@ -227,6 +227,9 @@ export default function BookingsTest() {
     const [selectedHotelName, setSelectedHotelName] = useState<string>('');
     const [selectedCaregiverName, setSelectedCaregiverName] =
         useState<string>('');
+    const [isAddressLocked, setIsAddressLocked] = useState(false);
+    const [showManualAddressInput, setShowManualAddressInput] = useState(false);
+    const [addressValue, setAddressValue] = useState('');
 
     const [message, setMessage] = useState<Message | null>(null);
 
@@ -638,6 +641,9 @@ export default function BookingsTest() {
         setSaveChildrenPetsToProfile(true);
         setAddressMode('select');
         setClientMode('select');
+        setIsAddressLocked(false);
+        setShowManualAddressInput(false);
+        setAddressValue('');
         setIsSheetOpen(true);
     };
 
@@ -691,6 +697,12 @@ export default function BookingsTest() {
             form.setData('address_city', booking.address_city || '');
             form.setData('address_state', booking.address_state || '');
             form.setData('address_zip', booking.address_zip || '');
+            setAddressValue(
+                `${booking.address_line1}${
+                    booking.address_line2 ? `, ${booking.address_line2}` : ''
+                }, ${booking.address_city || ''}, ${booking.address_state || ''} ${booking.address_zip || ''}`.trim(),
+            );
+            setIsAddressLocked(true);
         }
 
         if (booking.client_id) {
@@ -1138,6 +1150,14 @@ export default function BookingsTest() {
                                 selectedHotelName={selectedHotelName}
                                 handleHotelSearch={handleHotelSearch}
                                 calculateAge={calculateAge}
+                                isAddressLocked={isAddressLocked}
+                                setIsAddressLocked={setIsAddressLocked}
+                                showManualAddressInput={showManualAddressInput}
+                                setShowManualAddressInput={
+                                    setShowManualAddressInput
+                                }
+                                addressValue={addressValue}
+                                setAddressValue={setAddressValue}
                             />
 
                             <BookingDetailsSection
