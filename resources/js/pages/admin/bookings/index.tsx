@@ -630,6 +630,11 @@ export default function BookingsTest() {
                 phone: '',
                 client_type: 'vacationer',
             },
+            new_children: [],
+            new_pets: [],
+            deleted_child_ids: [],
+            deleted_pet_ids: [],
+            save_children_pets_to_profile: true,
         });
         setClientAddresses([]);
         setClientChildren([]);
@@ -638,12 +643,14 @@ export default function BookingsTest() {
         setNewPets([]);
         setDeletedChildIds([]);
         setDeletedPetIds([]);
-        setSaveChildrenPetsToProfile(true);
         setAddressMode('select');
         setClientMode('select');
         setIsAddressLocked(false);
         setShowManualAddressInput(false);
         setAddressValue('');
+        setSelectedClientName('');
+        setSelectedHotelName('');
+        setSelectedCaregiverName('');
         setIsSheetOpen(true);
     };
 
@@ -997,12 +1004,27 @@ export default function BookingsTest() {
                             const displayBookings = dayBookings.slice(0, 5);
                             const remainingCount = dayBookings.length - 5;
 
+                            const today = new Date();
+                            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                            const isToday = dateStr === todayStr;
+                            const isTodayOrFuture = dateStr >= todayStr;
+
                             return (
                                 <div
                                     key={day}
-                                    className="flex min-h-32 flex-col gap-1 border border-border bg-background p-2"
+                                    className={`flex min-h-32 flex-col gap-1 border border-border p-2 ${
+                                        isToday
+                                            ? 'bg-blue-50 ring-2 ring-primary ring-inset'
+                                            : 'bg-background'
+                                    }`}
                                 >
-                                    <span className="text-sm font-medium text-foreground">
+                                    <span
+                                        className={`text-sm font-medium ${
+                                            isToday
+                                                ? 'text-primary'
+                                                : 'text-foreground'
+                                        }`}
+                                    >
                                         {day}
                                     </span>
                                     {displayBookings.map((booking) => {
@@ -1079,12 +1101,16 @@ export default function BookingsTest() {
                                             + {remainingCount} more
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => openCreateSheet(dateStr)}
-                                        className="mt-auto text-xs text-ring hover:text-foreground"
-                                    >
-                                        + Add
-                                    </button>
+                                    {isTodayOrFuture && remainingCount <= 0 && (
+                                        <button
+                                            onClick={() =>
+                                                openCreateSheet(dateStr)
+                                            }
+                                            className="mt-auto text-xs text-ring hover:text-foreground"
+                                        >
+                                            + Add
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}
@@ -1109,7 +1135,7 @@ export default function BookingsTest() {
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="mt-4 space-y-4 px-4">
+                        <div className="space-y-4 px-4">
                             <PersonalInfoSection
                                 form={form}
                                 clientMode={clientMode}

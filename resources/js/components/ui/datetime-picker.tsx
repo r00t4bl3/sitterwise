@@ -31,6 +31,13 @@ export function DateTimePicker({
     const [time, setTime] = React.useState(
         value ? format(new Date(value), "HH:mm") : "09:00"
     )
+
+    const timeOptions = Array.from({ length: 96 }, (_, i) => {
+        const totalMins = i * 15
+        const hh = String(Math.floor(totalMins / 60)).padStart(2, "0")
+        const mm = String(totalMins % 60).padStart(2, "0")
+        return `${hh}:${mm}`
+    })
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -52,7 +59,7 @@ export function DateTimePicker({
         setOpen(false)
     }
 
-    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newTime = e.target.value
         setTime(newTime)
         if (date && onChange) {
@@ -88,14 +95,19 @@ export function DateTimePicker({
                     />
                 </PopoverContent>
             </Popover>
-            <input
-                type="time"
+            <select
                 value={time}
                 onChange={handleTimeChange}
                 className={`h-10 w-28 rounded-[3px] border bg-background px-3 text-sm ${
                     error ? "border-red-500" : "border-input"
                 }`}
-            />
+            >
+                {timeOptions.map((t) => (
+                    <option key={t} value={t}>
+                        {t}
+                    </option>
+                ))}
+            </select>
         </div>
     )
 }

@@ -251,7 +251,7 @@ export default function ManageAvailability() {
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="mt-4 space-y-4 px-4">
+                        <div className="space-y-4 px-4">
                             <div>
                                 <label className="text-sm font-medium text-foreground">
                                     Time Slots

@@ -284,7 +284,7 @@ export default function CaregiverShow() {
                         </SheetHeader>
                         <form
                             onSubmit={handlePasswordReset}
-                            className="mt-4 space-y-4 px-4"
+                            className="space-y-4 px-4"
                         >
                             <div>
                                 <label className="text-sm font-medium text-foreground">

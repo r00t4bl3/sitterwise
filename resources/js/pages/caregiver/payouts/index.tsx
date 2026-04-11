@@ -350,7 +350,7 @@ return '—';
                                         your payouts.
                                     </SheetDescription>
                                 </SheetHeader>
-                                <div className="mt-4 space-y-4 px-4">
+                                <div className="space-y-4 px-4">
                                     {payoutMethods.length > 0 ? (
                                         <div className="space-y-2">
                                             {payoutMethods.map((method) => (

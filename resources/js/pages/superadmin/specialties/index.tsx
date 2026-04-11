@@ -184,7 +184,7 @@ export default function SpecialtiesIndex() {
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
-                            className="mt-4 space-y-4 px-4"
+                            className="space-y-4 px-4"
                         >
                             <div>
                                 <label className="text-sm font-medium text-foreground">
