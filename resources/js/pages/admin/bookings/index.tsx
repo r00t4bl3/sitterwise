@@ -95,21 +95,35 @@ const serviceTypeIcons: Record<string, React.ElementType> = {
     corporate_invoiced: Building,
 };
 
-function getDaysInMonth(year: number, month: number): (number | null)[] {
-    const firstDay = new Date(year, month - 1, 1).getDay();
-    const daysInMonth = new Date(year, month, 0).getDate();
+function getDaysInMonth(
+    year: number,
+    month: number,
+): Array<{ day: number; monthOffset: number }> {
+    const firstWeekday = new Date(year, month - 1, 1).getDay(); // 0 = Sun
+    const daysInCurrent = new Date(year, month, 0).getDate();
+    const daysInPrev = new Date(year, month - 1, 0).getDate();
 
-    const days: (number | null)[] = [];
+    const leading = firstWeekday;
+    const trailing = (7 - ((firstWeekday + daysInCurrent) % 7)) % 7;
 
-    for (let i = 0; i < firstDay; i++) {
-        days.push(null);
+    const cells: Array<{ day: number; monthOffset: number }> = [];
+
+    // previous month days (offset -1)
+    for (let i = leading - 1; i >= 0; i--) {
+        cells.push({ day: daysInPrev - i, monthOffset: -1 });
     }
 
-    for (let i = 1; i <= daysInMonth; i++) {
-        days.push(i);
+    // current month days (offset 0)
+    for (let d = 1; d <= daysInCurrent; d++) {
+        cells.push({ day: d, monthOffset: 0 });
     }
 
-    return days;
+    // next month days (offset +1)
+    for (let d = 1; d <= trailing; d++) {
+        cells.push({ day: d, monthOffset: 1 });
+    }
+
+    return cells;
 }
 
 function formatTime(datetime: string): string {
@@ -989,17 +1003,20 @@ export default function BookingsTest() {
                             ),
                         )}
 
-                        {days.map((day, index) => {
-                            if (day === null) {
-                                return (
-                                    <div
-                                        key={`empty-${index}`}
-                                        className="h-32"
-                                    />
-                                );
+                        {days.map(({ day, monthOffset }, index) => {
+                            // compute actual month/year accounting for monthOffset
+                            let cellMonth = currentMonth + monthOffset;
+                            let cellYear = currentYear;
+
+                            if (cellMonth < 1) {
+                                cellMonth = 12;
+                                cellYear--;
+                            } else if (cellMonth > 12) {
+                                cellMonth = 1;
+                                cellYear++;
                             }
 
-                            const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                             const dayBookings = bookingsByDate[dateStr] || [];
                             const displayBookings = dayBookings.slice(0, 5);
                             const remainingCount = dayBookings.length - 5;
@@ -1009,20 +1026,28 @@ export default function BookingsTest() {
                             const isToday = dateStr === todayStr;
                             const isTodayOrFuture = dateStr >= todayStr;
 
+                            const isCurrentMonth = monthOffset === 0;
+
                             return (
                                 <div
-                                    key={day}
-                                    className={`flex min-h-32 flex-col gap-1 border border-border p-2 ${
+                                    key={`${monthOffset}-${day}`}
+                                    className={`flex min-h-32 flex-col gap-1 border p-2 ${
+                                        isCurrentMonth
+                                            ? 'border-border bg-background'
+                                            : 'border-dashed border-gray-300 bg-white'
+                                    } ${
                                         isToday
-                                            ? 'bg-blue-50 ring-2 ring-primary ring-inset'
-                                            : 'bg-background'
+                                            ? 'bg-white ring-2 ring-primary ring-inset'
+                                            : ''
                                     }`}
                                 >
                                     <span
                                         className={`text-sm font-medium ${
                                             isToday
                                                 ? 'text-primary'
-                                                : 'text-foreground'
+                                                : isCurrentMonth
+                                                  ? 'text-foreground'
+                                                  : 'text-gray-300'
                                         }`}
                                     >
                                         {day}
@@ -1138,6 +1163,7 @@ export default function BookingsTest() {
                         <div className="space-y-4 px-4">
                             <PersonalInfoSection
                                 form={form}
+                                editingBooking={editingBooking}
                                 clientMode={clientMode}
                                 setClientMode={setClientMode}
                                 addressMode={addressMode}
@@ -1184,6 +1210,14 @@ export default function BookingsTest() {
                                 }
                                 addressValue={addressValue}
                                 setAddressValue={setAddressValue}
+                                caregiverSuggestions={
+                                    caregivers as unknown as Array<{
+                                        id: number;
+                                        name: string;
+                                        [key: string]: unknown;
+                                    }>
+                                }
+                                handleCaregiverSearch={handleCaregiverSearch}
                             />
 
                             <BookingDetailsSection

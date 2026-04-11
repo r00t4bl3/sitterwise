@@ -49,6 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
         Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');
         Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
+        Route::post('bookings/{booking}/notify', [BookingController::class, 'notify'])->name('bookings.notify');
 
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
         Route::get('clients/{client}/data', [ClientController::class, 'getClientData'])->name('clients.getClientData');

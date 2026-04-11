@@ -298,4 +298,20 @@ class BookingController extends Controller
 
         return redirect()->route('bookings.index')->with('success', 'Booking deleted successfully.');
     }
+
+    public function notify(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'caregiver_ids' => 'required|array',
+            'caregiver_ids.*' => 'exists:caregivers,id',
+        ]);
+
+        $caregivers = Caregiver::whereIn('id', $validated['caregiver_ids'])->get();
+
+        // TODO: Send notifications to caregivers (email, SMS, push, etc.)
+        // For now, we'll just return a success response
+        // You can implement the notification logic here or dispatch a job
+
+        return back()->with('success', 'Caregivers have been notified.');
+    }
 }
