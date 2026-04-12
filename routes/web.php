@@ -41,10 +41,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
 
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
+    // Route::get('/bookings/available', [CaregiverController::class, 'showBookings'])->name('caregiver.bookings.index');
+    // Route::get('/bookings/available/{booking}', [CaregiverController::class, 'showBooking'])->name('caregiver.bookings.show');
 
-    Route::get('bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('admin.bookings.searchHotels');
+    // Route::get('bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('bookings.searchHotels');
+// Caregiver API routes (no CSRF)
+    Route::post('bookings/{booking}/reserve', [BookingController::class, 'reserve'])->name('bookings.reserve');
+    Route::post('bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
+    Route::post('bookings/{booking}/release', [BookingController::class, 'release'])->name('bookings.release');
     Route::get('bookings/recommended-caregivers', [BookingController::class, 'recommendedCaregivers'])->name('bookings.recommendedCaregivers');
-    Route::resource('bookings', BookingController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('bookings', BookingController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 
     Route::middleware('admin')->group(function () {
         Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
@@ -64,13 +70,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
     });
 
-    Route::middleware('super_admin')->group(function () {
-        Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
-        Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
-        Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
-        Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
-        Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
-    });
+    // Route::middleware('super_admin')->group(function () {
+    //     Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
+    //     Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
+    //     Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
+    //     Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
+    //     Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
+    // });
+
+    Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
+    Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
+    Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
+    Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
+
+    Route::get('hotels/search', [HotelController::class, 'search'])->name('hotels.search');
+    Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
+
 });
 
 require __DIR__ . '/settings.php';
+
+// // Caregiver API routes (no CSRF)
+// Route::middleware(['auth'])->prefix('api/caregiver')->group(function () {
+//     Route::get('/bookings', [CaregiverBookingController::class, 'index']);
+//     Route::post('/bookings/{booking}/reserve', [CaregiverBookingController::class, 'reserve']);
+//     Route::post('/bookings/{booking}/confirm', [CaregiverBookingController::class, 'confirm']);
+//     Route::post('/bookings/{booking}/release', [CaregiverBookingController::class, 'release']);
+// });

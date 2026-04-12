@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Booking;
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
@@ -8,18 +9,26 @@ use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
+use Database\Seeders\CaregiverStatusSeeder;
+use Database\Seeders\CertificationTypeSeeder;
+use Database\Seeders\LocationSeeder;
+use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(AttributeDefinitionSeeder::class);
-    $this->user = User::factory()->create(['role' => 'admin']);
+    $this->seed(CaregiverStatusSeeder::class);
+    $this->seed(CertificationTypeSeeder::class);
+    $this->seed(LocationSeeder::class);
+    $this->seed(SpecialtyTypeSeeder::class);
+    $this->user   = User::factory()->create(['role' => 'admin']);
     $this->client = Client::factory()->create();
-    $this->hotel = Hotel::factory()->create();
+    $this->hotel  = Hotel::factory()->create();
 });
 
-describe('BookingController', function () {
+describe('BookingController - Admin', function () {
     test('guests cannot view bookings index', function () {
         $response = $this->get(route('bookings.index'));
         $response->assertRedirect(route('login'));
@@ -27,14 +36,14 @@ describe('BookingController', function () {
 
     test('guests cannot create a booking', function () {
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $this->client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'hotel',
+            'client_id'      => $this->client->id,
+            'service_type'   => 'babysitter',
+            'location_type'  => 'hotel',
             'start_datetime' => now()->addDays(1)->toISOString(),
-            'end_datetime' => now()->addDays(1)->addHours(4)->toISOString(),
-            'hotel_id' => $this->hotel->id,
-            'total_amount' => 100,
-            'status' => 'received',
+            'end_datetime'   => now()->addDays(1)->addHours(4)->toISOString(),
+            'hotel_id'       => $this->hotel->id,
+            'total_amount'   => 100,
+            'status'         => 'received',
             'payment_status' => 'pending',
         ]);
 
@@ -59,14 +68,14 @@ describe('BookingController', function () {
     });
 
     test('guests cannot search hotels', function () {
-        $response = $this->get(route('admin.bookings.searchHotels', ['q' => 'test']));
+        $response = $this->get(route('hotels.search', ['q' => 'test']));
         $response->assertRedirect(route('login'));
     });
 
     // Non-admin user tests - caregivers CAN access bookings (like availabilities)
     test('caregivers can view bookings index', function () {
-        $caregiverUser = User::factory()->create(['role' => 'caregiver']);
-        $this->actingAs($caregiverUser);
+        $caregiverUser = Caregiver::factory()->create();
+        $this->actingAs($caregiverUser->user);
 
         $response = $this->get(route('bookings.index'));
         $response->assertSuccessful();
@@ -77,55 +86,55 @@ describe('BookingController', function () {
         $this->actingAs($caregiverUser);
 
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $this->client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'hotel',
+            'client_id'      => $this->client->id,
+            'service_type'   => 'babysitter',
+            'location_type'  => 'hotel',
             'start_datetime' => now()->addDays(1)->toISOString(),
-            'end_datetime' => now()->addDays(1)->addHours(4)->toISOString(),
-            'hotel_id' => $this->hotel->id,
-            'total_amount' => 100,
-            'status' => 'received',
+            'end_datetime'   => now()->addDays(1)->addHours(4)->toISOString(),
+            'hotel_id'       => $this->hotel->id,
+            'total_amount'   => 100,
+            'status'         => 'received',
             'payment_status' => 'pending',
         ]);
 
         $response->assertRedirect();
     });
 
-    test('caregivers can update a booking', function () {
+    test('caregivers cannot update a booking', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
         $this->actingAs($caregiverUser);
 
         $booking = Booking::factory()->create();
 
         $response = $this->patch(route('bookings.update', $booking), [
-            'client_id' => $booking->client_id,
-            'service_type' => $booking->service_type,
-            'location_type' => $booking->location_type,
+            'client_id'      => $booking->client_id,
+            'service_type'   => $booking->service_type,
+            'location_type'  => $booking->location_type,
             'start_datetime' => $booking->start_datetime->toISOString(),
-            'end_datetime' => $booking->end_datetime->toISOString(),
-            'total_amount' => $booking->total_amount,
-            'status' => 'confirmed',
+            'end_datetime'   => $booking->end_datetime->toISOString(),
+            'total_amount'   => $booking->total_amount,
+            'status'         => 'confirmed',
             'payment_status' => $booking->payment_status,
         ]);
 
-        $response->assertRedirect();
+        $response->assertForbidden();
     });
 
-    test('caregivers can delete a booking', function () {
+    test('caregivers cannot delete a booking', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
         $this->actingAs($caregiverUser);
 
         $booking = Booking::factory()->create();
 
         $response = $this->delete(route('bookings.destroy', $booking));
-        $response->assertRedirect();
+        $response->assertForbidden();
     });
 
     test('caregivers can search hotels', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
         $this->actingAs($caregiverUser);
 
-        $response = $this->get(route('admin.bookings.searchHotels', ['q' => 'test']));
+        $response = $this->get(route('hotels.search', ['q' => 'test']));
         $response->assertSuccessful();
     });
 
@@ -141,28 +150,28 @@ describe('BookingController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $this->client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'hotel',
+            'client_id'      => $this->client->id,
+            'service_type'   => 'babysitter',
+            'location_type'  => 'hotel',
             'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
-            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
-            'hotel_id' => $this->hotel->id,
-            'total_amount' => 100,
-            'status' => 'received',
+            'end_datetime'   => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id'       => $this->hotel->id,
+            'total_amount'   => 100,
+            'status'         => 'received',
             'payment_status' => 'pending',
-            'address_line1' => '123 Hotel Way',
-            'address_line2' => '',
-            'address_city' => 'Los Angeles',
-            'address_state' => 'CA',
-            'address_zip' => '90001',
+            'address_line1'  => '123 Hotel Way',
+            'address_line2'  => '',
+            'address_city'   => 'Los Angeles',
+            'address_state'  => 'CA',
+            'address_zip'    => '90001',
         ]);
 
         $response->assertRedirect();
 
         $this->assertDatabaseHas('bookings', [
-            'client_id' => $this->client->id,
-            'hotel_id' => $this->hotel->id,
-            'service_type' => 'babysitter',
+            'client_id'     => $this->client->id,
+            'hotel_id'      => $this->hotel->id,
+            'service_type'  => 'babysitter',
             'location_type' => 'hotel',
         ]);
     });
@@ -171,32 +180,32 @@ describe('BookingController', function () {
         $this->actingAs($this->user);
 
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $this->client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'vacation_rental',
-            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
-            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
-            'total_amount' => 150,
-            'status' => 'received',
-            'payment_status' => 'pending',
+            'client_id'       => $this->client->id,
+            'service_type'    => 'babysitter',
+            'location_type'   => 'vacation_rental',
+            'start_datetime'  => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime'    => now()->addDays(1)->setHour(18)->toISOString(),
+            'total_amount'    => 150,
+            'status'          => 'received',
+            'payment_status'  => 'pending',
             'rental_platform' => 'airbnb',
-            'address_line1' => '123 Beach House Way',
-            'address_line2' => '',
-            'address_city' => 'Malibu',
-            'address_state' => 'CA',
-            'address_zip' => '90265',
+            'address_line1'   => '123 Beach House Way',
+            'address_line2'   => '',
+            'address_city'    => 'Malibu',
+            'address_state'   => 'CA',
+            'address_zip'     => '90265',
         ]);
 
         $response->assertRedirect();
 
         $this->assertDatabaseHas('bookings', [
-            'client_id' => $this->client->id,
-            'location_type' => 'vacation_rental',
+            'client_id'       => $this->client->id,
+            'location_type'   => 'vacation_rental',
             'rental_platform' => 'airbnb',
-            'address_line1' => '123 Beach House Way',
-            'address_city' => 'Malibu',
-            'address_state' => 'CA',
-            'address_zip' => '90265',
+            'address_line1'   => '123 Beach House Way',
+            'address_city'    => 'Malibu',
+            'address_state'   => 'CA',
+            'address_zip'     => '90265',
         ]);
     });
 
@@ -206,26 +215,26 @@ describe('BookingController', function () {
         $clientAddress = ClientAddress::factory()->create();
 
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $this->client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'private_home',
+            'client_id'      => $this->client->id,
+            'service_type'   => 'babysitter',
+            'location_type'  => 'private_home',
             'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
-            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
-            'address_id' => $clientAddress->id,
-            'total_amount' => 100,
-            'status' => 'received',
+            'end_datetime'   => now()->addDays(1)->setHour(18)->toISOString(),
+            'address_id'     => $clientAddress->id,
+            'total_amount'   => 100,
+            'status'         => 'received',
             'payment_status' => 'pending',
-            'address_line1' => '123 Home Way',
-            'address_line2' => '',
-            'address_city' => 'Home City',
-            'address_state' => 'CA',
-            'address_zip' => '90001',
+            'address_line1'  => '123 Home Way',
+            'address_line2'  => '',
+            'address_city'   => 'Home City',
+            'address_state'  => 'CA',
+            'address_zip'    => '90001',
         ]);
 
         $response->assertRedirect();
 
         $this->assertDatabaseHas('bookings', [
-            'client_id' => $this->client->id,
+            'client_id'  => $this->client->id,
             'address_id' => $clientAddress->id,
         ]);
     });
@@ -234,20 +243,20 @@ describe('BookingController', function () {
         $this->actingAs($this->user);
 
         $booking = Booking::factory()->create([
-            'status' => 'received',
+            'status'       => 'received',
             'total_amount' => 100,
         ]);
 
         $response = $this->patch(route('bookings.update', $booking), [
-            'client_id' => $booking->client_id,
-            'service_type' => $booking->service_type,
-            'location_type' => $booking->location_type,
+            'client_id'      => $booking->client_id,
+            'service_type'   => $booking->service_type,
+            'location_type'  => $booking->location_type,
             'start_datetime' => now()->addDays(10)->toISOString(),
-            'end_datetime' => now()->addDays(11)->toISOString(),
-            'hotel_id' => $booking->hotel_id,
-            'address_id' => $booking->address_id,
-            'total_amount' => '200.00',
-            'status' => 'confirmed',
+            'end_datetime'   => now()->addDays(11)->toISOString(),
+            'hotel_id'       => $booking->hotel_id,
+            'address_id'     => $booking->address_id,
+            'total_amount'   => '200.00',
+            'status'         => 'confirmed',
             'payment_status' => 'paid',
         ]);
 
@@ -266,29 +275,29 @@ describe('BookingController', function () {
         ]);
 
         $response = $this->patch(route('bookings.update', $booking), [
-            'client_id' => $booking->client_id,
-            'service_type' => $booking->service_type,
-            'location_type' => 'vacation_rental',
-            'start_datetime' => now()->addDays(10)->toISOString(),
-            'end_datetime' => now()->addDays(11)->toISOString(),
-            'total_amount' => '200',
-            'status' => 'confirmed',
-            'payment_status' => 'paid',
+            'client_id'       => $booking->client_id,
+            'service_type'    => $booking->service_type,
+            'location_type'   => 'vacation_rental',
+            'start_datetime'  => now()->addDays(10)->toISOString(),
+            'end_datetime'    => now()->addDays(11)->toISOString(),
+            'total_amount'    => '200',
+            'status'          => 'confirmed',
+            'payment_status'  => 'paid',
             'rental_platform' => 'vrbo',
-            'address_line1' => '456 Mountain Cabin',
-            'address_line2' => '',
-            'address_city' => 'Lake Tahoe',
-            'address_state' => 'CA',
-            'address_zip' => '96150',
+            'address_line1'   => '456 Mountain Cabin',
+            'address_line2'   => '',
+            'address_city'    => 'Lake Tahoe',
+            'address_state'   => 'CA',
+            'address_zip'     => '96150',
         ]);
 
         $response->assertRedirect();
 
         $this->assertDatabaseHas('bookings', [
-            'id' => $booking->id,
+            'id'              => $booking->id,
             'rental_platform' => 'vrbo',
-            'address_line1' => '456 Mountain Cabin',
-            'address_city' => 'Lake Tahoe',
+            'address_line1'   => '456 Mountain Cabin',
+            'address_city'    => 'Lake Tahoe',
         ]);
     });
 
@@ -311,7 +320,7 @@ describe('BookingController', function () {
 
         $hotel = Hotel::factory()->create(['name' => 'Grand Hotel']);
 
-        $response = $this->get(route('admin.bookings.searchHotels', ['q' => 'Grand']));
+        $response = $this->get(route('hotels.search', ['q' => 'Grand']));
 
         $response->assertSuccessful();
         $response->assertHeader('content-type', 'application/json');
@@ -353,25 +362,25 @@ describe('BookingController', function () {
         $this->actingAs($this->user);
 
         // Create client with children and pets
-        $client = Client::factory()->create();
+        $client   = Client::factory()->create();
         $children = ClientChild::factory()->count(2)->create(['client_id' => $client->id]);
-        $pets = ClientPet::factory()->count(1)->create(['client_id' => $client->id]);
+        $pets     = ClientPet::factory()->count(1)->create(['client_id' => $client->id]);
 
         $response = $this->post(route('bookings.store'), [
-            'client_id' => $client->id,
-            'service_type' => 'babysitter',
-            'location_type' => 'hotel',
+            'client_id'      => $client->id,
+            'service_type'   => 'babysitter',
+            'location_type'  => 'hotel',
             'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
-            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
-            'hotel_id' => $this->hotel->id,
-            'total_amount' => 100,
-            'status' => 'received',
+            'end_datetime'   => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id'       => $this->hotel->id,
+            'total_amount'   => 100,
+            'status'         => 'received',
             'payment_status' => 'pending',
-            'address_line1' => '123 Hotel Way',
-            'address_line2' => '',
-            'address_city' => 'Los Angeles',
-            'address_state' => 'CA',
-            'address_zip' => '90001',
+            'address_line1'  => '123 Hotel Way',
+            'address_line2'  => '',
+            'address_city'   => 'Los Angeles',
+            'address_state'  => 'CA',
+            'address_zip'    => '90001',
         ]);
 
         $response->assertRedirect();
@@ -396,26 +405,26 @@ describe('BookingController', function () {
         // Create client with initial data
         $client = Client::factory()->create([
             'first_name' => 'John',
-            'last_name' => 'Doe',
-            'phone' => '555-1234',
+            'last_name'  => 'Doe',
+            'phone'      => '555-1234',
         ]);
 
         // Create booking
         $booking = Booking::factory()->create([
             'client_id' => $client->id,
-            'status' => 'received',
+            'status'    => 'received',
         ]);
 
         // Capture original snapshot data
         $originalFirstName = $booking->client_first_name;
-        $originalLastName = $booking->client_last_name;
-        $originalPhone = $booking->client_phone;
+        $originalLastName  = $booking->client_last_name;
+        $originalPhone     = $booking->client_phone;
 
         // Update client profile
         $client->update([
             'first_name' => 'Jane',
-            'last_name' => 'Smith',
-            'phone' => '555-9999',
+            'last_name'  => 'Smith',
+            'phone'      => '555-9999',
         ]);
 
         // Verify booking snapshot remains unchanged
@@ -423,5 +432,80 @@ describe('BookingController', function () {
         expect($booking->client_first_name)->toBe($originalFirstName);
         expect($booking->client_last_name)->toBe($originalLastName);
         expect($booking->client_phone)->toBe($originalPhone);
+    });
+
+    test('recommended caregivers endpoint returns scored caregivers', function () {
+        $this->actingAs($this->user);
+
+        $client = Client::factory()->create();
+        Caregiver::factory()->count(3)->create();
+
+        $response = $this->get(route('bookings.recommendedCaregivers', [
+            'client_id' => $client->id,
+        ]));
+
+        $response->assertSuccessful();
+        $response->assertJsonCount(3);
+        $response->assertJsonStructure([
+            '*' => ['id', 'name', 'score', 'matchBadge' => ['label', 'color', 'icon']],
+        ]);
+    });
+
+    test('recommended caregivers endpoint requires client_id', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->get('/bookings/recommended-caregivers');
+
+        $response->assertStatus(302); // Redirect to validation error or similar
+    });
+
+    test('notify endpoint creates notification records', function () {
+        // $this->markTestSkipped('CSRF protection prevents this test from running in isolation.');
+
+        $this->actingAs($this->user);
+
+        $booking    = Booking::factory()->create(['status' => 'received']);
+        $caregiver1 = Caregiver::factory()->create();
+        $caregiver2 = Caregiver::factory()->create();
+
+        $response = $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver1->id, $caregiver2->id],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id'   => $booking->id,
+            'caregiver_id' => $caregiver1->id,
+            'claimed'      => false,
+        ]);
+
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id'   => $booking->id,
+            'caregiver_id' => $caregiver2->id,
+            'claimed'      => false,
+        ]);
+    });
+
+    test('notify endpoint prevents duplicate notifications', function () {
+        // $this->markTestSkipped('CSRF protection prevents this test from running in isolation.');
+
+        $this->actingAs($this->user);
+
+        $booking   = Booking::factory()->create(['status' => 'received']);
+        $caregiver = Caregiver::factory()->create();
+
+        // First notification
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        // Second notification to same caregiver
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        // Should only have one record (updateOrCreate)
+        $this->assertDatabaseCount('booking_caregiver_notifications', 1);
     });
 });

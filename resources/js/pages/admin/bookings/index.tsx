@@ -618,8 +618,6 @@ export default function Bookings() {
                 params.append('end_datetime', form.data.end_datetime);
             }
 
-            console.log('Fetching recommended caregivers...', params.toString());
-            
             const response = await fetch(
                 `/bookings/recommended-caregivers?${params}`,
             );
@@ -629,7 +627,6 @@ export default function Bookings() {
             }
             
             const data = await response.json();
-            console.log('Recommended caregivers:', data);
 
             setCaregiverSuggestions(
                 data as unknown as Array<{

@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Factories;
 
 use App\Models\AttributeDefinition;
@@ -55,20 +54,20 @@ class CaregiverFactory extends Factory
         $statusIds = CaregiverStatus::pluck('id')->toArray();
 
         $firstName = $this->faker->randomElement($firstNames);
-        $lastName = $this->faker->randomElement($lastNames);
+        $lastName  = $this->faker->randomElement($lastNames);
 
         return [
-            'user_id' => User::factory(),
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'phone' => $this->faker->phoneNumber(),
-            'address' => $this->faker->numberBetween(100, 9999).' '.$this->faker->randomElement($streets).', '.$this->faker->randomElement($cities).', CA '.$this->faker->numerify('92###'),
-            'date_of_birth' => $this->faker->date('Y-m-d', '-18 years'),
-            'rating' => $this->faker->randomFloat(2, 3.5, 5.0),
-            'biography' => $this->faker->optional()->paragraph(),
-            'notes' => $this->faker->optional()->sentence(),
+            'user_id'           => User::factory(['role' => 'caregiver']),
+            'first_name'        => $firstName,
+            'last_name'         => $lastName,
+            'phone'             => $this->faker->phoneNumber(),
+            'address'           => $this->faker->numberBetween(100, 9999) . ' ' . $this->faker->randomElement($streets) . ', ' . $this->faker->randomElement($cities) . ', CA ' . $this->faker->numerify('92###'),
+            'date_of_birth'     => $this->faker->date('Y-m-d', '-18 years'),
+            'rating'            => $this->faker->randomFloat(2, 3.5, 5.0),
+            'biography'         => $this->faker->optional()->paragraph(),
+            'notes'             => $this->faker->optional()->sentence(),
             'stripe_account_id' => null,
-            'status_id' => $this->faker->randomElement($statusIds),
+            'status_id'         => $this->faker->randomElement($statusIds),
         ];
     }
 
@@ -78,33 +77,33 @@ class CaregiverFactory extends Factory
             $statusIds = CaregiverStatus::pluck('id')->toArray();
             $caregiver->update(['status_id' => $this->faker->randomElement($statusIds)]);
 
-            $specialtyIds = SpecialtyType::pluck('id')->toArray();
+            $specialtyIds        = SpecialtyType::pluck('id')->toArray();
             $selectedSpecialties = $this->faker->randomElements($specialtyIds, $this->faker->numberBetween(1, 3));
             $caregiver->specialtyTypes()->sync($selectedSpecialties);
 
-            $locationIds = Location::pluck('id')->toArray();
+            $locationIds       = Location::pluck('id')->toArray();
             $selectedLocations = $this->faker->randomElements($locationIds, $this->faker->numberBetween(1, 2));
-            $locationSync = [];
+            $locationSync      = [];
             foreach ($selectedLocations as $locationId) {
                 $locationSync[$locationId] = ['is_preferred' => $locationId === $selectedLocations[0]];
             }
             $caregiver->locations()->sync($locationSync);
 
-            $attributeIds = AttributeDefinition::forCaregivers()->pluck('id')->toArray();
+            $attributeIds       = AttributeDefinition::forCaregivers()->pluck('id')->toArray();
             $selectedAttributes = $this->faker->randomElements($attributeIds, $this->faker->numberBetween(1, 3));
-            $attributeSync = [];
+            $attributeSync      = [];
             foreach ($selectedAttributes as $attributeId) {
                 $attributeSync[$attributeId] = ['value' => 'true'];
             }
             $caregiver->attributes()->sync($attributeSync);
 
-            $certTypeIds = CertificationType::pluck('id')->toArray();
+            $certTypeIds   = CertificationType::pluck('id')->toArray();
             $selectedCerts = $this->faker->randomElements($certTypeIds, $this->faker->numberBetween(2, 4));
-            $certSync = [];
+            $certSync      = [];
             foreach ($selectedCerts as $certTypeId) {
                 $certSync[$certTypeId] = [
                     'expiration_date' => $this->faker->date('Y-m-d', '+2 years'),
-                    'verified_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
+                    'verified_at'     => $this->faker->dateTimeBetween('-1 year', 'now'),
                 ];
             }
             $caregiver->certifications()->sync($certSync);

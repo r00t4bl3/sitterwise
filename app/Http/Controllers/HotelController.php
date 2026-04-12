@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreHotelRequest;
 use App\Http\Requests\UpdateHotelRequest;
 use App\Models\Hotel;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class HotelController extends Controller
@@ -45,4 +45,21 @@ class HotelController extends Controller
         return redirect()->route('hotels.index')
             ->with('success', 'Hotel deleted successfully');
     }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('q', '');
+
+        $hotels = Hotel::where('is_active', true)
+            ->where('name', 'like', "%{$query}%")
+            ->limit(10)
+            ->get(['id', 'name', 'city'])
+            ->map(fn($h) => [
+                'id'   => $h->id,
+                'name' => $h->name . ($h->city ? ", {$h->city}" : ''),
+            ]);
+
+        return response()->json($hotels);
+    }
+
 }

@@ -35,6 +35,10 @@ return new class extends Migration
             $table->timestamp('checkout_at')->nullable();
             $table->decimal('total_working_hour', 5, 2)->nullable();
             $table->string('status');
+            $table->unsignedBigInteger('reserved_by')->nullable();
+            $table->timestamp('reservation_expires_at')->nullable();
+            $table->unsignedBigInteger('confirmed_by')->nullable();
+            $table->timestamp('confirmed_at')->nullable();
             $table->json('special_considerations')->nullable();
             $table->text('caregiver_notes')->nullable();
             $table->text('notes_to_sitterwise')->nullable();

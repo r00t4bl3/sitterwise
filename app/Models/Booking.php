@@ -37,6 +37,10 @@ class Booking extends Model
         'start_datetime',
         'end_datetime',
         'status',
+        'reserved_by',
+        'reservation_expires_at',
+        'confirmed_by',
+        'confirmed_at',
         'special_considerations',
         'caregiver_notes',
         'notes_to_sitterwise',
@@ -60,6 +64,8 @@ class Booking extends Model
     protected $casts = [
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
+        'reservation_expires_at' => 'datetime',
+        'confirmed_at' => 'datetime',
         'last_charge_attempt_at' => 'datetime',
         'special_considerations' => 'array',
         'sitter_preferences' => 'array',
@@ -118,5 +124,27 @@ class Booking extends Model
             ->withPivot('value', 'entity_type')
             ->withTimestamps()
             ->wherePivot('entity_type', 'booking');
+    }
+
+    public function caregiverNotifications(): HasMany
+    {
+        return $this->hasMany(BookingCaregiverNotification::class);
+    }
+
+    public function notifiedCaregivers(): BelongsToMany
+    {
+        return $this->belongsToMany(Caregiver::class, 'booking_caregiver_notifications')
+            ->withPivot('notified_at', 'viewed_at', 'responded_at', 'claimed')
+            ->withTimestamps();
+    }
+
+    public function reservedCaregiver(): BelongsTo
+    {
+        return $this->belongsTo(Caregiver::class, 'reserved_by');
+    }
+
+    public function confirmedCaregiver(): BelongsTo
+    {
+        return $this->belongsTo(Caregiver::class, 'confirmed_by');
     }
 }

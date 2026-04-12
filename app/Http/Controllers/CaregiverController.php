@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ResetCaregiverPasswordRequest;
@@ -39,12 +38,12 @@ class CaregiverController extends Controller
         }
 
         $caregivers = $query->orderBy('last_name')->paginate(20);
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses   = CaregiverStatus::active()->orderBy('sort_order')->get();
 
         return Inertia::render('admin/caregivers/index', [
             'caregivers' => $caregivers,
-            'statuses' => $statuses,
-            'filters' => [
+            'statuses'   => $statuses,
+            'filters'    => [
                 'search' => $request->search,
                 'status' => $request->status,
             ],
@@ -65,21 +64,21 @@ class CaregiverController extends Controller
         $validated = $request->validated();
 
         $user = User::create([
-            'name' => $validated['first_name'].' '.$validated['last_name'],
-            'email' => $validated['email'],
+            'name'     => $validated['first_name'] . ' ' . $validated['last_name'],
+            'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
 
         $caregiver = Caregiver::create([
-            'user_id' => $user->id,
-            'status_id' => $validated['status_id'],
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'phone' => $validated['phone'] ?? null,
-            'address' => $validated['address'] ?? null,
+            'user_id'       => $user->id,
+            'status_id'     => $validated['status_id'],
+            'first_name'    => $validated['first_name'],
+            'last_name'     => $validated['last_name'],
+            'phone'         => $validated['phone'] ?? null,
+            'address'       => $validated['address'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'biography' => $validated['biography'] ?? null,
-            'notes' => $validated['notes'] ?? null,
+            'biography'     => $validated['biography'] ?? null,
+            'notes'         => $validated['notes'] ?? null,
         ]);
 
         return redirect()->route('caregivers.show', $caregiver->id)
@@ -111,7 +110,7 @@ class CaregiverController extends Controller
 
         return Inertia::render('admin/caregivers/show', [
             'caregiver' => (new CaregiverResource($caregiver))->resolve(),
-            'statuses' => $statuses,
+            'statuses'  => $statuses,
         ]);
     }
 
@@ -121,21 +120,21 @@ class CaregiverController extends Controller
 
         if ($request->has('first_name')) {
             $updateData = [
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'phone' => $validated['phone'] ?? null,
-                'address' => $validated['address'] ?? null,
+                'first_name'    => $validated['first_name'],
+                'last_name'     => $validated['last_name'],
+                'phone'         => $validated['phone'] ?? null,
+                'address'       => $validated['address'] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
-                'rating' => $validated['rating'] ?? null,
-                'biography' => $validated['biography'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'status_id' => $validated['status_id'],
+                'rating'        => $validated['rating'] ?? null,
+                'biography'     => $validated['biography'] ?? null,
+                'notes'         => $validated['notes'] ?? null,
+                'status_id'     => $validated['status_id'],
             ];
 
             if ($request->hasFile('profile_photo')) {
-                $file = $request->file('profile_photo');
-                $filename = time().'_'.$file->getClientOriginalName();
-                $path = $file->storeAs('profile-photos', $filename, 'public');
+                $file     = $request->file('profile_photo');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path     = $file->storeAs('profile-photos', $filename, 'public');
                 $caregiver->user->update(['profile_photo_path' => $path]);
             }
 
@@ -170,7 +169,7 @@ class CaregiverController extends Controller
                 foreach ($validated['certifications'] as $cert) {
                     $certSync[$cert['certification_type_id']] = [
                         'expiration_date' => $cert['expiration_date'] ?? null,
-                        'verified_at' => $cert['verified_at'] ?? null,
+                        'verified_at'     => $cert['verified_at'] ?? null,
                     ];
                 }
                 $caregiver->certifications()->sync($certSync);
@@ -187,28 +186,28 @@ class CaregiverController extends Controller
     {
         $caregiver->load(['status', 'specialtyTypes', 'locations', 'user', 'certifications', 'attributes']);
 
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
-        $specialtyTypes = SpecialtyType::active()->get();
-        $locations = Location::active()->get();
+        $statuses             = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $specialtyTypes       = SpecialtyType::active()->get();
+        $locations            = Location::active()->get();
         $attributeDefinitions = AttributeDefinition::active()->forCaregivers()->get();
-        $certificationTypes = CertificationType::active()->get();
+        $certificationTypes   = CertificationType::active()->get();
 
         return Inertia::render('admin/caregivers/edit', [
-            'caregiver' => (new CaregiverResource($caregiver))->resolve(),
-            'statuses' => $statuses,
-            'specialty_types' => $specialtyTypes,
-            'locations' => $locations,
+            'caregiver'             => (new CaregiverResource($caregiver))->resolve(),
+            'statuses'              => $statuses,
+            'specialty_types'       => $specialtyTypes,
+            'locations'             => $locations,
             'attribute_definitions' => $attributeDefinitions,
-            'certification_types' => $certificationTypes,
-            'csrf_token' => csrf_token(),
+            'certification_types'   => $certificationTypes,
+            'csrf_token'            => csrf_token(),
         ]);
     }
 
-    public function updateProfilePhoto(UpdateCaregiverProfilePhotoRequest $request, Caregiver $caregiver): RedirectResponse|JsonResponse
+    public function updateProfilePhoto(UpdateCaregiverProfilePhotoRequest $request, Caregiver $caregiver): RedirectResponse | JsonResponse
     {
-        $file = $request->file('profile_photo');
-        $filename = time().'_'.$file->getClientOriginalName();
-        $path = $file->storeAs('profile-photos', $filename, 'public');
+        $file     = $request->file('profile_photo');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $path     = $file->storeAs('profile-photos', $filename, 'public');
         $caregiver->user->update(['profile_photo_path' => $path]);
 
         return redirect()->route('caregivers.edit', $caregiver->id)
@@ -231,4 +230,20 @@ class CaregiverController extends Controller
         return redirect()->route('caregivers.show', $caregiver->id)
             ->with('success', 'Password has been reset successfully');
     }
+
+    // /**
+    //  * Show caregiver's available bookings page.
+    //  */
+    // public function showBookings(Request $request)
+    // {
+    //     return app(CaregiverBookingService::class)->showPage($request);
+    // }
+
+    // /**
+    //  * Show a specific booking detail.
+    //  */
+    // public function showBooking(Request $request, int $bookingId)
+    // {
+    //     return app(CaregiverBookingService::class)->show($request, $bookingId);
+    // }
 }

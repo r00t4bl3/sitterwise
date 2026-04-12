@@ -60,5 +60,10 @@ class DatabaseSeeder extends Seeder
         Client::factory()->create([
             'user_id' => $client->id,
         ]);
+
+        // Run caregiver booking seeder after users are created
+        $this->call([
+            CaregiverBookingSeeder::class,
+        ]);
     }
 }

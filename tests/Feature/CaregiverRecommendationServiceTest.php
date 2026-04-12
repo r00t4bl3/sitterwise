@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\CaregiverStatus;
+use App\Models\CertificationType;
 use App\Models\Client;
+use App\Models\SpecialtyType;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CaregiverStatusSeeder;
@@ -40,7 +43,7 @@ describe('CaregiverRecommendationService', function () {
 
         // Caregiver1 should be in results (active)
         expect($recommended->pluck('caregiver.id')->contains($caregiver1->id))->toBeTrue();
-        
+
         // Caregiver2 might be in results since factory configure overrides status_id
         // Just verify the service doesn't crash
         expect($recommended->count())->toBeGreaterThanOrEqual(1);
@@ -147,5 +150,47 @@ describe('CaregiverRecommendationService', function () {
         $recommended = $this->service->getRecommendedCaregivers($client, limit: 3);
 
         expect($recommended)->toHaveCount(3);
+    });
+
+    test('caregiver with full availability scores higher', function () {
+        $client = Client::factory()->create();
+
+        $caregiver1 = Caregiver::factory()
+            ->state(['status_id' => $this->activeStatus->id, 'rating' => 4.0])
+            ->create();
+
+        $caregiver2 = Caregiver::factory()
+            ->state(['status_id' => $this->activeStatus->id, 'rating' => 4.0])
+            ->create();
+
+        // Ensure both have same certifications and specialties
+        $certTypeIds = CertificationType::limit(2)->pluck('id')->toArray();
+        $specialtyIds = SpecialtyType::limit(2)->pluck('id')->toArray();
+        $caregiver1->certifications()->sync($certTypeIds);
+        $caregiver1->specialtyTypes()->sync($specialtyIds);
+        $caregiver2->certifications()->sync($certTypeIds);
+        $caregiver2->specialtyTypes()->sync($specialtyIds);
+
+        // Add full availability for caregiver1
+        $bookingDate = now()->addDays(1)->setHour(9)->setMinute(0)->setSecond(0);
+        Availability::create([
+            'caregiver_id' => $caregiver1->id,
+            'date' => $bookingDate->format('Y-m-d'), // Store as date only
+            'time_slots' => ['morning', 'afternoon', 'evening'],
+        ]);
+
+        $booking = new Booking;
+        $booking->service_type = 'babysitter';
+        $booking->start_datetime = $bookingDate->toISOString();
+        $booking->end_datetime = (clone $bookingDate)->setHour(13)->toISOString();
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $score1 = $recommended->firstWhere('caregiver.id', $caregiver1->id)['score'];
+        $score2 = $recommended->firstWhere('caregiver.id', $caregiver2->id)['score'];
+
+        // Caregiver1 should have availability records and get bonus
+        expect($score1)->toBe(135.0) // 105 base + 30 availability
+            ->and($score2)->toBe(105.0); // 105 base + 0 availability
     });
 });

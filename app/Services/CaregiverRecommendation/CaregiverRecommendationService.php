@@ -157,9 +157,9 @@ class CaregiverRecommendationService
             $score += 15;
         }
 
-        // 6. Availability for booking dates (+30)
-        if ($startDate && $endDate && $this->isAvailable($caregiver, $startDate, $endDate)) {
-            $score += 30;
+        // 6. Availability for booking dates (0, 15, or 30 points)
+        if ($startDate && $endDate) {
+            $score += $this->getAvailabilityScore($caregiver, $startDate, $endDate);
         }
 
         return $score;
@@ -192,50 +192,182 @@ class CaregiverRecommendationService
 
     /**
      * Check if caregiver's specialties match the service type.
+     *
+     * Maps service types to relevant age/care specialties:
+     * - Babysitter: Babies, Toddlers, Preschool, School Age
+     * - Companion Care: Special Needs
+     * - Group Childcare: Babies, Toddlers, Preschool, School Age
+     * - Petsitter, Corporate, Comped: No specialty match needed
      */
     protected function matchesServiceType(
         Caregiver $caregiver,
         string $serviceType
     ): bool {
-        // Map service type to specialty type slug/name
+        // Map service type to relevant specialty names
         $specialtyMap = [
-            ServiceType::Babysitter->value => ['babysitter', 'childcare'],
-            ServiceType::Petsitter->value => ['petsitter', 'pet_care'],
-            ServiceType::CompanionCare->value => ['companion', 'elderly_care'],
+            ServiceType::Babysitter->value => ['Babies', 'Toddlers', 'Preschool', 'School Age'],
+            ServiceType::CompanionCare->value => ['Special Needs'],
+            ServiceType::GroupChildcareInvoiced->value => ['Babies', 'Toddlers', 'Preschool', 'School Age'],
         ];
 
         $expectedSpecialties = $specialtyMap[$serviceType] ?? [];
 
         if (empty($expectedSpecialties)) {
-            return true; // No specific match needed
+            return true; // No specific match needed for this service type
         }
 
         return $caregiver->specialtyTypes->pluck('name')->intersect($expectedSpecialties)->isNotEmpty();
     }
 
     /**
-     * Check if caregiver is available during the date range.
+     * Calculate availability score for a caregiver during the booking period.
+     *
+     * Returns:
+     * - 30 points: Full coverage of all dates and time slots
+     * - 15 points: Partial coverage (at least one time slot on each date)
+     * - 0 points: No availability or missing dates
      */
-    protected function isAvailable(
+    protected function getAvailabilityScore(
         Caregiver $caregiver,
         string $startDate,
         string $endDate
-    ): bool {
-        // Check if caregiver has availability records for the dates
-        $availableDates = $caregiver->availabilities
-            ->pluck('date')
-            ->map(fn ($d) => $d->toDateString());
-
-        $bookingDates = collect();
-        $current = new \DateTime($startDate);
+    ): int {
+        $start = new \DateTime($startDate);
         $end = new \DateTime($endDate);
 
+        // Generate all dates in the booking range
+        $bookingDates = [];
+        $current = clone $start;
         while ($current <= $end) {
-            $bookingDates->add($current->format('Y-m-d'));
+            $bookingDates[] = $current->format('Y-m-d');
             $current->modify('+1 day');
         }
 
-        // Caregiver must have availability for all booking dates
-        return $bookingDates->diff($availableDates)->isEmpty();
+        // Get caregiver's availabilities for these dates
+        // Use whereDate to handle SQLite datetime comparison properly
+        $availabilities = $caregiver->availabilities()
+            ->where(function ($query) use ($bookingDates) {
+                foreach ($bookingDates as $date) {
+                    $query->orWhereDate('date', $date);
+                }
+            })
+            ->get();
+
+        if ($availabilities->isEmpty()) {
+            return 0;
+        }
+
+        // Calculate required time slots for each date
+        $requiredSlotsPerDate = $this->getRequiredTimeSlots($startDate, $endDate);
+
+        // Check coverage for each date
+        $totalDates = count($bookingDates);
+        $fullyCoveredDates = 0;
+        $partiallyCoveredDates = 0;
+
+        foreach ($bookingDates as $date) {
+            // Find availability for this date (use whereDate for proper comparison)
+            $availability = $availabilities->first(function ($avail) use ($date) {
+                // Handle Carbon, DateTime, or string dates
+                if ($avail->date instanceof \DateTimeInterface) {
+                    $availDate = $avail->date->format('Y-m-d');
+                } else {
+                    // Parse string dates (e.g., "2026-04-13 00:00:00")
+                    $availDate = date('Y-m-d', strtotime($avail->date));
+                }
+
+                return $availDate === $date;
+            });
+
+            if (! $availability || empty($availability->time_slots)) {
+                continue; // No availability for this date
+            }
+
+            $availableSlots = is_array($availability->time_slots)
+                ? $availability->time_slots
+                : json_decode($availability->time_slots, true);
+
+            $requiredSlots = $requiredSlotsPerDate[$date] ?? [];
+
+            if (empty($requiredSlots)) {
+                $fullyCoveredDates++;
+
+                continue;
+            }
+
+            // Check if all required slots are covered
+            $coveredSlots = array_intersect($requiredSlots, $availableSlots);
+            $coverageRatio = count($coveredSlots) / count($requiredSlots);
+
+            if ($coverageRatio >= 1.0) {
+                $fullyCoveredDates++;
+            } elseif ($coverageRatio > 0) {
+                $partiallyCoveredDates++;
+            }
+        }
+
+        // Scoring logic
+        if ($fullyCoveredDates === $totalDates) {
+            return 30; // Full coverage on all dates
+        }
+
+        if ($fullyCoveredDates + $partiallyCoveredDates >= $totalDates * 0.5) {
+            return 15; // At least 50% of dates have some coverage
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get required time slots based on booking start/end times.
+     *
+     * Time slot definitions:
+     * - Morning: 6:00 AM - 12:00 PM
+     * - Afternoon: 12:00 PM - 6:00 PM
+     * - Evening: 6:00 PM - 11:00 PM
+     */
+    protected function getRequiredTimeSlots(
+        string $startDate,
+        string $endDate
+    ): array {
+        $start = new \DateTime($startDate);
+        $end = new \DateTime($endDate);
+
+        $requiredSlots = [];
+
+        // Generate dates and determine required time slots
+        $current = clone $start;
+        while ($current <= $end) {
+            $dateKey = $current->format('Y-m-d');
+            $slots = [];
+
+            // Determine time slots needed based on booking times
+            $dayStart = ($current->format('Y-m-d') === $start->format('Y-m-d')) ? $start : new \DateTime($dateKey.' 00:00:00');
+            $dayEnd = ($current->format('Y-m-d') === $end->format('Y-m-d')) ? $end : new \DateTime($dateKey.' 23:59:59');
+
+            // Check if any part of the booking falls in each time slot
+            $morningStart = new \DateTime($dateKey.' 06:00:00');
+            $morningEnd = new \DateTime($dateKey.' 12:00:00');
+            $afternoonStart = new \DateTime($dateKey.' 12:00:00');
+            $afternoonEnd = new \DateTime($dateKey.' 18:00:00');
+            $eveningStart = new \DateTime($dateKey.' 18:00:00');
+            $eveningEnd = new \DateTime($dateKey.' 23:00:00');
+
+            // Check overlap with each slot
+            if ($dayStart < $morningEnd && $dayEnd > $morningStart) {
+                $slots[] = 'morning';
+            }
+            if ($dayStart < $afternoonEnd && $dayEnd > $afternoonStart) {
+                $slots[] = 'afternoon';
+            }
+            if ($dayStart < $eveningEnd && $dayEnd > $eveningStart) {
+                $slots[] = 'evening';
+            }
+
+            $requiredSlots[$dateKey] = $slots;
+            $current->modify('+1 day');
+        }
+
+        return $requiredSlots;
     }
 }

@@ -129,6 +129,11 @@ class Caregiver extends Model
         return $this->hasMany(CaregiverPayout::class);
     }
 
+    public function bookingNotifications(): HasMany
+    {
+        return $this->hasMany(BookingCaregiverNotification::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
