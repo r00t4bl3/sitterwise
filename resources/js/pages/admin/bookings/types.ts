@@ -67,6 +67,22 @@ export interface Booking {
     address_city: string | null;
     address_state: string | null;
     address_zip: string | null;
+    client_first_name: string | null;
+    client_last_name: string | null;
+    client_phone: string | null;
+    client_email: string | null;
+    children: Array<{
+        name: string;
+        gender: string | null;
+        birth_month: number | null;
+        birth_year: number | null;
+    }> | null;
+    pets: Array<{
+        name: string;
+        type: string | null;
+        breed: string | null;
+        notes: string | null;
+    }> | null;
     rental_platform: string | null;
     sitter_preferences: string[] | null;
     other_adults_present: string | null;
@@ -83,9 +99,12 @@ export interface Booking {
         id: number;
         first_name: string;
         last_name: string;
+        phone: string | null;
         user: {
             profile_photo_path: string | null;
         };
+        children_count?: number;
+        pets_count?: number;
     };
     hotel: {
         id: number;

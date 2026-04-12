@@ -136,7 +136,7 @@ export function AvailabilityCalendar({
                             className={`flex h-24 flex-col gap-1 border border-border p-2 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
                         >
                             <span
-                                className={`text-sm font-medium ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
+                                className={`text-sm ${isToday ? 'text-foreground font-bold' : 'font-medium '} ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
                             >
                                 {day}
                             </span>

@@ -14,6 +14,7 @@ class UpdateBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'client_id' => ['required', 'exists:clients,id'],
             'service_type' => ['required', 'string'],
             'location_type' => ['required', 'string'],
             'start_datetime' => ['required', 'date', 'after:now'],

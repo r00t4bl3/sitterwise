@@ -3,6 +3,8 @@
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\ClientAddress;
+use App\Models\ClientChild;
+use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
@@ -344,5 +346,82 @@ describe('BookingController', function () {
         $response->assertSee('location_types');
         $response->assertSee('booking_statuses');
         $response->assertSee('payment_statuses');
+    });
+
+    test('booking creation captures client snapshot data', function () {
+        $this->withoutMiddleware();
+        $this->actingAs($this->user);
+
+        // Create client with children and pets
+        $client = Client::factory()->create();
+        $children = ClientChild::factory()->count(2)->create(['client_id' => $client->id]);
+        $pets = ClientPet::factory()->count(1)->create(['client_id' => $client->id]);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_line2' => '',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertRedirect();
+
+        $booking = Booking::where('client_id', $client->id)->first();
+
+        // Verify snapshot data was captured
+        expect($booking->client_first_name)->toBe($client->first_name);
+        expect($booking->client_last_name)->toBe($client->last_name);
+        expect($booking->client_phone)->toBe($client->phone);
+        expect($booking->client_email)->toBe($client->user->email);
+        expect($booking->children)->toHaveCount(2);
+        expect($booking->pets)->toHaveCount(1);
+        expect($booking->children[0]['name'])->toBe($children->first()->name);
+        expect($booking->pets[0]['name'])->toBe($pets->first()->name);
+    });
+
+    test('booking snapshot remains unchanged when client profile is updated', function () {
+        $this->withoutMiddleware();
+        $this->actingAs($this->user);
+
+        // Create client with initial data
+        $client = Client::factory()->create([
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'phone' => '555-1234',
+        ]);
+
+        // Create booking
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'received',
+        ]);
+
+        // Capture original snapshot data
+        $originalFirstName = $booking->client_first_name;
+        $originalLastName = $booking->client_last_name;
+        $originalPhone = $booking->client_phone;
+
+        // Update client profile
+        $client->update([
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
+            'phone' => '555-9999',
+        ]);
+
+        // Verify booking snapshot remains unchanged
+        $booking->refresh();
+        expect($booking->client_first_name)->toBe($originalFirstName);
+        expect($booking->client_last_name)->toBe($originalLastName);
+        expect($booking->client_phone)->toBe($originalPhone);
     });
 });

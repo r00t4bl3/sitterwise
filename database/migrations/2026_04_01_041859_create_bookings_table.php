@@ -21,6 +21,12 @@ return new class extends Migration
             $table->string('address_city')->nullable();
             $table->string('address_state')->nullable();
             $table->string('address_zip')->nullable();
+            $table->string('client_first_name')->nullable();
+            $table->string('client_last_name')->nullable();
+            $table->string('client_phone')->nullable();
+            $table->string('client_email')->nullable();
+            $table->json('children')->nullable();
+            $table->json('pets')->nullable();
             $table->string('service_type');
             $table->string('location_type');
             $table->string('rental_platform')->nullable();

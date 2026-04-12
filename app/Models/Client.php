@@ -35,9 +35,24 @@ class Client extends Model
         'special_needs_notes',
     ];
 
+    protected $appends = [
+        'children_count',
+        'pets_count',
+    ];
+
     protected $casts = [
         'sitter_preferences' => 'array',
     ];
+
+    public function getChildrenCountAttribute(): int
+    {
+        return $this->relationLoaded('children') ? $this->children->count() : $this->children()->count();
+    }
+
+    public function getPetsCountAttribute(): int
+    {
+        return $this->relationLoaded('pets') ? $this->pets->count() : $this->pets()->count();
+    }
 
     public function user(): BelongsTo
     {

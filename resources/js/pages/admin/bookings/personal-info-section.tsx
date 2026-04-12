@@ -12,6 +12,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import type { Booking } from './types';
 
 const MONTH_ABBR = [
     '',
@@ -47,7 +48,7 @@ interface NewPet {
 
 interface PersonalInfoSectionProps {
     form: any;
-    editingBooking: { id: number } | null;
+    editingBooking: Booking | null;
     clientMode: 'select' | 'input';
     setClientMode: (mode: 'select' | 'input') => void;
     addressMode: 'select' | 'input';
@@ -218,14 +219,24 @@ export function PersonalInfoSection({
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
                         <h2 className="font-semibold">
-                            Booking #{editingBooking.id}
+                            {editingBooking.client.first_name} {editingBooking.client.last_name} - {editingBooking.client.phone || 'No phone'}
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            Edit booking details
+                            {new Date(form.data.start_datetime).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(form.data.end_datetime).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
                         </p>
+                        {(editingBooking.client.children_count || editingBooking.client.pets_count) ? (
+                            <p className="text-sm text-muted-foreground">
+                                {editingBooking.client.children_count ? `(${editingBooking.client.children_count} ${editingBooking.client.children_count === 1 ? 'child' : 'children'})` : ''}
+                                {editingBooking.client.children_count && editingBooking.client.pets_count ? ', ' : ''}
+                                {editingBooking.client.pets_count ? `(${editingBooking.client.pets_count} ${editingBooking.client.pets_count === 1 ? 'pet' : 'pets'})` : ''}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                (No children/pets)
+                            </p>
+                        )}
                     </div>
                     <Button
-                        variant="secondary"
                         size="sm"
                         onClick={() => {
                             const currentId = form.data.caregiver_id;
@@ -239,36 +250,59 @@ export function PersonalInfoSection({
             )}
 
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
-                <SheetContent side="right" className="w-full sm:max-w-md">
-                    <SheetHeader>
+                <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+                    <SheetHeader className="shrink-0">
                         <SheetTitle>Notify Caregivers</SheetTitle>
                         <SheetDescription>
                             Select caregivers to notify about this booking.
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="mt-4 space-y-2">
-                        {caregiverSuggestions.map((caregiver) => (
-                            <label
-                                key={caregiver.id}
-                                className="flex items-center gap-2"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selectedCaregivers.includes(
-                                        caregiver.id,
+                    <div className="space-y-4 overflow-y-auto flex-1 px-4">
+                        {caregiverSuggestions.map((caregiver) => {
+                            const badge = (caregiver as any).matchBadge;
+                            const colorClasses: Record<string, string> = {
+                                green: 'bg-green-100 text-green-800',
+                                yellow: 'bg-yellow-100 text-yellow-800',
+                                orange: 'bg-orange-100 text-orange-800',
+                                blue: 'bg-blue-100 text-blue-800',
+                            };
+
+                            return (
+                                <label
+                                    key={caregiver.id}
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCaregivers.includes(
+                                                caregiver.id,
+                                            )}
+                                            onChange={() =>
+                                                toggleCaregiver(caregiver.id)
+                                            }
+                                            className="h-4 w-4 rounded border-input"
+                                        />
+                                        <span className="text-sm font-medium">
+                                            {caregiver.name}
+                                        </span>
+                                    </div>
+                                    {badge && (
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                colorClasses[badge.color] || 'bg-gray-100 text-gray-800'
+                                            }`}
+                                        >
+                                            {badge.label}
+                                        </span>
                                     )}
-                                    onChange={() =>
-                                        toggleCaregiver(caregiver.id)
-                                    }
-                                    className="h-4 w-4 rounded border-input"
-                                />
-                                <span>{caregiver.name}</span>
-                            </label>
-                        ))}
+                                </label>
+                            );
+                        })}
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-6">
+                    <div className="flex justify-end gap-2 pt-6 shrink-0 border-t border-border mt-4">
                         <Button
                             variant="outline"
                             onClick={() => setNotifySheetOpen(false)}

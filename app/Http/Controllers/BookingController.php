@@ -19,6 +19,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
+use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -41,7 +42,7 @@ class BookingController extends Controller
         return response()->json($hotels);
     }
 
-    public function index(Request $request)
+    public function index(Request $request, CaregiverRecommendationService $recommendationService)
     {
         $month = (int) $request->input('month', now()->month);
         $year = (int) $request->input('year', now()->year);
@@ -52,6 +53,8 @@ class BookingController extends Controller
 
         $query = Booking::with([
             'client.user',
+            'client.children',
+            'client.pets',
             'hotel',
             'caregiver.user',
             'address',
@@ -82,10 +85,14 @@ class BookingController extends Controller
             'zip' => $h->zip,
         ]);
 
-        $caregivers = Caregiver::with('user')->get()->map(fn ($c) => [
-            'id' => $c->id,
-            'name' => $c->first_name.' '.$c->last_name,
-        ]);
+        // Get recommended caregivers (no specific client/booking context at index level)
+        $caregivers = Caregiver::with('user')
+            ->whereHas('status', fn ($q) => $q->where('is_active', true))
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->first_name.' '.$c->last_name,
+            ]);
 
         return Inertia::render('admin/bookings/index', [
             'bookings' => $bookings,
@@ -193,6 +200,9 @@ class BookingController extends Controller
             'is_split' => false,
         ]);
 
+        // Get client data for snapshot
+        $client = Client::with(['children', 'pets', 'user'])->find($clientId);
+
         $booking = Booking::create([
             'booking_group_id' => $bookingGroup->id,
             'client_id' => $clientId,
@@ -205,6 +215,22 @@ class BookingController extends Controller
             'address_city' => $validated['address_city'] ?? null,
             'address_state' => $validated['address_state'] ?? null,
             'address_zip' => $validated['address_zip'] ?? null,
+            'client_first_name' => $client?->first_name,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => $client?->children->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
+                'birth_month' => $child->birth_month,
+                'birth_year' => $child->birth_year,
+            ])->toArray(),
+            'pets' => $client?->pets->map(fn ($pet) => [
+                'name' => $pet->name,
+                'type' => $pet->type,
+                'breed' => $pet->breed,
+                'notes' => $pet->notes,
+            ])->toArray(),
             'service_type' => $validated['service_type'],
             'location_type' => $validated['location_type'],
             'rental_platform' => $validated['rental_platform'] ?? null,
@@ -241,8 +267,6 @@ class BookingController extends Controller
                 'end_datetime' => 'Booking must be at least 4 hours long.',
             ]);
         }
-
-        $booking->update($validated);
 
         // Handle deleted children
         if (! empty($validated['deleted_child_ids'])) {
@@ -288,6 +312,31 @@ class BookingController extends Controller
             }
         }
 
+        // Update client snapshot data
+        $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
+
+        $updateData = [
+            ...$validated,
+            'client_first_name' => $client?->first_name,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => ($client?->children ?? collect())->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
+                'birth_month' => $child->birth_month,
+                'birth_year' => $child->birth_year,
+            ])->toArray(),
+            'pets' => ($client?->pets ?? collect())->map(fn ($pet) => [
+                'name' => $pet->name,
+                'type' => $pet->type,
+                'breed' => $pet->breed,
+                'notes' => $pet->notes,
+            ])->toArray(),
+        ];
+
+        $booking->update($updateData);
+
         return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
     }
 
@@ -313,5 +362,43 @@ class BookingController extends Controller
         // You can implement the notification logic here or dispatch a job
 
         return back()->with('success', 'Caregivers have been notified.');
+    }
+
+    public function recommendedCaregivers(
+        Request $request,
+        CaregiverRecommendationService $recommendationService
+    ) {
+        $validated = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'service_type' => 'nullable|string',
+            'start_datetime' => 'nullable|date',
+            'end_datetime' => 'nullable|date|after:start_datetime',
+        ]);
+
+        $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
+
+        // Create a mock booking if dates are provided
+        $mockBooking = null;
+        if (! empty($validated['service_type']) && ! empty($validated['start_datetime'])) {
+            $mockBooking = new Booking;
+            $mockBooking->service_type = $validated['service_type'];
+            $mockBooking->start_datetime = $validated['start_datetime'];
+            $mockBooking->end_datetime = $validated['end_datetime'];
+        }
+
+        $recommended = $recommendationService->getRecommendedCaregivers(
+            $client,
+            $mockBooking,
+            20
+        );
+
+        return response()->json($recommended->map(function ($item) {
+            return [
+                'id' => $item['caregiver']->id,
+                'name' => $item['caregiver']->first_name.' '.$item['caregiver']->last_name,
+                'score' => $item['score'],
+                'matchBadge' => $item['matchBadge'],
+            ];
+        }));
     }
 }

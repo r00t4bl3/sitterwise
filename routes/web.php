@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
 
     Route::get('bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('admin.bookings.searchHotels');
+    Route::get('bookings/recommended-caregivers', [BookingController::class, 'recommendedCaregivers'])->name('bookings.recommendedCaregivers');
     Route::resource('bookings', BookingController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::middleware('admin')->group(function () {
@@ -72,4 +73,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

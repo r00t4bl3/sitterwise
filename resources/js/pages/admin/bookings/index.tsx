@@ -176,7 +176,7 @@ function calculateAge(
     return `${age}yr`;
 }
 
-export default function BookingsTest() {
+export default function Bookings() {
     const {
         bookings,
         filters,
@@ -559,6 +559,9 @@ export default function BookingsTest() {
                     form.setData('location_type', 'hotel');
                 }
 
+                // Fetch recommended caregivers for this client
+                fetchRecommendedCaregivers(clientId);
+
                 // Populate client fields
                 form.setData(
                     'emergency_instructions',
@@ -588,6 +591,63 @@ export default function BookingsTest() {
             setClientChildren([]);
             setClientPets([]);
             setSelectedClientType(null);
+            setCaregiverSuggestions(
+                caregivers as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>,
+            );
+        }
+    };
+
+    const fetchRecommendedCaregivers = async (clientId: number) => {
+        try {
+            const params = new URLSearchParams({
+                client_id: clientId.toString(),
+            });
+
+            // Add booking context if available
+            if (form.data.service_type) {
+                params.append('service_type', form.data.service_type);
+            }
+            if (form.data.start_datetime) {
+                params.append('start_datetime', form.data.start_datetime);
+            }
+            if (form.data.end_datetime) {
+                params.append('end_datetime', form.data.end_datetime);
+            }
+
+            console.log('Fetching recommended caregivers...', params.toString());
+            
+            const response = await fetch(
+                `/bookings/recommended-caregivers?${params}`,
+            );
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Recommended caregivers:', data);
+
+            setCaregiverSuggestions(
+                data as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>,
+            );
+        } catch (error) {
+            console.error('Error fetching recommended caregivers:', error);
+            // Fallback to default list
+            setCaregiverSuggestions(
+                caregivers as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>,
+            );
         }
     };
 
@@ -1037,16 +1097,16 @@ export default function BookingsTest() {
                                             : 'border-dashed border-gray-300 bg-white'
                                     } ${
                                         isToday
-                                            ? 'bg-white ring-2 ring-primary ring-inset'
+                                            ? 'bg-blush'
                                             : ''
                                     }`}
                                 >
                                     <span
-                                        className={`text-sm font-medium ${
+                                        className={`text-sm ${
                                             isToday
-                                                ? 'text-primary'
+                                                ? 'text-foreground font-bold'
                                                 : isCurrentMonth
-                                                  ? 'text-foreground'
+                                                  ? 'text-foreground font-medium'
                                                   : 'text-gray-300'
                                         }`}
                                     >
@@ -1210,13 +1270,7 @@ export default function BookingsTest() {
                                 }
                                 addressValue={addressValue}
                                 setAddressValue={setAddressValue}
-                                caregiverSuggestions={
-                                    caregivers as unknown as Array<{
-                                        id: number;
-                                        name: string;
-                                        [key: string]: unknown;
-                                    }>
-                                }
+                                caregiverSuggestions={caregiverSuggestions}
                                 handleCaregiverSearch={handleCaregiverSearch}
                             />
 
