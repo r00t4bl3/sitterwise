@@ -4,6 +4,7 @@ import { Sunrise, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import { Spinner } from '@/components/ui/spinner';
+import { UserAvatar } from '@/components/user-avatar';
 import {
     Tooltip,
     TooltipContent,
@@ -59,6 +60,7 @@ interface Caregiver {
     date_of_birth: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     status: Status;
     specialty_types: SpecialtyType[];
@@ -284,34 +286,18 @@ export default function AvailabilitiesIndex() {
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        {caregiver.user
-                                                            .profile_photo_path ? (
-                                                            <img
-                                                                src={
-                                                                    caregiver
-                                                                        .user
-                                                                        .profile_photo_path ===
-                                                                    'avatar.jpg'
-                                                                        ? '/avatar.jpg'
-                                                                        : `/storage/${caregiver.user.profile_photo_path}`
-                                                                }
-                                                                alt=""
-                                                                className="h-8 w-8 rounded-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
-                                                                <span className="text-xs font-medium text-amber-600">
-                                                                    {
-                                                                        caregiver
-                                                                            .first_name[0]
-                                                                    }
-                                                                    {
-                                                                        caregiver
-                                                                            .last_name[0]
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                        )}
+                                                        <UserAvatar
+                                                            profile_photo_url={
+                                                                caregiver.user
+                                                                    .profile_photo_url
+                                                            }
+                                                            profile_photo_path={
+                                                                caregiver.user
+                                                                    .profile_photo_path
+                                                            }
+                                                            name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                                            size="sm"
+                                                        />
                                                         <Link
                                                             href={`/availabilities/${caregiver.id}`}
                                                             className="text-sm font-medium whitespace-nowrap text-ring hover:text-foreground hover:underline"

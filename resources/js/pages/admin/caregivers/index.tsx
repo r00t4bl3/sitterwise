@@ -5,6 +5,7 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
+import { UserAvatar } from '@/components/user-avatar';
 import {
     Tooltip,
     TooltipContent,
@@ -52,6 +53,7 @@ interface Caregiver {
     date_of_birth: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     status: Status;
     specialty_types: SpecialtyType[];
@@ -113,7 +115,7 @@ function calculateAge(dateOfBirth: string): number {
 export default function CaregiversIndex() {
     const { caregivers, statuses, filters } = usePage<Props>().props;
 
-    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [searchQuery] = useState(filters.search || '');
     const [suggestions, setSuggestions] = useState<
         Array<{ id: number; name: string; status: Status | null }>
     >([]);
@@ -262,30 +264,18 @@ export default function CaregiversIndex() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
-                                            {caregiver.user
-                                                .profile_photo_path ? (
-                                                <img
-                                                    src={
-                                                        caregiver.user
-                                                            .profile_photo_path ===
-                                                        'avatar.jpg'
-                                                            ? '/avatar.jpg'
-                                                            : `/storage/${caregiver.user.profile_photo_path}`
-                                                    }
-                                                    alt=""
-                                                    className="h-8 w-8 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
-                                                    <span className="text-xs font-medium text-amber-600">
-                                                        {
-                                                            caregiver
-                                                                .first_name[0]
-                                                        }
-                                                        {caregiver.last_name[0]}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <UserAvatar
+                                                profile_photo_url={
+                                                    caregiver.user
+                                                        .profile_photo_url
+                                                }
+                                                profile_photo_path={
+                                                    caregiver.user
+                                                        .profile_photo_path
+                                                }
+                                                name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                                size="sm"
+                                            />
                                             <Link
                                                 href={`/caregivers/${caregiver.id}`}
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"

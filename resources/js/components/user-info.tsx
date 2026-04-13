@@ -3,7 +3,15 @@ import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
 
 function getAvatarUrl(user: User | null): string | undefined {
-    if (!user || !user.profile_photo_path) {
+    if (!user) {
+        return undefined;
+    }
+
+    if (user.profile_photo_url) {
+        return user.profile_photo_url;
+    }
+
+    if (!user.profile_photo_path) {
         return undefined;
     }
 

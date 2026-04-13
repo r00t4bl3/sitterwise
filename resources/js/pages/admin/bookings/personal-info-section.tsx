@@ -1,10 +1,9 @@
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import {
     Sheet,
     SheetContent,
@@ -12,6 +11,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
 import type { Booking } from './types';
 
 const MONTH_ABBR = [
@@ -51,8 +51,6 @@ interface PersonalInfoSectionProps {
     editingBooking: Booking | null;
     clientMode: 'select' | 'input';
     setClientMode: (mode: 'select' | 'input') => void;
-    addressMode: 'select' | 'input';
-    setAddressMode: (mode: 'select' | 'input') => void;
     clientSuggestions: Array<{
         id: number;
         name: string;
@@ -140,7 +138,6 @@ interface PersonalInfoSectionProps {
         name: string;
         [key: string]: unknown;
     }>;
-    handleCaregiverSearch: (query: string) => void;
 }
 
 export function PersonalInfoSection({
@@ -148,8 +145,6 @@ export function PersonalInfoSection({
     editingBooking,
     clientMode,
     setClientMode,
-    addressMode,
-    setAddressMode,
     clientSuggestions,
     clientAddresses,
     clientChildren,
@@ -185,7 +180,6 @@ export function PersonalInfoSection({
     addressValue,
     setAddressValue,
     caregiverSuggestions,
-    handleCaregiverSearch,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -219,16 +213,48 @@ export function PersonalInfoSection({
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
                         <h2 className="font-semibold">
-                            {editingBooking.client.first_name} {editingBooking.client.last_name} - {editingBooking.client.phone || 'No phone'}
+                            {editingBooking.client.first_name}{' '}
+                            {editingBooking.client.last_name} -{' '}
+                            {editingBooking.client.phone || 'No phone'}
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            {new Date(form.data.start_datetime).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(form.data.end_datetime).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                            {new Date(form.data.start_datetime).toLocaleString(
+                                'en-US',
+                                {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                },
+                            )}{' '}
+                            -{' '}
+                            {new Date(form.data.end_datetime).toLocaleString(
+                                'en-US',
+                                {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                },
+                            )}
                         </p>
-                        {(editingBooking.client.children_count || editingBooking.client.pets_count) ? (
+                        {editingBooking.client.children_count ||
+                        editingBooking.client.pets_count ? (
                             <p className="text-sm text-muted-foreground">
-                                {editingBooking.client.children_count ? `(${editingBooking.client.children_count} ${editingBooking.client.children_count === 1 ? 'child' : 'children'})` : ''}
-                                {editingBooking.client.children_count && editingBooking.client.pets_count ? ', ' : ''}
-                                {editingBooking.client.pets_count ? `(${editingBooking.client.pets_count} ${editingBooking.client.pets_count === 1 ? 'pet' : 'pets'})` : ''}
+                                {editingBooking.client.children_count
+                                    ? `(${editingBooking.client.children_count} ${editingBooking.client.children_count === 1 ? 'child' : 'children'})`
+                                    : ''}
+                                {editingBooking.client.children_count &&
+                                editingBooking.client.pets_count
+                                    ? ', '
+                                    : ''}
+                                {editingBooking.client.pets_count
+                                    ? `(${editingBooking.client.pets_count} ${editingBooking.client.pets_count === 1 ? 'pet' : 'pets'})`
+                                    : ''}
                             </p>
                         ) : (
                             <p className="text-sm text-muted-foreground">
@@ -250,7 +276,10 @@ export function PersonalInfoSection({
             )}
 
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
-                <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+                <SheetContent
+                    side="right"
+                    className="flex w-full flex-col sm:max-w-md"
+                >
                     <SheetHeader className="shrink-0">
                         <SheetTitle>Notify Caregivers</SheetTitle>
                         <SheetDescription>
@@ -258,7 +287,7 @@ export function PersonalInfoSection({
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="space-y-4 overflow-y-auto flex-1 px-4">
+                    <div className="flex-1 space-y-4 overflow-y-auto px-4">
                         {caregiverSuggestions.map((caregiver) => {
                             const badge = (caregiver as any).matchBadge;
                             const colorClasses: Record<string, string> = {
@@ -291,7 +320,8 @@ export function PersonalInfoSection({
                                     {badge && (
                                         <span
                                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                colorClasses[badge.color] || 'bg-gray-100 text-gray-800'
+                                                colorClasses[badge.color] ||
+                                                'bg-gray-100 text-gray-800'
                                             }`}
                                         >
                                             {badge.label}
@@ -302,7 +332,7 @@ export function PersonalInfoSection({
                         })}
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-6 shrink-0 border-t border-border mt-4">
+                    <div className="mt-4 flex shrink-0 justify-end gap-2 border-t border-border pt-6">
                         <Button
                             variant="outline"
                             onClick={() => setNotifySheetOpen(false)}

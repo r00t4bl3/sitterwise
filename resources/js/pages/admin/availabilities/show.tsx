@@ -44,6 +44,7 @@ interface Caregiver {
     last_name: string;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     status: Status;
     specialty_types: SpecialtyType[];

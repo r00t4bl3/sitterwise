@@ -21,6 +21,7 @@ class CaregiverResource extends JsonResource
             'id' => $this->id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'slug' => $this->slug,
             'email' => $this->user?->email,
             'phone' => $this->phone,
             'address' => $this->address,
@@ -32,6 +33,7 @@ class CaregiverResource extends JsonResource
             'date_of_birth_raw' => $this->date_of_birth,
             'user' => [
                 'profile_photo_path' => $this->user->profile_photo_path ?? null,
+                'profile_photo_url' => $this->user->profile_photo_url ?? null,
             ],
             'rating' => $this->rating,
             'biography' => $this->biography,

@@ -88,6 +88,7 @@ interface Caregiver {
     date_of_birth: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     rating: number | null;
     biography: string | null;
@@ -163,7 +164,6 @@ export default function CaregiverEdit() {
         photoForm.setData('profile_photo', file);
 
         if (file && e.target.form) {
-            photoForm.data.profile_photo = file;
             e.target.form.requestSubmit();
         }
     };

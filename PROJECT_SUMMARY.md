@@ -24,6 +24,7 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 5. **Sidebar highlighting**: NavMain uses `useCurrentUrl` hook - changed from `isCurrentUrl` to `isCurrentOrParentUrl` to highlight parent for child routes (`/caregivers/23`, `/caregivers/23/edit`)
 6. **Toast duplication**: Flash messages persist in page props - added useRef tracking to prevent duplicate toasts
 7. **Role enum**: User roles are 'admin', 'client', 'caregiver' (not 'user')
+8. **useForm vs fetch**: Use Inertia's `useForm` for all form submissions - backend returns Inertia redirects with flash data instead of JSON
 
 ## Accomplishments
 
@@ -39,6 +40,9 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 - ✅ **Sidebar highlighting** - Changed to `isCurrentOrParentUrl`
 - ✅ **Tests** - 28 tests covering CRUD + authorization
 - ✅ **UI fixes** - Specialties display, "Manage" wording removed, button centering
+- ✅ **Booking reservations** - useForm implementation for reserve/confirm/release actions
+- ✅ **Lint cleanup** - Fixed all ESLint and PHP Pint errors
+- ✅ **Test email/SMS** - Artisan commands: `test:email`, `test:sms`
 
 ## Project Structure
 
@@ -49,6 +53,7 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 - `app/Http/Requests/StoreCaregiverRequest.php` - Form validation for create
 - `app/Http/Requests/UpdateCaregiverRequest.php` - Form validation for update
 - `app/Models/Caregiver.php` - Caregiver model
+- `app/Services/Booking/CaregiverBookingService.php` - Booking service with useForm integration
 - `routes/web.php` - Route definitions with resource + custom routes
 - `database/migrations/` - Database migrations for caregivers table
 
@@ -60,6 +65,8 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 - `resources/js/pages/caregivers/create.tsx` - Caregiver create form
 - `resources/js/pages/caregivers/CaregiverForm.tsx` - Reusable form component
 - `resources/js/pages/caregivers/CaregiverSearch.tsx` - Search suggestions component
+- `resources/js/pages/caregiver/bookings/show.tsx` - Booking detail with useForm
+- `resources/js/pages/caregiver/bookings/index.tsx` - Available bookings list
 - `resources/js/components/app-sidebar.tsx` - Navigation sidebar
 - `resources/js/components/nav-main.tsx` - Nav menu with active highlighting
 - `resources/js/components/toaster-message.tsx` - Flash message toast component
@@ -74,11 +81,12 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 
 ### Test Files
 
-- `tests/Feature/CaregiverTest.php` - Comprehensive tests (28 tests)
+- `tests/Feature/CaregiverTest.php` - Comprehensive CRUD tests
+- `tests/Feature/CaregiverBookingControllerTest.php` - Booking tests
 
 ## Test Summary
 
-**28 tests covering:**
+**406 tests covering:**
 
 - Caregiver CRUD operations
 - Authorization (admin vs regular users)
@@ -87,6 +95,8 @@ Build a Sitterwise Laravel application with comprehensive caregiver management f
 - Password reset
 - Flash messages and redirects
 - Validation errors
+- Booking reservations (reserve, confirm, release)
+- Client and admin features
 
 ## Route Structure
 
@@ -101,6 +111,13 @@ PUT    /caregivers/{caregiver}  (update - admin only)
 DELETE /caregivers/{caregiver}  (destroy - admin only)
 POST   /caregivers/{caregiver}/profile-photo (photo - admin only)
 POST   /caregivers/{caregiver}/password (password reset - admin only)
+
+GET    /bookings               (caregiver bookings list)
+GET    /bookings/available     (available bookings)
+GET    /bookings/{booking}      (booking detail)
+POST   /bookings/{booking}/reserve  (reserve booking)
+POST   /bookings/{booking}/confirm  (confirm booking)
+POST   /bookings/{booking}/release (release reservation)
 ```
 
 ## Technical Notes
@@ -110,3 +127,9 @@ POST   /caregivers/{caregiver}/password (password reset - admin only)
 - Pest for testing
 - Wayfinder for route type-safety
 - Laravel Fortify for authentication
+- Test commands: `php artisan test:email --to=email`, `php artisan test:sms --to=phone`
+
+## Commands
+
+- `php artisan test:email --to=user@example.com` - Send test email
+- `php artisan test:sms --to=+1234567890` - Send test SMS

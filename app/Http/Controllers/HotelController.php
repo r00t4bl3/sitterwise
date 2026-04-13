@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreHotelRequest;
@@ -54,12 +55,11 @@ class HotelController extends Controller
             ->where('name', 'like', "%{$query}%")
             ->limit(10)
             ->get(['id', 'name', 'city'])
-            ->map(fn($h) => [
-                'id'   => $h->id,
-                'name' => $h->name . ($h->city ? ", {$h->city}" : ''),
+            ->map(fn ($h) => [
+                'id' => $h->id,
+                'name' => $h->name.($h->city ? ", {$h->city}" : ''),
             ]);
 
         return response()->json($hotels);
     }
-
 }

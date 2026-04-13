@@ -65,6 +65,7 @@ interface Client {
     special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     addresses: Address[];
     children: Child[];
@@ -127,7 +128,6 @@ export default function ClientEdit() {
         photoForm.setData('profile_photo', file);
 
         if (file && e.target.form) {
-            photoForm.data.profile_photo = file;
             e.target.form.requestSubmit();
         }
     };

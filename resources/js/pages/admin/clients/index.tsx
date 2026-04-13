@@ -1,8 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -53,6 +52,7 @@ interface Client {
     client_type: string;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     children_count?: number;
     pets_count?: number;
@@ -81,7 +81,7 @@ interface Props {
 export default function ClientsIndex() {
     const { clients, filters } = usePage<Props>().props;
 
-    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [searchQuery] = useState(filters.search || '');
     const [suggestions, setSuggestions] = useState<
         Array<{ id: number; name: string; client_type: string }>
     >([]);
@@ -230,26 +230,18 @@ export default function ClientsIndex() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
-                                            {client.user.profile_photo_path ? (
-                                                <img
-                                                    src={
-                                                        client.user
-                                                            .profile_photo_path ===
-                                                        'avatar.jpg'
-                                                            ? '/avatar.jpg'
-                                                            : `/storage/${client.user.profile_photo_path}`
-                                                    }
-                                                    alt=""
-                                                    className="h-8 w-8 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
-                                                    <span className="text-xs font-medium text-amber-600">
-                                                        {client.first_name[0]}
-                                                        {client.last_name[0]}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <UserAvatar
+                                                profile_photo_url={
+                                                    client.user
+                                                        .profile_photo_url
+                                                }
+                                                profile_photo_path={
+                                                    client.user
+                                                        .profile_photo_path
+                                                }
+                                                name={`${client.first_name} ${client.last_name}`}
+                                                size="sm"
+                                            />
                                             <Link
                                                 href={`/clients/${client.id}`}
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"

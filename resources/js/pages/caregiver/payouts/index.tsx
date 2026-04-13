@@ -2,7 +2,6 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     CircleDollarSign,
     AlertCircle,
-    CheckCircle2,
     ExternalLink,
     CreditCard,
     ChevronLeft,
@@ -104,8 +103,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function PayoutMethodBadge({ method }: { method: PayoutMethod | null }) {
     if (!method) {
-return <span className="text-muted-foreground">—</span>;
-}
+        return <span className="text-muted-foreground">—</span>;
+    }
 
     return (
         <div className="flex items-center gap-1">
@@ -240,8 +239,7 @@ export default function CaregiverPayoutsIndex() {
         payoutMethods,
         payouts,
     } = usePage<Props>().props;
-    const [stripeStatus, setStripeStatus] =
-        useState<StripeStatus>(initialStatus);
+    const [stripeStatus] = useState<StripeStatus>(initialStatus);
 
     const connectForm = useForm({});
     const onboardingForm = useForm<{ url: string }>({ url: '' });
@@ -255,8 +253,8 @@ export default function CaregiverPayoutsIndex() {
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) {
-return '—';
-}
+            return '—';
+        }
 
         return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
@@ -294,16 +292,6 @@ return '—';
             },
             onError: (errors) => {
                 console.error('Failed to retry:', errors);
-            },
-        });
-    };
-
-    const refreshStatus = () => {
-        onboardingForm.get('/payouts/stripe/status', {
-            onSuccess: (page: any) => {
-                if (page.props.stripeStatus) {
-                    setStripeStatus(page.props.stripeStatus);
-                }
             },
         });
     };

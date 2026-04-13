@@ -26,15 +26,11 @@ import type { BreadcrumbItem } from '@/types';
 import { BookingDetailsSection } from './booking-details-section';
 import { PersonalInfoSection } from './personal-info-section';
 import type {
-    Client,
-    Hotel,
-    Caregiver,
     ClientAddress,
     ClientChild,
     ClientPet,
     Booking,
     Props,
-    BookingFormData,
 } from './types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -228,9 +224,7 @@ export default function Bookings() {
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [clientChildren, setClientChildren] = useState<ClientChild[]>([]);
     const [clientPets, setClientPets] = useState<ClientPet[]>([]);
-    const [addressMode, setAddressMode] = useState<'select' | 'input'>(
-        'select',
-    );
+    const [, setAddressMode] = useState<'select' | 'input'>('select');
     const [clientMode, setClientMode] = useState<'select' | 'input'>('select');
     const [selectedClientType, setSelectedClientType] = useState<string | null>(
         null,
@@ -611,9 +605,11 @@ export default function Bookings() {
             if (form.data.service_type) {
                 params.append('service_type', form.data.service_type);
             }
+
             if (form.data.start_datetime) {
                 params.append('start_datetime', form.data.start_datetime);
             }
+
             if (form.data.end_datetime) {
                 params.append('end_datetime', form.data.end_datetime);
             }
@@ -621,11 +617,11 @@ export default function Bookings() {
             const response = await fetch(
                 `/bookings/recommended-caregivers?${params}`,
             );
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
 
             setCaregiverSuggestions(
@@ -1060,7 +1056,7 @@ export default function Bookings() {
                             ),
                         )}
 
-                        {days.map(({ day, monthOffset }, index) => {
+                        {days.map(({ day, monthOffset }) => {
                             // compute actual month/year accounting for monthOffset
                             let cellMonth = currentMonth + monthOffset;
                             let cellYear = currentYear;
@@ -1092,18 +1088,14 @@ export default function Bookings() {
                                         isCurrentMonth
                                             ? 'border-border bg-background'
                                             : 'border-dashed border-gray-300 bg-white'
-                                    } ${
-                                        isToday
-                                            ? 'bg-blush'
-                                            : ''
-                                    }`}
+                                    } ${isToday ? 'bg-blush' : ''}`}
                                 >
                                     <span
                                         className={`text-sm ${
                                             isToday
-                                                ? 'text-foreground font-bold'
+                                                ? 'font-bold text-foreground'
                                                 : isCurrentMonth
-                                                  ? 'text-foreground font-medium'
+                                                  ? 'font-medium text-foreground'
                                                   : 'text-gray-300'
                                         }`}
                                     >
@@ -1223,8 +1215,6 @@ export default function Bookings() {
                                 editingBooking={editingBooking}
                                 clientMode={clientMode}
                                 setClientMode={setClientMode}
-                                addressMode={addressMode}
-                                setAddressMode={setAddressMode}
                                 clientSuggestions={clientSuggestions}
                                 clientAddresses={clientAddresses}
                                 clientChildren={clientChildren}
@@ -1268,7 +1258,6 @@ export default function Bookings() {
                                 addressValue={addressValue}
                                 setAddressValue={setAddressValue}
                                 caregiverSuggestions={caregiverSuggestions}
-                                handleCaregiverSearch={handleCaregiverSearch}
                             />
 
                             <BookingDetailsSection

@@ -4,7 +4,6 @@ use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
 use App\Models\Client;
-use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
@@ -23,8 +22,8 @@ beforeEach(function () {
         AttributeDefinitionSeeder::class,
     ]);
     $this->caregiver = Caregiver::factory()->create();
-    $this->client    = Client::factory()->create();
-    $this->booking   = Booking::factory()->create([
+    $this->client = Client::factory()->create();
+    $this->booking = Booking::factory()->create([
         'client_id' => $this->client->id,
     ]);
 });
@@ -33,9 +32,9 @@ describe('BookingController - Caregiver', function () {
     test('caregiver can view their notified bookings', function () {
         // Create notification record
         BookingCaregiverNotification::create([
-            'booking_id'   => $this->booking->id,
+            'booking_id' => $this->booking->id,
             'caregiver_id' => $this->caregiver->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         $this->actingAs($this->caregiver->user);
@@ -56,16 +55,16 @@ describe('BookingController - Caregiver', function () {
 
         // Notify only caregiver1 about booking1
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking1->id,
+            'booking_id' => $booking1->id,
             'caregiver_id' => $caregiver1->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         // Notify only caregiver2 about booking2
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking2->id,
+            'booking_id' => $booking2->id,
             'caregiver_id' => $caregiver2->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         $this->actingAs($caregiver1->user);
@@ -84,39 +83,38 @@ describe('BookingController - Caregiver', function () {
 
     test('caregiver can reserve a booking', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
             'client_id' => $client->id,
-            'status'    => 'received',
+            'status' => 'received',
         ]);
 
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         $this->actingAs($caregiver->user);
 
         $response = $this->post(route('bookings.reserve', $booking));
 
-        $response->assertSuccessful();
-        // $response->assertJson(['success' => true]);
-        // $response->assertJsonStructure(['expires_in']);
+        $response->assertStatus(302);
+        $response->assertSessionHas('expires_in');
 
         $this->assertDatabaseHas('bookings', [
-            'id'          => $booking->id,
+            'id' => $booking->id,
             'reserved_by' => $caregiver->id,
-            'status'      => 'reserved',
+            'status' => 'reserved',
         ]);
     });
 
     test('only notified caregiver can reserve booking', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
             'client_id' => $client->id,
-            'status'    => 'received',
+            'status' => 'received',
         ]);
 
         // Don't create notification record
@@ -125,28 +123,29 @@ describe('BookingController - Caregiver', function () {
 
         $response = $this->post(route('bookings.reserve', $booking));
 
-        $response->assertForbidden();
+        $response->assertStatus(302);
+        $response->assertSessionHas('error');
     });
 
     test('cannot reserve already reserved booking', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
-        $client     = Client::factory()->create();
-        $booking    = Booking::factory()->create([
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
             'client_id' => $client->id,
-            'status'    => 'received',
+            'status' => 'received',
         ]);
 
         // Notify both caregivers
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver1->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver2->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         // First caregiver reserves
@@ -157,69 +156,69 @@ describe('BookingController - Caregiver', function () {
         $this->actingAs($caregiver2->user);
         $response = $this->post(route('bookings.reserve', $booking));
 
-        $response->assertStatus(409);
-        $response->assertJson(['success' => false]);
+        $response->assertStatus(302);
+        $response->assertSessionHas('error');
     });
 
     test('caregiver can confirm reserved booking', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
-            'client_id'              => $client->id,
-            'status'                 => 'reserved',
-            'reserved_by'            => $caregiver->id,
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
         ]);
 
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         $this->actingAs($caregiver->user);
 
         $response = $this->post(route('bookings.confirm', $booking));
 
-        $response->assertSuccessful();
-        $response->assertJson(['success' => true]);
+        $response->assertStatus(302);
+        $response->assertRedirect(route('dashboard'));
 
         $booking->refresh();
-        // expect($booking->status)->toBe('confirmed')
-        //     ->and($booking->caregiver_id)->toBe($caregiver->id)
-        //     ->and($booking->confirmed_by)->toBe($caregiver->id)
-        //     ->and($booking->confirmed_at)->not()->toBeNull();
+        expect($booking->status)->toBe('confirmed')
+            ->and($booking->caregiver_id)->toBe($caregiver->id)
+            ->and($booking->confirmed_by)->toBe($caregiver->id)
+            ->and($booking->confirmed_at)->not()->toBeNull();
     });
 
     test('cannot confirm expired reservation', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
-            'client_id'              => $client->id,
-            'status'                 => 'reserved',
-            'reserved_by'            => $caregiver->id,
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->subMinute(), // Expired
         ]);
 
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
-            'notified_at'  => now(),
+            'notified_at' => now(),
         ]);
 
         $this->actingAs($caregiver->user);
 
         $response = $this->post(route('bookings.confirm', $booking));
 
-        $response->assertStatus(409);
-        $response->assertJson(['success' => false]);
+        $response->assertStatus(302);
+        $response->assertSessionHas('error');
     });
 
     test('caregiver can release reservation', function () {
         $booking = Booking::factory()->create([
-            'client_id'              => $this->client->id,
-            'status'                 => 'reserved',
-            'reserved_by'            => $this->caregiver->id,
+            'client_id' => $this->client->id,
+            'status' => 'reserved',
+            'reserved_by' => $this->caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
         ]);
 
@@ -227,9 +226,7 @@ describe('BookingController - Caregiver', function () {
 
         $response = $this->post(route('bookings.release', $booking));
 
-        // $response->assertForbidden();
-        $response->assertSuccessful();
-        // $response->assertJson(['success' => true]);
+        $response->assertStatus(302);
 
         $booking->refresh();
         expect($booking->reserved_by)->toBeNull()
@@ -240,11 +237,11 @@ describe('BookingController - Caregiver', function () {
     test('cannot release another caregiver reservation', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
-        $client     = Client::factory()->create();
-        $booking    = Booking::factory()->create([
-            'client_id'              => $client->id,
-            'status'                 => 'reserved',
-            'reserved_by'            => $caregiver1->id,
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver1->id,
             'reservation_expires_at' => now()->addMinute(),
         ]);
 
@@ -252,7 +249,7 @@ describe('BookingController - Caregiver', function () {
 
         $response = $this->post(route('bookings.release', $booking));
 
-        $response->assertSuccessful();
+        $response->assertStatus(302);
 
         $booking->refresh();
         // Should still be reserved by caregiver1
@@ -261,19 +258,19 @@ describe('BookingController - Caregiver', function () {
 
     test('notification marked as claimed on confirmation', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
-            'client_id'              => $client->id,
-            'status'                 => 'reserved',
-            'reserved_by'            => $caregiver->id,
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
         ]);
 
         $notification = BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
-            'notified_at'  => now(),
-            'claimed'      => false,
+            'notified_at' => now(),
+            'claimed' => false,
         ]);
 
         $this->actingAs($caregiver->user);
@@ -283,23 +280,23 @@ describe('BookingController - Caregiver', function () {
         $notification->refresh();
         expect($notification->claimed)->toBeTrue()
             ->and($notification->responded_at)->not()->toBeNull();
-        $response->assertSuccessful();
+        $response->assertStatus(302);
     });
 
     test('confirmed booking not shown in list', function () {
         $caregiver = Caregiver::factory()->create();
-        $client    = Client::factory()->create();
-        $booking   = Booking::factory()->create([
-            'client_id'    => $client->id,
-            'status'       => 'confirmed',
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'confirmed',
             'caregiver_id' => $caregiver->id,
         ]);
 
         BookingCaregiverNotification::create([
-            'booking_id'   => $booking->id,
+            'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
-            'notified_at'  => now(),
-            'claimed'      => true,
+            'notified_at' => now(),
+            'claimed' => true,
         ]);
 
         $this->actingAs($caregiver->user);

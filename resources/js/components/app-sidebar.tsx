@@ -6,8 +6,6 @@ import {
     Home,
     LayoutGrid,
     MapPin,
-    Search,
-    Settings,
     Shield,
     Star,
     Users,

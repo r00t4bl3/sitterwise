@@ -34,6 +34,7 @@ class Caregiver extends Model
         'status_id',
         'first_name',
         'last_name',
+        'slug',
         'phone',
         'address',
         'date_of_birth',
@@ -41,12 +42,38 @@ class Caregiver extends Model
         'biography',
         'notes',
         'stripe_account_id',
+        'stripe_charges_enabled',
+        'education_level',
+        'languages',
+        'metadata',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
         'rating' => 'decimal:2',
+        'languages' => 'array',
+        'metadata' => 'array',
     ];
+
+    public function educations(): HasMany
+    {
+        return $this->hasMany(CaregiverEducation::class);
+    }
+
+    public function experiences(): HasMany
+    {
+        return $this->hasMany(CaregiverExperience::class);
+    }
+
+    public function references(): HasMany
+    {
+        return $this->hasMany(CaregiverReference::class);
+    }
+
+    public function sponsors(): HasMany
+    {
+        return $this->hasMany(CaregiverSponsor::class);
+    }
 
     public function user(): BelongsTo
     {

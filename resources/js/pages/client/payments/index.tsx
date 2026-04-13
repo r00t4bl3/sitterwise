@@ -95,8 +95,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function PaymentMethodBadge({ method }: { method: PaymentMethod | null }) {
     if (!method) {
-return <span className="text-muted-foreground">—</span>;
-}
+        return <span className="text-muted-foreground">—</span>;
+    }
 
     return (
         <div className="flex items-center gap-1">
@@ -202,8 +202,8 @@ export default function ClientPaymentsIndex() {
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) {
-return '—';
-}
+            return '—';
+        }
 
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -271,12 +271,6 @@ return '—';
         } catch (error) {
             console.error('Failed to delete:', error);
         }
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setIsAddingCard(false);
-        setClientSecret(null);
     };
 
     return (

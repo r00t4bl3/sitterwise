@@ -1,3 +1,4 @@
+import { Link, usePage, useForm } from '@inertiajs/react';
 import {
     Calendar,
     Clock,
@@ -8,19 +9,9 @@ import {
     ArrowLeft,
     Phone,
     Mail,
-    Home,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Link, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import {
     Sheet,
     SheetContent,
@@ -28,8 +19,8 @@ import {
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
 
 interface Booking {
     id: number;
@@ -82,97 +73,86 @@ const getBreadcrumbTitle = (clientName: string) => [
 ];
 
 export default function BookingDetail({ booking }: PageProps) {
-    const [loading, setLoading] = useState(false);
+    const { props } = usePage();
     const [error, setError] = useState<string | null>(null);
     const [showConfirmSheet, setShowConfirmSheet] = useState(false);
     const [countdown, setCountdown] = useState(0);
-    const [confirming, setConfirming] = useState(false);
     const [confirmed, setConfirmed] = useState(false);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    const reserveForm = useForm({});
+    const confirmForm = useForm({});
+    const releaseForm = useForm({});
+
     const breadcrumbs = getBreadcrumbTitle(booking.client_name);
 
-    const startReservation = useCallback(async () => {
-        setLoading(true);
+    const startReservation = useCallback(() => {
         setError(null);
+        reserveForm.post(`/bookings/${booking.id}/reserve`, {
+            onSuccess: () => {
+                const expiresIn = (props.expires_in as number) || 60;
+                setCountdown(expiresIn);
+                setShowConfirmSheet(true);
 
-        try {
-            const response = await fetch(
-                `/api/caregiver/bookings/${booking.id}/reserve`,
-                { method: 'POST' },
-            );
+                countdownRef.current = setInterval(() => {
+                    setCountdown((prev) => {
+                        if (prev <= 1) {
+                            clearInterval(countdownRef.current!);
+                            setShowConfirmSheet(false);
+                            setError('Reservation expired. Please try again.');
 
-            const data = await response.json();
+                            return 0;
+                        }
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to reserve booking');
-            }
-
-            // Start countdown
-            setCountdown(data.expires_in);
-            setShowConfirmSheet(true);
-
-            countdownRef.current = setInterval(() => {
-                setCountdown((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(countdownRef.current!);
-                        setShowConfirmSheet(false);
-                        setError('Reservation expired. Please try again.');
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-        } finally {
-            setLoading(false);
-        }
-    }, [booking.id]);
-
-    const confirmBooking = useCallback(async () => {
-        setConfirming(true);
-
-        try {
-            const response = await fetch(
-                `/api/caregiver/bookings/${booking.id}/confirm`,
-                { method: 'POST' },
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to confirm booking');
-            }
-
-            setConfirmed(true);
-            setShowConfirmSheet(false);
-            if (countdownRef.current) {
-                clearInterval(countdownRef.current);
-            }
-
-            // Redirect to success page after a delay
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 2000);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-        } finally {
-            setConfirming(false);
-        }
-    }, [booking.id]);
-
-    const releaseReservation = useCallback(async () => {
-        await fetch(`/api/caregiver/bookings/${booking.id}/release`, {
-            method: 'POST',
+                        return prev - 1;
+                    });
+                }, 1000);
+            },
+            onError: (errors) => {
+                setError(errors.error || 'Failed to reserve booking');
+            },
         });
+    }, [booking.id, reserveForm, props]);
 
-        setShowConfirmSheet(false);
-        setCountdown(0);
-        if (countdownRef.current) {
-            clearInterval(countdownRef.current);
-        }
-    }, [booking.id]);
+    const confirmBooking = useCallback(() => {
+        confirmForm.post(`/bookings/${booking.id}/confirm`, {
+            onSuccess: () => {
+                setConfirmed(true);
+                setShowConfirmSheet(false);
+
+                if (countdownRef.current) {
+                    clearInterval(countdownRef.current);
+                }
+
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            },
+            onError: (errors) => {
+                setError(errors.error || 'Failed to confirm booking');
+            },
+        });
+    }, [booking.id, confirmForm]);
+
+    const releaseReservation = useCallback(() => {
+        releaseForm.post(`/bookings/${booking.id}/release`, {
+            onSuccess: () => {
+                setShowConfirmSheet(false);
+                setCountdown(0);
+
+                if (countdownRef.current) {
+                    clearInterval(countdownRef.current);
+                }
+            },
+            onError: () => {
+                setShowConfirmSheet(false);
+
+                if (countdownRef.current) {
+                    clearInterval(countdownRef.current);
+                }
+            },
+        });
+    }, [booking.id, releaseForm]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -193,15 +173,19 @@ export default function BookingDetail({ booking }: PageProps) {
                 if (data.caregiver_id !== booking.reserved_by) {
                     setError('Another caregiver has reserved this booking.');
                     setShowConfirmSheet(false);
+
                     if (countdownRef.current) {
                         clearInterval(countdownRef.current);
                     }
                 }
             });
 
-            channel.listen('JobConfirmed', (data: any) => {
-                setError('This booking has been confirmed by another caregiver.');
+            channel.listen('JobConfirmed', () => {
+                setError(
+                    'This booking has been confirmed by another caregiver.',
+                );
                 setShowConfirmSheet(false);
+
                 if (countdownRef.current) {
                     clearInterval(countdownRef.current);
                 }
@@ -212,12 +196,13 @@ export default function BookingDetail({ booking }: PageProps) {
             if (channel) {
                 channel.stopListening('JobReserved');
                 channel.stopListening('JobConfirmed');
-            };
+            }
         };
-    }, [booking.id]);
+    }, [booking.id, booking.reserved_by]);
 
     const formatDateTime = (dateStr: string) => {
         const date = new Date(dateStr);
+
         return date.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -392,15 +377,22 @@ export default function BookingDetail({ booking }: PageProps) {
                     <Button
                         size="lg"
                         onClick={startReservation}
-                        disabled={loading || confirmed}
+                        disabled={reserveForm.processing || confirmed}
                     >
-                        {loading && <Spinner className="mr-2 h-4 w-4" />}
-                        {loading ? 'Reserving...' : 'Accept Booking'}
+                        {reserveForm.processing && (
+                            <Spinner className="mr-2 h-4 w-4" />
+                        )}
+                        {reserveForm.processing
+                            ? 'Reserving...'
+                            : 'Accept Booking'}
                     </Button>
                 </div>
 
                 {/* Confirmation Sheet */}
-                <Sheet open={showConfirmSheet} onOpenChange={setShowConfirmSheet}>
+                <Sheet
+                    open={showConfirmSheet}
+                    onOpenChange={setShowConfirmSheet}
+                >
                     <SheetContent side="bottom" className="h-auto max-h-[90vh]">
                         <SheetHeader>
                             <SheetTitle>Confirm Booking</SheetTitle>
@@ -418,7 +410,9 @@ export default function BookingDetail({ booking }: PageProps) {
                                             {booking.client_name}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            {formatDateTime(booking.start_datetime)}
+                                            {formatDateTime(
+                                                booking.start_datetime,
+                                            )}
                                         </p>
                                     </div>
                                     <div className="text-center">
@@ -442,13 +436,13 @@ export default function BookingDetail({ booking }: PageProps) {
                                 </Button>
                                 <Button
                                     onClick={confirmBooking}
-                                    disabled={confirming}
+                                    disabled={confirmForm.processing}
                                     className="flex-1"
                                 >
-                                    {confirming && (
+                                    {confirmForm.processing && (
                                         <Spinner className="mr-2 h-4 w-4" />
                                     )}
-                                    {confirming
+                                    {confirmForm.processing
                                         ? 'Confirming...'
                                         : 'Confirm Booking'}
                                 </Button>

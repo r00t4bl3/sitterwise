@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Booking\Contracts;
 
 use Illuminate\Http\Request;

@@ -1,9 +1,28 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
-import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Rating } from '@/components/ui/rating';
+import { Textarea } from '@/components/ui/textarea';
+import { UserAvatar } from '@/components/user-avatar';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -11,6 +30,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -75,6 +95,7 @@ interface FavoriteCaregiver {
     last_name: string;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
 }
 
@@ -103,6 +124,7 @@ interface Client {
     special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     addresses: Address[];
     children: Child[];
@@ -272,25 +294,16 @@ export default function ClientShow() {
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex items-center gap-4">
-                            {client.user.profile_photo_path ? (
-                                <img
-                                    src={
-                                        client.user.profile_photo_path ===
-                                        'avatar.jpg'
-                                            ? '/avatar.jpg'
-                                            : `/storage/${client.user.profile_photo_path}`
-                                    }
-                                    alt={`${client.first_name} ${client.last_name}`}
-                                    className="h-16 w-16 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-                                    <span className="text-2xl font-medium text-amber-600">
-                                        {client.first_name[0]}
-                                        {client.last_name[0]}
-                                    </span>
-                                </div>
-                            )}
+                            <UserAvatar
+                                profile_photo_url={
+                                    client.user.profile_photo_url
+                                }
+                                profile_photo_path={
+                                    client.user.profile_photo_path
+                                }
+                                name={`${client.first_name} ${client.last_name}`}
+                                size="lg"
+                            />
                             <div>
                                 <h1 className="text-2xl font-bold text-foreground">
                                     {client.first_name} {client.last_name}
@@ -675,35 +688,14 @@ export default function ClientShow() {
                                                     href={`/caregivers/${caregiver.id}`}
                                                     className="flex items-center gap-3 rounded-[3px] border border-border bg-background p-3 hover:bg-accent"
                                                 >
-                                                    {caregiver.user
-                                                        .profile_photo_path ? (
-                                                        <img
-                                                            src={
-                                                                caregiver.user
-                                                                    .profile_photo_path ===
-                                                                'avatar.jpg'
-                                                                    ? '/avatar.jpg'
-                                                                    : `/storage/${caregiver.user.profile_photo_path}`
-                                                            }
-                                                            alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                                                            className="h-10 w-10 rounded-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                                                            <span className="text-sm font-medium text-amber-600">
-                                                                {
-                                                                    caregiver
-                                                                        .first_name[0]
-                                                                }
-                                                                {
-                                                                    caregiver
-                                                                        .last_name[0]
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                    <UserAvatar
+                                                        profile_photo_url={caregiver.user.profile_photo_url}
+                                                        profile_photo_path={caregiver.user.profile_photo_path}
+                                                        name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                                        size="md"
+                                                    />
                                                     <span className="font-medium text-foreground">
-                                                        {caregiver.first_name}{' '}
+                                                        {caregiver.first_name}{' '}}
                                                         {caregiver.last_name}
                                                     </span>
                                                 </Link>

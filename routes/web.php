@@ -22,6 +22,8 @@ Route::inertia('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
+Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
+
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -45,7 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('/bookings/available/{booking}', [CaregiverController::class, 'showBooking'])->name('caregiver.bookings.show');
 
     // Route::get('bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('bookings.searchHotels');
-// Caregiver API routes (no CSRF)
+    // Caregiver API routes (no CSRF)
     Route::post('bookings/{booking}/reserve', [BookingController::class, 'reserve'])->name('bookings.reserve');
     Route::post('bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('bookings/{booking}/release', [BookingController::class, 'release'])->name('bookings.release');
@@ -88,7 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 // // Caregiver API routes (no CSRF)
 // Route::middleware(['auth'])->prefix('api/caregiver')->group(function () {

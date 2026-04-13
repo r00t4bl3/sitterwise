@@ -1,8 +1,7 @@
-import { Calendar, Clock, MapPin, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Calendar, Clock, User, CheckCircle } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -33,26 +32,38 @@ interface Props {
     bookings: Booking[];
 }
 
-export default function CaregiverBookings({ bookings: initialBookings }: Props) {
+export default function CaregiverBookings({
+    bookings: initialBookings,
+}: Props) {
     const [bookings, setBookings] = useState<Booking[]>(initialBookings);
-    const [countdowns, setCountdowns] = useState<Record<number, number>>({});
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    useEffect(() => {
-        // Initialize countdowns for reserved bookings
+    const getInitialCountdowns = (): Record<number, number> => {
         const newCountdowns: Record<number, number> = {};
         bookings.forEach((booking) => {
             if (booking.reservation_expires_at) {
-                const expiresAt = new Date(booking.reservation_expires_at).getTime();
+                const expiresAt = new Date(
+                    booking.reservation_expires_at,
+                ).getTime();
                 const now = Date.now();
-                const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
+                const secondsLeft = Math.max(
+                    0,
+                    Math.floor((expiresAt - now) / 1000),
+                );
+
                 if (secondsLeft > 0) {
                     newCountdowns[booking.id] = secondsLeft;
                 }
             }
         });
-        setCountdowns(newCountdowns);
 
+        return newCountdowns;
+    };
+
+    const [countdowns, setCountdowns] =
+        useState<Record<number, number>>(getInitialCountdowns);
+
+    useEffect(() => {
         // Start countdown timer for all reserved bookings
         intervalRef.current = setInterval(() => {
             setCountdowns((prev) => {
@@ -67,6 +78,7 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
                         changed = true;
                     }
                 });
+
                 return changed ? updated : prev;
             });
         }, 1000);
@@ -81,7 +93,10 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
     // WebSocket listeners for real-time updates
     useEffect(() => {
         const echo = (window as any).Echo;
-        if (!echo) return;
+
+        if (!echo) {
+            return;
+        }
 
         const channels: any[] = [];
 
@@ -97,7 +112,13 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
                 setBookings((prev) =>
                     prev.map((b) =>
                         b.id === booking.id
-                            ? { ...b, reserved_by: data.caregiver_id, reservation_expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString() }
+                            ? {
+                                  ...b,
+                                  reserved_by: data.caregiver_id,
+                                  reservation_expires_at: new Date(
+                                      Date.now() + data.expires_in * 1000,
+                                  ).toISOString(),
+                              }
                             : b,
                     ),
                 );
@@ -107,6 +128,7 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
                 setCountdowns((prev) => {
                     const updated = { ...prev };
                     delete updated[booking.id];
+
                     return updated;
                 });
                 setBookings((prev) => prev.filter((b) => b.id !== booking.id));
@@ -116,12 +138,18 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
                 setCountdowns((prev) => {
                     const updated = { ...prev };
                     delete updated[booking.id];
+
                     return updated;
                 });
                 setBookings((prev) =>
                     prev.map((b) =>
                         b.id === booking.id
-                            ? { ...b, reserved_by: null, reservation_expires_at: null, status: 'received' }
+                            ? {
+                                  ...b,
+                                  reserved_by: null,
+                                  reservation_expires_at: null,
+                                  status: 'received',
+                              }
                             : b,
                     ),
                 );
@@ -137,12 +165,9 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
         };
     }, [bookings]);
 
-    const refreshBookings = () => {
-        router.reload({ only: ['bookings'] });
-    };
-
     const formatDateTime = (dateStr: string) => {
         const date = new Date(dateStr);
+
         return date.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -178,8 +203,8 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
     if (bookings.length === 0) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Bookings" />
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <Head title="Bookings" />
+                <div className="flex h-full flex-1 flex-col gap-4 p-4">
                     <div>
                         <h1 className="text-2xl font-semibold text-foreground">
                             Available Bookings
@@ -243,23 +268,29 @@ export default function CaregiverBookings({ bookings: initialBookings }: Props) 
                                         <div className="flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
                                             <span className="text-sm text-muted-foreground">
-                                                {formatDateTime(booking.start_datetime)}{' '}
+                                                {formatDateTime(
+                                                    booking.start_datetime,
+                                                )}{' '}
                                                 -{' '}
-                                                {formatDateTime(booking.end_datetime)}
+                                                {formatDateTime(
+                                                    booking.end_datetime,
+                                                )}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
                                             <span className="text-xs text-muted-foreground">
                                                 Notified{' '}
-                                                {new Date(booking.notified_at).toLocaleDateString()}
+                                                {new Date(
+                                                    booking.notified_at,
+                                                ).toLocaleDateString()}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-4">
                                         {getStatusBadge(booking)}
-                                        <Link href={`/bookings/available/${booking.id}`}>
+                                        <Link href={`/bookings/${booking.id}`}>
                                             <Button size="sm">
                                                 View Details
                                             </Button>

@@ -71,7 +71,6 @@ export default function ChargeBooking() {
     const baseAmount = booking?.total_amount || 0;
     const reimbursementValue = parseFloat(reimbursement) || 0;
     const tipValue = parseFloat(tip) || 0;
-    const total = baseAmount + reimbursementValue + tipValue;
 
     const PLATFORM_FEE = 12;
     const caregiverGross = baseAmount + reimbursementValue;
@@ -115,7 +114,7 @@ export default function ChargeBooking() {
                     window.location.href = '/bookings';
                 }, 2000);
             }
-        } catch (error) {
+        } catch {
             setResult({
                 success: false,
                 message: 'An error occurred while processing the payment.',

@@ -4,6 +4,7 @@ export type User = {
     email: string;
     avatar: string | undefined;
     profile_photo_path: string | null;
+    profile_photo_url: string | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

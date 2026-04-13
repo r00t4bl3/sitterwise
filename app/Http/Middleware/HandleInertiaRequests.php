@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'google_places_api_key' => config('services.google_places.api_key'),
             'auth' => [
-                'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'profile_photo_path']),
+                'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'profile_photo_path', 'profile_photo_url']),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [

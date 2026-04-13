@@ -87,21 +87,9 @@ export function BookingDetailsSection({
     setIsSheetOpen,
 }: BookingDetailsSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [datetimeError, setDatetimeError] = useState<string | null>(null);
-    const [startDatetime, setStartDatetime] = useState(
-        form.data.start_datetime,
-    );
-    const [endDatetime, setEndDatetime] = useState(form.data.end_datetime);
-
-    useEffect(() => {
-        setStartDatetime(form.data.start_datetime);
-        setEndDatetime(form.data.end_datetime);
-    }, [form.data.start_datetime, form.data.end_datetime]);
-
-    useEffect(() => {
-        const error = validateDatetime(startDatetime, endDatetime);
-        setDatetimeError(error);
-    }, [startDatetime, endDatetime]);
+    const startDatetime = form.data.start_datetime;
+    const endDatetime = form.data.end_datetime;
+    const datetimeError = validateDatetime(startDatetime, endDatetime);
 
     useEffect(() => {
         const serviceType = form.data.service_type;
@@ -156,7 +144,6 @@ export function BookingDetailsSection({
                             <DateTimePicker
                                 value={startDatetime}
                                 onChange={(datetime) => {
-                                    setStartDatetime(datetime);
                                     form.setData('start_datetime', datetime);
                                 }}
                             />
@@ -170,7 +157,6 @@ export function BookingDetailsSection({
                             <DateTimePicker
                                 value={endDatetime}
                                 onChange={(datetime) => {
-                                    setEndDatetime(datetime);
                                     form.setData('end_datetime', datetime);
                                 }}
                             />
@@ -197,7 +183,10 @@ export function BookingDetailsSection({
                             displayValue={selectedCaregiverName}
                             renderItem={(item) => {
                                 const badge = (item as any).matchBadge;
-                                if (!badge) return item.name;
+
+                                if (!badge) {
+                                    return item.name;
+                                }
 
                                 const colorClasses: Record<string, string> = {
                                     green: 'bg-green-100 text-green-800',
@@ -211,7 +200,8 @@ export function BookingDetailsSection({
                                         <span>{item.name}</span>
                                         <span
                                             className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                colorClasses[badge.color] || 'bg-gray-100 text-gray-800'
+                                                colorClasses[badge.color] ||
+                                                'bg-gray-100 text-gray-800'
                                             }`}
                                         >
                                             {badge.label}

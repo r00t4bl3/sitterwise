@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Caregiver;
 
 use App\Http\Controllers\Controller;

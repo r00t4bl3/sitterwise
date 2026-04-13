@@ -5,13 +5,13 @@ import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
+import { UserAvatar } from '@/components/user-avatar';
 import {
     Sheet,
     SheetContent,
     SheetDescription,
     SheetHeader,
     SheetTitle,
-    SheetFooter,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
@@ -78,6 +78,7 @@ interface Caregiver {
     id: number;
     first_name: string;
     last_name: string;
+    slug: string;
     email: string;
     phone: string;
     address: string;
@@ -85,6 +86,7 @@ interface Caregiver {
     date_of_birth_raw: string | null;
     user: {
         profile_photo_path: string | null;
+        profile_photo_url: string | null;
     };
     rating: number | null;
     biography: string | null;
@@ -226,25 +228,14 @@ export default function CaregiverShow() {
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
-                        {caregiver.user.profile_photo_path ? (
-                            <img
-                                src={
-                                    caregiver.user.profile_photo_path ===
-                                    'avatar.jpg'
-                                        ? '/avatar.jpg'
-                                        : `/storage/${caregiver.user.profile_photo_path}`
-                                }
-                                alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                                className="h-16 w-16 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-                                <span className="text-2xl font-medium text-amber-600">
-                                    {caregiver.first_name[0]}
-                                    {caregiver.last_name[0]}
-                                </span>
-                            </div>
-                        )}
+                        <UserAvatar
+                            profile_photo_url={caregiver.user.profile_photo_url}
+                            profile_photo_path={
+                                caregiver.user.profile_photo_path
+                            }
+                            name={`${caregiver.first_name} ${caregiver.last_name}`}
+                            size="lg"
+                        />
                         <div>
                             <h1 className="text-2xl font-bold text-foreground">
                                 {caregiver.first_name} {caregiver.last_name}
@@ -255,6 +246,13 @@ export default function CaregiverShow() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href={`/bio/${caregiver.slug}`}
+                            target="_blank"
+                            className="btn-secondary"
+                        >
+                            View Public Profile
+                        </Link>
                         <Button
                             onClick={() => setIsPasswordSheetOpen(true)}
                             variant="secondary"

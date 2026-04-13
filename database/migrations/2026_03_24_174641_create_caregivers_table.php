@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('status_id')->constrained('caregiver_statuses');
             $table->string('first_name');
             $table->string('last_name');
+            $table->string('slug')->unique();
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->date('date_of_birth')->nullable();
@@ -24,6 +25,11 @@ return new class extends Migration
             $table->text('biography')->nullable();
             $table->text('notes')->nullable();
             $table->string('stripe_account_id')->nullable();
+            $table->boolean('stripe_charges_enabled')->nullable();
+            $table->string('education_level')->nullable();
+            $table->json('languages')->nullable();
+            $table->json('metadata')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
 

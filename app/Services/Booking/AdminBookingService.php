@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Booking;
 
 use App\Enums\BookingPaymentStatus;
@@ -33,12 +34,12 @@ class AdminBookingService implements BookingServiceInterface
 
     public function index(Request $request)
     {
-        $month  = (int) $request->input('month', now()->month);
-        $year   = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
         $status = $request->input('status');
 
         $startDate = now()->year($year)->month($month)->startOfMonth();
-        $endDate   = $startDate->endOfMonth();
+        $endDate = $startDate->endOfMonth();
 
         $query = Booking::with([
             'client.user',
@@ -58,68 +59,68 @@ class AdminBookingService implements BookingServiceInterface
 
         $bookings = $query->get();
 
-        $clients = Client::with('user')->get()->map(fn($c) => [
-            'id'    => $c->id,
-            'name'  => $c->first_name . ' ' . $c->last_name,
+        $clients = Client::with('user')->get()->map(fn ($c) => [
+            'id' => $c->id,
+            'name' => $c->first_name.' '.$c->last_name,
             'email' => $c->user->email,
         ]);
 
-        $hotels = Hotel::where('is_active', true)->get()->map(fn($h) => [
-            'id'    => $h->id,
-            'name'  => $h->name,
-            'city'  => $h->city,
+        $hotels = Hotel::where('is_active', true)->get()->map(fn ($h) => [
+            'id' => $h->id,
+            'name' => $h->name,
+            'city' => $h->city,
             'line1' => $h->line1,
             'line2' => $h->line2,
             'state' => $h->state,
-            'zip'   => $h->zip,
+            'zip' => $h->zip,
         ]);
 
         $caregivers = Caregiver::with('user')
-            ->whereHas('status', fn($q) => $q->where('is_active', true))
+            ->whereHas('status', fn ($q) => $q->where('is_active', true))
             ->get()
-            ->map(fn($c) => [
-                'id'   => $c->id,
-                'name' => $c->first_name . ' ' . $c->last_name,
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->first_name.' '.$c->last_name,
             ]);
 
         return Inertia::render('admin/bookings/index', [
-            'bookings'                      => $bookings,
-            'filters'                       => [
-                'month'  => (int) $month,
-                'year'   => (int) $year,
+            'bookings' => $bookings,
+            'filters' => [
+                'month' => (int) $month,
+                'year' => (int) $year,
                 'status' => $status,
             ],
-            'clients'                       => $clients,
-            'hotels'                        => $hotels,
-            'caregivers'                    => $caregivers,
-            'service_types'                 => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'clients' => $clients,
+            'hotels' => $hotels,
+            'caregivers' => $caregivers,
+            'service_types' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 ServiceType::cases()
             ),
-            'location_types'                => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'location_types' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 LocationType::cases()
             ),
-            'booking_statuses'              => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'booking_statuses' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 BookingStatus::cases()
             ),
-            'payment_statuses'              => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+            'payment_statuses' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 BookingPaymentStatus::cases()
             ),
             'special_consideration_options' => array_map(
-                fn($case) => ['value' => $case->value, 'label' => $case->label()],
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 SpecialConsideration::cases(),
             ),
-            'booking_attributes'            => AttributeDefinition::active()
+            'booking_attributes' => AttributeDefinition::active()
                 ->forBookings()
                 ->get()
-                ->map(fn($attr) => [
-                    'id'      => $attr->id,
-                    'name'    => $attr->name,
-                    'slug'    => $attr->slug,
-                    'type'    => $attr->type,
+                ->map(fn ($attr) => [
+                    'id' => $attr->id,
+                    'name' => $attr->name,
+                    'slug' => $attr->slug,
+                    'type' => $attr->type,
                     'options' => $attr->options,
                 ]),
         ]);
@@ -130,8 +131,8 @@ class AdminBookingService implements BookingServiceInterface
         $validated = $request->validated();
 
         // Validate minimum 4-hour duration
-        $start     = new \DateTime($validated['start_datetime']);
-        $end       = new \DateTime($validated['end_datetime']);
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
         $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
         if ($diffHours < 4) {
             throw ValidationException::withMessages([
@@ -144,22 +145,22 @@ class AdminBookingService implements BookingServiceInterface
         // Create new client if new_client data provided
         if (! empty($validated['new_client']['first_name'])) {
             $user = User::create([
-                'name'     => $validated['new_client']['first_name'] . ' ' . $validated['new_client']['last_name'],
-                'email'    => $validated['new_client']['email'],
+                'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
+                'email' => $validated['new_client']['email'],
                 'password' => \Hash::make(\Str::random(16)),
-                'role'     => 'client',
+                'role' => 'client',
             ]);
 
             $client = Client::create([
-                'user_id'                => $user->id,
-                'first_name'             => $validated['new_client']['first_name'],
-                'last_name'              => $validated['new_client']['last_name'],
-                'phone'                  => $validated['new_client']['phone'] ?? null,
-                'client_type'            => $validated['new_client']['client_type'] ?? 'vacationer',
-                'corporate_id'           => $validated['corporate_id'] ?? null,
-                'how_did_you_hear'       => $validated['how_did_you_hear'] ?? null,
-                'sitter_preferences'     => $validated['sitter_preferences'] ?? null,
-                'other_adults_present'   => $validated['other_adults_present'] ?? null,
+                'user_id' => $user->id,
+                'first_name' => $validated['new_client']['first_name'],
+                'last_name' => $validated['new_client']['last_name'],
+                'phone' => $validated['new_client']['phone'] ?? null,
+                'client_type' => $validated['new_client']['client_type'] ?? 'vacationer',
+                'corporate_id' => $validated['corporate_id'] ?? null,
+                'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
+                'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+                'other_adults_present' => $validated['other_adults_present'] ?? null,
                 'emergency_instructions' => $validated['emergency_instructions'] ?? null,
             ]);
 
@@ -170,71 +171,71 @@ class AdminBookingService implements BookingServiceInterface
                 ! empty($validated['address_line1'])) {
                 ClientAddress::create([
                     'client_id' => $client->id,
-                    'line1'     => $validated['address_line1'],
-                    'line2'     => $validated['address_line2'] ?? null,
-                    'city'      => $validated['address_city'],
-                    'state'     => $validated['address_state'],
-                    'zip'       => $validated['address_zip'],
+                    'line1' => $validated['address_line1'],
+                    'line2' => $validated['address_line2'] ?? null,
+                    'city' => $validated['address_city'],
+                    'state' => $validated['address_state'],
+                    'zip' => $validated['address_zip'],
                 ]);
             }
         }
 
         $bookingGroup = BookingGroup::create([
-            'client_id'       => $clientId,
-            'submitted_at'    => now(),
+            'client_id' => $clientId,
+            'submitted_at' => now(),
             'submission_type' => 'admin',
-            'is_split'        => false,
+            'is_split' => false,
         ]);
 
         // Get client data for snapshot
         $client = Client::with(['children', 'pets', 'user'])->find($clientId);
 
         Booking::create([
-            'booking_group_id'       => $bookingGroup->id,
-            'client_id'              => $clientId,
-            'caregiver_id'           => $validated['caregiver_id'] ?? null,
-            'availability_id'        => null,
-            'hotel_id'               => $validated['hotel_id'] ?? null,
-            'address_id'             => $validated['address_id'] ?? null,
-            'address_line1'          => $validated['address_line1'] ?? null,
-            'address_line2'          => $validated['address_line2'] ?? null,
-            'address_city'           => $validated['address_city'] ?? null,
-            'address_state'          => $validated['address_state'] ?? null,
-            'address_zip'            => $validated['address_zip'] ?? null,
-            'client_first_name'      => $client?->first_name,
-            'client_last_name'       => $client?->last_name,
-            'client_phone'           => $client?->phone,
-            'client_email'           => $client?->user?->email,
-            'children'               => $client?->children->map(fn($child) => [
-                'name'        => $child->name,
-                'gender'      => $child->gender,
+            'booking_group_id' => $bookingGroup->id,
+            'client_id' => $clientId,
+            'caregiver_id' => $validated['caregiver_id'] ?? null,
+            'availability_id' => null,
+            'hotel_id' => $validated['hotel_id'] ?? null,
+            'address_id' => $validated['address_id'] ?? null,
+            'address_line1' => $validated['address_line1'] ?? null,
+            'address_line2' => $validated['address_line2'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+            'address_state' => $validated['address_state'] ?? null,
+            'address_zip' => $validated['address_zip'] ?? null,
+            'client_first_name' => $client?->first_name,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => $client?->children->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
                 'birth_month' => $child->birth_month,
-                'birth_year'  => $child->birth_year,
+                'birth_year' => $child->birth_year,
             ])->toArray(),
-            'pets'                   => $client?->pets->map(fn($pet) => [
-                'name'  => $pet->name,
-                'type'  => $pet->type,
+            'pets' => $client?->pets->map(fn ($pet) => [
+                'name' => $pet->name,
+                'type' => $pet->type,
                 'breed' => $pet->breed,
                 'notes' => $pet->notes,
             ])->toArray(),
-            'service_type'           => $validated['service_type'],
-            'location_type'          => $validated['location_type'],
-            'rental_platform'        => $validated['rental_platform'] ?? null,
-            'start_datetime'         => $validated['start_datetime'],
-            'end_datetime'           => $validated['end_datetime'],
-            'status'                 => $validated['status'],
+            'service_type' => $validated['service_type'],
+            'location_type' => $validated['location_type'],
+            'rental_platform' => $validated['rental_platform'] ?? null,
+            'start_datetime' => $validated['start_datetime'],
+            'end_datetime' => $validated['end_datetime'],
+            'status' => $validated['status'],
             'special_considerations' => $validated['special_considerations'] ?? null,
-            'caregiver_notes'        => $validated['caregiver_notes'] ?? null,
-            'notes_to_sitterwise'    => $validated['notes_to_sitterwise'] ?? null,
-            'admin_notes'            => $validated['admin_notes'] ?? null,
-            'corporate_id'           => $validated['corporate_id'] ?? null,
-            'sitter_preferences'     => $validated['sitter_preferences'] ?? null,
-            'other_adults_present'   => $validated['other_adults_present'] ?? null,
-            'special_needs_notes'    => $validated['special_needs_notes'] ?? null,
+            'caregiver_notes' => $validated['caregiver_notes'] ?? null,
+            'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
+            'admin_notes' => $validated['admin_notes'] ?? null,
+            'corporate_id' => $validated['corporate_id'] ?? null,
+            'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+            'other_adults_present' => $validated['other_adults_present'] ?? null,
+            'special_needs_notes' => $validated['special_needs_notes'] ?? null,
             'emergency_instructions' => $validated['emergency_instructions'] ?? null,
-            'total_amount'           => 0,
-            'payment_status'         => $validated['payment_status'],
-            'requires_payment'       => $validated['requires_payment'] ?? true,
+            'total_amount' => 0,
+            'payment_status' => $validated['payment_status'],
+            'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
 
         return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
@@ -242,12 +243,12 @@ class AdminBookingService implements BookingServiceInterface
 
     public function update(Request $request, $id)
     {
-        $booking   = Booking::findOrFail($id);
+        $booking = Booking::findOrFail($id);
         $validated = $request->validated();
 
         // Validate minimum 4-hour duration
-        $start     = new \DateTime($validated['start_datetime']);
-        $end       = new \DateTime($validated['end_datetime']);
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
         $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
         if ($diffHours < 4) {
             throw ValidationException::withMessages([
@@ -273,11 +274,11 @@ class AdminBookingService implements BookingServiceInterface
         ) {
             foreach ($validated['new_children'] as $childData) {
                 ClientChild::create([
-                    'client_id'   => $booking->client_id,
-                    'name'        => $childData['name'] ?? null,
-                    'gender'      => $childData['gender'] ?? null,
+                    'client_id' => $booking->client_id,
+                    'name' => $childData['name'] ?? null,
+                    'gender' => $childData['gender'] ?? null,
                     'birth_month' => $childData['birth_month'] ? (int) $childData['birth_month'] : null,
-                    'birth_year'  => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
+                    'birth_year' => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
                 ]);
             }
         }
@@ -291,10 +292,10 @@ class AdminBookingService implements BookingServiceInterface
             foreach ($validated['new_pets'] as $petData) {
                 ClientPet::create([
                     'client_id' => $booking->client_id,
-                    'name'      => $petData['name'] ?? null,
-                    'type'      => $petData['type'] ?? null,
-                    'breed'     => $petData['breed'] ?? null,
-                    'notes'     => $petData['notes'] ?? null,
+                    'name' => $petData['name'] ?? null,
+                    'type' => $petData['type'] ?? null,
+                    'breed' => $petData['breed'] ?? null,
+                    'notes' => $petData['notes'] ?? null,
                 ]);
             }
         }
@@ -303,20 +304,20 @@ class AdminBookingService implements BookingServiceInterface
         $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
 
         $updateData = [
-             ...$validated,
+            ...$validated,
             'client_first_name' => $client?->first_name,
-            'client_last_name'  => $client?->last_name,
-            'client_phone'      => $client?->phone,
-            'client_email'      => $client?->user?->email,
-            'children'          => ($client?->children ?? collect())->map(fn($child) => [
-                'name'        => $child->name,
-                'gender'      => $child->gender,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => ($client?->children ?? collect())->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
                 'birth_month' => $child->birth_month,
-                'birth_year'  => $child->birth_year,
+                'birth_year' => $child->birth_year,
             ])->toArray(),
-            'pets'              => ($client?->pets ?? collect())->map(fn($pet) => [
-                'name'  => $pet->name,
-                'type'  => $pet->type,
+            'pets' => ($client?->pets ?? collect())->map(fn ($pet) => [
+                'name' => $pet->name,
+                'type' => $pet->type,
                 'breed' => $pet->breed,
                 'notes' => $pet->notes,
             ])->toArray(),
@@ -342,7 +343,7 @@ class AdminBookingService implements BookingServiceInterface
 
         try {
             $validated = $request->validate([
-                'caregiver_ids'   => 'required|array',
+                'caregiver_ids' => 'required|array',
                 'caregiver_ids.*' => 'exists:caregivers,id',
             ]);
 
@@ -352,14 +353,14 @@ class AdminBookingService implements BookingServiceInterface
             foreach ($caregivers as $caregiver) {
                 BookingCaregiverNotification::updateOrCreate(
                     [
-                        'booking_id'   => $booking->id,
+                        'booking_id' => $booking->id,
                         'caregiver_id' => $caregiver->id,
                     ],
                     [
-                        'notified_at'  => now(),
-                        'viewed_at'    => null,
+                        'notified_at' => now(),
+                        'viewed_at' => null,
                         'responded_at' => null,
-                        'claimed'      => false,
+                        'claimed' => false,
                     ]
                 );
 
@@ -372,19 +373,19 @@ class AdminBookingService implements BookingServiceInterface
 
             return back()->with('success', 'Caregivers have been notified.');
         } catch (\Exception $e) {
-            \Log::error('Booking notify error: ' . $e->getMessage());
+            \Log::error('Booking notify error: '.$e->getMessage());
 
-            return back()->withErrors(['error' => 'Failed to notify caregivers: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to notify caregivers: '.$e->getMessage()]);
         }
     }
 
     public function recommendedCaregivers(Request $request)
     {
         $validated = $request->validate([
-            'client_id'      => 'required|exists:clients,id',
-            'service_type'   => 'nullable|string',
+            'client_id' => 'required|exists:clients,id',
+            'service_type' => 'nullable|string',
             'start_datetime' => 'nullable|date',
-            'end_datetime'   => 'nullable|date|after:start_datetime',
+            'end_datetime' => 'nullable|date|after:start_datetime',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
@@ -392,10 +393,10 @@ class AdminBookingService implements BookingServiceInterface
         // Create a mock booking if dates are provided
         $mockBooking = null;
         if (! empty($validated['service_type']) && ! empty($validated['start_datetime'])) {
-            $mockBooking                 = new Booking;
-            $mockBooking->service_type   = $validated['service_type'];
+            $mockBooking = new Booking;
+            $mockBooking->service_type = $validated['service_type'];
             $mockBooking->start_datetime = $validated['start_datetime'];
-            $mockBooking->end_datetime   = $validated['end_datetime'];
+            $mockBooking->end_datetime = $validated['end_datetime'];
         }
 
         $recommended = $this->recommendationService->getRecommendedCaregivers(
@@ -406,9 +407,9 @@ class AdminBookingService implements BookingServiceInterface
 
         return response()->json($recommended->map(function ($item) {
             return [
-                'id'         => $item['caregiver']->id,
-                'name'       => $item['caregiver']->first_name . ' ' . $item['caregiver']->last_name,
-                'score'      => $item['score'],
+                'id' => $item['caregiver']->id,
+                'name' => $item['caregiver']->first_name.' '.$item['caregiver']->last_name,
+                'score' => $item['score'],
                 'matchBadge' => $item['matchBadge'],
             ];
         }));

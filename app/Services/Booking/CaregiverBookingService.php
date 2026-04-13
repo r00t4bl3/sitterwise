@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Booking;
 
 use App\Events\JobConfirmed;
@@ -15,7 +16,6 @@ use Inertia\Inertia;
 
 class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
 {
-
     public static function middleware(): array
     {
         return [
@@ -43,22 +43,22 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 // Lazy expiration check
                 if ($booking->reservation_expires_at && now()->gt($booking->reservation_expires_at)) {
                     $booking->update([
-                        'reserved_by'            => null,
+                        'reserved_by' => null,
                         'reservation_expires_at' => null,
-                        'status'                 => 'received',
+                        'status' => 'received',
                     ]);
                 }
 
                 return [
-                    'id'                     => $booking->id,
-                    'client_name'            => $booking->client->first_name . ' ' . $booking->client->last_name,
-                    'start_datetime'         => $booking->start_datetime,
-                    'end_datetime'           => $booking->end_datetime,
-                    'status'                 => $booking->status,
-                    'reserved_by'            => $booking->reserved_by,
+                    'id' => $booking->id,
+                    'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
+                    'start_datetime' => $booking->start_datetime,
+                    'end_datetime' => $booking->end_datetime,
+                    'status' => $booking->status,
+                    'reserved_by' => $booking->reserved_by,
                     'reservation_expires_at' => $booking->reservation_expires_at,
-                    'notified_at'            => $notification->notified_at,
-                    'viewed_at'              => $notification->viewed_at,
+                    'notified_at' => $notification->notified_at,
+                    'viewed_at' => $notification->viewed_at,
                 ];
             });
 
@@ -106,32 +106,32 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         // Lazy expiration check
         if ($booking->reservation_expires_at && now()->gt($booking->reservation_expires_at)) {
             $booking->update([
-                'reserved_by'            => null,
+                'reserved_by' => null,
                 'reservation_expires_at' => null,
-                'status'                 => 'received',
+                'status' => 'received',
             ]);
         }
 
         return Inertia::render('caregiver/bookings/show', [
             'booking' => [
-                'id'                     => $booking->id,
-                'client_name'            => $booking->client->first_name . ' ' . $booking->client->last_name,
-                'client_phone'           => $booking->client_phone ?? $booking->client->user?->phone,
-                'client_email'           => $booking->client_email ?? $booking->client->user?->email,
-                'address_line1'          => $booking->address_line1,
-                'address_line2'          => $booking->address_line2,
-                'address_city'           => $booking->address_city,
-                'address_state'          => $booking->address_state,
-                'address_zip'            => $booking->address_zip,
-                'start_datetime'         => $booking->start_datetime,
-                'end_datetime'           => $booking->end_datetime,
-                'status'                 => $booking->status,
-                'reserved_by'            => $booking->reserved_by,
+                'id' => $booking->id,
+                'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
+                'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
+                'client_email' => $booking->client_email ?? $booking->client->user?->email,
+                'address_line1' => $booking->address_line1,
+                'address_line2' => $booking->address_line2,
+                'address_city' => $booking->address_city,
+                'address_state' => $booking->address_state,
+                'address_zip' => $booking->address_zip,
+                'start_datetime' => $booking->start_datetime,
+                'end_datetime' => $booking->end_datetime,
+                'status' => $booking->status,
+                'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
-                'notified_at'            => $notification->notified_at,
-                'viewed_at'              => $notification->viewed_at,
-                'children'               => $booking->children,
-                'pets'                   => $booking->pets,
+                'notified_at' => $notification->notified_at,
+                'viewed_at' => $notification->viewed_at,
+                'children' => $booking->children,
+                'pets' => $booking->pets,
             ],
         ]);
     }
@@ -161,10 +161,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->first();
 
         if (! $notification) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You were not notified for this booking',
-            ], 403);
+            return back()->with('error', 'You were not notified for this booking');
         }
 
         // Mark as viewed
@@ -172,7 +169,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             $notification->update(['viewed_at' => now()]);
         }
 
-                         // Atomic reservation update
+        // Atomic reservation update
         $expiresIn = 60; // 1 minute TTL
         $expiresAt = now()->addSeconds($expiresIn);
 
@@ -184,24 +181,18 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     ->orWhere('reservation_expires_at', '<', now());
             })
             ->update([
-                'reserved_by'            => $caregiver->id,
+                'reserved_by' => $caregiver->id,
                 'reservation_expires_at' => $expiresAt,
-                'status'                 => 'reserved',
+                'status' => 'reserved',
             ]);
 
         if ($updated === 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Booking is no longer available',
-            ], 409);
+            return back()->with('error', 'Booking is no longer available');
         }
 
         broadcast(new JobReserved($booking->id, $caregiver->id, $expiresIn))->toOthers();
 
-        return response()->json([
-            'success'    => true,
-            'expires_in' => $expiresIn,
-        ]);
+        return back()->with('expires_in', $expiresIn);
     }
 
     /**
@@ -219,19 +210,16 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->where('reserved_by', $caregiver->id)
             ->where('reservation_expires_at', '>', now())
             ->update([
-                'status'                 => 'confirmed',
-                'caregiver_id'           => $caregiver->id,
-                'confirmed_by'           => $caregiver->id,
-                'confirmed_at'           => now(),
-                'reserved_by'            => null,
+                'status' => 'confirmed',
+                'caregiver_id' => $caregiver->id,
+                'confirmed_by' => $caregiver->id,
+                'confirmed_at' => now(),
+                'reserved_by' => null,
                 'reservation_expires_at' => null,
             ]);
 
         if ($updated === 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reservation expired or invalid',
-            ], 409);
+            return back()->with('error', 'Reservation expired or invalid');
         }
 
         // Mark notification as claimed
@@ -241,7 +229,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
 
         broadcast(new JobConfirmed($booking->id, $caregiver->id))->toOthers();
 
-        return response()->json(['success' => true]);
+        return to_route('dashboard')->with('success', 'Booking confirmed successfully');
     }
 
     /**
@@ -258,13 +246,13 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->where('id', $booking->id)
             ->where('reserved_by', $caregiver->id)
             ->update([
-                'reserved_by'            => null,
+                'reserved_by' => null,
                 'reservation_expires_at' => null,
-                'status'                 => 'received',
+                'status' => 'received',
             ]);
 
         broadcast(new JobReleased($booking->id, $caregiver->id))->toOthers();
 
-        return response()->json(['success' => true]);
+        return back();
     }
 }
