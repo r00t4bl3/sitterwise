@@ -24,7 +24,11 @@ class CaregiverResource extends JsonResource
             'slug' => $this->slug,
             'email' => $this->user?->email,
             'phone' => $this->phone,
-            'address' => $this->address,
+            'address_line1' => $this->address_line1,
+            'address_line2' => $this->address_line2,
+            'address_city' => $this->address_city,
+            'address_state' => $this->address_state,
+            'address_zip' => $this->address_zip,
             'date_of_birth' => $isEdit
                 ? $this->date_of_birth
                 : ($this->date_of_birth
@@ -68,6 +72,14 @@ class CaregiverResource extends JsonResource
                 ],
                 'value' => $a->pivot->value,
             ]),
+            'educations' => $this->educations->map(fn ($e) => [
+                'id' => $e->id,
+                'education_type' => $e->education_type,
+                'school_name' => $e->school_name,
+                'graduation_year' => $e->graduation_year,
+            ]),
+            'stripe_account_id' => $this->stripe_account_id,
+            'stripe_charges_enabled' => $this->stripe_charges_enabled,
         ];
     }
 }

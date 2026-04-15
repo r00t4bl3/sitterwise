@@ -151,21 +151,21 @@ export function BookingAddressFields({
 
             addressComponents?.forEach((component: any) => {
                 const types = component.types;
+                const longName = component.longText || component.longName;
+                const shortName = component.shortText || component.shortName;
 
                 if (types.includes('street_number')) {
-                    line1 = component.longName;
+                    line1 = longName;
                 } else if (types.includes('route')) {
-                    line1 = line1
-                        ? `${line1} ${component.longName}`
-                        : component.longName;
+                    line1 = line1 ? `${line1} ${longName}` : longName;
                 } else if (types.includes('subpremise')) {
-                    line2 = component.longName;
+                    line2 = longName;
                 } else if (types.includes('locality')) {
-                    city = component.longName;
+                    city = longName;
                 } else if (types.includes('administrative_area_level_1')) {
-                    state = component.shortName;
+                    state = shortName;
                 } else if (types.includes('postal_code')) {
-                    zip = component.longName;
+                    zip = longName;
                 }
             });
 

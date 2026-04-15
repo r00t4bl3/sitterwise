@@ -39,12 +39,12 @@ class UpdateClientRequest extends FormRequest
             'addresses' => ['nullable', 'array'],
             'addresses.*.id' => ['nullable', 'integer', 'exists:client_addresses,id'],
             'addresses.*.label' => ['nullable', 'string', 'max:255'],
-            'addresses.*.location_type' => ['nullable', 'in:residence,hotel,vacation_rental,other'],
-            'addresses.*.line1' => ['required', 'string', 'max:255'],
+            'addresses.*.location_type' => ['nullable', 'in:private_home,hotel,vacation_rental,event_venue'],
+            'addresses.*.line1' => ['nullable', 'string', 'max:255'],
             'addresses.*.line2' => ['nullable', 'string', 'max:255'],
-            'addresses.*.city' => ['required', 'string', 'max:255'],
-            'addresses.*.state' => ['required', 'string', 'max:255'],
-            'addresses.*.zip' => ['required', 'string', 'max:20'],
+            'addresses.*.city' => ['nullable', 'string', 'max:255'],
+            'addresses.*.state' => ['nullable', 'string', 'max:255'],
+            'addresses.*.zip' => ['nullable', 'string', 'max:20'],
             'addresses.*.is_primary' => ['nullable', 'boolean'],
         ];
     }

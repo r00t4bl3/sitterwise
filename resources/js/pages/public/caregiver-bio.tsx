@@ -1,10 +1,20 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Phone } from 'lucide-react';
+import { ArrowLeft, Phone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/user-avatar';
 
 interface User {
     profile_photo_url: string | null;
     profile_photo_path: string | null;
+}
+
+interface AuthUser {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    profile_photo_path: string | null;
+    profile_photo_url: string | null;
 }
 
 interface Caregiver {
@@ -17,14 +27,28 @@ interface Caregiver {
 }
 
 export default function CaregiverBio() {
-    const { caregiver } = usePage<{ caregiver: Caregiver }>().props;
+    const { caregiver, auth } = usePage<{
+        caregiver: Caregiver;
+        auth?: { user: AuthUser | null };
+    }>().props;
 
     const fullName = `${caregiver.first_name} ${caregiver.last_name}`;
+    const isAuthenticated = auth?.user != null;
 
     return (
         <>
             <Head title={`${fullName} - Bio`} />
             <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
+                {isAuthenticated && (
+                    <Button
+                        onClick={() => window.history.back()}
+                        variant="outline"
+                        className="fixed top-4 left-4"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                    </Button>
+                )}
                 <div className="mb-6">
                     <img
                         src="/sitterwise.png"

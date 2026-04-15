@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->string('label')->nullable();
-            $table->enum('location_type', ['hotel', 'private_home', 'vacation_rental', 'event_venue']);
+            $table->string('location_type', 255)->default('private_home');
             $table->string('line1');
             $table->string('line2')->nullable();
             $table->string('city');

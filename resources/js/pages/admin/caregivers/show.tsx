@@ -1,11 +1,18 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, Shield, Eye, EyeOff } from 'lucide-react';
+import {
+    ArrowLeft,
+    Check,
+    CheckCircle,
+    MinusCircle,
+    Shield,
+    Eye,
+    EyeOff,
+} from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
-import { UserAvatar } from '@/components/user-avatar';
 import {
     Sheet,
     SheetContent,
@@ -14,6 +21,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -67,6 +75,13 @@ interface Attribute {
     value: string | boolean;
 }
 
+interface Education {
+    id: number;
+    education_type: string;
+    school_name: string;
+    graduation_year: number | null;
+}
+
 interface Location {
     id: number;
     name: string;
@@ -81,7 +96,11 @@ interface Caregiver {
     slug: string;
     email: string;
     phone: string;
-    address: string;
+    address_line1: string | null;
+    address_line2: string | null;
+    address_city: string | null;
+    address_state: string | null;
+    address_zip: string | null;
     date_of_birth: string;
     date_of_birth_raw: string | null;
     user: {
@@ -91,11 +110,14 @@ interface Caregiver {
     rating: number | null;
     biography: string | null;
     notes: string | null;
+    stripe_account_id: string | null;
+    stripe_charges_enabled: boolean | null;
     status: Status;
     specialty_types: SpecialtyType[];
     locations: Location[];
     certifications: Certification[];
     attributes: Attribute[];
+    educations: Education[];
 }
 
 interface Props {
@@ -175,6 +197,25 @@ function AttributeBadge({
     );
 }
 
+function StripeBadge({ isConnected }: { isConnected: boolean | null }) {
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                isConnected
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            }`}
+        >
+            {isConnected ? (
+                <CheckCircle className="h-3.5 w-3.5" />
+            ) : (
+                <MinusCircle className="h-3.5 w-3.5" />
+            )}
+            Stripe {isConnected ? 'Connected' : 'Not Connected'}
+        </span>
+    );
+}
+
 export default function CaregiverShow() {
     const { caregiver, statuses } = usePage<Props>().props;
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
@@ -249,6 +290,7 @@ export default function CaregiverShow() {
                         <Link
                             href={`/bio/${caregiver.slug}`}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="btn-secondary"
                         >
                             View Public Profile
@@ -406,7 +448,15 @@ export default function CaregiverShow() {
                                             Address
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {caregiver.address || '—'}
+                                            {caregiver.address_line1}
+                                            {caregiver.address_line2 &&
+                                                `, ${caregiver.address_line2}`}
+                                            {caregiver.address_city &&
+                                                `, ${caregiver.address_city}`}
+                                            {caregiver.address_state &&
+                                                `, ${caregiver.address_state}`}
+                                            {caregiver.address_zip &&
+                                                ` ${caregiver.address_zip}`}
                                         </p>
                                     </div>
                                     <div>
@@ -525,6 +575,43 @@ export default function CaregiverShow() {
 
                         <div className="mt-6 border-t border-border pt-6">
                             <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Education
+                            </h3>
+                            <div className="space-y-3">
+                                {caregiver.educations.map((edu) => {
+                                    const educationTypeLabels: Record<
+                                        string,
+                                        string
+                                    > = {
+                                        high_school: 'High School',
+                                        college: 'College',
+                                    };
+
+                                    return (
+                                        <div key={edu.id}>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {edu.school_name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {educationTypeLabels[
+                                                    edu.education_type
+                                                ] || edu.education_type}
+                                                {edu.graduation_year &&
+                                                    ` • ${edu.graduation_year}`}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
+                                {caregiver.educations.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No education
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6 border-t border-border pt-6">
+                            <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Attributes
                             </h3>
                             <div className="grid gap-2 sm:grid-cols-2">
@@ -564,7 +651,14 @@ export default function CaregiverShow() {
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Status
                                 </h2>
-                                <StatusBadge status={caregiver.status} />
+                                <div className="flex flex-col items-end gap-2">
+                                    <StatusBadge status={caregiver.status} />
+                                    <StripeBadge
+                                        isConnected={
+                                            caregiver.stripe_charges_enabled
+                                        }
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-3">

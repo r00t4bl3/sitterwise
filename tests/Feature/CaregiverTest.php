@@ -215,7 +215,11 @@ test('admin users can update a caregiver', function () {
         'first_name' => 'UpdatedFirstName',
         'last_name' => $caregiver->last_name,
         'phone' => $caregiver->phone,
-        'address' => $caregiver->address,
+        'address_line1' => $caregiver->address_line1,
+        'address_line2' => $caregiver->address_line2,
+        'address_city' => $caregiver->address_city,
+        'address_state' => $caregiver->address_state,
+        'address_zip' => $caregiver->address_zip,
         'status_id' => $caregiver->status_id,
     ]);
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Caregiver extends Model
 {
@@ -22,11 +23,36 @@ class Caregiver extends Model
     // Sync system's user name with caregiver's first and last name
     protected static function booted(): void
     {
+        static::creating(function (Caregiver $caregiver) {
+            if (empty($caregiver->slug)) {
+                $caregiver->slug = static::generateSlug(
+                    "{$caregiver->first_name} {$caregiver->last_name}"
+                );
+            }
+        });
+
         static::saved(function (Caregiver $caregiver) {
             if ($caregiver->user) {
                 $caregiver->user->update(['name' => "{$caregiver->first_name} {$caregiver->last_name}"]);
             }
         });
+    }
+
+    private static function generateSlug(string $name): string
+    {
+        $slug = Str::slug($name);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        $query = self::where('slug', $slug);
+
+        while ($query->exists()) {
+            $slug = $originalSlug.'-'.$counter;
+            $query = self::where('slug', $slug);
+            $counter++;
+        }
+
+        return $slug;
     }
 
     protected $fillable = [
@@ -36,7 +62,11 @@ class Caregiver extends Model
         'last_name',
         'slug',
         'phone',
-        'address',
+        'address_line1',
+        'address_line2',
+        'address_city',
+        'address_state',
+        'address_zip',
         'date_of_birth',
         'rating',
         'biography',

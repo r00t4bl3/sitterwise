@@ -19,7 +19,11 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('slug')->unique();
             $table->string('phone')->nullable();
-            $table->string('address')->nullable();
+            $table->string('address_line1')->nullable();
+            $table->string('address_line2')->nullable();
+            $table->string('address_city')->nullable();
+            $table->string('address_state')->nullable();
+            $table->string('address_zip')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->decimal('rating', 3, 2)->nullable();
             $table->text('biography')->nullable();

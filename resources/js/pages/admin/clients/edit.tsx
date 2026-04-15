@@ -2,7 +2,9 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
+import { toast } from 'sonner';
 import { ToasterMessage } from '@/components/toaster-message';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
@@ -171,8 +173,14 @@ export default function ClientEdit() {
 
     const submit: SubmitEventHandler = (e) => {
         e.preventDefault();
+
         form.patch(`/clients/${client.id}`, {
-            onSuccess: () => {},
+            onSuccess: () => {
+                toast.success('Client updated successfully');
+            },
+            onError: () => {
+                toast.error('Failed to update client');
+            },
         });
     };
 
@@ -829,13 +837,14 @@ export default function ClientEdit() {
                                 Addresses ({form.data.addresses.length})
                             </h2>
                             <Button
+                                type="button"
                                 onClick={() => {
                                     form.setData('addresses', [
                                         ...form.data.addresses,
                                         {
                                             id: null,
                                             label: '',
-                                            location_type: 'residence',
+                                            location_type: 'private_home',
                                             line1: '',
                                             line2: '',
                                             city: '',
@@ -884,7 +893,7 @@ export default function ClientEdit() {
                                             <select
                                                 value={
                                                     address.location_type ||
-                                                    'residence'
+                                                    'private_home'
                                                 }
                                                 onChange={(e) => {
                                                     const updated = [
@@ -902,8 +911,8 @@ export default function ClientEdit() {
                                                 }}
                                                 className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             >
-                                                <option value="residence">
-                                                    Residence
+                                                <option value="private_home">
+                                                    Private Home
                                                 </option>
                                                 <option value="hotel">
                                                     Hotel
@@ -911,8 +920,8 @@ export default function ClientEdit() {
                                                 <option value="vacation_rental">
                                                     Vacation Rental
                                                 </option>
-                                                <option value="other">
-                                                    Other
+                                                <option value="event_venue">
+                                                    Event Venue
                                                 </option>
                                             </select>
                                         </div>
@@ -946,108 +955,10 @@ export default function ClientEdit() {
                                             </label>
                                         </div>
                                         <div className="sm:col-span-2 lg:col-span-3">
-                                            <input
-                                                type="text"
-                                                value={address.line1 || ''}
-                                                onChange={(e) => {
-                                                    const updated = [
-                                                        ...form.data.addresses,
-                                                    ];
-                                                    updated[index] = {
-                                                        ...address,
-                                                        line1: e.target.value,
-                                                    };
-                                                    form.setData(
-                                                        'addresses',
-                                                        updated,
-                                                    );
-                                                }}
-                                                placeholder="Address Line 1 *"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
-                                            />
-                                        </div>
-                                        <div className="sm:col-span-2 lg:col-span-3">
-                                            <input
-                                                type="text"
-                                                value={address.line2 || ''}
-                                                onChange={(e) => {
-                                                    const updated = [
-                                                        ...form.data.addresses,
-                                                    ];
-                                                    updated[index] = {
-                                                        ...address,
-                                                        line2: e.target.value,
-                                                    };
-                                                    form.setData(
-                                                        'addresses',
-                                                        updated,
-                                                    );
-                                                }}
-                                                placeholder="Address Line 2 (Optional)"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={address.city || ''}
-                                                onChange={(e) => {
-                                                    const updated = [
-                                                        ...form.data.addresses,
-                                                    ];
-                                                    updated[index] = {
-                                                        ...address,
-                                                        city: e.target.value,
-                                                    };
-                                                    form.setData(
-                                                        'addresses',
-                                                        updated,
-                                                    );
-                                                }}
-                                                placeholder="City *"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={address.state || ''}
-                                                onChange={(e) => {
-                                                    const updated = [
-                                                        ...form.data.addresses,
-                                                    ];
-                                                    updated[index] = {
-                                                        ...address,
-                                                        state: e.target.value,
-                                                    };
-                                                    form.setData(
-                                                        'addresses',
-                                                        updated,
-                                                    );
-                                                }}
-                                                placeholder="State *"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={address.zip || ''}
-                                                onChange={(e) => {
-                                                    const updated = [
-                                                        ...form.data.addresses,
-                                                    ];
-                                                    updated[index] = {
-                                                        ...address,
-                                                        zip: e.target.value,
-                                                    };
-                                                    form.setData(
-                                                        'addresses',
-                                                        updated,
-                                                    );
-                                                }}
-                                                placeholder="ZIP *"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                                            <AddressAutocomplete
+                                                form={form}
+                                                prefix={`addresses.${index}.`}
+                                                label="Address"
                                             />
                                         </div>
                                         <div className="flex items-center justify-end sm:col-span-2 lg:col-span-3">

@@ -10,6 +10,7 @@ use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Caregiver>
@@ -61,9 +62,13 @@ class CaregiverFactory extends Factory
             'user_id' => User::factory(['role' => 'caregiver']),
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'slug' => \Str::slug($firstName.' '.$lastName).'-'.$this->faker->numerify('#####'),
+            'slug' => Str::slug($firstName.' '.$lastName).'-'.$this->faker->numerify('#####'),
             'phone' => $this->faker->phoneNumber(),
-            'address' => $this->faker->numberBetween(100, 9999).' '.$this->faker->randomElement($streets).', '.$this->faker->randomElement($cities).', CA '.$this->faker->numerify('92###'),
+            'address_line1' => $this->faker->numberBetween(100, 9999).' '.$this->faker->randomElement($streets),
+            'address_line2' => null,
+            'address_city' => $this->faker->randomElement($cities),
+            'address_state' => 'CA',
+            'address_zip' => $this->faker->numerify('92###'),
             'date_of_birth' => $this->faker->date('Y-m-d', '-18 years'),
             'rating' => $this->faker->randomFloat(2, 3.5, 5.0),
             'biography' => $this->faker->optional()->paragraph(),

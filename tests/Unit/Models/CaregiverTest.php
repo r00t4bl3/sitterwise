@@ -34,7 +34,11 @@ class CaregiverTest extends TestCase
             'first_name' => 'Jane',
             'last_name' => 'Smith',
             'phone' => '555-1234',
-            'address' => '123 Main St',
+            'address_line1' => '123 Main St',
+            'address_line2' => null,
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
             'date_of_birth' => '1990-01-15',
             'rating' => 4.50,
             'biography' => 'Experienced caregiver',
@@ -44,7 +48,10 @@ class CaregiverTest extends TestCase
         $this->assertEquals('Jane', $caregiver->first_name);
         $this->assertEquals('Smith', $caregiver->last_name);
         $this->assertEquals('555-1234', $caregiver->phone);
-        $this->assertEquals('123 Main St', $caregiver->address);
+        $this->assertEquals('123 Main St', $caregiver->address_line1);
+        $this->assertEquals('San Diego', $caregiver->address_city);
+        $this->assertEquals('CA', $caregiver->address_state);
+        $this->assertEquals('92101', $caregiver->address_zip);
         $this->assertEquals(4.50, $caregiver->rating);
         $this->assertEquals('Experienced caregiver', $caregiver->biography);
         $this->assertEquals('Some notes', $caregiver->notes);
@@ -154,6 +161,7 @@ class CaregiverTest extends TestCase
             'status_id' => $status->id,
             'first_name' => 'Jane',
             'last_name' => 'Smith',
+            'slug' => 'jane-smith-'.rand(10000, 99999),
         ]);
         $caregiver->save();
 

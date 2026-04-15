@@ -106,10 +106,14 @@ class ClientController extends Controller
                 'client_type' => $client->client_type,
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,
+                    'label' => $a->label,
+                    'location_type' => $a->location_type,
                     'line1' => $a->line1,
+                    'line2' => $a->line2,
                     'city' => $a->city,
                     'state' => $a->state,
                     'zip' => $a->zip,
+                    'is_primary' => $a->is_primary,
                 ]),
                 'children' => $client->children->map(fn ($c) => [
                     'id' => $c->id,
@@ -372,7 +376,7 @@ class ClientController extends Controller
                     if ($address) {
                         $address->update([
                             'label' => $addressData['label'] ?? null,
-                            'location_type' => $addressData['location_type'] ?? 'residence',
+                            'location_type' => $addressData['location_type'] ?? 'private_home',
                             'line1' => $addressData['line1'] ?? '',
                             'line2' => $addressData['line2'] ?? null,
                             'city' => $addressData['city'] ?? '',
@@ -385,7 +389,7 @@ class ClientController extends Controller
                 } else {
                     $newAddress = $client->addresses()->create([
                         'label' => $addressData['label'] ?? null,
-                        'location_type' => $addressData['location_type'] ?? 'residence',
+                        'location_type' => $addressData['location_type'] ?? 'private_home',
                         'line1' => $addressData['line1'] ?? '',
                         'line2' => $addressData['line2'] ?? null,
                         'city' => $addressData['city'] ?? '',

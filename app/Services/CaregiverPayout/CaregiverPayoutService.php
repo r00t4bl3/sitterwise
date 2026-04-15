@@ -29,10 +29,11 @@ class CaregiverPayoutService
                 'email' => $caregiver->user->email,
                 'phone' => $caregiver->phone,
                 'address' => [
-                    'line1' => $caregiver->address ?? '',
-                    'city' => '',
-                    'state' => '',
-                    'postal_code' => '',
+                    'line1' => $caregiver->address_line1 ?? '',
+                    'line2' => $caregiver->address_line2 ?? '',
+                    'city' => $caregiver->address_city ?? '',
+                    'state' => $caregiver->address_state ?? '',
+                    'postal_code' => $caregiver->address_zip ?? '',
                 ],
             ],
             'capabilities' => [

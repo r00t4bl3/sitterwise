@@ -206,10 +206,10 @@ export default function HotelsIndex() {
                                                 : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 flex gap-x-2 justify-end">
+                                    <td className="flex justify-end gap-x-2 px-4 py-3">
                                         <Button
                                             onClick={() => openEditSheet(hotel)}
-                                            className='h-8'
+                                            className="h-8"
                                         >
                                             Edit
                                         </Button>
@@ -218,7 +218,7 @@ export default function HotelsIndex() {
                                             onClick={() =>
                                                 handleDelete(hotel.id)
                                             }
-                                            className='h-8'
+                                            className="h-8"
                                         >
                                             Delete
                                         </Button>
@@ -466,14 +466,14 @@ export default function HotelsIndex() {
                                 </label>
                             </div>
                             <div className="gap-2 pt-4">
-                                <Button type="submit" className='w-full'>
+                                <Button type="submit" className="w-full">
                                     {form.processing ? 'Saving...' : 'Save'}
                                 </Button>
                                 <Button
                                     variant="secondary"
                                     type="button"
                                     onClick={() => setIsSheetOpen(false)}
-                                    className='mt-2 w-full'
+                                    className="mt-2 w-full"
                                 >
                                     Cancel
                                 </Button>

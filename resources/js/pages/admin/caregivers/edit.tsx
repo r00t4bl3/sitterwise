@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import type { FormEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -78,13 +79,24 @@ interface Certification {
     verified_at: string | null;
 }
 
+interface Education {
+    id: number;
+    education_type: string;
+    school_name: string;
+    graduation_year: number | null;
+}
+
 interface Caregiver {
     id: number;
     first_name: string;
     last_name: string;
     email: string;
     phone: string;
-    address: string;
+    address_line1: string | null;
+    address_line2: string | null;
+    address_city: string | null;
+    address_state: string | null;
+    address_zip: string | null;
     date_of_birth: string | null;
     user: {
         profile_photo_path: string | null;
@@ -99,6 +111,7 @@ interface Caregiver {
     preferred_location_id: number | null;
     attributes: CaregiverAttribute[];
     certifications: Certification[];
+    educations: Education[];
 }
 
 interface Props {
@@ -146,11 +159,15 @@ export default function CaregiverEdit() {
     const [certifications, setCertifications] = useState<Certification[]>(
         caregiver.certifications,
     );
+    const [educations, setEducations] = useState<Education[]>(
+        caregiver.educations,
+    );
 
     const [specialtiesOpen, setSpecialtiesOpen] = useState(false);
     const [locationsOpen, setLocationsOpen] = useState(false);
     const [attributesOpen, setAttributesOpen] = useState(false);
     const [certificationsOpen, setCertificationsOpen] = useState(false);
+    const [educationsOpen, setEducationsOpen] = useState(false);
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
         caregiver.user.profile_photo_path,
     );
@@ -193,7 +210,11 @@ export default function CaregiverEdit() {
         first_name: caregiver.first_name,
         last_name: caregiver.last_name,
         phone: caregiver.phone || '',
-        address: caregiver.address || '',
+        address_line1: caregiver.address_line1 || '',
+        address_line2: caregiver.address_line2 || '',
+        address_city: caregiver.address_city || '',
+        address_state: caregiver.address_state || '',
+        address_zip: caregiver.address_zip || '',
         date_of_birth: caregiver.date_of_birth || '',
         rating: caregiver.rating?.toString() || '',
         biography: caregiver.biography || '',
@@ -215,7 +236,34 @@ export default function CaregiverEdit() {
             return initial;
         })(),
         certifications: caregiver.certifications,
+        educations: caregiver.educations,
     });
+
+    const addEducation = () => {
+        setEducations([
+            ...educations,
+            {
+                id: Date.now(),
+                education_type: 'high_school',
+                school_name: '',
+                graduation_year: null,
+            },
+        ]);
+    };
+
+    const removeEducation = (id: number) => {
+        setEducations(educations.filter((e) => e.id !== id));
+    };
+
+    const updateEducation = (
+        id: number,
+        field: keyof Education,
+        value: string | number | null,
+    ) => {
+        setEducations(
+            educations.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+        );
+    };
 
     const addCertification = () => {
         if (certification_types.length > 0) {
@@ -261,6 +309,7 @@ export default function CaregiverEdit() {
             preferred_location_id: preferredLocationId,
             attribute_values: attributeValues,
             certifications: certifications,
+            educations: educations,
         }));
 
         form.patch(`/caregivers/${caregiver.id}`, {
@@ -435,23 +484,10 @@ export default function CaregiverEdit() {
                                 </label>
                             </div>
                             <div className="sm:col-span-2">
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Address
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="address"
-                                        value={form.data.address}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'address',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    />
-                                </label>
+                                <AddressAutocomplete
+                                    form={form}
+                                    label="Address"
+                                />
                             </div>
                             <div>
                                 <label className="block">
@@ -848,6 +884,115 @@ export default function CaregiverEdit() {
                                     onClick={addCertification}
                                 >
                                     + Add Certification
+                                </Button>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+
+                    <div className="mt-4 rounded-[6px] border border-border bg-card p-6">
+                        <Collapsible
+                            open={educationsOpen}
+                            onOpenChange={setEducationsOpen}
+                        >
+                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                                <h2 className="font-serif text-lg font-semibold text-foreground">
+                                    Education
+                                </h2>
+                                <ChevronDown
+                                    className={`h-5 w-5 text-muted-foreground transition-transform ${
+                                        educationsOpen ? 'rotate-180' : ''
+                                    }`}
+                                />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-4 space-y-4">
+                                {educations.map((edu) => (
+                                    <div
+                                        key={edu.id}
+                                        className="flex flex-col gap-2 rounded border border-border p-3"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <select
+                                                value={edu.education_type}
+                                                onChange={(e) =>
+                                                    updateEducation(
+                                                        edu.id,
+                                                        'education_type',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
+                                            >
+                                                <option value="high_school">
+                                                    High School
+                                                </option>
+                                                <option value="college">
+                                                    College
+                                                </option>
+                                            </select>
+                                            <Button
+                                                type="button"
+                                                onClick={() =>
+                                                    removeEducation(edu.id)
+                                                }
+                                                variant="link"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground">
+                                                    School Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={edu.school_name}
+                                                    onChange={(e) =>
+                                                        updateEducation(
+                                                            edu.id,
+                                                            'school_name',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="mt-1 block w-full rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground">
+                                                    Graduation Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={
+                                                        edu.graduation_year ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        updateEducation(
+                                                            edu.id,
+                                                            'graduation_year',
+                                                            e.target.value
+                                                                ? parseInt(
+                                                                      e.target
+                                                                          .value,
+                                                                      10,
+                                                                  )
+                                                                : null,
+                                                        )
+                                                    }
+                                                    placeholder="e.g. 2020"
+                                                    className="mt-1 block w-full rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button
+                                    variant="link"
+                                    type="button"
+                                    onClick={addEducation}
+                                >
+                                    + Add Education
                                 </Button>
                             </CollapsibleContent>
                         </Collapsible>

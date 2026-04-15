@@ -1,6 +1,15 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Calendar, MapPin, Phone } from 'lucide-react';
+import {
+    ArrowLeft,
+    Calendar,
+    Check,
+    Eye,
+    EyeOff,
+    MapPin,
+    Phone,
+} from 'lucide-react';
 import { useState } from 'react';
+import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,8 +23,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Rating } from '@/components/ui/rating';
-import { Textarea } from '@/components/ui/textarea';
-import { UserAvatar } from '@/components/user-avatar';
 import {
     Select,
     SelectContent,
@@ -31,6 +38,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -689,13 +697,19 @@ export default function ClientShow() {
                                                     className="flex items-center gap-3 rounded-[3px] border border-border bg-background p-3 hover:bg-accent"
                                                 >
                                                     <UserAvatar
-                                                        profile_photo_url={caregiver.user.profile_photo_url}
-                                                        profile_photo_path={caregiver.user.profile_photo_path}
+                                                        profile_photo_url={
+                                                            caregiver.user
+                                                                .profile_photo_url
+                                                        }
+                                                        profile_photo_path={
+                                                            caregiver.user
+                                                                .profile_photo_path
+                                                        }
                                                         name={`${caregiver.first_name} ${caregiver.last_name}`}
                                                         size="md"
                                                     />
                                                     <span className="font-medium text-foreground">
-                                                        {caregiver.first_name}{' '}}
+                                                        {caregiver.first_name}{' '}
                                                         {caregiver.last_name}
                                                     </span>
                                                 </Link>

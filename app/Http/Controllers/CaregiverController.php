@@ -129,11 +129,29 @@ class CaregiverController extends Controller
         $validated = $request->validated();
 
         if ($request->has('first_name')) {
+            $addressLine1 = $validated['address_line1'] ?? null;
+            $addressLine2 = $validated['address_line2'] ?? null;
+            $addressCity = $validated['address_city'] ?? null;
+            $addressState = $validated['address_state'] ?? null;
+            $addressZip = $validated['address_zip'] ?? null;
+
+            $fullAddress = implode(', ', array_filter([
+                $addressLine1,
+                $addressLine2,
+                $addressCity,
+                $addressState,
+                $addressZip,
+            ]));
+
             $updateData = [
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
                 'phone' => $validated['phone'] ?? null,
-                'address' => $validated['address'] ?? null,
+                'address_line1' => $addressLine1,
+                'address_line2' => $addressLine2,
+                'address_city' => $addressCity,
+                'address_state' => $addressState,
+                'address_zip' => $addressZip,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'rating' => $validated['rating'] ?? null,
                 'biography' => $validated['biography'] ?? null,
@@ -184,6 +202,19 @@ class CaregiverController extends Controller
                 }
                 $caregiver->certifications()->sync($certSync);
             }
+
+            if (isset($validated['educations'])) {
+                $caregiver->educations()->delete();
+                foreach ($validated['educations'] as $edu) {
+                    if (! empty($edu['school_name'])) {
+                        $caregiver->educations()->create([
+                            'education_type' => $edu['education_type'],
+                            'school_name' => $edu['school_name'],
+                            'graduation_year' => $edu['graduation_year'] ?? null,
+                        ]);
+                    }
+                }
+            }
         } else {
             $caregiver->update(['status_id' => $validated['status_id']]);
         }
@@ -194,7 +225,7 @@ class CaregiverController extends Controller
 
     public function edit(Caregiver $caregiver)
     {
-        $caregiver->load(['status', 'specialtyTypes', 'locations', 'user', 'certifications', 'attributes']);
+        $caregiver->load(['status', 'specialtyTypes', 'locations', 'user', 'certifications', 'attributes', 'educations']);
 
         $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
         $specialtyTypes = SpecialtyType::active()->get();

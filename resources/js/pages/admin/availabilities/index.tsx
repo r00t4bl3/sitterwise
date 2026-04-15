@@ -4,12 +4,12 @@ import { Sunrise, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import { Spinner } from '@/components/ui/spinner';
-import { UserAvatar } from '@/components/user-avatar';
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
