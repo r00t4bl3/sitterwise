@@ -425,18 +425,23 @@ class ImportCaregivers extends Command
         $hasMorePages = true;
         $pageNumber = 1;
         $cookies = [];
-        $apiEndpoint = null;
+
+        // Check and install Chrome if needed
+        $this->ensureChromeInstalled();
+
+        // Check and download ChromeDriver if needed
+        $chromeDriverPath = $this->ensureChromeDriverInstalled();
 
         $this->info('Launching headless Chrome browser...');
 
         // Create Panther client with ChromeDriver
-        $chromeDriverPath = base_path('drivers/chromedriver');
-        $userDataDir = sys_get_temp_dir() . '/panther_chrome_' . uniqid();
+        $userDataDir = sys_get_temp_dir().'/panther_chrome_'.uniqid();
         @mkdir($userDataDir, 0755, true);
-        
+
         $client = Client::createChromeClient(
             $chromeDriverPath,
             [
+                '--headless=new',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
                 '--window-size=1920,1080',
@@ -444,7 +449,7 @@ class ImportCaregivers extends Command
                 '--no-default-browser-check',
                 '--disable-extensions',
                 '--disable-default-apps',
-                '--user-data-dir=' . $userDataDir,
+                '--user-data-dir='.$userDataDir,
                 '--disable-software-rasterizer',
                 '--disable-gpu',
                 '--enable-logging',
@@ -471,7 +476,7 @@ class ImportCaregivers extends Command
                 } else {
                     // Reset intercepted response before clicking
                     $client->executeScript('window._capturedResponse = null; window._capturedTimestamp = null;');
-                    
+
                     // Click "Load 50 more items" button
                     $this->line('Clicking "Load 50 more items"...');
                     $loadMoreButton = $client->waitFor('.light-button.load-more', 30);
@@ -481,21 +486,23 @@ class ImportCaregivers extends Command
                         ");
                         // Wait for the data to load and be intercepted
                         usleep(5000000); // 5 seconds
-                        
+
                         // Wait for intercepted response
                         $this->line('Waiting for Elasticsearch response...');
                         $hits = $this->waitForInterceptedResponse($client, 60);
-                        
+
                         if (! $hits || ! isset($hits['hits']['hits'])) {
                             $this->error('Failed to intercept response for page '.$pageNumber);
                             $hasMorePages = false;
+
                             continue;
                         }
-                        
+
                         $hits = $hits['hits']['hits'];
                     } else {
                         $this->info('No more "Load more" button available');
                         $hasMorePages = false;
+
                         continue;
                     }
                 }
@@ -507,7 +514,7 @@ class ImportCaregivers extends Command
 
                 $allHits = array_merge($allHits, $hits);
 
-                $this->line("  Retrieved ".count($hits).' records (total: '.count($allHits).')');
+                $this->line('  Retrieved '.count($hits).' records (total: '.count($allHits).')');
 
                 // Check if we should continue
                 if ($limit && count($allHits) >= $limit) {
@@ -526,7 +533,7 @@ class ImportCaregivers extends Command
                 $allHits = array_slice($allHits, 0, $limit);
             }
 
-            $this->info("Total records fetched: ".count($allHits));
+            $this->info('Total records fetched: '.count($allHits));
         } finally {
             $client->quit();
             $this->info('Browser closed');
@@ -536,7 +543,7 @@ class ImportCaregivers extends Command
     }
 
     /**
-     * Configure Bubble fields and return browser cookies.
+     * Configure Bubble fields and return intercepted hits.
      */
     protected function configureBubbleFieldsAndGetCookies(Client $client, string $bubbleUrl): array
     {
@@ -545,380 +552,107 @@ class ImportCaregivers extends Command
 
         // Wait for page to load
         $client->waitFor('body', 30);
-        
-        // Inject script to log when page is ready
-        $client->executeScript("
-            const startTime = Date.now();
-            const checkReady = () => {
-                const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
-                if (document.readyState === 'complete') {
-                    console.log('page is loaded after ' + elapsed + ' seconds');
-                } else {
-                    setTimeout(checkReady, 100);
-                }
-            };
-            checkReady();
-        ");
-        
         usleep(5000000); // 5 seconds wait for potential popup
 
-        // Wait for page-ready console log
-        $this->line('Waiting for page to signal readiness...');
-        $this->waitForConsoleLog($client, 'page is loaded after', 60, true);
-
-        // Check for and dismiss "Upgrade Bubble Version" popup
-        $this->line('Checking for upgrade popup...');
+        // Dismiss upgrade popup
         $client->executeScript("
             const popupTitle = document.querySelector('.popup-title');
             if (popupTitle && popupTitle.textContent.includes('Upgrade Bubble Version')) {
                 const cancelBtn = document.querySelector('.btn.btn-cancel');
-                if (cancelBtn) {
-                    cancelBtn.click();
-                    console.log('Dismissed Upgrade Bubble Version popup');
-                }
+                if (cancelBtn) cancelBtn.click();
             }
         ");
-        usleep(1000000); // 1 second
+        usleep(1000000);
 
-        // Click "tab-caption app data" element
-        $this->line('Clicking "tab-caption app data"...');
+        // Click tab-caption
         $client->executeScript("
             const tabCaption = document.querySelector('div.tab-caption:nth-child(3)');
-            if (tabCaption) {
-                tabCaption.click();
-                console.log('Clicked tab-caption app data');
-            } else {
-                console.log('tab-caption app data not found');
-            }
+            if (tabCaption) tabCaption.click();
         ");
-        usleep(2000000); // 2 seconds
+        usleep(2000000);
 
-        // Set up XHR interceptor before any further interactions
-        $this->line('Setting up XHR response interceptor...');
+        // Set up XHR interceptor
         $this->setupResponseInterceptor($client);
         usleep(1000000);
 
-        // Click "Caregivers" nested view title
-        $this->line('Clicking "Caregivers" nested view...');
+        // Click Caregivers nested view
         $client->executeScript("
             const nestedViewTitle = document.querySelector('.nested-view-title');
             if (nestedViewTitle && nestedViewTitle.textContent.includes('Caregivers')) {
                 nestedViewTitle.click();
-                console.log('Clicked Caregivers nested view');
             } else {
-                // Try finding any element with Caregivers text
                 const elements = document.querySelectorAll('*');
                 for (const el of elements) {
                     if (typeof el.className === 'string' && el.className.includes('nested-view-title') && el.textContent.includes('Caregivers')) {
                         el.click();
-                        console.log('Clicked Caregivers nested view');
                         return;
                     }
                 }
-                console.log('Caregivers nested view not found');
             }
         ");
-        usleep(2000000); // 2 seconds
+        usleep(2000000);
 
-        // Click "Switch to live database" button
-        $this->line('Clicking "Switch to live database"...');
+        // Click Switch to live database
         $client->executeScript("
             const switchDb = document.querySelector('.switch-db');
-            if (switchDb) {
-                switchDb.click();
-                console.log('Clicked Switch to live database');
-            } else {
-                console.log('Switch to live database button not found');
-            }
+            if (switchDb) switchDb.click();
         ");
+        usleep(5000000);
 
-        // Wait for page to reload and be ready
-        $client->waitFor('body', 30);
-        usleep(5000000); // 5 seconds
+        // Clear previous response
+        $client->executeScript('window._capturedResponse = null;');
 
-        // Click "XXX additional fields" button - find dynamically
-        $this->line('Finding and clicking "additional fields" button...');
+        // Click additional fields
         $client->executeScript("
             const buttons = document.querySelectorAll('.light-button');
             for (const btn of buttons) {
                 if (btn.textContent.includes('additional fields')) {
                     btn.click();
-                    console.log('Clicked: ' + btn.textContent.trim());
                     return;
                 }
             }
-            console.log('Additional fields button not found');
         ");
-
-        // Wait for modal to appear
         usleep(2000000);
 
-        // Click "(select all)" button in the modal
-        $this->line('Clicking "(select all)" button...');
+        // Click select all
         $client->executeScript("
             const selectAll = document.querySelector('.select-all.bubble-ui.light-grey-btn');
-            if (selectAll) {
-                selectAll.click();
-                console.log('Clicked select all');
-            } else {
-                console.log('Select all button not found');
-            }
+            if (selectAll) selectAll.click();
         ");
-
         usleep(1000000);
 
-        // Clear any previous intercepted response
-        $client->executeScript("window._capturedResponse = null;");
-
-        // Click "SAVE" button
-        $this->line('Clicking "SAVE" button...');
+        // Click SAVE
         $client->executeScript("
             const saveButton = document.querySelector('.btn.btn-create.bubble-ui');
-            if (saveButton) {
-                saveButton.click();
-                console.log('Clicked SAVE');
-            } else {
-                console.log('Save button not found');
-            }
+            if (saveButton) saveButton.click();
         ");
 
-        // Wait for and get the intercepted Elasticsearch response
+        // Wait for intercepted response
         $this->line('Waiting for Elasticsearch response...');
         $responseData = $this->waitForInterceptedResponse($client, 60);
 
         if ($responseData && isset($responseData['hits']['hits'])) {
             $count = count($responseData['hits']['hits']);
             $this->line("Successfully intercepted API response: {$count} records");
+
             return $responseData['hits']['hits'];
         }
 
         $this->error('Failed to intercept Elasticsearch response');
+
         return [];
     }
 
     /**
-     * Extract data either via API with cookies or from page context.
-     */
-    protected function extractDataViaApiOrPage(Client $client, string $bubbleUrl, array $cookies, int $offset): ?array
-    {
-        // Try to make API request with cookies
-        try {
-            $this->line('Attempting API request with browser cookies...');
-            
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'Referer' => $bubbleUrl,
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            ])
-            ->withCookies($cookies, 'bubble.io')
-            ->timeout(30)
-            ->post(self::BUBBLE_API_URL, [
-                'index' => 'user',
-                'query' => ['bool' => ['must' => []]],
-                'from' => $offset,
-                'size' => 50,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['hits']['hits'])) {
-                    return $data['hits']['hits'];
-                }
-            }
-            
-            $this->line('API request failed: '.$response->status());
-        } catch (\Throwable $e) {
-            $this->line('API request exception: '.$e->getMessage());
-        }
-
-        // Fallback: Try to extract from page JavaScript context
-        $this->line('Falling back to page context extraction...');
-        return $this->extractDataFromPageContext($client, $bubbleUrl, $cookies, $offset);
-    }
-
-    /**
-     * Extract data from page JavaScript context.
-     */
-    protected function extractDataFromPageContext(Client $client, string $bubbleUrl, array $cookies, int $offset): ?array
-    {
-        // Try to access Bubble's internal data structures
-        $data = $client->executeScript("
-            // Try common Bubble data locations
-            if (window.bubble && window.bubble.data) {
-                return window.bubble.data;
-            }
-            
-            // Try to find data in React/Vue internals
-            if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-                // React app - try to find data store
-            }
-            
-            // Try to access any global data store
-            const keys = Object.keys(window).filter(k => 
-                k.includes('bubble') || k.includes('data') || k.includes('user')
-            );
-            
-            for (const key of keys) {
-                const value = window[key];
-                if (value && typeof value === 'object' && value.hits) {
-                    return value;
-                }
-            }
-            
-            // Try to get from performance API (recent XHR responses)
-            if (window.performance && window.performance.getEntriesByType) {
-                const resources = window.performance.getEntriesByType('resource');
-                const elasticCalls = resources.filter(r => 
-                    r.name && r.name.includes('elasticsearch/search')
-                );
-                if (elasticCalls.length > 0) {
-                    console.log('Found elasticsearch calls in performance API:', elasticCalls.length);
-                }
-            }
-            
-            return null;
-        ");
-
-        if ($data && isset($data['hits']['hits'])) {
-            return $data['hits']['hits'];
-        }
-
-        // Last resort: Try to use browser cookies to make a better API request
-        $this->line('Attempting enhanced API request with session data...');
-        return $this->makeEnhancedApiRequest($bubbleUrl, $cookies, $offset);
-    }
-
-    /**
-     * Make an enhanced API request trying to mimic Bubble's actual format.
-     */
-    protected function makeEnhancedApiRequest(string $bubbleUrl, array $cookies, int $offset): ?array
-    {
-        try {
-            // Try different request formats that Bubble might expect
-            $testPayloads = [
-                // Format 1: Simple search
-                [
-                    'index' => 'user',
-                    'query' => ['bool' => ['must' => []]],
-                    'from' => $offset,
-                    'size' => 50,
-                ],
-                // Format 2: With type
-                [
-                    'type' => 'user',
-                    'index' => 'user',
-                    'query' => ['bool' => ['must' => []]],
-                    'from' => $offset,
-                    'size' => 50,
-                ],
-                // Format 3: Match all
-                [
-                    'index' => 'user',
-                    'query' => ['match_all' => new \stdClass()],
-                    'from' => $offset,
-                    'size' => 50,
-                ],
-            ];
-
-            foreach ($testPayloads as $i => $payload) {
-                $this->line("  Trying API format ".($i + 1)."...");
-                
-                $response = Http::withHeaders([
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                    'Referer' => $bubbleUrl,
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Origin' => 'https://bubble.io',
-                ])
-                ->withCookies($cookies, 'bubble.io')
-                ->timeout(30)
-                ->post(self::BUBBLE_API_URL, $payload);
-
-                if ($response->successful()) {
-                    $data = $response->json();
-                    if (isset($data['hits']['hits'])) {
-                        $this->line("  Success with format ".($i + 1));
-                        return $data['hits']['hits'];
-                    }
-                }
-            }
-            
-            $this->line('All API formats failed');
-        } catch (\Throwable $e) {
-            $this->line('Enhanced API request exception: '.$e->getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * Wait for a specific console log message to appear.
-     */
-    protected function waitForConsoleLog(Client $client, string $expectedMessage, int $timeoutSeconds = 30, bool $debug = false): void
-    {
-        $startTime = time();
-        $lastLogCount = 0;
-        
-        while (time() - $startTime < $timeoutSeconds) {
-            try {
-                $logs = $client->manage()->getLog('browser');
-                
-                if ($debug && count($logs) > $lastLogCount) {
-                    // Show new logs
-                    for ($i = $lastLogCount; $i < count($logs); $i++) {
-                        $log = $logs[$i];
-                        $message = $log['message'] ?? '';
-                        $this->line("  Browser log [{$log['level']}]: ".$message);
-                    }
-                    $lastLogCount = count($logs);
-                }
-                
-                foreach ($logs as $log) {
-                    $message = $log['message'] ?? '';
-                    // Log might be in different formats, check multiple possibilities
-                    if (is_array($message)) {
-                        $message = json_encode($message);
-                    }
-                    
-                    if (stripos((string)$message, $expectedMessage) !== false) {
-                        // If message contains "0.000", skip it - we want actual load time
-                        if (preg_match('/page is loaded after ([0-9.]+)/', (string)$message, $matches)) {
-                            $seconds = (float) $matches[1];
-                            if ($seconds > 0) {
-                                $this->line("Found expected log: ".$expectedMessage." (".$seconds."s)");
-                                return;
-                            }
-                        } else {
-                            // No seconds pattern found, accept it
-                            $this->line("Found expected log: ".$expectedMessage);
-                            return;
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                if ($debug) {
-                    $this->line("  Log error: ".$e->getMessage());
-                }
-            }
-            
-            usleep(500000); // 0.5 seconds
-        }
-        
-        $this->line("Timeout waiting for console log: ".$expectedMessage);
-    }
-
-    /**
-     * Set up XMLHttpRequest interceptor to capture Elasticsearch responses.
+     * Set up XHR interceptor to capture Elasticsearch responses.
      */
     protected function setupResponseInterceptor(Client $client): void
     {
         $client->executeScript("
             if (!window._responseInterceptorSetup) {
                 window._capturedResponse = null;
+                window._capturedTimestamp = null;
                 window._responseInterceptorSetup = true;
-                
-                console.log('Setting up XHR response interceptor...');
                 
                 const OriginalXHR = window.XMLHttpRequest;
                 
@@ -928,13 +662,11 @@ class ImportCaregivers extends Command
                     
                     xhrInstance.open = function(method, url) {
                         this._interceptedUrl = url;
-                        this._interceptedMethod = method;
                         return originalOpen.apply(this, arguments);
                     };
                     
                     xhrInstance.send = function(body) {
                         const xhr = this;
-                        
                         xhr.addEventListener('loadend', function() {
                             if (xhr._interceptedUrl && 
                                 xhr._interceptedUrl.includes('elasticsearch/search')) {
@@ -942,14 +674,9 @@ class ImportCaregivers extends Command
                                     const response = JSON.parse(xhr.responseText);
                                     window._capturedResponse = response;
                                     window._capturedTimestamp = Date.now();
-                                    console.log('Intercepted Elasticsearch response with', 
-                                        response.hits?.hits?.length || 0, 'hits');
-                                } catch(e) {
-                                    console.error('Failed to parse Elasticsearch response:', e);
-                                }
+                                } catch(e) {}
                             }
                         });
-                        
                         return originalSend.apply(this, arguments);
                     };
                     
@@ -961,36 +688,27 @@ class ImportCaregivers extends Command
                     return wrapXHR(xhr);
                 };
                 
-                // Copy static properties
                 Object.keys(OriginalXHR).forEach(key => {
                     window.XMLHttpRequest[key] = OriginalXHR[key];
                 });
                 window.XMLHttpRequest.prototype = OriginalXHR.prototype;
                 
-                // Also intercept fetch API
                 const originalFetch = window.fetch;
                 window.fetch = function(...args) {
                     const url = args[0];
                     if (typeof url === 'string' && url.includes('elasticsearch/search')) {
-                        console.log('Intercepting fetch to elasticsearch/search');
                         return originalFetch.apply(this, args).then(async function(response) {
                             const clone = response.clone();
                             try {
                                 const data = await clone.json();
                                 window._capturedResponse = data;
                                 window._capturedTimestamp = Date.now();
-                                console.log('Intercepted fetch Elasticsearch response with',
-                                    data.hits?.hits?.length || 0, 'hits');
-                            } catch(e) {
-                                console.error('Failed to parse fetch response:', e);
-                            }
+                            } catch(e) {}
                             return response;
                         });
                     }
                     return originalFetch.apply(this, args);
                 };
-                
-                console.log('XHR response interceptor setup complete');
             }
         ");
     }
@@ -1001,18 +719,398 @@ class ImportCaregivers extends Command
     protected function waitForInterceptedResponse(Client $client, int $timeoutSeconds = 30): ?array
     {
         $startTime = time();
-        
+
         while (time() - $startTime < $timeoutSeconds) {
             $response = $client->executeScript('return window._capturedResponse;');
             $timestamp = $client->executeScript('return window._capturedTimestamp;');
-            
+
             if ($response) {
                 return $response;
             }
-            
-            usleep(500000); // 0.5 seconds
+
+            usleep(500000);
         }
-        
+
         return null;
+    }
+
+    /**
+     * Ensure Chrome is installed, install if needed.
+     */
+    protected function ensureChromeInstalled(): void
+    {
+        // Check if Chrome is available
+        $chromePaths = [
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/usr/local/bin/google-chrome',
+            '/snap/bin/chromium',
+        ];
+
+        $chromeFound = null;
+        foreach ($chromePaths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                $chromeFound = $path;
+                break;
+            }
+        }
+
+        // Also check via which command
+        if (! $chromeFound) {
+            $output = [];
+            exec('which google-chrome google-chrome-stable chromium-browser chromium 2>/dev/null', $output, $returnCode);
+            if ($returnCode === 0 && ! empty($output)) {
+                $chromeFound = trim($output[0]);
+            }
+        }
+
+        if ($chromeFound) {
+            $version = shell_exec("{$chromeFound} --version 2>&1");
+            $this->line('Chrome found: '.trim($version));
+
+            return;
+        }
+
+        $this->warn('Chrome not found. Installing...');
+
+        // Detect OS
+        $os = PHP_OS_FAMILY;
+
+        if ($os === 'Linux') {
+            $this->installChromeLinux();
+        } elseif ($os === 'Darwin') {
+            $this->installChromeMac();
+        } else {
+            $this->error("Unsupported OS: {$os}. Please install Chrome manually.");
+            exit(1);
+        }
+    }
+
+    /**
+     * Install Chrome on Linux.
+     */
+    protected function installChromeLinux(): void
+    {
+        $this->line('Installing Google Chrome on Linux...');
+
+        // Try apt-get (Debian/Ubuntu)
+        if (file_exists('/usr/bin/apt-get')) {
+            $this->executeShellCommand('wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -');
+            $this->executeShellCommand("sudo sh -c 'echo \"deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\" >> /etc/apt/sources.list.d/google-chrome.list'");
+            $this->executeShellCommand('sudo apt-get update -qq');
+            $this->executeShellCommand('sudo apt-get install -y google-chrome-stable');
+        } elseif (file_exists('/usr/bin/dnf')) {
+            // Fedora/RHEL
+            $this->executeShellCommand('sudo dnf install -y fedora-workstation-repositories');
+            $this->executeShellCommand('sudo dnf config-manager --set-enabled google-chrome');
+            $this->executeShellCommand('sudo dnf install -y google-chrome-stable');
+        } elseif (file_exists('/usr/bin/pacman')) {
+            // Arch Linux
+            $this->executeShellCommand('sudo pacman -S --noconfirm google-chrome');
+        } else {
+            $this->error('Unsupported Linux distribution. Please install Chrome manually.');
+            exit(1);
+        }
+
+        // Verify installation
+        $output = [];
+        exec('google-chrome-stable --version 2>&1', $output);
+        if (! empty($output)) {
+            $this->info('Chrome installed successfully: '.trim($output[0]));
+        } else {
+            $this->error('Chrome installation failed. Please install manually.');
+            exit(1);
+        }
+    }
+
+    /**
+     * Install Chrome on macOS.
+     */
+    protected function installChromeMac(): void
+    {
+        $this->line('Installing Google Chrome on macOS...');
+
+        // Check if Homebrew is installed
+        $output = [];
+        exec('which brew 2>/dev/null', $output, $returnCode);
+        if ($returnCode !== 0) {
+            $this->error('Homebrew not found. Please install Homebrew first:');
+            $this->line('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"');
+            exit(1);
+        }
+
+        $this->executeShellCommand('brew install --cask google-chrome');
+
+        // Verify installation
+        $output = [];
+        exec('/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version 2>&1', $output);
+        if (! empty($output)) {
+            $this->info('Chrome installed successfully: '.trim($output[0]));
+        } else {
+            $this->error('Chrome installation failed. Please install manually.');
+            exit(1);
+        }
+    }
+
+    /**
+     * Run a shell command and output progress.
+     */
+    protected function executeShellCommand(string $command): void
+    {
+        $this->line('  Running: '.$command);
+        $output = [];
+        $returnCode = 0;
+        exec($command.' 2>&1', $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            $this->warn('  Command returned code: '.$returnCode);
+            if (! empty($output)) {
+                $lastLines = array_slice($output, -3);
+                foreach ($lastLines as $line) {
+                    $this->line('    '.$line);
+                }
+            }
+        }
+    }
+
+    /**
+     * Ensure ChromeDriver is downloaded and available.
+     */
+    protected function ensureChromeDriverInstalled(): string
+    {
+        $driversDir = storage_path('app/drivers');
+        $chromeDriverPath = $driversDir.'/chromedriver';
+
+        // Check if ChromeDriver already exists
+        if (file_exists($chromeDriverPath) && is_executable($chromeDriverPath)) {
+            $version = shell_exec("{$chromeDriverPath} --version 2>&1");
+            $this->line('ChromeDriver found: '.trim($version));
+
+            return $chromeDriverPath;
+        }
+
+        $this->warn('ChromeDriver not found. Downloading...');
+
+        // Create drivers directory
+        if (! is_dir($driversDir)) {
+            @mkdir($driversDir, 0755, true);
+            $this->line('Created drivers directory');
+        }
+
+        // Get Chrome version
+        $chromeVersion = $this->getChromeVersion();
+        if (! $chromeVersion) {
+            $this->error('Cannot determine Chrome version');
+
+            return $this->downloadLatestChromeDriver($driversDir);
+        }
+
+        $majorVersion = explode('.', $chromeVersion)[0];
+        $this->line("Detected Chrome major version: {$majorVersion}");
+
+        // Try to download matching ChromeDriver version
+        if ($this->downloadChromeDriverForVersion($driversDir, $majorVersion)) {
+            return $chromeDriverPath;
+        }
+
+        // Fallback to latest version
+        return $this->downloadLatestChromeDriver($driversDir);
+    }
+
+    /**
+     * Get installed Chrome version.
+     */
+    protected function getChromeVersion(): ?string
+    {
+        $chromePaths = [
+            'google-chrome-stable',
+            'google-chrome',
+            'chromium-browser',
+            'chromium',
+        ];
+
+        foreach ($chromePaths as $cmd) {
+            $output = [];
+            exec("{$cmd} --version 2>&1", $output);
+            if (! empty($output)) {
+                // Extract version number from output like "Google Chrome 147.0.7727.55"
+                if (preg_match('/(\d+\.\d+\.\d+\.\d+)/', $output[0], $matches)) {
+                    return $matches[1];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Download ChromeDriver for specific version.
+     */
+    protected function downloadChromeDriverForVersion(string $driversDir, string $majorVersion): bool
+    {
+        $this->line("Attempting to download ChromeDriver for version {$majorVersion}...");
+
+        // Try new ChromeDriver JSON endpoint (Chrome 115+)
+        $versions = $this->getChromeDriverVersions();
+        if ($versions) {
+            $url = $this->findChromeDriverUrl($versions, $majorVersion);
+            if ($url) {
+                return $this->downloadChromeDriverFromUrl($driversDir, $url);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get available ChromeDriver versions from JSON endpoint.
+     */
+    protected function getChromeDriverVersions(): ?array
+    {
+        try {
+            $response = Http::timeout(10)->get('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json');
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            // Fallback will handle this
+        }
+
+        return null;
+    }
+
+    /**
+     * Find ChromeDriver download URL for specific version.
+     */
+    protected function findChromeDriverUrl(array $versions, string $majorVersion): ?string
+    {
+        $allVersions = $versions['versions'] ?? [];
+
+        // Filter for matching major version and get the latest one
+        $matchingVersions = array_filter($allVersions, function ($v) use ($majorVersion) {
+            return explode('.', $v['version'])[0] === $majorVersion;
+        });
+
+        if (empty($matchingVersions)) {
+            return null;
+        }
+
+        // Get the latest version matching our major version
+        $latestVersion = end($matchingVersions);
+        $downloads = $latestVersion['downloads']['chromedriver'] ?? [];
+
+        // Find linux64 build
+        foreach ($downloads as $download) {
+            if (isset($download['platform']) && strpos($download['platform'], 'linux') !== false) {
+                return $download['url'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Download ChromeDriver from URL.
+     */
+    protected function downloadChromeDriverFromUrl(string $driversDir, string $url): bool
+    {
+        $this->line("Downloading ChromeDriver from: {$url}");
+
+        $zipPath = $driversDir.'/chromedriver.zip';
+
+        try {
+            $response = Http::timeout(60)->get($url);
+            if (! $response->successful()) {
+                $this->error("Failed to download ChromeDriver: HTTP {$response->status()}");
+
+                return false;
+            }
+
+            file_put_contents($zipPath, $response->body());
+
+            // Extract zip
+            $zip = new \ZipArchive;
+            if ($zip->open($zipPath) === true) {
+                $zip->extractTo($driversDir);
+                $zip->close();
+
+                // Find the extracted chromedriver binary
+                $extractedPath = $this->findExtractedChromeDriver($driversDir);
+                if ($extractedPath) {
+                    chmod($extractedPath, 0755);
+                    $version = shell_exec("{$extractedPath} --version 2>&1");
+                    $this->info('ChromeDriver installed: '.trim($version));
+
+                    // Clean up zip
+                    @unlink($zipPath);
+
+                    // Create symlink to standard path if needed
+                    if ($extractedPath !== $driversDir.'/chromedriver') {
+                        @symlink($extractedPath, $driversDir.'/chromedriver');
+                    }
+
+                    return true;
+                }
+            }
+
+            $this->error('Failed to extract ChromeDriver zip');
+
+            return false;
+        } catch (\Throwable $e) {
+            $this->error('ChromeDriver download failed: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Find extracted chromedriver binary.
+     */
+    protected function findExtractedChromeDriver(string $driversDir): ?string
+    {
+        // Check for chromedriver directly
+        if (file_exists($driversDir.'/chromedriver')) {
+            return $driversDir.'/chromedriver';
+        }
+
+        // Check in subdirectories (ChromeDriver 115+ extracts to chromedriver-linux64/)
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($driversDir, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->getFilename() === 'chromedriver' && $file->isFile()) {
+                return $file->getPathname();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Download latest ChromeDriver as fallback.
+     */
+    protected function downloadLatestChromeDriver(string $driversDir): string
+    {
+        $this->warn('Falling back to BDI driver detection...');
+
+        // Try using BDI (Browser Driver Installer)
+        $bdiPath = base_path('vendor/bin/bdi');
+        if (file_exists($bdiPath)) {
+            $this->executeShellCommand("{$bdiPath} detect {$driversDir} 2>&1");
+            if (file_exists($driversDir.'/chromedriver')) {
+                chmod($driversDir.'/chromedriver', 0755);
+                $version = shell_exec("{$driversDir}/chromedriver --version 2>&1");
+                $this->info('ChromeDriver installed via BDI: '.trim($version));
+
+                return $driversDir.'/chromedriver';
+            }
+        }
+
+        $this->error('Failed to install ChromeDriver automatically.');
+        $this->line('Please run: ./vendor/bin/bdi detect '.$driversDir);
+        exit(1);
     }
 }
