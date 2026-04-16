@@ -58,7 +58,7 @@ export default function ClientCreate() {
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Account Information
                         </h2>

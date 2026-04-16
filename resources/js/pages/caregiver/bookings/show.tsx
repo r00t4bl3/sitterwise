@@ -1,4 +1,4 @@
-import { Link, usePage, useForm } from '@inertiajs/react';
+import { Link, usePage, useForm, Head } from '@inertiajs/react';
 import {
     Calendar,
     Clock,
@@ -32,9 +32,13 @@ interface Booking {
     address_city: string | null;
     address_state: string | null;
     address_zip: string | null;
+    hotel_id: number | null;
+    hotel_name: string | null;
     start_datetime: string;
     end_datetime: string;
     status: string;
+    special_considerations: string[] | null;
+    caregiver_notes: string | null;
     reserved_by: number | null;
     reservation_expires_at: string | null;
     notified_at: string;
@@ -63,8 +67,8 @@ const getBreadcrumbTitle = (clientName: string) => [
         href: '/dashboard',
     },
     {
-        title: 'Available Bookings',
-        href: '/bookings/available',
+        title: 'Bookings',
+        href: '/bookings',
     },
     {
         title: clientName,
@@ -215,9 +219,10 @@ export default function BookingDetail({ booking }: PageProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="space-y-6">
+            <Head title="Bookings" />
+            <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center gap-4">
-                    <Link href="/bookings/available">
+                    <Link href="/bookings">
                         <Button variant="ghost" size="icon">
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
@@ -254,7 +259,7 @@ export default function BookingDetail({ booking }: PageProps) {
                     </div>
                 )}
 
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                     {/* Client Info */}
                     <div className="rounded-lg border border-border bg-card p-6">
                         <h2 className="mb-4 text-lg font-semibold text-foreground">
@@ -304,11 +309,41 @@ export default function BookingDetail({ booking }: PageProps) {
                                     {formatDateTime(booking.end_datetime)}
                                 </span>
                             </div>
+                            {booking.special_considerations &&
+                                booking.special_considerations.length > 0 && (
+                                    <div>
+                                        <h3 className="mb-1 text-sm font-medium text-foreground">
+                                            Special Considerations
+                                        </h3>
+                                        <div className="flex flex-wrap gap-1">
+                                            {booking.special_considerations.map(
+                                                (consideration, i) => (
+                                                    <span
+                                                        key={i}
+                                                        className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
+                                                    >
+                                                        {consideration}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            {booking.caregiver_notes && (
+                                <div>
+                                    <h3 className="mb-1 text-sm font-medium text-foreground">
+                                        Notes for Caregiver
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        {booking.caregiver_notes}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Address */}
-                    {booking.address_line1 && (
+                    {/* Address or Hotel */}
+                    {(booking.address_line1 || booking.hotel_name) && (
                         <div className="rounded-lg border border-border bg-card p-6">
                             <h2 className="mb-4 text-lg font-semibold text-foreground">
                                 Location
@@ -316,15 +351,24 @@ export default function BookingDetail({ booking }: PageProps) {
                             <div className="flex items-start gap-2">
                                 <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                 <div className="text-sm text-muted-foreground">
-                                    <p>{booking.address_line1}</p>
+                                    {booking.hotel_name && (
+                                        <p className="font-medium text-foreground">
+                                            {booking.hotel_name}
+                                        </p>
+                                    )}
+                                    {booking.address_line1 && (
+                                        <p>{booking.address_line1}</p>
+                                    )}
                                     {booking.address_line2 && (
                                         <p>{booking.address_line2}</p>
                                     )}
-                                    <p>
-                                        {booking.address_city},{' '}
-                                        {booking.address_state}{' '}
-                                        {booking.address_zip}
-                                    </p>
+                                    {booking.address_city && (
+                                        <p>
+                                            {booking.address_city},{' '}
+                                            {booking.address_state}{' '}
+                                            {booking.address_zip}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -402,7 +446,7 @@ export default function BookingDetail({ booking }: PageProps) {
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="mt-6 space-y-4">
+                        <div className="mt-6 space-y-4 p-4">
                             <div className="rounded-lg border border-border bg-muted p-4">
                                 <div className="flex items-center justify-between">
                                     <div>

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -11,7 +12,7 @@ use Sichikawa\LaravelSendgridDriver\SendGrid;
 
 class BookingReceived extends Mailable
 {
-    use Queueable, SerializesModels, SendGrid;
+    use Queueable, SendGrid, SerializesModels;
 
     /**
      * Create a new message instance.
@@ -30,23 +31,24 @@ class BookingReceived extends Mailable
             'personalizations' => [
                 [
                     'dynamic_template_data' => [
-                        'client_first_name'      => 'Jason',
-                        'service_requested'      => 'Caregiving',
-                        'date'                   => 'Wednesday, September 27, 2023',
-                        'children_summary'       => '2 children, ages 3 and 5',
-                        'location'               => '123 Main St, Anytown, USA',
-                        'is_hotel'               => 'Grand Hotel',
+                        'client_first_name' => 'Jason',
+                        'service_requested' => 'Caregiving',
+                        'date' => 'Wednesday, September 27, 2023',
+                        'children_summary' => '2 children, ages 3 and 5',
+                        'location' => '123 Main St, Anytown, USA',
+                        'is_hotel' => 'Grand Hotel',
                         'special_considerations' => 'Sitter must be comfortable with pets',
-                        'notes_for_sitter'       => 'Please bring snacks for the kids.',
-                        'hourly_rate'            => '15.00',
-                        'client_name'            => 'Jason Smith',
-                        'start_time'             => '9:00 AM',
-                        'end_time'               => '4:00 PM',
+                        'notes_for_sitter' => 'Please bring snacks for the kids.',
+                        'hourly_rate' => '15.00',
+                        'client_name' => 'Jason Smith',
+                        'start_time' => '9:00 AM',
+                        'end_time' => '4:00 PM',
                     ],
                 ],
             ],
-            'template_id'      => 'd-c691618c009e4289a937774e33975817',
+            'template_id' => 'd-c691618c009e4289a937774e33975817',
         ]);
+
         return new Envelope(
             from: 'admin@sitterwise.io',
             // replyTo: 'reply@example.com',

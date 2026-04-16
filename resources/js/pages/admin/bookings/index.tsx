@@ -448,6 +448,17 @@ export default function Bookings() {
         return grouped;
     }, [bookings]);
 
+    const currentMonthBookings = useMemo(() => {
+        return bookings.filter((booking) => {
+            const startDate = new Date(booking.start_datetime);
+
+            return (
+                startDate.getMonth() + 1 === currentMonth &&
+                startDate.getFullYear() === currentYear
+            );
+        });
+    }, [bookings, currentMonth, currentYear]);
+
     const handleClientSearch = async (query: string) => {
         if (!query.trim()) {
             setClientSuggestions([]);
@@ -984,7 +995,7 @@ export default function Bookings() {
                             Bookings
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {monthNames[currentMonth - 1]} {currentYear}
+                            {currentMonthBookings.length} bookings this month
                         </p>
                     </div>
                     <Button onClick={() => openCreateSheet()}>
@@ -993,22 +1004,6 @@ export default function Bookings() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon-sm"
-                            onClick={prevMonth}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon-sm"
-                            onClick={nextMonth}
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                    </div>
                     <select
                         value={statusFilter || ''}
                         onChange={(e) =>
@@ -1023,9 +1018,7 @@ export default function Bookings() {
                             </option>
                         ))}
                     </select>
-                    <Button variant="secondary" onClick={applyFilters}>
-                        Apply
-                    </Button>
+                    <Button onClick={applyFilters}>Filter</Button>
                 </div>
 
                 <div className="flex flex-wrap gap-3 text-xs">
@@ -1043,7 +1036,25 @@ export default function Bookings() {
                     ))}
                 </div>
 
-                <div className="rounded-[6px] border border-border bg-card p-4">
+                <div className="border border-border bg-card p-4">
+                    <div className="mb-4 flex items-center justify-between">
+                        <button
+                            onClick={prevMonth}
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <h2 className="text-lg font-semibold text-foreground">
+                            {monthNames[currentMonth - 1]} {currentYear}
+                        </h2>
+                        <button
+                            onClick={nextMonth}
+                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </div>
+
                     <div className="grid grid-cols-7 gap-1">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
                             (day) => (

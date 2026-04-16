@@ -302,7 +302,7 @@ export default function ClientEdit() {
                 <form onSubmit={submit} className="space-y-6">
                     <input type="hidden" name="_token" value={csrf_token} />
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
@@ -445,7 +445,7 @@ export default function ClientEdit() {
                         </div>
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Sitter Preferences
                         </h2>
@@ -477,7 +477,7 @@ export default function ClientEdit() {
                     </div>
 
                     {attribute_definitions.length > 0 && (
-                        <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Attributes
                             </h2>
@@ -510,7 +510,7 @@ export default function ClientEdit() {
                         </div>
                     )}
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Children ({form.data.children.length})
@@ -697,7 +697,7 @@ export default function ClientEdit() {
                         )}
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Pets ({form.data.pets.length})
@@ -831,7 +831,7 @@ export default function ClientEdit() {
                         )}
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="font-serif text-lg font-semibold text-foreground">
                                 Addresses ({form.data.addresses.length})
@@ -988,7 +988,7 @@ export default function ClientEdit() {
                         )}
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Additional Information
                         </h2>

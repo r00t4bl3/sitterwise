@@ -126,6 +126,11 @@ class AdminBookingService implements BookingServiceInterface
         ]);
     }
 
+    public function show($id)
+    {
+        return redirect()->route('bookings.index');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validated();

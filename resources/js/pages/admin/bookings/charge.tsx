@@ -179,7 +179,7 @@ export default function ChargeBooking() {
                     </div>
                 </div>
 
-                <div className="rounded-[6px] border border-border bg-card p-6">
+                <div className="border border-border bg-card p-6">
                     <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Payment Summary
                     </h2>
@@ -225,7 +225,7 @@ export default function ChargeBooking() {
                     </div>
                 </div>
 
-                <div className="rounded-[6px] border border-border bg-card p-6">
+                <div className="border border-border bg-card p-6">
                     <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Caregiver Payout Summary
                     </h2>
@@ -286,7 +286,7 @@ export default function ChargeBooking() {
                     )}
                 </div>
 
-                <div className="rounded-[6px] border border-border bg-card p-6">
+                <div className="border border-border bg-card p-6">
                     <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Adjustments
                     </h2>
@@ -368,7 +368,7 @@ export default function ChargeBooking() {
 
                 {result && (
                     <div
-                        className={`rounded-[6px] border p-4 ${
+                        className={`border p-4 ${
                             result.success
                                 ? 'border-green-500 bg-green-50 text-green-700'
                                 : 'border-red-500 bg-red-50 text-red-700'

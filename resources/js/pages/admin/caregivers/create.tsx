@@ -75,7 +75,7 @@ export default function CaregiverCreate() {
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
@@ -223,7 +223,7 @@ export default function CaregiverCreate() {
                         </div>
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Account Credentials
                         </h2>
@@ -274,7 +274,7 @@ export default function CaregiverCreate() {
                         </div>
                     </div>
 
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Additional Information
                         </h2>

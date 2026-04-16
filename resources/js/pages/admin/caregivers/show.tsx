@@ -420,7 +420,7 @@ export default function CaregiverShow() {
                 </Sheet>
 
                 <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="rounded-[6px] border border-border bg-card p-6 lg:col-span-2">
+                    <div className="border border-border bg-card p-6 lg:col-span-2">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
@@ -646,7 +646,7 @@ export default function CaregiverShow() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="border border-border bg-card p-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Status
@@ -705,7 +705,7 @@ export default function CaregiverShow() {
                             </div>
                         </div>
 
-                        <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
                                 <Shield className="h-5 w-5" />
                                 Certifications

@@ -13,21 +13,32 @@ interface AvailabilityCalendarProps {
     onDateClick: (date: string) => void;
 }
 
-function getDaysInMonth(year: number, month: number): (number | null)[] {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+function getDaysInMonth(
+    year: number,
+    month: number,
+): Array<{ day: number; monthOffset: number }> {
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInCurrent = new Date(year, month + 1, 0).getDate();
+    const daysInPrev = new Date(year, month, 0).getDate();
 
-    const days: (number | null)[] = [];
+    const leading = firstWeekday;
+    const trailing = (7 - ((firstWeekday + daysInCurrent) % 7)) % 7;
 
-    for (let i = 0; i < firstDay; i++) {
-        days.push(null);
+    const cells: Array<{ day: number; monthOffset: number }> = [];
+
+    for (let i = leading - 1; i >= 0; i--) {
+        cells.push({ day: daysInPrev - i, monthOffset: -1 });
     }
 
-    for (let i = 1; i <= daysInMonth; i++) {
-        days.push(i);
+    for (let d = 1; d <= daysInCurrent; d++) {
+        cells.push({ day: d, monthOffset: 0 });
     }
 
-    return days;
+    for (let d = 1; d <= trailing; d++) {
+        cells.push({ day: d, monthOffset: 1 });
+    }
+
+    return cells;
 }
 
 function getMonthName(month: number): string {
@@ -81,7 +92,7 @@ export function AvailabilityCalendar({
     };
 
     return (
-        <div className="rounded-[6px] border border-border bg-card p-4">
+        <div className="border border-border bg-card p-4">
             <div className="mb-4 flex items-center justify-between">
                 <button
                     onClick={prevMonth}
@@ -112,13 +123,20 @@ export function AvailabilityCalendar({
                     ),
                 )}
 
-                {days.map((day, index) => {
-                    if (day === null) {
-                        return <div key={`empty-${index}`} className="h-24" />;
+                {days.map(({ day, monthOffset }) => {
+                    let cellMonth = month + monthOffset;
+                    let cellYear = year;
+
+                    if (cellMonth < 0) {
+                        cellMonth = 12;
+                        cellYear--;
+                    } else if (cellMonth > 11) {
+                        cellMonth = 0;
+                        cellYear++;
                     }
 
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dateObj = new Date(year, month, day);
+                    const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dateObj = new Date(cellYear, cellMonth, day);
                     const dateOnly = new Date(
                         dateObj.getFullYear(),
                         dateObj.getMonth(),
@@ -130,13 +148,25 @@ export function AvailabilityCalendar({
                     const hasAvailability =
                         availability && availability.time_slots.length > 0;
 
+                    const isCurrentMonth = monthOffset === 0;
+
                     return (
                         <div
-                            key={day}
-                            className={`flex h-24 flex-col gap-1 border border-border p-2 ${isToday ? 'bg-blush' : 'bg-background'} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
+                            key={`${monthOffset}-${day}`}
+                            className={`flex h-24 flex-col gap-1 border p-2 ${
+                                isCurrentMonth
+                                    ? 'border-border bg-background'
+                                    : 'border-dashed border-gray-300 bg-white'
+                            } ${isToday ? 'bg-blush' : ''} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
                         >
                             <span
-                                className={`text-sm ${isToday ? 'font-bold text-foreground' : 'font-medium'} ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}
+                                className={`text-sm ${
+                                    isToday
+                                        ? 'font-bold text-foreground'
+                                        : isCurrentMonth
+                                          ? 'font-medium text-foreground'
+                                          : 'text-gray-300'
+                                }`}
                             >
                                 {day}
                             </span>

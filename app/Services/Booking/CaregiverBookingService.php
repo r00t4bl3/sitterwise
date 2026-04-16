@@ -126,6 +126,10 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
+                'special_considerations' => $booking->special_considerations
+                    ? json_decode($booking->special_considerations, true)
+                    : null,
+                'caregiver_notes' => $booking->caregiver_notes,
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
                 'notified_at' => $notification->notified_at,

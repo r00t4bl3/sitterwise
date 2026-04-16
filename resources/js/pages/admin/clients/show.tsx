@@ -448,7 +448,7 @@ export default function ClientShow() {
                 </Sheet>
 
                 <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="rounded-[6px] border border-border bg-card p-6 lg:col-span-2">
+                    <div className="border border-border bg-card p-6 lg:col-span-2">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
@@ -609,7 +609,7 @@ export default function ClientShow() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="rounded-[6px] border border-border bg-card p-6">
+                        <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Addresses
                             </h2>
@@ -652,7 +652,7 @@ export default function ClientShow() {
 
                         {client.sitter_preferences &&
                             client.sitter_preferences.length > 0 && (
-                                <div className="rounded-[6px] border border-border bg-card p-6">
+                                <div className="border border-border bg-card p-6">
                                     <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                         Sitter Preferences
                                     </h2>
@@ -672,7 +672,7 @@ export default function ClientShow() {
                             )}
 
                         {client.special_needs_notes && (
-                            <div className="rounded-[6px] border border-red-200 bg-red-50 p-6">
+                            <div className="border border-red-200 bg-red-50 p-6">
                                 <h2 className="mb-2 font-serif text-lg font-semibold text-red-800">
                                     Special Needs
                                 </h2>
@@ -684,7 +684,7 @@ export default function ClientShow() {
 
                         {client.favorite_caregivers &&
                             client.favorite_caregivers.length > 0 && (
-                                <div className="rounded-[6px] border border-border bg-card p-6">
+                                <div className="border border-border bg-card p-6">
                                     <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                         Favorite Caregivers
                                     </h2>
@@ -721,7 +721,7 @@ export default function ClientShow() {
 
                         {client.type_changes &&
                             client.type_changes.length > 0 && (
-                                <div className="rounded-[6px] border border-border bg-card p-6">
+                                <div className="border border-border bg-card p-6">
                                     <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                         Type Change History
                                     </h2>

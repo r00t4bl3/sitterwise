@@ -191,7 +191,7 @@ export default function ClientsIndex() {
                     </form>
                 </div>
 
-                <div className="rounded-[6px] border border-border bg-card">
+                <div className="border border-border bg-card">
                     <table className="w-full">
                         <thead>
                             <tr className="bg-foreground">

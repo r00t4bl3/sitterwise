@@ -406,7 +406,7 @@ export default function CaregiverEdit() {
                 </div>
 
                 <form onSubmit={submit}>
-                    <div className="rounded-[6px] border border-border bg-card p-6">
+                    <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
@@ -599,7 +599,7 @@ export default function CaregiverEdit() {
                         </div>
                     </div>
 
-                    <div className="mt-6 rounded-[6px] border border-border bg-card p-6">
+                    <div className="mt-6 border border-border bg-card p-6">
                         <Collapsible
                             open={specialtiesOpen}
                             onOpenChange={setSpecialtiesOpen}
@@ -650,7 +650,7 @@ export default function CaregiverEdit() {
                         </Collapsible>
                     </div>
 
-                    <div className="mt-4 rounded-[6px] border border-border bg-card p-6">
+                    <div className="mt-4 border border-border bg-card p-6">
                         <Collapsible
                             open={locationsOpen}
                             onOpenChange={setLocationsOpen}
@@ -731,7 +731,7 @@ export default function CaregiverEdit() {
                         </Collapsible>
                     </div>
 
-                    <div className="mt-4 rounded-[6px] border border-border bg-card p-6">
+                    <div className="mt-4 border border-border bg-card p-6">
                         <Collapsible
                             open={attributesOpen}
                             onOpenChange={setAttributesOpen}
@@ -775,7 +775,7 @@ export default function CaregiverEdit() {
                         </Collapsible>
                     </div>
 
-                    <div className="mt-4 rounded-[6px] border border-border bg-card p-6">
+                    <div className="mt-4 border border-border bg-card p-6">
                         <Collapsible
                             open={certificationsOpen}
                             onOpenChange={setCertificationsOpen}
@@ -889,7 +889,7 @@ export default function CaregiverEdit() {
                         </Collapsible>
                     </div>
 
-                    <div className="mt-4 rounded-[6px] border border-border bg-card p-6">
+                    <div className="mt-4 border border-border bg-card p-6">
                         <Collapsible
                             open={educationsOpen}
                             onOpenChange={setEducationsOpen}
