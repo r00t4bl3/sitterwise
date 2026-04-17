@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CaregiverConnectStripeRequest;
 use App\Models\Caregiver;
 use App\Services\CaregiverPayout\CaregiverPayoutService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -29,27 +28,20 @@ class CaregiverPayoutController extends Controller
         ]);
     }
 
-    public function connect(CaregiverConnectStripeRequest $request): JsonResponse
+    public function connect(CaregiverConnectStripeRequest $request)
     {
         $caregiver = $request->caregiver();
 
         if ($caregiver->stripe_account_id) {
-            return response()->json([
-                'error' => 'Account already connected',
-            ], 400);
+            return redirect()->back()->with('error', 'Account already connected');
         }
 
         try {
-            $accountId = $this->payoutService->createConnectAccount($caregiver);
+            $this->payoutService->createConnectAccount($caregiver);
 
-            return response()->json([
-                'success' => true,
-                'stripe_account_id' => $accountId,
-            ]);
+            return redirect()->back()->with('success', 'Stripe account created successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to create Stripe account: '.$e->getMessage(),
-            ], 500);
+            return redirect()->back()->with('error', 'Failed to create Stripe account: '.$e->getMessage());
         }
     }
 
