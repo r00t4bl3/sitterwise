@@ -309,4 +309,113 @@ describe('BookingController - Caregiver', function () {
         });
 
     });
+
+    test('cannot confirm another caregiver reservation', function () {
+        $caregiver1 = Caregiver::factory()->create();
+        $caregiver2 = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver1->id,
+            'reservation_expires_at' => now()->addMinute(),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver2->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver2->user);
+
+        $response = $this->post(route('bookings.confirm', $booking));
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('error');
+
+        $booking->refresh();
+        expect($booking->status)->toBe('reserved');
+    });
+
+    test('expired reservation returns to open on access', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
+            'reservation_expires_at' => now()->subSecond(),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->get(route('bookings.index'));
+
+        $response->assertSuccessful();
+    });
+
+    test('reservation sets correct expiration time', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'received',
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->post(route('bookings.reserve', $booking));
+
+        $response->assertSessionHas('expires_in', 60);
+
+        $booking->refresh();
+        expect($booking->reservation_expires_at)->not()->toBeNull();
+        expect($booking->reservation_expires_at->gt(now()))->toBeTrue();
+    });
+
+    test('only one caregiver can reserve at a time - atomic test', function () {
+        $caregiver1 = Caregiver::factory()->create();
+        $caregiver2 = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'status' => 'received',
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver1->id,
+            'notified_at' => now(),
+        ]);
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver2->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver1->user);
+        $this->post(route('bookings.reserve', $booking));
+
+        $this->actingAs($caregiver2->user);
+        $response = $this->post(route('bookings.reserve', $booking));
+
+        $response->assertSessionHas('error');
+
+        $booking->refresh();
+        expect($booking->reserved_by)->toBe($caregiver1->id);
+        expect($booking->status)->toBe('reserved');
+    });
 });

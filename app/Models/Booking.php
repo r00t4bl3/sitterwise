@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,30 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Booking extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Booking $booking) {
+            $booking->calculateTotalWorkingHours();
+        });
+
+        static::updating(function (Booking $booking) {
+            if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
+                $booking->calculateTotalWorkingHours();
+            }
+        });
+    }
+
+    public function calculateTotalWorkingHours(): void
+    {
+        if ($this->start_datetime && $this->end_datetime) {
+            $start = $this->start_datetime instanceof Carbon ? $this->start_datetime : Carbon::parse($this->start_datetime);
+            $end = $this->end_datetime instanceof Carbon ? $this->end_datetime : Carbon::parse($this->end_datetime);
+            $this->total_working_hour = $start->diffInMinutes($end) / 60;
+        }
+    }
 
     protected $fillable = [
         'booking_group_id',
@@ -52,6 +77,8 @@ class Booking extends Model
         'emergency_instructions',
         'total_amount',
         'reimbursement',
+        'reimbursement_description',
+        'bonus',
         'tip',
         'payment_status',
         'stripe_payment_intent_id',
@@ -73,6 +100,8 @@ class Booking extends Model
         'pets' => 'array',
         'total_amount' => 'decimal:2',
         'reimbursement' => 'decimal:2',
+        'reimbursement_description' => 'string',
+        'bonus' => 'decimal:2',
         'tip' => 'decimal:2',
         'actual_amount' => 'decimal:2',
         'charge_attempt_count' => 'integer',

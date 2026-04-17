@@ -50,6 +50,8 @@ return new class extends Migration
             $table->text('emergency_instructions')->nullable();
             $table->decimal('total_amount', 10, 2);
             $table->decimal('reimbursement', 10, 2)->nullable()->default(null);
+            $table->string('reimbursement_description')->nullable();
+            $table->decimal('bonus', 10, 2)->nullable()->default(null);
             $table->decimal('tip', 10, 2)->nullable()->default(null);
             $table->string('payment_status');
             $table->string('stripe_payment_intent_id')->nullable();

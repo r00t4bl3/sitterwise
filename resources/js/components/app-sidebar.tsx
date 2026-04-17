@@ -89,8 +89,8 @@ const adminNavItems: NavItem[] = [
         icon: ClipboardList,
     },
     {
-        title: 'Payments',
-        href: '#',
+        title: 'Transactions',
+        href: '/transactions',
         icon: CircleDollarSign,
     },
 ];

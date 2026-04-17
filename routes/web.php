@@ -12,9 +12,11 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HotelController;
+use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -53,7 +55,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('bookings/{booking}/release', [BookingController::class, 'release'])->name('bookings.release');
     Route::get('bookings/recommended-caregivers', [BookingController::class, 'recommendedCaregivers'])->name('bookings.recommendedCaregivers');
     Route::resource('bookings', BookingController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
 
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {
         Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
         Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');

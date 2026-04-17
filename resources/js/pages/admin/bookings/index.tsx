@@ -735,59 +735,72 @@ export default function Bookings() {
     const openEditSheet = (booking: Booking) => {
         setEditingBooking(booking);
 
-        form.setData('client_id', booking.client_id);
-        form.setData('service_type', booking.service_type);
-        form.setData('location_type', booking.location_type);
-        form.setData(
-            'start_datetime',
-            formatDateTimeLocal(new Date(booking.start_datetime)),
-        );
-        form.setData(
-            'end_datetime',
-            formatDateTimeLocal(new Date(booking.end_datetime)),
-        );
-        form.setData('hotel_id', booking.hotel_id);
-        form.setData('address_id', booking.address_id);
-        form.setData('caregiver_id', booking.caregiver_id);
-        form.setData(
-            'special_considerations',
-            booking.special_considerations || [],
-        );
-        form.setData('caregiver_notes', booking.caregiver_notes || '');
-        form.setData('notes_to_sitterwise', booking.notes_to_sitterwise || '');
-        form.setData('admin_notes', booking.admin_notes || '');
-        form.setData('corporate_id', booking.corporate_id || '');
-        form.setData('sitter_preferences', booking.sitter_preferences || []);
-        form.setData(
-            'other_adults_present',
-            booking.other_adults_present || '',
-        );
-        form.setData(
-            'emergency_instructions',
-            booking.emergency_instructions || '',
-        );
-        form.setData('special_needs_notes', booking.special_needs_notes || '');
-        form.setData('how_did_you_hear', booking.how_did_you_hear || '');
-        form.setData('requires_payment', booking.requires_payment);
-        form.setData('status', booking.status);
-        form.setData('payment_status', booking.payment_status);
+        const formData = {
+            client_id: booking.client_id,
+            service_type: booking.service_type,
+            location_type: booking.location_type,
+            start_datetime: formatDateTimeLocal(new Date(booking.start_datetime)),
+            end_datetime: formatDateTimeLocal(new Date(booking.end_datetime)),
+            hotel_id: booking.hotel_id,
+            address_id: booking.address_id,
+            caregiver_id: booking.caregiver_id,
+            special_considerations: booking.special_considerations || [],
+            caregiver_notes: booking.caregiver_notes || '',
+            notes_to_sitterwise: booking.notes_to_sitterwise || '',
+            admin_notes: booking.admin_notes || '',
+            corporate_id: booking.corporate_id || '',
+            sitter_preferences: booking.sitter_preferences || [],
+            other_adults_present: booking.other_adults_present || '',
+            emergency_instructions: booking.emergency_instructions || '',
+            special_needs_notes: booking.special_needs_notes || '',
+            how_did_you_hear: booking.how_did_you_hear || '',
+            requires_payment: booking.requires_payment,
+            status: booking.status,
+            payment_status: booking.payment_status,
+            rental_platform: booking.rental_platform || null,
+            address_line1: booking.address_line1 || '',
+            address_line2: booking.address_line2 || '',
+            address_city: booking.address_city || '',
+            address_state: booking.address_state || '',
+            address_zip: booking.address_zip || '',
+            new_client: {
+                first_name: '',
+                last_name: '',
+                email: '',
+                phone: '',
+                client_type: 'individual',
+            },
+            new_children: [],
+            new_pets: [],
+            deleted_child_ids: [],
+            deleted_pet_ids: [],
+            save_children_pets_to_profile: true,
+        };
 
-        if (booking.rental_platform) {
-            form.setData('rental_platform', booking.rental_platform);
+        form.setData(formData);
+
+        const isPrivateHome = booking.location_type === 'private_home';
+        const hasAddressId = !!booking.address_id;
+        const hasDirectAddress = !!booking.address_line1;
+
+        if (isPrivateHome && hasAddressId) {
+            setShowManualAddressInput(false);
+            setAddressMode('select');
+        } else if (hasDirectAddress) {
+            setShowManualAddressInput(true);
+            setAddressMode('input');
         }
 
-        if (booking.address_line1) {
-            form.setData('address_line1', booking.address_line1);
-            form.setData('address_line2', booking.address_line2 || '');
-            form.setData('address_city', booking.address_city || '');
-            form.setData('address_state', booking.address_state || '');
-            form.setData('address_zip', booking.address_zip || '');
+        if (hasDirectAddress) {
             setAddressValue(
                 `${booking.address_line1}${
                     booking.address_line2 ? `, ${booking.address_line2}` : ''
                 }, ${booking.address_city || ''}, ${booking.address_state || ''} ${booking.address_zip || ''}`.trim(),
             );
             setIsAddressLocked(true);
+        } else {
+            setAddressValue('');
+            setIsAddressLocked(false);
         }
 
         if (booking.client_id) {
@@ -798,7 +811,8 @@ export default function Bookings() {
                 handleClientSearch(client.name);
             }
 
-            handleClientChange(booking.client_id);
+            // Fetch client specific data without overriding form.setData for client_id/address_id
+            fetchClientDataOnly(booking.client_id);
         }
 
         if (booking.hotel_id) {
@@ -822,6 +836,20 @@ export default function Bookings() {
         }
 
         setIsSheetOpen(true);
+    };
+
+    const fetchClientDataOnly = async (clientId: number) => {
+        try {
+            const response = await fetch(`/clients/${clientId}/data`);
+            const data = await response.json();
+            setClientAddresses(data.client.addresses || []);
+            setClientChildren(data.client.children || []);
+            setClientPets(data.client.pets || []);
+            setSelectedClientType(data.client.client_type || null);
+            fetchRecommendedCaregivers(clientId);
+        } catch (error) {
+            console.error('Error fetching client data:', error);
+        }
     };
 
     const handleSubmit = () => {

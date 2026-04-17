@@ -1,35 +1,9 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    Calendar,
-    Check,
-    Eye,
-    EyeOff,
-    MapPin,
-    Phone,
-} from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Rating } from '@/components/ui/rating';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -37,7 +11,6 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';

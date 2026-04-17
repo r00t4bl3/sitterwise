@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\ServiceType;
 use App\Events\JobConfirmed;
 use App\Events\JobReleased;
 use App\Events\JobReserved;
@@ -115,6 +116,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         return Inertia::render('caregiver/bookings/show', [
             'booking' => [
                 'id' => $booking->id,
+                'service_type' => ServiceType::from($booking->service_type)->label(),
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
                 'client_email' => $booking->client_email ?? $booking->client->user?->email,

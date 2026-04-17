@@ -1,7 +1,6 @@
 import { Link, usePage, useForm, Head } from '@inertiajs/react';
 import {
     Calendar,
-    Clock,
     MapPin,
     User,
     CheckCircle,
@@ -9,6 +8,7 @@ import {
     ArrowLeft,
     Phone,
     Mail,
+    Heart,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import AppLayout from '@/layouts/app-layout';
 
 interface Booking {
     id: number;
+    service_type: string;
     client_name: string;
     client_phone: string | null;
     client_email: string | null;
@@ -59,6 +60,11 @@ interface Booking {
 
 interface PageProps {
     booking: Booking;
+    flash: {
+        success: string | null;
+        error: string | null;
+    };
+    expires_in?: number;
 }
 
 const getBreadcrumbTitle = (clientName: string) => [
@@ -93,8 +99,17 @@ export default function BookingDetail({ booking }: PageProps) {
     const startReservation = useCallback(() => {
         setError(null);
         reserveForm.post(`/bookings/${booking.id}/reserve`, {
-            onSuccess: () => {
-                const expiresIn = (props.expires_in as number) || 60;
+            onSuccess: (page) => {
+                const props = page.props as any;
+                const flashError = props.flash?.error;
+
+                if (flashError) {
+                    setError(flashError);
+
+                    return;
+                }
+
+                const expiresIn = props.expires_in || 60;
                 setCountdown(expiresIn);
                 setShowConfirmSheet(true);
 
@@ -120,7 +135,16 @@ export default function BookingDetail({ booking }: PageProps) {
 
     const confirmBooking = useCallback(() => {
         confirmForm.post(`/bookings/${booking.id}/confirm`, {
-            onSuccess: () => {
+            onSuccess: (page) => {
+                const props = page.props as any;
+                const flashError = props.flash?.error;
+
+                if (flashError) {
+                    setError(flashError);
+
+                    return;
+                }
+
                 setConfirmed(true);
                 setShowConfirmSheet(false);
 
@@ -204,17 +228,70 @@ export default function BookingDetail({ booking }: PageProps) {
         };
     }, [booking.id, booking.reserved_by]);
 
-    const formatDateTime = (dateStr: string) => {
+    const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
 
         return date.toLocaleString('en-US', {
-            month: 'short',
+            weekday: 'long',
+            month: 'long',
             day: 'numeric',
             year: 'numeric',
+            // hour: 'numeric',
+            // minute: '2-digit',
+            // hour12: true,
+        });
+    };
+
+    const formatTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+
+        return date.toLocaleString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true,
         });
+    };
+
+    const calculateAge = (
+        birthYear: number | null,
+        birthMonth: number | null,
+    ): string => {
+        if (!birthYear && !birthMonth) {
+            return 'Age unknown';
+        }
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
+        const year = birthYear ?? currentYear;
+        const month = birthMonth ?? 1;
+
+        let years = currentYear - year;
+        let months = currentMonth - month;
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        if (years < 0 || (years === 0 && months < 0)) {
+            return 'Age unknown';
+        }
+
+        if (years === 0 && months === 0) {
+            return 'Newborn';
+        }
+
+        if (years === 0) {
+            return `${months} month${months !== 1 ? 's' : ''} old`;
+        }
+
+        if (months === 0) {
+            return `${years} yr${years !== 1 ? 's' : ''} old`;
+        }
+
+        return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
     };
 
     return (
@@ -222,10 +299,11 @@ export default function BookingDetail({ booking }: PageProps) {
             <Head title="Bookings" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center gap-4">
-                    <Link href="/bookings">
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
+                    <Link
+                        href="/bookings"
+                        className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
                     </Link>
                     <div>
                         <h1 className="text-2xl font-semibold text-foreground">
@@ -259,161 +337,204 @@ export default function BookingDetail({ booking }: PageProps) {
                     </div>
                 )}
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    {/* Client Info */}
-                    <div className="rounded-lg border border-border bg-card p-6">
-                        <h2 className="mb-4 text-lg font-semibold text-foreground">
-                            Client Information
-                        </h2>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm text-foreground">
-                                    {booking.client_name}
-                                </span>
-                            </div>
-                            {booking.client_phone && (
+                <div className="rounded-lg border border-border bg-card p-6">
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {/* Client Information */}
+                        <div className="left-panel">
+                            <h2 className="mb-4 text-lg font-semibold text-foreground">
+                                Client Information
+                            </h2>
+                            <div className="space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <Phone className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm text-muted-foreground">
-                                        {booking.client_phone}
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-foreground">
+                                        {booking.client_name}
                                     </span>
                                 </div>
-                            )}
-                            {booking.client_email && (
-                                <div className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm text-muted-foreground">
-                                        {booking.client_email}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                {booking.client_phone && (
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            <a
+                                                href={`sms:${booking.client_phone}`}
+                                                className="text-blue-500 hover:underline"
+                                            >
+                                                {booking.client_phone}
+                                            </a>
+                                        </span>
+                                    </div>
+                                )}
+                                {booking.client_email && (
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {booking.client_email}
+                                        </span>
+                                    </div>
+                                )}
 
-                    {/* Booking Details */}
-                    <div className="rounded-lg border border-border bg-card p-6">
-                        <h2 className="mb-4 text-lg font-semibold text-foreground">
-                            Booking Details
-                        </h2>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">
-                                    {formatDateTime(booking.start_datetime)}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">
-                                    {formatDateTime(booking.end_datetime)}
-                                </span>
-                            </div>
-                            {booking.special_considerations &&
-                                booking.special_considerations.length > 0 && (
-                                    <div>
-                                        <h3 className="mb-1 text-sm font-medium text-foreground">
-                                            Special Considerations
-                                        </h3>
-                                        <div className="flex flex-wrap gap-1">
-                                            {booking.special_considerations.map(
-                                                (consideration, i) => (
-                                                    <span
-                                                        key={i}
-                                                        className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
-                                                    >
-                                                        {consideration}
-                                                    </span>
-                                                ),
+                                {booking.service_type && (
+                                    <div className="flex items-center gap-2">
+                                        <Heart className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {booking.service_type}
+                                        </span>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        {formatDate(booking.start_datetime)}{' '}
+                                        from{' '}
+                                        {formatTime(booking.start_datetime)} to{' '}
+                                        {formatTime(booking.end_datetime)}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            {booking.hotel_name && (
+                                                <span className="font-medium text-foreground">
+                                                    {booking.hotel_name}
+                                                </span>
                                             )}
-                                        </div>
-                                    </div>
-                                )}
-                            {booking.caregiver_notes && (
+                                            {booking.address_line1 && (
+                                                <span>
+                                                    {booking.address_line1}
+                                                    ,{' '}
+                                                </span>
+                                            )}{' '}
+                                            {booking.address_line2 && (
+                                                <span>
+                                                    {booking.address_line2}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_city && (
+                                                <span>
+                                                    {booking.address_city},{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_state && (
+                                                <span>
+                                                    {booking.address_state}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_zip && (
+                                                <span>
+                                                    {booking.address_zip}
+                                                </span>
+                                            )}
+                                        </a>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="right-panel grid gap-6">
+                            {/* Children  */}
+                            {booking.children && (
                                 <div>
-                                    <h3 className="mb-1 text-sm font-medium text-foreground">
-                                        Notes for Caregiver
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {booking.caregiver_notes}
-                                    </p>
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Children ({booking.children?.length})
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {booking.children &&
+                                            booking.children.length > 0 && (
+                                                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                                                    {booking.children.map(
+                                                        (child, i) => (
+                                                            <li key={i}>
+                                                                {child.name} (
+                                                                {calculateAge(
+                                                                    child.birth_year,
+                                                                    child.birth_month,
+                                                                )}
+                                                                )
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                    </div>
                                 </div>
                             )}
-                        </div>
-                    </div>
 
-                    {/* Address or Hotel */}
-                    {(booking.address_line1 || booking.hotel_name) && (
-                        <div className="rounded-lg border border-border bg-card p-6">
-                            <h2 className="mb-4 text-lg font-semibold text-foreground">
-                                Location
-                            </h2>
-                            <div className="flex items-start gap-2">
-                                <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                <div className="text-sm text-muted-foreground">
-                                    {booking.hotel_name && (
-                                        <p className="font-medium text-foreground">
-                                            {booking.hotel_name}
-                                        </p>
-                                    )}
-                                    {booking.address_line1 && (
-                                        <p>{booking.address_line1}</p>
-                                    )}
-                                    {booking.address_line2 && (
-                                        <p>{booking.address_line2}</p>
-                                    )}
-                                    {booking.address_city && (
-                                        <p>
-                                            {booking.address_city},{' '}
-                                            {booking.address_state}{' '}
-                                            {booking.address_zip}
-                                        </p>
+                            {/* Pets */}
+                            {booking.pets && (
+                                <div>
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Pets ({booking.pets?.length})
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {booking.pets &&
+                                            booking.pets.length > 0 && (
+                                                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                                                    {booking.pets.map(
+                                                        (pet, i) => (
+                                                            <li key={i}>
+                                                                {pet.name} (
+                                                                {pet.breed} /{' '}
+                                                                {pet.type})
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notes & Considerations */}
+                            <div>
+                                <h2 className="text-md mb-2 font-semibold text-foreground">
+                                    Notes & Considerations
+                                </h2>
+                                <div className="space-y-3">
+                                    {booking.special_considerations &&
+                                        booking.special_considerations.length >
+                                            0 && (
+                                            <div>
+                                                <h3 className="mb-1 text-sm font-medium text-foreground">
+                                                    Special Considerations
+                                                </h3>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {booking.special_considerations.map(
+                                                        (consideration, i) => (
+                                                            <span
+                                                                key={i}
+                                                                className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
+                                                            >
+                                                                {consideration}
+                                                            </span>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    {booking.caregiver_notes && (
+                                        <div>
+                                            <h3 className="mb-1 text-sm font-medium text-foreground">
+                                                Notes for Caregiver
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {booking.caregiver_notes}
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    {/* Children & Pets */}
-                    {(booking.children || booking.pets) && (
-                        <div className="rounded-lg border border-border bg-card p-6">
-                            <h2 className="mb-4 text-lg font-semibold text-foreground">
-                                Children & Pets
-                            </h2>
-                            <div className="space-y-4">
-                                {booking.children &&
-                                    booking.children.length > 0 && (
-                                        <div>
-                                            <h3 className="mb-2 text-sm font-medium text-foreground">
-                                                Children (
-                                                {booking.children.length})
-                                            </h3>
-                                            <ul className="space-y-1 text-sm text-muted-foreground">
-                                                {booking.children.map(
-                                                    (child, i) => (
-                                                        <li key={i}>
-                                                            {child.name}
-                                                        </li>
-                                                    ),
-                                                )}
-                                            </ul>
-                                        </div>
-                                    )}
-                                {booking.pets && booking.pets.length > 0 && (
-                                    <div>
-                                        <h3 className="mb-2 text-sm font-medium text-foreground">
-                                            Pets ({booking.pets.length})
-                                        </h3>
-                                        <ul className="space-y-1 text-sm text-muted-foreground">
-                                            {booking.pets.map((pet, i) => (
-                                                <li key={i}>{pet.name}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Accept Button */}
@@ -442,21 +563,23 @@ export default function BookingDetail({ booking }: PageProps) {
                             <SheetTitle>Confirm Booking</SheetTitle>
                             <SheetDescription>
                                 You have {countdown} seconds to confirm this
-                                booking
+                                booking. Click "Confirm Booking" to accept, or
+                                "Cancel" to release the reservation and allow
+                                other caregivers to accept it.
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="mt-6 space-y-4 p-4">
-                            <div className="rounded-lg border border-border bg-muted p-4">
+                        <div className="mb-6 space-y-4 p-4">
+                            <div className="mb-12 rounded-lg border border-border bg-muted p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium text-foreground">
                                             {booking.client_name}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            {formatDateTime(
-                                                booking.start_datetime,
-                                            )}
+                                            {formatDate(booking.start_datetime)}{' '}
+                                            {formatTime(booking.start_datetime)}{' '}
+                                            - {formatTime(booking.end_datetime)}
                                         </p>
                                     </div>
                                     <div className="text-center">

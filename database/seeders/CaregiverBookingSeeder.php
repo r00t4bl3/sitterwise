@@ -76,7 +76,7 @@ class CaregiverBookingSeeder extends Seeder
             $booking = Booking::create([
                 'booking_group_id' => $bookingGroup->id,
                 'client_id' => $client->id,
-                'caregiver_id' => null,
+                'caregiver_id' => $caregiver->id,
                 'client_first_name' => $client->first_name,
                 'client_last_name' => $client->last_name,
                 'client_email' => $client->user->email,
@@ -87,8 +87,18 @@ class CaregiverBookingSeeder extends Seeder
                 'payment_status' => BookingPaymentStatus::Pending->value,
                 'total_amount' => rand(100, 300),
                 'requires_payment' => true,
-                'children' => [],
-                'pets' => [],
+                'children' => $client->children->map(fn ($child) => [
+                    'name' => $child->name,
+                    'gender' => $child->gender,
+                    'birth_month' => $child->birth_month,
+                    'birth_year' => $child->birth_year,
+                ])->toArray(),
+                'pets' => $client->pets->map(fn ($pet) => [
+                    'name' => $pet->name,
+                    'type' => $pet->type,
+                    'breed' => $pet->breed,
+                    'notes' => $pet->notes,
+                ])->toArray(),
                 ...$bookingData,
             ]);
 

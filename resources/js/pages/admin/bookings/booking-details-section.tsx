@@ -97,7 +97,10 @@ export function BookingDetailsSection({
             serviceType === 'babysitter' ||
             serviceType === 'petsitter' ||
             serviceType === 'companion_care';
-        form.setData('requires_payment', requiresPayment);
+
+        if (form.data.requires_payment !== requiresPayment) {
+            form.setData('requires_payment', requiresPayment);
+        }
     }, [form.data.service_type]);
 
     return (
