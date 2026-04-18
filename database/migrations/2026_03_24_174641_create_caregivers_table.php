@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('address_zip')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->decimal('rating', 3, 2)->nullable();
+            $table->decimal('admin_rating', 3, 2)->nullable();
             $table->text('biography')->nullable();
             $table->text('notes')->nullable();
             $table->string('stripe_account_id')->nullable();

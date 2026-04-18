@@ -86,6 +86,7 @@ class CaregiverBookingSeeder extends Seeder
                 'status' => BookingStatus::Received->value,
                 'payment_status' => BookingPaymentStatus::Pending->value,
                 'total_amount' => rand(100, 300),
+                'caregiver_amount' => rand(50, 100),
                 'requires_payment' => true,
                 'children' => $client->children->map(fn ($child) => [
                     'name' => $child->name,

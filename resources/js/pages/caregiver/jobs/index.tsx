@@ -44,6 +44,7 @@ interface Job {
     status: string;
     location_type: string;
     service_type: string;
+    service_type_label: string;
     address_line1: string | null;
     address_city: string | null;
     address_state: string | null;
@@ -311,7 +312,7 @@ export default function JobsIndex() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-foreground">
-                                                {job.service_type}
+                                                {job.service_type_label}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {getStatusBadge(job.status)}

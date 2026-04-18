@@ -49,6 +49,7 @@ return new class extends Migration
             $table->text('special_needs_notes')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->decimal('total_amount', 10, 2);
+            $table->decimal('caregiver_amount', 10, 2);
             $table->decimal('reimbursement', 10, 2)->nullable()->default(null);
             $table->string('reimbursement_description')->nullable();
             $table->decimal('bonus', 10, 2)->nullable()->default(null);

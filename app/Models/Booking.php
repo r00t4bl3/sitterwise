@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ServiceType;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -73,6 +74,7 @@ class Booking extends Model
         'special_needs_notes',
         'emergency_instructions',
         'total_amount',
+        'caregiver_amount',
         'reimbursement',
         'reimbursement_description',
         'bonus',
@@ -83,6 +85,10 @@ class Booking extends Model
         'charge_attempt_count',
         'last_charge_attempt_at',
         'requires_payment',
+    ];
+
+    protected $appends = [
+        'service_type_label',
     ];
 
     public function casts(): array
@@ -98,6 +104,7 @@ class Booking extends Model
             'children' => 'array',
             'pets' => 'array',
             'total_amount' => 'decimal:2',
+            'caregiver_amount' => 'decimal:2',
             'reimbursement' => 'decimal:2',
             'reimbursement_description' => 'string',
             'bonus' => 'decimal:2',
@@ -222,5 +229,14 @@ class Booking extends Model
     public function confirmedCaregiver()
     {
         return $this->belongsTo(Caregiver::class, 'confirmed_by');
+    }
+
+    public function getServiceTypeLabelAttribute(): ?string
+    {
+        if (! $this->service_type) {
+            return null;
+        }
+
+        return ServiceType::tryFrom($this->service_type)?->label() ?? $this->service_type;
     }
 }
