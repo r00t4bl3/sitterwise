@@ -272,19 +272,16 @@ class CaregiverController extends Controller
             ->with('success', 'Password has been reset successfully');
     }
 
-    // /**
-    //  * Show caregiver's available bookings page.
-    //  */
-    // public function showBookings(Request $request)
-    // {
-    //     return app(CaregiverBookingService::class)->showPage($request);
-    // }
+    public function updateAdminRating(Request $request, Caregiver $caregiver): RedirectResponse
+    {
+        $validated = $request->validate([
+            'admin_rating' => 'required|numeric|min:1|max:5',
+        ]);
 
-    // /**
-    //  * Show a specific booking detail.
-    //  */
-    // public function showBooking(Request $request, int $bookingId)
-    // {
-    //     return app(CaregiverBookingService::class)->show($request, $bookingId);
-    // }
+        $caregiver->update([
+            'admin_rating' => round($validated['admin_rating'], 2),
+        ]);
+
+        return back()->with('success', 'Admin rating updated successfully');
+    }
 }

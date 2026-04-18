@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { Calendar, Clock, User, CheckCircle } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Calendar, Clock, User, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -29,18 +29,27 @@ interface Booking {
 }
 
 interface Props {
-    bookings: Booking[];
+    bookings: {
+        data: Booking[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
 }
 
-export default function CaregiverBookings({
-    bookings: initialBookings,
-}: Props) {
-    const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+export default function CaregiverBookings() {
+    const { bookings } = usePage().props as unknown as Props;
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const getInitialCountdowns = (): Record<number, number> => {
         const newCountdowns: Record<number, number> = {};
-        bookings.forEach((booking) => {
+        bookings.data.forEach((booking) => {
             if (booking.reservation_expires_at) {
                 const expiresAt = new Date(
                     booking.reservation_expires_at,
@@ -88,82 +97,7 @@ export default function CaregiverBookings({
                 clearInterval(intervalRef.current);
             }
         };
-    }, [bookings]);
-
-    // WebSocket listeners for real-time updates
-    useEffect(() => {
-        const echo = (window as any).Echo;
-
-        if (!echo) {
-            return;
-        }
-
-        const channels: any[] = [];
-
-        bookings.forEach((booking) => {
-            const channel = echo.channel(`booking.${booking.id}`);
-            channels.push(channel);
-
-            channel.listen('JobReserved', (data: any) => {
-                setCountdowns((prev) => ({
-                    ...prev,
-                    [booking.id]: data.expires_in,
-                }));
-                setBookings((prev) =>
-                    prev.map((b) =>
-                        b.id === booking.id
-                            ? {
-                                  ...b,
-                                  reserved_by: data.caregiver_id,
-                                  reservation_expires_at: new Date(
-                                      Date.now() + data.expires_in * 1000,
-                                  ).toISOString(),
-                              }
-                            : b,
-                    ),
-                );
-            });
-
-            channel.listen('JobConfirmed', () => {
-                setCountdowns((prev) => {
-                    const updated = { ...prev };
-                    delete updated[booking.id];
-
-                    return updated;
-                });
-                setBookings((prev) => prev.filter((b) => b.id !== booking.id));
-            });
-
-            channel.listen('JobReleased', () => {
-                setCountdowns((prev) => {
-                    const updated = { ...prev };
-                    delete updated[booking.id];
-
-                    return updated;
-                });
-                setBookings((prev) =>
-                    prev.map((b) =>
-                        b.id === booking.id
-                            ? {
-                                  ...b,
-                                  reserved_by: null,
-                                  reservation_expires_at: null,
-                                  status: 'received',
-                              }
-                            : b,
-                    ),
-                );
-            });
-        });
-
-        return () => {
-            channels.forEach((channel) => {
-                channel.stopListening('JobReserved');
-                channel.stopListening('JobConfirmed');
-                channel.stopListening('JobReleased');
-            });
-        };
-    }, [bookings]);
+    }, [bookings.data]);
 
     const formatDateTime = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -200,7 +134,7 @@ export default function CaregiverBookings({
         );
     };
 
-    if (bookings.length === 0) {
+    if (bookings.data.length === 0) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="Bookings" />
@@ -240,7 +174,7 @@ export default function CaregiverBookings({
                     </p>
                 </div>
 
-                {bookings.length === 0 ? (
+                {bookings.data.length === 0 ? (
                     <div className="rounded-lg border border-border bg-card p-12 text-center">
                         <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                         <h3 className="text-lg font-medium text-foreground">
@@ -252,7 +186,7 @@ export default function CaregiverBookings({
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {bookings.map((booking) => (
+                        {bookings.data.map((booking) => (
                             <div
                                 key={booking.id}
                                 className="rounded-lg border border-border bg-card p-6"
@@ -299,6 +233,48 @@ export default function CaregiverBookings({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {bookings.last_page > 1 && (
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Page {bookings.current_page} of {bookings.last_page}
+                        </p>
+                        <div className="flex gap-1">
+                            {bookings.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-foreground text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

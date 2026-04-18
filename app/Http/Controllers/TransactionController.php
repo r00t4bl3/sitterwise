@@ -33,7 +33,7 @@ class TransactionController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Transactions/Index', [
+        return Inertia::render('admin/transactions/index', [
             'bookings' => $bookings,
             'filters' => [
                 'search' => $search,

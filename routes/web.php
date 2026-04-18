@@ -57,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('bookings', BookingController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
+    Route::post('jobs/{booking}/rate', [JobController::class, 'rate'])->name('jobs.rate');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {
@@ -74,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
         Route::post('caregivers/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
+        Route::put('caregivers/{caregiver}/admin-rating', [CaregiverController::class, 'updateAdminRating'])->name('caregivers.updateAdminRating');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
     });
 

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
+import { RatingInput } from '@/components/RatingInput';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -108,6 +109,7 @@ interface Caregiver {
         profile_photo_url: string | null;
     };
     rating: number | null;
+    admin_rating: number | null;
     biography: string | null;
     notes: string | null;
     stripe_account_id: string | null;
@@ -222,6 +224,10 @@ export default function CaregiverShow() {
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const adminRatingForm = useForm({
+        admin_rating: caregiver.admin_rating || 0,
+    });
+
     const statusForm = useForm<{ status_id: number }>({
         status_id: caregiver.status.id,
     });
@@ -233,6 +239,12 @@ export default function CaregiverShow() {
         new_password: '',
         new_password_confirmation: '',
     });
+
+    const handleAdminRatingUpdate = () => {
+        adminRatingForm.put(`/caregivers/${caregiver.id}/admin-rating`, {
+            preserveScroll: true,
+        });
+    };
 
     const handleStatusUpdate = () => {
         setIsStatusUpdating(true);
@@ -701,6 +713,37 @@ export default function CaregiverShow() {
                                     {isStatusUpdating
                                         ? 'Updating...'
                                         : 'Update Status'}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="border border-border bg-card p-6">
+                            <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Admin Rating
+                            </h2>
+                            <p className="mb-4 text-xs text-muted-foreground">
+                                Global rating visible to admins only.
+                            </p>
+                            <div className="space-y-4">
+                                <RatingInput
+                                    value={adminRatingForm.data.admin_rating}
+                                    onChange={(val) =>
+                                        adminRatingForm.setData(
+                                            'admin_rating',
+                                            val,
+                                        )
+                                    }
+                                    error={adminRatingForm.errors.admin_rating}
+                                />
+                                <Button
+                                    onClick={handleAdminRatingUpdate}
+                                    disabled={adminRatingForm.processing}
+                                    className="w-full"
+                                    variant="outline"
+                                >
+                                    {adminRatingForm.processing
+                                        ? 'Saving...'
+                                        : 'Save Admin Rating'}
                                 </Button>
                             </div>
                         </div>

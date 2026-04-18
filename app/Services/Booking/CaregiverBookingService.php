@@ -37,8 +37,8 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->whereHas('booking', function ($query) {
                 $query->where('status', '!=', 'confirmed');
             })
-            ->get()
-            ->map(function ($notification) {
+            ->paginate(5)
+            ->through(function ($notification) {
                 $booking = $notification->booking;
 
                 // Lazy expiration check

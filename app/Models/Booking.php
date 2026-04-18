@@ -5,9 +5,6 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Booking extends Model
@@ -88,62 +85,112 @@ class Booking extends Model
         'requires_payment',
     ];
 
-    protected $casts = [
-        'start_datetime' => 'datetime',
-        'end_datetime' => 'datetime',
-        'reservation_expires_at' => 'datetime',
-        'confirmed_at' => 'datetime',
-        'last_charge_attempt_at' => 'datetime',
-        'special_considerations' => 'array',
-        'sitter_preferences' => 'array',
-        'children' => 'array',
-        'pets' => 'array',
-        'total_amount' => 'decimal:2',
-        'reimbursement' => 'decimal:2',
-        'reimbursement_description' => 'string',
-        'bonus' => 'decimal:2',
-        'tip' => 'decimal:2',
-        'actual_amount' => 'decimal:2',
-        'charge_attempt_count' => 'integer',
-        'requires_payment' => 'boolean',
-    ];
+    public function casts(): array
+    {
+        return [
+            'start_datetime' => 'datetime',
+            'end_datetime' => 'datetime',
+            'reservation_expires_at' => 'datetime',
+            'confirmed_at' => 'datetime',
+            'last_charge_attempt_at' => 'datetime',
+            'special_considerations' => 'array',
+            'sitter_preferences' => 'array',
+            'children' => 'array',
+            'pets' => 'array',
+            'total_amount' => 'decimal:2',
+            'reimbursement' => 'decimal:2',
+            'reimbursement_description' => 'string',
+            'bonus' => 'decimal:2',
+            'tip' => 'decimal:2',
+            'actual_amount' => 'decimal:2',
+            'charge_attempt_count' => 'integer',
+            'requires_payment' => 'boolean',
+        ];
+    }
 
-    public function bookingGroup(): BelongsTo
+    public function ratings()
+    {
+        return $this->hasMany(BookingRating::class, 'booking_id');
+    }
+
+    public function clientRating()
+    {
+        return $this->hasOne(BookingRating::class, 'booking_id')
+            ->where('ratable_type', Client::class);
+    }
+
+    public function caregiverRating()
+    {
+        return $this->hasOne(BookingRating::class, 'booking_id')
+            ->where('ratable_type', Caregiver::class);
+    }
+
+    public function getClientRatingAttribute(): ?array
+    {
+        if (! $this->relationLoaded('clientRating')) {
+            return null;
+        }
+
+        $rating = $this->clientRating;
+
+        return $rating ? [
+            'id' => $rating->id,
+            'rating' => $rating->rating,
+            'comment' => $rating->comment,
+        ] : null;
+    }
+
+    public function getCaregiverRatingAttribute(): ?array
+    {
+        if (! $this->relationLoaded('caregiverRating')) {
+            return null;
+        }
+
+        $rating = $this->caregiverRating;
+
+        return $rating ? [
+            'id' => $rating->id,
+            'rating' => $rating->rating,
+            'comment' => $rating->comment,
+        ] : null;
+    }
+
+    public function bookingGroup()
     {
         return $this->belongsTo(BookingGroup::class);
     }
 
-    public function client(): BelongsTo
+    public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function caregiver(): BelongsTo
+    public function caregiver()
     {
         return $this->belongsTo(Caregiver::class);
     }
 
-    public function availability(): BelongsTo
+    public function availability()
     {
         return $this->belongsTo(Availability::class);
     }
 
-    public function hotel(): BelongsTo
+    public function hotel()
     {
         return $this->belongsTo(Hotel::class);
     }
 
-    public function address(): BelongsTo
+    public function address()
     {
         return $this->belongsTo(ClientAddress::class, 'address_id');
     }
 
-    public function payments(): HasMany
+    public function payments()
     {
         return $this->hasMany(ClientPayment::class);
     }
 
-    public function attributeDefinitions(): BelongsToMany
+    public function attributeDefinitions()
     {
         return $this->belongsToMany(
             AttributeDefinition::class,
@@ -155,24 +202,24 @@ class Booking extends Model
             ->wherePivot('entity_type', 'booking');
     }
 
-    public function caregiverNotifications(): HasMany
+    public function caregiverNotifications()
     {
         return $this->hasMany(BookingCaregiverNotification::class);
     }
 
-    public function notifiedCaregivers(): BelongsToMany
+    public function notifiedCaregivers()
     {
         return $this->belongsToMany(Caregiver::class, 'booking_caregiver_notifications')
             ->withPivot('notified_at', 'viewed_at', 'responded_at', 'claimed')
             ->withTimestamps();
     }
 
-    public function reservedCaregiver(): BelongsTo
+    public function reservedCaregiver()
     {
         return $this->belongsTo(Caregiver::class, 'reserved_by');
     }
 
-    public function confirmedCaregiver(): BelongsTo
+    public function confirmedCaregiver()
     {
         return $this->belongsTo(Caregiver::class, 'confirmed_by');
     }

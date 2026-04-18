@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 
@@ -28,6 +29,7 @@ class Client extends Model
         'client_type',
         'corporate_id',
         'stripe_customer_id',
+        'rating',
         'how_did_you_hear',
         'sitter_preferences',
         'other_adults_present',
@@ -42,7 +44,27 @@ class Client extends Model
 
     protected $casts = [
         'sitter_preferences' => 'array',
+        'rating' => 'decimal:2',
     ];
+
+    public function ratings(): MorphMany
+    {
+        return $this->morphMany(BookingRating::class, 'ratable');
+    }
+
+    public function receivedRatings(): MorphMany
+    {
+        return $this->morphMany(BookingRating::class, 'ratable');
+    }
+
+    public function recalculateRating(): void
+    {
+        $average = $this->ratings()
+            ->whereNull('deleted_at')
+            ->avg('rating') ?: 0;
+
+        $this->update(['rating' => round($average, 2)]);
+    }
 
     public function getChildrenCountAttribute(): int
     {

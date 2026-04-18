@@ -40,6 +40,7 @@ class CaregiverResource extends JsonResource
                 'profile_photo_url' => $this->user->profile_photo_url ?? null,
             ],
             'rating' => $this->rating,
+            'admin_rating' => $this->admin_rating,
             'biography' => $this->biography,
             'notes' => $this->notes,
             'status' => $isEdit ? null : $this->status,

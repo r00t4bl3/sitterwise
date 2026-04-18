@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -69,6 +70,7 @@ class Caregiver extends Model
         'address_zip',
         'date_of_birth',
         'rating',
+        'admin_rating',
         'biography',
         'notes',
         'stripe_account_id',
@@ -81,9 +83,29 @@ class Caregiver extends Model
     protected $casts = [
         'date_of_birth' => 'date',
         'rating' => 'decimal:2',
+        'admin_rating' => 'decimal:2',
         'languages' => 'array',
         'metadata' => 'array',
     ];
+
+    public function ratings(): MorphMany
+    {
+        return $this->morphMany(BookingRating::class, 'ratable');
+    }
+
+    public function receivedRatings(): MorphMany
+    {
+        return $this->morphMany(BookingRating::class, 'ratable');
+    }
+
+    public function recalculateRating(): void
+    {
+        $average = $this->ratings()
+            ->whereNull('deleted_at')
+            ->avg('rating') ?: 0;
+
+        $this->update(['rating' => round($average, 2)]);
+    }
 
     public function educations(): HasMany
     {
