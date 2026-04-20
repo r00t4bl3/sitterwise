@@ -17,6 +17,7 @@ import {
     SheetHeader,
     SheetTitle,
     SheetDescription,
+    SheetFooter,
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -71,8 +72,8 @@ interface Job {
         first_name: string;
         last_name: string;
         user: {
-        email: string;
-        phone: string | null;
+            email: string;
+            phone: string | null;
         } | null;
     };
     // This comes from the accessor - camelCase in JSON
@@ -138,7 +139,21 @@ export default function JobsIndex() {
         });
     };
 
-    const getStatusBadge = (status: string) => {
+    const formatDateTimeLocal = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    const getStatusBadge = (
+        status: string,
+        start_datetime?: string,
+        end_datetime?: string,
+    ) => {
         const colors: Record<
             string,
             { bg: string; text: string; border: string }
@@ -176,11 +191,40 @@ export default function JobsIndex() {
             border: 'border-gray-300',
         };
 
+        let label = status.charAt(0).toUpperCase() + status.slice(1);
+
+        if (status === 'confirmed' && start_datetime && end_datetime) {
+            const now = new Date();
+            const start = new Date(start_datetime);
+            const end = new Date(end_datetime);
+
+            if (end <= now) {
+                label = 'Confirmed';
+            } else if (start <= now) {
+                label = 'Confirmed (in progress)';
+            } else {
+                const diffMs = start.getTime() - now.getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+                const diffDays = diffHours / 24;
+
+                if (diffDays >= 1) {
+                    const days = Math.floor(diffDays);
+                    label = `Confirmed (starts in ${days} day${days !== 1 ? 's' : ''})`;
+                } else if (diffHours >= 1) {
+                    const hours = Math.floor(diffHours);
+                    label = `Confirmed (starts in ${hours} hour${hours !== 1 ? 's' : ''})`;
+                } else {
+                    const mins = Math.floor(diffMs / (1000 * 60));
+                    label = `Confirmed (starts in ${mins} min${mins !== 1 ? 's' : ''})`;
+                }
+            }
+        }
+
         return (
             <span
                 className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.bg} ${style.text} ${style.border}`}
             >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {label}
             </span>
         );
     };
@@ -315,65 +359,78 @@ export default function JobsIndex() {
                                                 {job.service_type_label}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {getStatusBadge(job.status)}
+                                                {getStatusBadge(
+                                                    job.status,
+                                                    job.start_datetime,
+                                                    job.end_datetime,
+                                                )}
                                             </td>
                                             <td className="flex justify-end gap-x-2 px-4 py-3">
-                                                {job.status === 'confirmed' && (
-                                                    <Button
-                                                        onClick={() => {
-                                                            setSelectedJob(job);
-                                                            const start =
-                                                                new Date(
-                                                                    job.start_datetime,
+                                                {job.status === 'confirmed' &&
+                                                    new Date(
+                                                        job.start_datetime,
+                                                    ) <= new Date() && (
+                                                        <Button
+                                                            onClick={() => {
+                                                                setSelectedJob(
+                                                                    job,
                                                                 );
-                                                            const end =
-                                                                new Date(
-                                                                    job.end_datetime,
+                                                                const start =
+                                                                    new Date(
+                                                                        job.start_datetime,
+                                                                    );
+                                                                const end =
+                                                                    new Date(
+                                                                        job.end_datetime,
+                                                                    );
+                                                                const hours =
+                                                                    (end.getTime() -
+                                                                        start.getTime()) /
+                                                                    (1000 *
+                                                                        60 *
+                                                                        60);
+                                                                checkoutForm.setData(
+                                                                    {
+                                                                        start_datetime:
+                                                                            formatDateTimeLocal(
+                                                                                new Date(
+                                                                                    job.start_datetime,
+                                                                                ),
+                                                                            ),
+                                                                        end_datetime:
+                                                                            formatDateTimeLocal(
+                                                                                new Date(
+                                                                                    job.end_datetime,
+                                                                                ),
+                                                                            ),
+                                                                        total_working_hour:
+                                                                            job.total_working_hour?.toString() ||
+                                                                            hours.toFixed(
+                                                                                2,
+                                                                            ),
+                                                                        reimbursement:
+                                                                            job.reimbursement?.toString() ||
+                                                                            '',
+                                                                        reimbursement_description:
+                                                                            job.reimbursement_description ||
+                                                                            '',
+                                                                        bonus:
+                                                                            job.bonus?.toString() ||
+                                                                            '',
+                                                                    },
                                                                 );
-                                                            const hours =
-                                                                (end.getTime() -
-                                                                    start.getTime()) /
-                                                                (1000 * 60 * 60);
-                                                            checkoutForm.setData(
-                                                                {
-                                                                    start_datetime:
-                                                                        job.start_datetime.slice(
-                                                                            0,
-                                                                            16,
-                                                                        ),
-                                                                    end_datetime:
-                                                                        job.end_datetime.slice(
-                                                                            0,
-                                                                            16,
-                                                                        ),
-                                                                    total_working_hour:
-                                                                        job.total_working_hour?.toString() ||
-                                                                        hours.toFixed(
-                                                                            2,
-                                                                        ),
-                                                                    reimbursement:
-                                                                        job.reimbursement?.toString() ||
-                                                                        '',
-                                                                    reimbursement_description:
-                                                                        job.reimbursement_description ||
-                                                                        '',
-                                                                    bonus:
-                                                                        job.bonus?.toString() ||
-                                                                        '',
-                                                                },
-                                                            );
-                                                            setHasCheckedOut(
-                                                                false,
-                                                            );
-                                                            ratingForm.reset();
-                                                            setShowCheckout(
-                                                                true,
-                                                            );
-                                                        }}
-                                                    >
-                                                        Checkout
-                                                    </Button>
-                                                )}
+                                                                setHasCheckedOut(
+                                                                    false,
+                                                                );
+                                                                ratingForm.reset();
+                                                                setShowCheckout(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                        >
+                                                            Checkout
+                                                        </Button>
+                                                    )}
                                                 {job.status === 'completed' &&
                                                     !job.client_rating && (
                                                         <Button
@@ -459,263 +516,266 @@ export default function JobsIndex() {
                     </SheetHeader>
 
                     {!hasCheckedOut ? (
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
+                        <div>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
 
-                                if (selectedJob) {
-                                    checkoutForm.post(
-                                        `/jobs/${selectedJob.id}/checkout`,
-                                        {
-                                            onSuccess: () => {
-                                                setHasCheckedOut(true);
-                                                checkoutForm.reset();
+                                    if (selectedJob) {
+                                        checkoutForm.post(
+                                            `/jobs/${selectedJob.id}/checkout`,
+                                            {
+                                                onSuccess: () => {
+                                                    setHasCheckedOut(true);
+                                                    checkoutForm.reset();
+                                                },
                                             },
-                                        },
-                                    );
-                                }
-                            }}
-                            className="px-4 space-y-4"
-                        >
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    Start Date & Time
-                                </label>
-                                <DateTimePicker
-                                    value={checkoutForm.data.start_datetime}
-                                    onChange={(datetime) =>
-                                        checkoutForm.setData(
-                                            'start_datetime',
-                                            datetime,
-                                        )
-                                    }
-                                    error={checkoutForm.errors.start_datetime}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    End Date & Time
-                                </label>
-                                <DateTimePicker
-                                    value={checkoutForm.data.end_datetime}
-                                    onChange={(datetime) => {
-                                        checkoutForm.setData(
-                                            'end_datetime',
-                                            datetime,
                                         );
+                                    }
+                                }}
+                                className="space-y-4 px-4"
+                            >
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Start Date & Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={checkoutForm.data.start_datetime}
+                                        onChange={(datetime) =>
+                                            checkoutForm.setData(
+                                                'start_datetime',
+                                                datetime,
+                                            )
+                                        }
+                                        error={
+                                            checkoutForm.errors.start_datetime
+                                        }
+                                    />
+                                </div>
 
-                                        if (checkoutForm.data.start_datetime) {
-                                            const start = new Date(
-                                                checkoutForm.data
-                                                    .start_datetime,
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        End Date & Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={checkoutForm.data.end_datetime}
+                                        onChange={(datetime) => {
+                                            checkoutForm.setData(
+                                                'end_datetime',
+                                                datetime,
                                             );
-                                            const end = new Date(datetime);
-                                            const hours =
-                                                (end.getTime() -
-                                                    start.getTime()) /
-                                                (1000 * 60 * 60);
+
+                                            if (
+                                                checkoutForm.data.start_datetime
+                                            ) {
+                                                const start = new Date(
+                                                    checkoutForm.data
+                                                        .start_datetime,
+                                                );
+                                                const end = new Date(datetime);
+                                                const hours =
+                                                    (end.getTime() -
+                                                        start.getTime()) /
+                                                    (1000 * 60 * 60);
+                                                checkoutForm.setData(
+                                                    'total_working_hour',
+                                                    hours.toFixed(2),
+                                                );
+                                            }
+                                        }}
+                                        error={checkoutForm.errors.end_datetime}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Total Hours
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={
+                                            checkoutForm.data.total_working_hour
+                                        }
+                                        onChange={(e) =>
                                             checkoutForm.setData(
                                                 'total_working_hour',
-                                                hours.toFixed(2),
-                                            );
+                                                e.target.value,
+                                            )
                                         }
-                                    }}
-                                    error={checkoutForm.errors.end_datetime}
-                                />
-                            </div>
+                                        placeholder="0.00"
+                                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                    {checkoutForm.errors.total_working_hour && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {
+                                                checkoutForm.errors
+                                                    .total_working_hour
+                                            }
+                                        </p>
+                                    )}
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    Total Hours
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={checkoutForm.data.total_working_hour}
-                                    onChange={(e) =>
-                                        checkoutForm.setData(
-                                            'total_working_hour',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="0.00"
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {checkoutForm.errors.total_working_hour && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {checkoutForm.errors.total_working_hour}
-                                    </p>
-                                )}
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Reimbursement
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={checkoutForm.data.reimbursement}
+                                        onChange={(e) =>
+                                            checkoutForm.setData(
+                                                'reimbursement',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="0.00"
+                                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                    {checkoutForm.errors.reimbursement && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {checkoutForm.errors.reimbursement}
+                                        </p>
+                                    )}
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    Reimbursement
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={checkoutForm.data.reimbursement}
-                                    onChange={(e) =>
-                                        checkoutForm.setData(
-                                            'reimbursement',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="0.00"
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {checkoutForm.errors.reimbursement && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {checkoutForm.errors.reimbursement}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    Reimbursement Description
-                                </label>
-                                <input
-                                    type="text"
-                                    value={
-                                        checkoutForm.data
-                                            .reimbursement_description
-                                    }
-                                    onChange={(e) =>
-                                        checkoutForm.setData(
-                                            'reimbursement_description',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="Enter description"
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {checkoutForm.errors
-                                    .reimbursement_description && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {
-                                            checkoutForm.errors
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Reimbursement Description
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={
+                                            checkoutForm.data
                                                 .reimbursement_description
                                         }
-                                    </p>
-                                )}
-                            </div>
+                                        onChange={(e) =>
+                                            checkoutForm.setData(
+                                                'reimbursement_description',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Enter description"
+                                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                    {checkoutForm.errors
+                                        .reimbursement_description && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {
+                                                checkoutForm.errors
+                                                    .reimbursement_description
+                                            }
+                                        </p>
+                                    )}
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-foreground">
-                                    Bonus
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={checkoutForm.data.bonus}
-                                    onChange={(e) =>
-                                        checkoutForm.setData(
-                                            'bonus',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="0.00"
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                />
-                                {checkoutForm.errors.bonus && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {checkoutForm.errors.bonus}
-                                    </p>
-                                )}
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Bonus
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={checkoutForm.data.bonus}
+                                        onChange={(e) =>
+                                            checkoutForm.setData(
+                                                'bonus',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="0.00"
+                                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                    {checkoutForm.errors.bonus && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {checkoutForm.errors.bonus}
+                                        </p>
+                                    )}
+                                </div>
+                            </form>
 
-                            <div className="flex gap-2 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowCheckout(false);
-                                        setSelectedJob(null);
-                                        checkoutForm.reset();
-                                    }}
-                                    className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={checkoutForm.processing}
-                                    className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                                >
-                                    {checkoutForm.processing
-                                        ? 'Saving...'
-                                        : 'Save Changes'}
-                                </button>
-                            </div>
-                        </form>
+                            <SheetFooter>
+                                <div className="flex gap-2 pt-4">
+                                    <Button
+                                        variant="outline"
+                                        type="button"
+                                        onClick={() => {
+                                            setShowCheckout(false);
+                                            setSelectedJob(null);
+                                            checkoutForm.reset();
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={checkoutForm.processing}
+                                    >
+                                        {checkoutForm.processing
+                                            ? 'Saving...'
+                                            : hasCheckedOut
+                                              ? 'Submit Rating'
+                                              : 'Checkout'}
+                                    </Button>
+                                </div>
+                            </SheetFooter>
+                        </div>
                     ) : (
+                        <div>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
 
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-
-                                if (selectedJob) {
-                                    ratingForm.post(
-                                        `/jobs/${selectedJob.id}/rate`,
-                                        {
-                                            onSuccess: () => {
-                                                setShowCheckout(false);
-                                                setSelectedJob(null);
-                                                ratingForm.reset();
+                                    if (selectedJob) {
+                                        ratingForm.post(
+                                            `/jobs/${selectedJob.id}/rate`,
+                                            {
+                                                onSuccess: () => {
+                                                    setShowCheckout(false);
+                                                    setSelectedJob(null);
+                                                    ratingForm.reset();
+                                                },
                                             },
-                                        },
-                                    );
-                                }
-                            }}
-                            className="px-4 space-y-4"
-                        >
-                            <RatingInput
-                                value={ratingForm.data.rating}
-                                onChange={(val) =>
-                                    ratingForm.setData('rating', val)
-                                }
-                                label="Rating"
-                                error={ratingForm.errors.rating}
-                            />
-
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-foreground">
-                                    Comment (Optional)
-                                </label>
-                                <textarea
-                                    value={ratingForm.data.comment}
-                                    onChange={(e) =>
-                                        ratingForm.setData(
-                                            'comment',
-                                            e.target.value,
-                                        )
+                                        );
                                     }
-                                    placeholder="Share your experience..."
-                                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                    rows={4}
+                                }}
+                                className="space-y-4 px-4"
+                            >
+                                <RatingInput
+                                    value={ratingForm.data.rating}
+                                    onChange={(val) =>
+                                        ratingForm.setData('rating', val)
+                                    }
+                                    label="Rating"
+                                    error={ratingForm.errors.rating}
                                 />
-                                {ratingForm.errors.comment && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {ratingForm.errors.comment}
-                                    </p>
-                                )}
-                            </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowCheckout(false);
-                                        setSelectedJob(null);
-                                        ratingForm.reset();
-                                    }}
-                                    className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                                >
-                                    Skip
-                                </button>
-                                <button
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Comment (Optional)
+                                    </label>
+                                    <textarea
+                                        value={ratingForm.data.comment}
+                                        onChange={(e) =>
+                                            ratingForm.setData(
+                                                'comment',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Share your experience..."
+                                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        rows={4}
+                                    />
+                                    {ratingForm.errors.comment && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {ratingForm.errors.comment}
+                                        </p>
+                                    )}
+                                </div>
+                            </form>
+                            <SheetFooter>
+                                <Button
                                     type="submit"
                                     disabled={ratingForm.processing}
                                     className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -723,9 +783,20 @@ export default function JobsIndex() {
                                     {ratingForm.processing
                                         ? 'Submitting...'
                                         : 'Submit Rating'}
-                                </button>
-                            </div>
-                        </form>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowCheckout(false);
+                                        setSelectedJob(null);
+                                        ratingForm.reset();
+                                    }}
+                                >
+                                    Skip
+                                </Button>
+                            </SheetFooter>
+                        </div>
                     )}
                 </SheetContent>
             </Sheet>

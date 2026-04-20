@@ -1,4 +1,4 @@
-import { Link, usePage, useForm, Head } from '@inertiajs/react';
+import { Link, useForm, Head } from '@inertiajs/react';
 import {
     Calendar,
     MapPin,
@@ -18,6 +18,7 @@ import {
     SheetHeader,
     SheetTitle,
     SheetDescription,
+    SheetFooter,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
@@ -83,7 +84,6 @@ const getBreadcrumbTitle = (clientName: string) => [
 ];
 
 export default function BookingDetail({ booking }: PageProps) {
-    const { props } = usePage();
     const [error, setError] = useState<string | null>(null);
     const [showConfirmSheet, setShowConfirmSheet] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -131,7 +131,7 @@ export default function BookingDetail({ booking }: PageProps) {
                 setError(errors.error || 'Failed to reserve booking');
             },
         });
-    }, [booking.id, reserveForm, props]);
+    }, [booking.id, reserveForm]);
 
     const confirmBooking = useCallback(() => {
         confirmForm.post(`/bookings/${booking.id}/confirm`, {
@@ -151,10 +151,6 @@ export default function BookingDetail({ booking }: PageProps) {
                 if (countdownRef.current) {
                     clearInterval(countdownRef.current);
                 }
-
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 2000);
             },
             onError: (errors) => {
                 setError(errors.error || 'Failed to confirm booking');
@@ -592,7 +588,8 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </div>
                                 </div>
                             </div>
-
+                        </div>
+                        <SheetFooter>
                             <div className="flex gap-3">
                                 <Button
                                     variant="outline"
@@ -614,7 +611,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                         : 'Confirm Booking'}
                                 </Button>
                             </div>
-                        </div>
+                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

@@ -8,6 +8,7 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -395,6 +396,8 @@ export default function ClientShow() {
                                     </p>
                                 )}
                             </div>
+                        </form>
+                        <SheetFooter>
                             <div>
                                 <Button
                                     type="submit"
@@ -416,7 +419,7 @@ export default function ClientShow() {
                                     Cancel
                                 </Button>
                             </div>
-                        </form>
+                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
 

@@ -1,5 +1,12 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Calendar, Clock, User, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    Calendar,
+    Clock,
+    User,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';

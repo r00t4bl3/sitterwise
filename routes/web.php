@@ -14,15 +14,13 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PricingRuleController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::redirect('/', '/login')->name('home');
 
 Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
 
@@ -94,6 +92,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('hotels/search', [HotelController::class, 'search'])->name('hotels.search');
     Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
+    Route::resource('pricing-rules', PricingRuleController::class)->except(['show', 'create', 'edit'])->name('index', 'pricing-rules.index');
 
 });
 

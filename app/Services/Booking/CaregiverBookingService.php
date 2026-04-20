@@ -235,7 +235,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
 
         broadcast(new JobConfirmed($booking->id, $caregiver->id))->toOthers();
 
-        return to_route('dashboard')->with('success', 'Booking confirmed successfully');
+        return to_route('jobs.index')->with('success', 'Booking confirmed successfully');
     }
 
     /**

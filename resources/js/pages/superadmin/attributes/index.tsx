@@ -6,6 +6,7 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -341,20 +342,20 @@ export default function AttributesIndex() {
                                     Active
                                 </label>
                             </div>
-                            <div className="gap-2 pt-4">
-                                <Button type="submit" className="w-full">
-                                    {form.processing ? 'Saving...' : 'Save'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    type="button"
-                                    onClick={() => setIsSheetOpen(false)}
-                                    className="mt-2 w-full"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
                         </form>
+                        <SheetFooter>
+                            <Button type="submit" className="w-full">
+                                {form.processing ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                type="button"
+                                onClick={() => setIsSheetOpen(false)}
+                                className="mt-2 w-full"
+                            >
+                                Cancel
+                            </Button>
+                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

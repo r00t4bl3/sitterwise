@@ -6,6 +6,7 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -230,7 +231,10 @@ export default function HotelsIndex() {
                 </div>
 
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                    <SheetContent side="right" className="w-full sm:max-w-lg">
+                    <SheetContent
+                        side="right"
+                        className="flex w-full flex-col sm:max-w-lg"
+                    >
                         <SheetHeader>
                             <SheetTitle>
                                 {editingId ? 'Edit Hotel' : 'Add Hotel'}
@@ -241,7 +245,7 @@ export default function HotelsIndex() {
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
-                            className="space-y-4 px-4"
+                            className="flex-grow space-y-4 overflow-y-auto px-4"
                         >
                             <div>
                                 <label className="text-sm font-medium text-foreground">
@@ -465,20 +469,20 @@ export default function HotelsIndex() {
                                     Active
                                 </label>
                             </div>
-                            <div className="gap-2 pt-4">
-                                <Button type="submit" className="w-full">
-                                    {form.processing ? 'Saving...' : 'Save'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    type="button"
-                                    onClick={() => setIsSheetOpen(false)}
-                                    className="mt-2 w-full"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
                         </form>
+                        <SheetFooter>
+                            <Button type="submit" className="w-full">
+                                {form.processing ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                type="button"
+                                onClick={() => setIsSheetOpen(false)}
+                                className="mt-2 w-full"
+                            >
+                                Cancel
+                            </Button>
+                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

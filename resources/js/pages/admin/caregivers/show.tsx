@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { useState } from 'react';
+import { RatingInput } from '@/components/RatingInput';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
@@ -17,12 +18,12 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
-import { RatingInput } from '@/components/RatingInput';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -406,28 +407,26 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <Button
-                                    type="submit"
-                                    disabled={passwordForm.processing}
-                                    className="w-full"
-                                >
-                                    {passwordForm.processing
-                                        ? 'Resetting...'
-                                        : 'Reset Password'}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() =>
-                                        setIsPasswordSheetOpen(false)
-                                    }
-                                    variant="outline"
-                                    className="mt-2 w-full"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
                         </form>
+                        <SheetFooter>
+                            <Button
+                                type="submit"
+                                disabled={passwordForm.processing}
+                                className="w-full"
+                            >
+                                {passwordForm.processing
+                                    ? 'Resetting...'
+                                    : 'Reset Password'}
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={() => setIsPasswordSheetOpen(false)}
+                                variant="outline"
+                                className="mt-2 w-full"
+                            >
+                                Cancel
+                            </Button>
+                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
 

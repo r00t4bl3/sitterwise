@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             HotelSeeder::class,
             BookingGroupSeeder::class,
             BookingSeeder::class,
+            PricingRulesTableSeeder::class,
         ]);
 
         User::factory()->create([

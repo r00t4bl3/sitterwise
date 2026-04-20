@@ -739,7 +739,9 @@ export default function Bookings() {
             client_id: booking.client_id,
             service_type: booking.service_type,
             location_type: booking.location_type,
-            start_datetime: formatDateTimeLocal(new Date(booking.start_datetime)),
+            start_datetime: formatDateTimeLocal(
+                new Date(booking.start_datetime),
+            ),
             end_datetime: formatDateTimeLocal(new Date(booking.end_datetime)),
             hotel_id: booking.hotel_id,
             address_id: booking.address_id,

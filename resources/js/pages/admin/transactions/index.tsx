@@ -1,5 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Calendar, Clock, User, Receipt } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Calendar,
+    Clock,
+    Receipt,
+} from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -149,7 +155,7 @@ export default function TransactionsIndex() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search by booking ID, client or caregiver name..."
-                            className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring w-full max-w-md"
+                            className="h-10 w-full max-w-md rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                         />
                         <button type="submit" className="btn-primary">
                             Search
@@ -218,11 +224,23 @@ export default function TransactionsIndex() {
                                                 {booking.caregiver ? (
                                                     <>
                                                         <div className="text-sm font-medium text-foreground">
-                                                            {booking.caregiver.first_name}{' '}
-                                                            {booking.caregiver.last_name}
+                                                            {
+                                                                booking
+                                                                    .caregiver
+                                                                    .first_name
+                                                            }{' '}
+                                                            {
+                                                                booking
+                                                                    .caregiver
+                                                                    .last_name
+                                                            }
                                                         </div>
                                                         <div className="text-xs text-muted-foreground">
-                                                            {booking.caregiver.user?.email}
+                                                            {
+                                                                booking
+                                                                    .caregiver
+                                                                    .user?.email
+                                                            }
                                                         </div>
                                                     </>
                                                 ) : (
@@ -243,11 +261,16 @@ export default function TransactionsIndex() {
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     <Clock className="h-3 w-3" />
                                                     Ends:{' '}
-                                                    {formatDateTime(booking.end_datetime)}
+                                                    {formatDateTime(
+                                                        booking.end_datetime,
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-foreground">
-                                                ${booking.total_price?.toFixed(2) ?? '0.00'}
+                                                $
+                                                {booking.total_price?.toFixed(
+                                                    2,
+                                                ) ?? '0.00'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {getStatusBadge(booking.status)}

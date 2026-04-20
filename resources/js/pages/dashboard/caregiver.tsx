@@ -5,6 +5,7 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -293,47 +294,52 @@ export default function CaregiverDashboard({
                             />
                         </div>
 
-                        <div className="flex gap-2 pt-4">
+                        <SheetFooter>
+                            <div className="flex gap-2 pt-4">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={
+                                        processing ||
+                                        data.time_slots.length === 0
+                                    }
+                                    className="btn-primary flex-1"
+                                >
+                                    {processing && (
+                                        <Spinner className="size-4" />
+                                    )}
+                                    {processing ? 'Saving...' : 'Save'}
+                                </button>
+                                {(() => {
+                                    const map = availabilities.reduce(
+                                        (acc, av) => {
+                                            acc[av.date] = av;
+
+                                            return acc;
+                                        },
+                                        {} as Record<string, Availability>,
+                                    );
+
+                                    return (
+                                        map[selectedDate || ''] && (
+                                            <button
+                                                onClick={handleDelete}
+                                                disabled={processing}
+                                                className="btn-secondary w-1/4"
+                                            >
+                                                Delete
+                                            </button>
+                                        )
+                                    );
+                                })()}
+                            </div>
+
                             <button
-                                onClick={handleSave}
-                                disabled={
-                                    processing || data.time_slots.length === 0
-                                }
-                                className="btn-primary flex-1"
+                                onClick={() => setIsSheetOpen(false)}
+                                className="btn-secondary mt-2 w-full"
                             >
-                                {processing && <Spinner className="size-4" />}
-                                {processing ? 'Saving...' : 'Save'}
+                                Cancel
                             </button>
-                            {(() => {
-                                const map = availabilities.reduce(
-                                    (acc, av) => {
-                                        acc[av.date] = av;
-
-                                        return acc;
-                                    },
-                                    {} as Record<string, Availability>,
-                                );
-
-                                return (
-                                    map[selectedDate || ''] && (
-                                        <button
-                                            onClick={handleDelete}
-                                            disabled={processing}
-                                            className="btn-secondary w-1/4"
-                                        >
-                                            Delete
-                                        </button>
-                                    )
-                                );
-                            })()}
-                        </div>
-
-                        <button
-                            onClick={() => setIsSheetOpen(false)}
-                            className="btn-secondary mt-2 w-full"
-                        >
-                            Cancel
-                        </button>
+                        </SheetFooter>
                     </div>
                 </SheetContent>
             </Sheet>

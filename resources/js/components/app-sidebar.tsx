@@ -121,6 +121,11 @@ const superAdminNavItems: NavItem[] = [
         href: '/hotels',
         icon: Home,
     },
+    {
+        title: 'Pricing Rules',
+        href: '/pricing-rules',
+        icon: CircleDollarSign,
+    },
 ];
 
 const footerNavItems: NavItem[] = [];

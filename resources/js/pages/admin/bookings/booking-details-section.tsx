@@ -101,6 +101,7 @@ export function BookingDetailsSection({
         if (form.data.requires_payment !== requiresPayment) {
             form.setData('requires_payment', requiresPayment);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.service_type]);
 
     return (
