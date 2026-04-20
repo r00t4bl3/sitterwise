@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { useState } from 'react';
-import { RatingInput } from '@/components/RatingInput';
+import { RatingInput } from '@/components/rating-input';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';

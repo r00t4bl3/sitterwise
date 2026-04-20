@@ -8,7 +8,7 @@ import {
     Building,
 } from 'lucide-react';
 import { useState } from 'react';
-import { RatingInput } from '@/components/RatingInput';
+import { RatingInput } from '@/components/rating-input';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
