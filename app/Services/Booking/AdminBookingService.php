@@ -126,7 +126,7 @@ class AdminBookingService implements BookingServiceInterface
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, Booking $booking)
     {
         return redirect()->route('bookings.index');
     }
@@ -246,9 +246,8 @@ class AdminBookingService implements BookingServiceInterface
         return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Booking $booking)
     {
-        $booking = Booking::findOrFail($id);
         $validated = $request->validated();
 
         // Validate minimum 4-hour duration
@@ -333,19 +332,16 @@ class AdminBookingService implements BookingServiceInterface
         return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Booking $booking)
     {
-        $booking = Booking::findOrFail($id);
         $booking->bookingGroup->delete();
         $booking->delete();
 
         return redirect()->route('bookings.index')->with('success', 'Booking deleted successfully.');
     }
 
-    public function notify(Request $request, $id)
+    public function notify(Request $request, Booking $booking)
     {
-        $booking = Booking::findOrFail($id);
-
         try {
             $validated = $request->validate([
                 'caregiver_ids' => 'required|array',
@@ -420,17 +416,17 @@ class AdminBookingService implements BookingServiceInterface
         }));
     }
 
-    public function reserve(Request $request, int $bookingId)
+    public function reserve(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot reserve bookings');
     }
 
-    public function confirm(Request $request, int $bookingId)
+    public function confirm(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot confirm bookings');
     }
 
-    public function release(Request $request, int $bookingId)
+    public function release(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot release bookings');
     }

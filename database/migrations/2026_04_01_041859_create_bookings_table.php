@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
             $table->foreignId('booking_group_id')->constrained()->cascadeOnDelete();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->foreignId('caregiver_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('availability_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('hotel_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('address_id')->nullable()->constrained('client_addresses')->nullOnDelete();
+            $table->foreignId('pricing_rule_id')->nullable()->nullOnDelete();
             $table->string('address_line1')->nullable();
             $table->string('address_line2')->nullable();
             $table->string('address_city')->nullable();
@@ -48,12 +50,19 @@ return new class extends Migration
             $table->string('other_adults_present')->nullable();
             $table->text('special_needs_notes')->nullable();
             $table->text('emergency_instructions')->nullable();
-            $table->decimal('total_amount', 10, 2);
-            $table->decimal('caregiver_amount', 10, 2);
-            $table->decimal('reimbursement', 10, 2)->nullable()->default(null);
+            $table->string('how_did_you_hear')->nullable();
+            $table->decimal('charge_to_client_hourly', 10, 2)->nullable();
+            $table->decimal('paid_to_caregiver_hourly', 10, 2)->nullable();
+            $table->decimal('sitterwise_cut_hourly', 10, 2)->nullable();
+            $table->decimal('charge_to_client', 10, 2)->nullable()->comment('Total charge to client for the booking: charge_to_client_hourly * total_working_hour');
+            $table->decimal('paid_to_caregiver', 10, 2)->nullable()->comment('Total amount paid to caregiver for the booking: paid_to_caregiver_hourly * total_working_hour');
+            $table->decimal('sitterwise_cut', 10, 2)->nullable()->comment('Total amount cut by Sitterwise for the booking: sitterwise_cut_hourly * total_working_hour');
+            $table->decimal('reimbursement', 10, 2)->nullable()->default(null)->comment('Total reimbursement amount for the booking');
             $table->string('reimbursement_description')->nullable();
             $table->decimal('bonus', 10, 2)->nullable()->default(null);
             $table->decimal('tip', 10, 2)->nullable()->default(null);
+            $table->decimal('paid_to_caregiver_total', 10, 2)->nullable()->comment('Total amount paid to caregiver for the booking: paid_to_caregiver + reimbursement + bonus + tip');
+            $table->decimal('total_amount', 10, 2)->comment('Total amount for the booking: charge_to_client + reimbursement + bonus + tip');
             $table->string('payment_status');
             $table->string('stripe_payment_intent_id')->nullable();
             $table->decimal('actual_amount', 10, 2)->nullable();
@@ -62,6 +71,7 @@ return new class extends Migration
             $table->boolean('requires_payment')->default(true);
             $table->softDeletes();
             $table->timestamps();
+            $table->comment('Bookings table to store all booking information, which is true at the time of booking. This allows us to keep a historical record of bookings even if related data changes');
         });
     }
 

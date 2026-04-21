@@ -13,6 +13,14 @@ class UpdateBookingRequest extends FormRequest
 
     public function rules(): array
     {
+        return match ($this->user()->role) {
+            'admin' => $this->adminRules(),
+            'client' => $this->clientRules(),
+        };
+    }
+
+    private function adminRules()
+    {
         return [
             'client_id' => ['required', 'exists:clients,id'],
             'service_type' => ['required', 'string'],

@@ -5,10 +5,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-// Homepage
+// Login
 test('home page loads successfully', function () {
-    $response = $this->get('/');
+    $response = $this->get('/login');
     $response->assertSuccessful();
+});
+
+// Assert that the homepage always redirects to the login page for guests
+test('home page redirects to login for guests', function () {
+    $response = $this->get('/');
+    $response->assertRedirect('/login');
 });
 
 // Auth pages

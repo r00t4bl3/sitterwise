@@ -20,12 +20,16 @@ use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
+// Public routes
 Route::redirect('/', '/login')->name('home');
 
+// Caregiver public profile
 Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
 
+// Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
+// Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -47,12 +51,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('/bookings/available/{booking}', [CaregiverController::class, 'showBooking'])->name('caregiver.bookings.show');
 
     // Route::get('bookings/search-hotels', [BookingController::class, 'searchHotels'])->name('bookings.searchHotels');
-    // Caregiver API routes (no CSRF)
     Route::post('bookings/{booking}/reserve', [BookingController::class, 'reserve'])->name('bookings.reserve');
     Route::post('bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('bookings/{booking}/release', [BookingController::class, 'release'])->name('bookings.release');
     Route::get('bookings/recommended-caregivers', [BookingController::class, 'recommendedCaregivers'])->name('bookings.recommendedCaregivers');
-    Route::resource('bookings', BookingController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::resource('bookings', BookingController::class)->only(['index', 'create', 'show', 'store', 'update', 'destroy']);
     Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
     Route::post('jobs/{booking}/rate', [JobController::class, 'rate'])->name('jobs.rate');

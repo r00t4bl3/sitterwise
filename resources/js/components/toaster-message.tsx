@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -10,30 +11,80 @@ interface ToasterMessageProps {
     message?: Message | null;
 }
 
-export function ToasterMessage({ message }: ToasterMessageProps) {
-    const previousMessageRef = useRef<string | null>(null);
+export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
+    const { props } = usePage();
+    const flash = props.flash as
+        | { success?: string; error?: string }
+        | undefined;
+    const errors = props.errors;
+
+    const lastToastRef = useRef<string | null>(null);
 
     useEffect(() => {
-        // Handle prop messages
-        if (message && message.content !== previousMessageRef.current) {
-            previousMessageRef.current = message.content;
+        const showToast = (
+            type: Message['type'],
+            content: string,
+            fingerprint?: string,
+        ) => {
+            const finalFingerprint = fingerprint || content;
 
-            switch (message.type) {
+            if (lastToastRef.current === finalFingerprint) {
+                return;
+            }
+
+            lastToastRef.current = finalFingerprint;
+
+            const options = { position: 'top-center' as const };
+
+            switch (type) {
                 case 'success':
-                    toast.success(message.content, { position: 'top-center' });
+                    toast.success(content, options);
                     break;
                 case 'error':
-                    toast.error(message.content, { position: 'top-center' });
+                    toast.error(content, options);
                     break;
                 case 'info':
-                    toast.info(message.content, { position: 'top-center' });
+                    toast.info(content, options);
                     break;
                 case 'warning':
-                    toast.warning(message.content, { position: 'top-center' });
+                    toast.warning(content, options);
                     break;
             }
+        };
+
+        // 1. Handle prop message if provided (highest priority)
+        if (propMessage?.content) {
+            showToast(propMessage.type, propMessage.content);
+
+            return;
         }
-    }, [message]);
+
+        // 2. Handle flash messages
+        if (flash?.success) {
+            showToast('success', flash.success);
+
+            return;
+        }
+
+        if (flash?.error) {
+            showToast('error', flash.error);
+
+            return;
+        }
+
+        // 3. Handle validation errors
+        const errorKeys = Object.keys(errors);
+
+        if (errorKeys.length > 0) {
+            // Create a unique fingerprint for this set of errors
+            const errorFingerprint = `errors-${errorKeys.join(',')}-${Object.values(errors).join(',')}`;
+            showToast(
+                'error',
+                'Validation failed. Please check the form.',
+                errorFingerprint,
+            );
+        }
+    }, [propMessage, flash, errors]);
 
     return null;
 }

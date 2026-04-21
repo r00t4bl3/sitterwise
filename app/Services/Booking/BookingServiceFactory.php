@@ -19,6 +19,7 @@ class BookingServiceFactory
 
         return match ($user->role) {
             'caregiver' => app(CaregiverBookingService::class),
+            'client' => app(ClientBookingService::class),
             default => app(AdminBookingService::class),
         };
     }

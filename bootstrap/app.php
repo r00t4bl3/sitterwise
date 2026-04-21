@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsCaregiver;
+use App\Http\Middleware\EnsureUserIsClient;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -24,13 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->validateCsrfTokens(except: [
-            'api/caregiver/*',
-        ]);
-
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'caregiver' => EnsureUserIsCaregiver::class,
+            'client' => EnsureUserIsClient::class,
             // 'super_admin' => EnsureUserIsSuperAdmin::class,
         ]);
     })

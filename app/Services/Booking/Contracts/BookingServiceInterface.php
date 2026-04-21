@@ -2,21 +2,26 @@
 
 namespace App\Services\Booking\Contracts;
 
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 interface BookingServiceInterface
 {
     public function index(Request $request);
 
-    // public function store(Request $request);
+    // public function create(Request $request);
 
-    // public function update(Request $request, $id);
+    public function store(Request $request);
 
-    // public function destroy($id);
+    public function show(Request $request, Booking $booking);
+
+    public function update(Request $request, Booking $booking);
+
+    public function destroy(Booking $booking);
 
     // public function searchHotels(Request $request);
 
-    // public function notify(Request $request, $id);
+    // public function notify(Request $request, Booking $booking);
 
     // public function recommendedCaregivers(Request $request);
 }

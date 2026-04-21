@@ -52,6 +52,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
 
                 return [
                     'id' => $booking->id,
+                    'ulid' => $booking->ulid,
                     'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                     'start_datetime' => $booking->start_datetime,
                     'end_datetime' => $booking->end_datetime,
@@ -71,12 +72,12 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     /**
      * Show a specific booking detail page (Inertia).
      */
-    public function show(Request $request, int $bookingId)
+    public function show(Request $request, Booking $booking)
     {
         $caregiver = $request->user()->caregiver;
 
         // Check if caregiver was notified for this booking
-        $notification = BookingCaregiverNotification::where('booking_id', $bookingId)
+        $notification = BookingCaregiverNotification::where('booking_id', $booking->id)
             ->where('caregiver_id', $caregiver->id)
             ->first();
 
@@ -90,9 +91,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         }
 
         // Get booking details
-        $booking = $notification->booking()->with([
-            'client.user',
-        ])->first();
+        $booking->load('client.user');
 
         if (! $booking) {
             abort(404);
@@ -116,6 +115,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         return Inertia::render('caregiver/bookings/show', [
             'booking' => [
                 'id' => $booking->id,
+                'ulid' => $booking->ulid,
                 'service_type' => ServiceType::from($booking->service_type)->label(),
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
@@ -142,12 +142,17 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         ]);
     }
 
-    public function update($request, $id)
+    public function store(Request $request)
     {
         abort(403, 'Caregivers cannot update bookings');
     }
 
-    public function destroy($id)
+    public function update(Request $request, Booking $booking)
+    {
+        abort(403, 'Caregivers cannot update bookings');
+    }
+
+    public function destroy(Booking $booking)
     {
         abort(403, 'Caregivers cannot delete bookings');
     }
@@ -155,11 +160,9 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     /**
      * Reserve a booking (atomic operation).
      */
-    public function reserve(Request $request, int $bookingId)
+    public function reserve(Request $request, Booking $booking)
     {
         $caregiver = $request->user()->caregiver;
-
-        $booking = Booking::findOrFail($bookingId);
 
         // Check if caregiver was notified for this booking
         $notification = BookingCaregiverNotification::where('booking_id', $booking->id)
@@ -204,11 +207,9 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     /**
      * Confirm a reserved booking (atomic operation).
      */
-    public function confirm(Request $request, int $bookingId)
+    public function confirm(Request $request, Booking $booking)
     {
         $caregiver = $request->user()->caregiver;
-
-        $booking = Booking::findOrFail($bookingId);
 
         // Atomic confirmation
         $updated = DB::table('bookings')
@@ -241,11 +242,9 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     /**
      * Release a reservation.
      */
-    public function release(Request $request, int $bookingId)
+    public function release(Request $request, Booking $booking)
     {
         $caregiver = $request->user()->caregiver;
-
-        $booking = Booking::findOrFail($bookingId);
 
         // Atomic release
         DB::table('bookings')

@@ -13,6 +13,7 @@ use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\Hotel;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class BookingFactory extends Factory
 {
@@ -24,6 +25,7 @@ class BookingFactory extends Factory
         $endDatetime = (clone $startDatetime)->addHours(rand(2, 8));
 
         return [
+            'ulid' => Str::ulid(),
             'booking_group_id' => BookingGroup::factory(),
             'client_id' => Client::factory(),
             'caregiver_id' => null,

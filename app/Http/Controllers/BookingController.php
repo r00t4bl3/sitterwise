@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
+use App\Models\Booking;
 use App\Services\Booking\BookingServiceFactory;
 use Illuminate\Http\Request;
 
@@ -21,9 +22,14 @@ class BookingController extends Controller
         return $this->service->index($request);
     }
 
-    public function show(Request $request, $id)
+    public function create(Request $request)
     {
-        return $this->service->show($request, $id);
+        return $this->service->create($request);
+    }
+
+    public function show(Request $request, Booking $booking)
+    {
+        return $this->service->show($request, $booking);
     }
 
     public function store(StoreBookingRequest $request)
@@ -31,19 +37,19 @@ class BookingController extends Controller
         return $this->service->store($request);
     }
 
-    public function update(UpdateBookingRequest $request, $id)
+    public function update(UpdateBookingRequest $request, Booking $booking)
     {
-        return $this->service->update($request, $id);
+        return $this->service->update($request, $booking);
     }
 
-    public function destroy($id)
+    public function destroy(Booking $booking)
     {
-        return $this->service->destroy($id);
+        return $this->service->destroy($booking);
     }
 
-    public function notify(Request $request, $id)
+    public function notify(Request $request, Booking $booking)
     {
-        return $this->service->notify($request, $id);
+        return $this->service->notify($request, $booking);
     }
 
     public function recommendedCaregivers(Request $request)
@@ -51,18 +57,18 @@ class BookingController extends Controller
         return $this->service->recommendedCaregivers($request);
     }
 
-    public function reserve(Request $request, $id)
+    public function reserve(Request $request, Booking $booking)
     {
-        return $this->service->reserve($request, $id);
+        return $this->service->reserve($request, $booking);
     }
 
-    public function confirm(Request $request, $id)
+    public function confirm(Request $request, Booking $booking)
     {
-        return $this->service->confirm($request, $id);
+        return $this->service->confirm($request, $booking);
     }
 
-    public function release(Request $request, $id)
+    public function release(Request $request, Booking $booking)
     {
-        return $this->service->release($request, $id);
+        return $this->service->release($request, $booking);
     }
 }

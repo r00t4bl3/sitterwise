@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Booking extends Model
 {
@@ -17,23 +18,42 @@ class Booking extends Model
         parent::boot();
 
         static::creating(function (Booking $booking) {
+            if (empty($booking->ulid)) {
+                $booking->ulid = Str::ulid();
+            }
             $booking->calculateTotalWorkingHours();
+            $booking->calculateHourlyRate();
         });
 
         static::updating(function (Booking $booking) {
             if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
                 $booking->calculateTotalWorkingHours();
+                $booking->calculateHourlyRate();
             }
         });
     }
 
-    public function calculateTotalWorkingHours(): void
+    private function calculateTotalWorkingHours(): void
     {
         if ($this->start_datetime && $this->end_datetime) {
             $start = $this->start_datetime instanceof Carbon ? $this->start_datetime : Carbon::parse($this->start_datetime);
             $end = $this->end_datetime instanceof Carbon ? $this->end_datetime : Carbon::parse($this->end_datetime);
             $this->total_working_hour = $start->diffInMinutes($end) / 60;
         }
+    }
+
+    private function calculateHourlyRate(): void
+    {
+        // Placeholder for hourly rate calculation logic
+        // This could involve looking up the caregiver's rate, service type, etc.
+        // Set charge_to_client_hourly, paid_to_caregiver_hourly, and sitterwise_cut_hourly accordingly
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where('id', $value)
+            ->orWhere('ulid', $value)
+            ->firstOrFail();
     }
 
     protected $fillable = [
@@ -73,6 +93,7 @@ class Booking extends Model
         'other_adults_present',
         'special_needs_notes',
         'emergency_instructions',
+        'how_did_you_hear',
         'total_amount',
         'caregiver_amount',
         'reimbursement',
