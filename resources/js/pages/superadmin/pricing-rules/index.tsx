@@ -481,20 +481,20 @@ export default function PricingRulesIndex() {
                                     </p>
                                 )}
                             </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button type="submit" className="w-full">
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
                         </form>
-                        <SheetFooter>
-                            <Button type="submit" className="w-full">
-                                {form.processing ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                type="button"
-                                onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

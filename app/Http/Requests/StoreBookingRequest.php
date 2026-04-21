@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\MinimumBookingDuration;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBookingRequest extends FormRequest
@@ -16,6 +17,7 @@ class StoreBookingRequest extends FormRequest
         return match ($this->user()->role) {
             'admin' => $this->adminRules(),
             'client' => $this->clientRules(),
+            default => [],
         };
     }
 
@@ -64,7 +66,7 @@ class StoreBookingRequest extends FormRequest
             'service_type' => ['required', 'string'],
             'location_type' => ['required', 'string'],
             'start_datetime' => ['required', 'date', 'after:now'],
-            'end_datetime' => ['required', 'date', 'after:start_datetime'],
+            'end_datetime' => ['required', 'date', 'after:start_datetime', new MinimumBookingDuration],
             'address_line1' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable'],
             'address_line2' => ['nullable', 'string'],
             'address_city' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable'],

@@ -47,13 +47,13 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
             ]
         );
 
-        return back()->with('success', 'Availability saved successfully.');
+        return back()->with('success', 'Availability updated successfully.');
     }
 
     public function destroy($id)
     {
-        $caregiver = Caregiver::findOrFail($id);
         $user = auth()->user();
+        $caregiver = $user->caregiver;
 
         if (! $user->caregiver) {
             return back()->with('error', 'You are not a caregiver.');

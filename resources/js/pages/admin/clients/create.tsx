@@ -3,6 +3,15 @@ import { ArrowLeft } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -64,11 +73,12 @@ export default function ClientCreate() {
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="first_name">
                                     First Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="first_name"
                                     type="text"
                                     value={form.data.first_name}
                                     onChange={(e) =>
@@ -77,7 +87,6 @@ export default function ClientCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.first_name && (
@@ -87,11 +96,12 @@ export default function ClientCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="last_name">
                                     Last Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="last_name"
                                     type="text"
                                     value={form.data.last_name}
                                     onChange={(e) =>
@@ -100,7 +110,6 @@ export default function ClientCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.last_name && (
@@ -110,17 +119,17 @@ export default function ClientCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="email">
                                     Email{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="email"
                                     type="email"
                                     value={form.data.email}
                                     onChange={(e) =>
                                         form.setData('email', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.email && (
@@ -130,17 +139,17 @@ export default function ClientCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="phone">
                                     Phone{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="phone"
                                     type="text"
                                     value={form.data.phone}
                                     onChange={(e) =>
                                         form.setData('phone', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.phone && (
@@ -150,69 +159,80 @@ export default function ClientCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="client_type">
                                     Client Type{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.client_type}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'client_type',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('client_type', value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 >
-                                    <option value="vacationer">
-                                        Vacationer
-                                    </option>
-                                    <option value="sd_resident">
-                                        SD Resident
-                                    </option>
-                                    <option value="invoiced">Invoiced</option>
-                                </select>
+                                    <SelectTrigger id="client_type">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="vacationer">
+                                            Vacationer
+                                        </SelectItem>
+                                        <SelectItem value="sd_resident">
+                                            SD Resident
+                                        </SelectItem>
+                                        <SelectItem value="invoiced">
+                                            Invoiced
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="how_did_you_hear">
                                     How did you hear about us?
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.how_did_you_hear}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'how_did_you_hear',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('how_did_you_hear', value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 >
-                                    <option value="">Select an option</option>
-                                    <option value="concierge">Concierge</option>
-                                    <option value="friend_family">
-                                        Friend/Family
-                                    </option>
-                                    <option value="google">Google</option>
-                                    <option value="returning_client">
-                                        Returning Client
-                                    </option>
-                                    <option value="care_com">Care.com</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                    <SelectTrigger id="how_did_you_hear">
+                                        <SelectValue placeholder="Select an option" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="concierge">
+                                            Concierge
+                                        </SelectItem>
+                                        <SelectItem value="friend_family">
+                                            Friend/Family
+                                        </SelectItem>
+                                        <SelectItem value="google">
+                                            Google
+                                        </SelectItem>
+                                        <SelectItem value="returning_client">
+                                            Returning Client
+                                        </SelectItem>
+                                        <SelectItem value="care_com">
+                                            Care.com
+                                        </SelectItem>
+                                        <SelectItem value="other">
+                                            Other
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="password">
                                     Password{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="password"
                                     type="password"
                                     value={form.data.password}
                                     onChange={(e) =>
                                         form.setData('password', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.password && (
@@ -222,11 +242,12 @@ export default function ClientCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="password_confirmation">
                                     Confirm Password{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="password_confirmation"
                                     type="password"
                                     value={form.data.password_confirmation}
                                     onChange={(e) =>
@@ -235,7 +256,6 @@ export default function ClientCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                             </div>

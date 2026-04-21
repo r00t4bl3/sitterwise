@@ -2,11 +2,21 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
-import { toast } from 'sonner';
 import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -176,10 +186,12 @@ export default function ClientEdit() {
 
         form.patch(`/clients/${client.id}`, {
             onSuccess: () => {
-                toast.success('Client updated successfully');
+                console.log('Client updated successfully');
+                // toast.success('Client updated successfully');
             },
             onError: () => {
-                toast.error('Failed to update client');
+                console.error('Failed to update client');
+                // toast.error('Failed to update client');
             },
         });
     };
@@ -300,19 +312,18 @@ export default function ClientEdit() {
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
-                    <input type="hidden" name="_token" value={csrf_token} />
-
                     <div className="border border-border bg-card p-6">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Personal Information
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="first_name">
                                     First Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="first_name"
                                     type="text"
                                     value={form.data.first_name}
                                     onChange={(e) =>
@@ -321,16 +332,16 @@ export default function ClientEdit() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="last_name">
                                     Last Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="last_name"
                                     type="text"
                                     value={form.data.last_name}
                                     onChange={(e) =>
@@ -339,82 +350,90 @@ export default function ClientEdit() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="phone">
                                     Cell Phone{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="phone"
                                     type="text"
                                     value={form.data.phone}
                                     onChange={(e) =>
                                         form.setData('phone', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label>
                                     Client Type{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.client_type}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'client_type',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('client_type', value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
-                                    required
                                 >
-                                    <option value="vacationer">
-                                        Vacationer
-                                    </option>
-                                    <option value="sd_resident">
-                                        SD Resident
-                                    </option>
-                                    <option value="invoiced">Invoiced</option>
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="vacationer">
+                                            Vacationer
+                                        </SelectItem>
+                                        <SelectItem value="sd_resident">
+                                            SD Resident
+                                        </SelectItem>
+                                        <SelectItem value="invoiced">
+                                            Invoiced
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    How did you hear about us?
-                                </label>
-                                <select
+                                <Label>How did you hear about us?</Label>
+                                <Select
                                     value={form.data.how_did_you_hear}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'how_did_you_hear',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('how_did_you_hear', value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 >
-                                    <option value="">Select an option</option>
-                                    <option value="concierge">Concierge</option>
-                                    <option value="friend_family">
-                                        Friend/Family
-                                    </option>
-                                    <option value="google">Google</option>
-                                    <option value="returning_client">
-                                        Returning Client
-                                    </option>
-                                    <option value="care_com">Care.com</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select an option" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="concierge">
+                                            Concierge
+                                        </SelectItem>
+                                        <SelectItem value="friend_family">
+                                            Friend/Family
+                                        </SelectItem>
+                                        <SelectItem value="google">
+                                            Google
+                                        </SelectItem>
+                                        <SelectItem value="returning_client">
+                                            Returning Client
+                                        </SelectItem>
+                                        <SelectItem value="care_com">
+                                            Care.com
+                                        </SelectItem>
+                                        <SelectItem value="other">
+                                            Other
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="special_needs_notes">
                                     Special Needs Notes
-                                </label>
-                                <textarea
+                                </Label>
+                                <Textarea
+                                    id="special_needs_notes"
                                     value={form.data.special_needs_notes || ''}
                                     onChange={(e) =>
                                         form.setData(
@@ -423,14 +442,14 @@ export default function ClientEdit() {
                                         )
                                     }
                                     rows={3}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="other_adults_present">
                                     Other Adults in Home
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="other_adults_present"
                                     type="text"
                                     value={form.data.other_adults_present}
                                     onChange={(e) =>
@@ -439,7 +458,6 @@ export default function ClientEdit() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                         </div>
@@ -451,27 +469,29 @@ export default function ClientEdit() {
                         </h2>
                         <div className="flex flex-wrap gap-4">
                             {sitterPreferenceOptions.map((pref) => (
-                                <label
+                                <div
                                     key={pref}
                                     className="flex items-center gap-2"
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
+                                        id={`pref-${pref}`}
                                         checked={form.data.sitter_preferences.includes(
                                             pref,
                                         )}
-                                        onChange={(e) =>
+                                        onCheckedChange={(checked) =>
                                             handlePreferenceChange(
                                                 pref,
-                                                e.target.checked,
+                                                checked as boolean,
                                             )
                                         }
-                                        className="h-4 w-4 rounded border-input text-primary"
                                     />
-                                    <span className="text-sm text-foreground capitalize">
+                                    <Label
+                                        htmlFor={`pref-${pref}`}
+                                        className="capitalize"
+                                    >
                                         {pref.replace(/_/g, ' ')}
-                                    </span>
-                                </label>
+                                    </Label>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -483,28 +503,27 @@ export default function ClientEdit() {
                             </h2>
                             <div className="flex flex-wrap gap-4">
                                 {attribute_definitions.map((def) => (
-                                    <label
+                                    <div
                                         key={def.id}
                                         className="flex items-center gap-2"
                                     >
-                                        <input
-                                            type="checkbox"
+                                        <Checkbox
+                                            id={`attr-${def.id}`}
                                             checked={
                                                 attributeValues[def.id] ===
                                                 'true'
                                             }
-                                            onChange={(e) =>
+                                            onCheckedChange={(checked) =>
                                                 handleAttributeChange(
                                                     def.id,
-                                                    e.target.checked,
+                                                    checked as boolean,
                                                 )
                                             }
-                                            className="h-4 w-4 rounded border-input text-primary"
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label htmlFor={`attr-${def.id}`}>
                                             {def.name}
-                                        </span>
-                                    </label>
+                                        </Label>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -538,11 +557,11 @@ export default function ClientEdit() {
                             <div className="space-y-4">
                                 {form.data.children.map((child, index) => (
                                     <div
-                                        key={child.id}
+                                        key={child.id || `child-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-7"
                                     >
                                         <div className="sm:col-span-2">
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={child.name || ''}
                                                 onChange={(e) => {
@@ -559,56 +578,55 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Name"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div>
-                                            <select
+                                            <Select
                                                 value={child.gender || ''}
-                                                onChange={(e) => {
+                                                onValueChange={(value) => {
                                                     const updated = [
                                                         ...form.data.children,
                                                     ];
                                                     updated[index] = {
                                                         ...child,
-                                                        gender:
-                                                            e.target.value ||
-                                                            null,
+                                                        gender: value || null,
                                                     };
                                                     form.setData(
                                                         'children',
                                                         updated,
                                                     );
                                                 }}
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             >
-                                                <option value="">Gender</option>
-                                                <option value="male">
-                                                    Male
-                                                </option>
-                                                <option value="female">
-                                                    Female
-                                                </option>
-                                                <option value="other">
-                                                    Other
-                                                </option>
-                                            </select>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="male">
+                                                        Male
+                                                    </SelectItem>
+                                                    <SelectItem value="female">
+                                                        Female
+                                                    </SelectItem>
+                                                    <SelectItem value="other">
+                                                        Other
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div>
-                                            <select
-                                                value={child.birth_month || ''}
-                                                onChange={(e) => {
+                                            <Select
+                                                value={
+                                                    child.birth_month?.toString() ||
+                                                    ''
+                                                }
+                                                onValueChange={(value) => {
                                                     const updated = [
                                                         ...form.data.children,
                                                     ];
                                                     updated[index] = {
                                                         ...child,
-                                                        birth_month: e.target
-                                                            .value
-                                                            ? parseInt(
-                                                                  e.target
-                                                                      .value,
-                                                              )
+                                                        birth_month: value
+                                                            ? parseInt(value)
                                                             : null,
                                                     };
                                                     form.setData(
@@ -616,32 +634,35 @@ export default function ClientEdit() {
                                                         updated,
                                                     );
                                                 }}
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             >
-                                                <option value="">Month</option>
-                                                {Array.from(
-                                                    { length: 12 },
-                                                    (_, i) => i + 1,
-                                                ).map((month) => (
-                                                    <option
-                                                        key={month}
-                                                        value={month}
-                                                    >
-                                                        {new Date(
-                                                            2000,
-                                                            month - 1,
-                                                        ).toLocaleString(
-                                                            'default',
-                                                            {
-                                                                month: 'short',
-                                                            },
-                                                        )}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Month" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Array.from(
+                                                        { length: 12 },
+                                                        (_, i) => i + 1,
+                                                    ).map((month) => (
+                                                        <SelectItem
+                                                            key={month}
+                                                            value={month.toString()}
+                                                        >
+                                                            {new Date(
+                                                                2000,
+                                                                month - 1,
+                                                            ).toLocaleString(
+                                                                'default',
+                                                                {
+                                                                    month: 'short',
+                                                                },
+                                                            )}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div>
-                                            <input
+                                            <Input
                                                 type="number"
                                                 value={child.birth_year || ''}
                                                 onChange={(e) => {
@@ -664,7 +685,6 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Year"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div className="flex items-center justify-end">
@@ -676,9 +696,8 @@ export default function ClientEdit() {
                                                     form.setData(
                                                         'children',
                                                         form.data.children.filter(
-                                                            (c) =>
-                                                                c.id !==
-                                                                child.id,
+                                                            (_, i) =>
+                                                                i !== index,
                                                         ),
                                                     );
                                                 }}
@@ -725,11 +744,11 @@ export default function ClientEdit() {
                             <div className="space-y-4">
                                 {form.data.pets.map((pet, index) => (
                                     <div
-                                        key={pet.id}
+                                        key={pet.id || `pet-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-5"
                                     >
-                                        <div>
-                                            <input
+                                        <div className="sm:col-span-2">
+                                            <Input
                                                 type="text"
                                                 value={pet.name || ''}
                                                 onChange={(e) => {
@@ -746,43 +765,49 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Name"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div>
-                                            <select
+                                            <Select
                                                 value={pet.type || ''}
-                                                onChange={(e) => {
+                                                onValueChange={(value) => {
                                                     const updated = [
                                                         ...form.data.pets,
                                                     ];
                                                     updated[index] = {
                                                         ...pet,
-                                                        type: e.target.value,
+                                                        type: value,
                                                     };
                                                     form.setData(
                                                         'pets',
                                                         updated,
                                                     );
                                                 }}
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             >
-                                                <option value="">Type</option>
-                                                <option value="dog">Dog</option>
-                                                <option value="cat">Cat</option>
-                                                <option value="bird">
-                                                    Bird
-                                                </option>
-                                                <option value="fish">
-                                                    Fish
-                                                </option>
-                                                <option value="other">
-                                                    Other
-                                                </option>
-                                            </select>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="dog">
+                                                        Dog
+                                                    </SelectItem>
+                                                    <SelectItem value="cat">
+                                                        Cat
+                                                    </SelectItem>
+                                                    <SelectItem value="bird">
+                                                        Bird
+                                                    </SelectItem>
+                                                    <SelectItem value="fish">
+                                                        Fish
+                                                    </SelectItem>
+                                                    <SelectItem value="other">
+                                                        Other
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div>
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={pet.breed || ''}
                                                 onChange={(e) => {
@@ -801,25 +826,26 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Breed"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div className="flex items-center justify-end">
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => {
                                                     form.setData(
                                                         'pets',
                                                         form.data.pets.filter(
-                                                            (p) =>
-                                                                p.id !== pet.id,
+                                                            (_, i) =>
+                                                                i !== index,
                                                         ),
                                                     );
                                                 }}
-                                                className="text-sm text-destructive hover:text-destructive"
+                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -865,11 +891,11 @@ export default function ClientEdit() {
                             <div className="space-y-4">
                                 {form.data.addresses.map((address, index) => (
                                     <div
-                                        key={address.id || `new-${index}`}
+                                        key={address.id || `address-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-3"
                                     >
                                         <div>
-                                            <input
+                                            <Input
                                                 type="text"
                                                 value={address.label || ''}
                                                 onChange={(e) => {
@@ -886,51 +912,55 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Label (e.g., Home, Hotel)"
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             />
                                         </div>
                                         <div>
-                                            <select
+                                            <Select
                                                 value={
                                                     address.location_type ||
                                                     'private_home'
                                                 }
-                                                onChange={(e) => {
+                                                onValueChange={(value) => {
                                                     const updated = [
                                                         ...form.data.addresses,
                                                     ];
                                                     updated[index] = {
                                                         ...address,
-                                                        location_type:
-                                                            e.target.value,
+                                                        location_type: value,
                                                     };
                                                     form.setData(
                                                         'addresses',
                                                         updated,
                                                     );
                                                 }}
-                                                className="h-9 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                             >
-                                                <option value="private_home">
-                                                    Private Home
-                                                </option>
-                                                <option value="hotel">
-                                                    Hotel
-                                                </option>
-                                                <option value="vacation_rental">
-                                                    Vacation Rental
-                                                </option>
-                                                <option value="event_venue">
-                                                    Event Venue
-                                                </option>
-                                            </select>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Location Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="private_home">
+                                                        Private Home
+                                                    </SelectItem>
+                                                    <SelectItem value="hotel">
+                                                        Hotel
+                                                    </SelectItem>
+                                                    <SelectItem value="vacation_rental">
+                                                        Vacation Rental
+                                                    </SelectItem>
+                                                    <SelectItem value="event_venue">
+                                                        Event Venue
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div className="flex items-center">
-                                            <label className="flex items-center gap-2 text-sm">
-                                                <input
-                                                    type="checkbox"
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    id={`address-primary-${index}`}
                                                     checked={address.is_primary}
-                                                    onChange={(e) => {
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
                                                         const updated =
                                                             form.data.addresses.map(
                                                                 (a, i) => ({
@@ -938,9 +968,7 @@ export default function ClientEdit() {
                                                                     is_primary:
                                                                         i ===
                                                                         index
-                                                                            ? e
-                                                                                  .target
-                                                                                  .checked
+                                                                            ? (checked as boolean)
                                                                             : false,
                                                                 }),
                                                             );
@@ -949,10 +977,13 @@ export default function ClientEdit() {
                                                             updated,
                                                         );
                                                     }}
-                                                    className="h-4 w-4 rounded border-input"
                                                 />
-                                                Primary
-                                            </label>
+                                                <Label
+                                                    htmlFor={`address-primary-${index}`}
+                                                >
+                                                    Primary
+                                                </Label>
+                                            </div>
                                         </div>
                                         <div className="sm:col-span-2 lg:col-span-3">
                                             <AddressAutocomplete
@@ -965,6 +996,7 @@ export default function ClientEdit() {
                                             <Button
                                                 variant="link"
                                                 size="sm"
+                                                type="button"
                                                 onClick={() => {
                                                     form.setData(
                                                         'addresses',
@@ -974,6 +1006,7 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
+                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>
@@ -994,10 +1027,11 @@ export default function ClientEdit() {
                         </h2>
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="emergency_instructions">
                                     Emergency Instructions
-                                </label>
-                                <textarea
+                                </Label>
+                                <Textarea
+                                    id="emergency_instructions"
                                     value={form.data.emergency_instructions}
                                     onChange={(e) =>
                                         form.setData(
@@ -1006,7 +1040,6 @@ export default function ClientEdit() {
                                         )
                                     }
                                     rows={3}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     placeholder="Emergency instructions for caregivers..."
                                 />
                             </div>

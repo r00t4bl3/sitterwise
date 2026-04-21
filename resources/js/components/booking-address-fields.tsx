@@ -39,9 +39,7 @@ export function BookingAddressFields({
     const [predictions, setPredictions] = useState<Suggestion[]>([]);
     const [showPredictions, setShowPredictions] = useState(false);
     const [loading, setLoading] = useState(false);
-    const autocompleteSuggestionRef = useRef<
-        typeof google.maps.places.AutocompleteSuggestion | null
-    >(null);
+    const autocompleteSuggestionRef = useRef<any>(null);
 
     useEffect(() => {
         if (!googleApiKey) {

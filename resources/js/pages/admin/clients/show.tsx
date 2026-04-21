@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -326,14 +328,15 @@ export default function ClientShow() {
                         </SheetHeader>
                         <form
                             onSubmit={handlePasswordReset}
-                            className="space-y-4 px-4"
+                            className="mt-6 space-y-6 px-4"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="space-y-2">
+                                <Label htmlFor="new_password">
                                     New Password
-                                </label>
+                                </Label>
                                 <div className="relative">
-                                    <input
+                                    <Input
+                                        id="new_password"
                                         type={
                                             showPassword ? 'text' : 'password'
                                         }
@@ -344,7 +347,7 @@ export default function ClientShow() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 pr-10 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                        className="pr-10"
                                         required
                                     />
                                     <button
@@ -367,11 +370,12 @@ export default function ClientShow() {
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="space-y-2">
+                                <Label htmlFor="new_password_confirmation">
                                     Confirm Password
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="new_password_confirmation"
                                     type={showPassword ? 'text' : 'password'}
                                     value={
                                         passwordForm.data
@@ -383,7 +387,6 @@ export default function ClientShow() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {passwordForm.errors
@@ -396,9 +399,7 @@ export default function ClientShow() {
                                     </p>
                                 )}
                             </div>
-                        </form>
-                        <SheetFooter>
-                            <div>
+                            <div className="mt-10 w-full space-y-2">
                                 <Button
                                     type="submit"
                                     disabled={passwordForm.processing}
@@ -414,12 +415,12 @@ export default function ClientShow() {
                                     onClick={() =>
                                         setIsPasswordSheetOpen(false)
                                     }
-                                    className="mt-2 w-full"
+                                    className="w-full"
                                 >
                                     Cancel
                                 </Button>
                             </div>
-                        </SheetFooter>
+                        </form>
                     </SheetContent>
                 </Sheet>
 

@@ -181,7 +181,7 @@ describe('BookingController - Caregiver', function () {
         $response = $this->post(route('bookings.confirm', $booking));
 
         $response->assertStatus(302);
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('jobs.index'));
 
         $booking->refresh();
         expect($booking->status)->toBe('confirmed')

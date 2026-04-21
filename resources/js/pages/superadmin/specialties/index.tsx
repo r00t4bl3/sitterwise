@@ -2,6 +2,9 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -10,6 +13,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -187,25 +191,20 @@ export default function SpecialtiesIndex() {
                             onSubmit={handleSubmit}
                             className="space-y-4 px-4"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Name
-                                </label>
-                                <input
+                            <div className="space-y-2">
+                                <Label>Name</Label>
+                                <Input
                                     type="text"
                                     value={form.data.name}
                                     onChange={(e) =>
                                         form.setData('name', e.target.value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Description
-                                </label>
-                                <textarea
+                            <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea
                                     value={form.data.description}
                                     onChange={(e) =>
                                         form.setData(
@@ -213,44 +212,41 @@ export default function SpecialtiesIndex() {
                                             e.target.value,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={3}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="is_active"
                                     checked={form.data.is_active}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'is_active',
-                                            e.target.checked,
+                                            checked as boolean,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <label
+                                <Label
                                     htmlFor="is_active"
-                                    className="text-sm text-foreground"
+                                    className="text-sm font-normal text-foreground"
                                 >
                                     Active
-                                </label>
+                                </Label>
+                            </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button type="submit" className="w-full">
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </form>
-                        <SheetFooter>
-                            <Button type="submit" className="w-full">
-                                {form.processing ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                type="button"
-                                onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

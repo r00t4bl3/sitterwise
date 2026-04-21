@@ -81,7 +81,7 @@ describe('BookingController - Admin', function () {
         $response->assertSuccessful();
     });
 
-    test('caregivers can create a booking', function () {
+    test('caregivers cannot create a booking', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
         $this->actingAs($caregiverUser);
 
@@ -97,7 +97,7 @@ describe('BookingController - Admin', function () {
             'payment_status' => 'pending',
         ]);
 
-        $response->assertRedirect();
+        $response->assertForbidden();
     });
 
     test('caregivers cannot update a booking', function () {
@@ -358,7 +358,6 @@ describe('BookingController - Admin', function () {
     });
 
     test('booking creation captures client snapshot data', function () {
-        $this->withoutMiddleware();
         $this->actingAs($this->user);
 
         // Create client with children and pets
@@ -399,7 +398,6 @@ describe('BookingController - Admin', function () {
     });
 
     test('booking snapshot remains unchanged when client profile is updated', function () {
-        $this->withoutMiddleware();
         $this->actingAs($this->user);
 
         // Create client with initial data

@@ -25,6 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface Booking {
     id: number;
+    ulid: string;
     client_name: string;
     start_datetime: string;
     end_datetime: string;
@@ -231,7 +232,9 @@ export default function CaregiverBookings() {
 
                                     <div className="flex items-center gap-4">
                                         {getStatusBadge(booking)}
-                                        <Link href={`/bookings/${booking.id}`}>
+                                        <Link
+                                            href={`/bookings/${booking.ulid}`}
+                                        >
                                             <Button size="sm">
                                                 View Details
                                             </Button>

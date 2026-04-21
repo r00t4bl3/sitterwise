@@ -2,6 +2,9 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -10,6 +13,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -190,32 +194,33 @@ export default function CertificationsIndex() {
                                     : 'Add Certification'}
                             </SheetTitle>
                             <SheetDescription>
-                                Add or edit a certification type for caregivers.
+                                Add or edit a caregiver certification.
                             </SheetDescription>
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-4 px-4"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
                                     value={form.data.name}
                                     onChange={(e) =>
                                         form.setData('name', e.target.value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     required
                                 />
+                                {form.errors.name && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.name}
+                                    </p>
+                                )}
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Description
-                                </label>
-                                <textarea
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea
+                                    id="description"
                                     value={form.data.description}
                                     onChange={(e) =>
                                         form.setData(
@@ -223,64 +228,60 @@ export default function CertificationsIndex() {
                                             e.target.value,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={3}
                                 />
+                                {form.errors.description && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.description}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="expires_required"
                                     checked={form.data.expires_required}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'expires_required',
-                                            e.target.checked,
+                                            checked === true,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <label
-                                    htmlFor="expires_required"
-                                    className="text-sm text-foreground"
-                                >
+                                <Label htmlFor="expires_required">
                                     Expiration Required
-                                </label>
+                                </Label>
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="is_active"
                                     checked={form.data.is_active}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'is_active',
-                                            e.target.checked,
+                                            checked === true,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <label
-                                    htmlFor="is_active"
-                                    className="text-sm text-foreground"
+                                <Label htmlFor="is_active">Active</Label>
+                            </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button
+                                    className="w-full"
+                                    type="submit"
+                                    disabled={form.processing}
                                 >
-                                    Active
-                                </label>
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </form>
-                        <SheetFooter>
-                            <Button type="submit" className="w-full">
-                                {form.processing ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                type="button"
-                                onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

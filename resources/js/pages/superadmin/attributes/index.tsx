@@ -2,6 +2,16 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -246,65 +256,80 @@ export default function AttributesIndex() {
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-4 px-4"
+                            id="attribute-form"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
                                     value={form.data.name}
                                     onChange={(e) =>
                                         form.setData('name', e.target.value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Type
-                                </label>
-                                <select
+                            <div className="grid gap-2">
+                                <Label htmlFor="type">Type</Label>
+                                <Select
                                     value={form.data.type}
-                                    onChange={(e) =>
-                                        form.setData('type', e.target.value)
+                                    onValueChange={(value) =>
+                                        form.setData('type', value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                 >
-                                    <option value="boolean">Boolean</option>
-                                    <option value="date">Date</option>
-                                    <option value="text">Text</option>
-                                    <option value="number">Number</option>
-                                    <option value="select">Select</option>
-                                </select>
+                                    <SelectTrigger id="type">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="boolean">
+                                            Boolean
+                                        </SelectItem>
+                                        <SelectItem value="date">
+                                            Date
+                                        </SelectItem>
+                                        <SelectItem value="text">
+                                            Text
+                                        </SelectItem>
+                                        <SelectItem value="number">
+                                            Number
+                                        </SelectItem>
+                                        <SelectItem value="select">
+                                            Select
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Entity Type
-                                </label>
-                                <select
+                            <div className="grid gap-2">
+                                <Label htmlFor="entity_type">Entity Type</Label>
+                                <Select
                                     value={form.data.entity_type}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'entity_type',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('entity_type', value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                 >
-                                    <option value="caregiver">Caregiver</option>
-                                    <option value="client">Client</option>
-                                    <option value="booking">Booking</option>
-                                </select>
+                                    <SelectTrigger id="entity_type">
+                                        <SelectValue placeholder="Select entity type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="caregiver">
+                                            Caregiver
+                                        </SelectItem>
+                                        <SelectItem value="client">
+                                            Client
+                                        </SelectItem>
+                                        <SelectItem value="booking">
+                                            Booking
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             {form.data.type === 'select' && (
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="options">
                                         Options (comma-separated)
-                                    </label>
-                                    <input
-                                        type="text"
+                                    </Label>
+                                    <Input
+                                        id="options"
                                         value={
                                             typeof form.data.options ===
                                             'string'
@@ -318,44 +343,40 @@ export default function AttributesIndex() {
                                             )
                                         }
                                         placeholder="Option 1, Option 2, Option 3"
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="is_active"
                                     checked={form.data.is_active}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'is_active',
-                                            e.target.checked,
+                                            checked === true,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <label
-                                    htmlFor="is_active"
-                                    className="text-sm text-foreground"
+                                <Label htmlFor="is_active">Active</Label>
+                            </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={form.processing}
                                 >
-                                    Active
-                                </label>
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </form>
-                        <SheetFooter>
-                            <Button type="submit" className="w-full">
-                                {form.processing ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                type="button"
-                                onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

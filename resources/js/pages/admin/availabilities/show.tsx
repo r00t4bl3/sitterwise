@@ -4,6 +4,9 @@ import { useState, useMemo } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -252,86 +255,88 @@ export default function ManageAvailability() {
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="space-y-4 px-4">
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Time Slots
-                                </label>
-                                <div className="mt-2 space-y-2">
+                        <div className="mt-6 space-y-6 px-4">
+                            <div className="space-y-3">
+                                <Label>Time Slots</Label>
+                                <div className="space-y-2">
                                     {timeSlots.map((slot) => (
-                                        <label
+                                        <div
                                             key={slot.value}
                                             className="flex items-center gap-2"
                                         >
-                                            <input
-                                                type="checkbox"
+                                            <Checkbox
+                                                id={`slot-${slot.value}`}
                                                 checked={data.time_slots.includes(
                                                     slot.value,
                                                 )}
-                                                onChange={(e) =>
+                                                onCheckedChange={(checked) =>
                                                     handleTimeSlotChange(
                                                         slot.value,
-                                                        e.target.checked,
+                                                        checked as boolean,
                                                     )
                                                 }
-                                                className="h-4 w-4 rounded border-input text-primary"
                                             />
-                                            <span className="text-sm text-foreground">
+                                            <Label
+                                                htmlFor={`slot-${slot.value}`}
+                                                className="font-normal"
+                                            >
                                                 {slot.label}
-                                            </span>
-                                        </label>
+                                            </Label>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="space-y-2">
+                                <Label htmlFor="specific_time">
                                     Specific Time
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="specific_time"
                                     type="text"
-                                    value={data.specific_time}
+                                    value={data.specific_time || ''}
                                     onChange={(e) =>
                                         setData('specific_time', e.target.value)
                                     }
                                     placeholder="e.g., after 9am"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm text-foreground"
                                 />
                             </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <Button
-                                    onClick={handleSave}
-                                    disabled={
-                                        processing ||
-                                        data.time_slots.length === 0
-                                    }
-                                    className="flex-1"
-                                >
-                                    {processing && (
-                                        <Spinner className="size-4" />
-                                    )}
-                                    {processing ? 'Saving...' : 'Save'}
-                                </Button>
-                                {availabilityMap[selectedDate || ''] && (
+                            <div className="flex flex-col gap-2 pt-4">
+                                <div className="flex gap-2">
                                     <Button
-                                        onClick={handleDelete}
-                                        disabled={processing}
-                                        variant="secondary"
-                                        className="w-1/4"
+                                        onClick={handleSave}
+                                        disabled={
+                                            processing ||
+                                            data.time_slots.length === 0
+                                        }
+                                        className="flex-1"
                                     >
-                                        Delete
+                                        {processing && (
+                                            <Spinner className="size-4" />
+                                        )}
+                                        {processing ? 'Saving...' : 'Save'}
                                     </Button>
-                                )}
-                            </div>
+                                    {availabilityMap[selectedDate || ''] && (
+                                        <Button
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            variant="secondary"
+                                            className="w-1/4"
+                                        >
+                                            Delete
+                                        </Button>
+                                    )}
+                                </div>
 
-                            <Button
-                                onClick={() => setIsSheetOpen(false)}
-                                variant="outline"
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
+                                <Button
+                                    onClick={() => setIsSheetOpen(false)}
+                                    variant="outline"
+                                    className="w-full"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>

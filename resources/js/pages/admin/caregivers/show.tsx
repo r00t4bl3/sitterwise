@@ -13,7 +13,16 @@ import { useState } from 'react';
 import { RatingInput } from '@/components/rating-input';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Rating } from '@/components/ui/rating';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -339,12 +348,13 @@ export default function CaregiverShow() {
                             onSubmit={handlePasswordReset}
                             className="space-y-4 px-4"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="grid gap-2">
+                                <Label htmlFor="new_password">
                                     New Password
-                                </label>
+                                </Label>
                                 <div className="relative">
-                                    <input
+                                    <Input
+                                        id="new_password"
                                         type={
                                             showPassword ? 'text' : 'password'
                                         }
@@ -355,7 +365,7 @@ export default function CaregiverShow() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="h-10 w-full rounded-[3px] border border-input bg-background px-3 pr-10 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
+                                        className="pr-10"
                                         required
                                     />
                                     <button
@@ -378,11 +388,12 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="grid gap-2">
+                                <Label htmlFor="confirm_password">
                                     Confirm Password
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="confirm_password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={
                                         passwordForm.data
@@ -394,7 +405,6 @@ export default function CaregiverShow() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {passwordForm.errors
@@ -407,26 +417,28 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button
+                                    type="submit"
+                                    disabled={passwordForm.processing}
+                                    className="w-full"
+                                >
+                                    {passwordForm.processing
+                                        ? 'Resetting...'
+                                        : 'Reset Password'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPasswordSheetOpen(false)
+                                    }
+                                    variant="outline"
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
                         </form>
-                        <SheetFooter>
-                            <Button
-                                type="submit"
-                                disabled={passwordForm.processing}
-                                className="w-full"
-                            >
-                                {passwordForm.processing
-                                    ? 'Resetting...'
-                                    : 'Reset Password'}
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => setIsPasswordSheetOpen(false)}
-                                variant="outline"
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
 
@@ -672,37 +684,37 @@ export default function CaregiverShow() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="block">
-                                    <span className="text-sm text-muted-foreground">
-                                        Change Status
-                                    </span>
-                                    <select
-                                        value={statusForm.data.status_id}
-                                        onChange={(e) =>
-                                            statusForm.setData(
-                                                'status_id',
-                                                Number(e.target.value),
-                                            )
-                                        }
-                                        disabled={statusForm.processing}
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-ring disabled:opacity-50"
-                                    >
+                            <div className="grid gap-2">
+                                <Label htmlFor="status_id">Change Status</Label>
+                                <Select
+                                    value={statusForm.data.status_id.toString()}
+                                    onValueChange={(value) =>
+                                        statusForm.setData(
+                                            'status_id',
+                                            Number(value),
+                                        )
+                                    }
+                                    disabled={statusForm.processing}
+                                >
+                                    <SelectTrigger id="status_id">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
                                         {statuses.map((status) => (
-                                            <option
+                                            <SelectItem
                                                 key={status.id}
-                                                value={status.id}
+                                                value={status.id.toString()}
                                             >
                                                 {status.name}
-                                            </option>
+                                            </SelectItem>
                                         ))}
-                                    </select>
-                                    {statusForm.errors.status_id && (
-                                        <p className="mt-1 text-xs text-red-500">
-                                            {statusForm.errors.status_id}
-                                        </p>
-                                    )}
-                                </label>
+                                    </SelectContent>
+                                </Select>
+                                {statusForm.errors.status_id && (
+                                    <p className="mt-1 text-xs text-red-500">
+                                        {statusForm.errors.status_id}
+                                    </p>
+                                )}
                                 <Button
                                     onClick={handleStatusUpdate}
                                     disabled={statusForm.processing}

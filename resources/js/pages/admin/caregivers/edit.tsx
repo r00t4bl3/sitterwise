@@ -13,7 +13,17 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -411,77 +421,58 @@ export default function CaregiverEdit() {
                             Personal Information
                         </h2>
                         <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        First Name
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="first_name"
-                                        value={form.data.first_name}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'first_name',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                        required
-                                    />
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="first_name">First Name</Label>
+                                <Input
+                                    id="first_name"
+                                    type="text"
+                                    name="first_name"
+                                    value={form.data.first_name}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'first_name',
+                                            e.target.value,
+                                        )
+                                    }
+                                    required
+                                />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Last Name
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="last_name"
-                                        value={form.data.last_name}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'last_name',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                        required
-                                    />
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="last_name">Last Name</Label>
+                                <Input
+                                    id="last_name"
+                                    type="text"
+                                    name="last_name"
+                                    value={form.data.last_name}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'last_name',
+                                            e.target.value,
+                                        )
+                                    }
+                                    required
+                                />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Email
-                                    </span>
-                                    <input
-                                        type="email"
-                                        value={caregiver.email || ''}
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
-                                        disabled
-                                    />
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={caregiver.email || ''}
+                                    disabled
+                                />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Phone
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="phone"
-                                        value={form.data.phone}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'phone',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    />
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                    id="phone"
+                                    type="text"
+                                    name="phone"
+                                    value={form.data.phone}
+                                    onChange={(e) =>
+                                        form.setData('phone', e.target.value)
+                                    }
+                                />
                             </div>
                             <div className="sm:col-span-2">
                                 <AddressAutocomplete
@@ -489,112 +480,84 @@ export default function CaregiverEdit() {
                                     label="Address"
                                 />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Date of Birth
-                                    </span>
-                                    <div className="mt-1">
-                                        <DatePicker
-                                            name="date_of_birth"
-                                            value={form.data.date_of_birth}
-                                            onChange={(date) =>
-                                                form.setData(
-                                                    'date_of_birth',
-                                                    date || '',
-                                                )
-                                            }
-                                            placeholder="Select date of birth"
-                                        />
-                                    </div>
-                                </label>
+                            <div className="space-y-2">
+                                <Label>Date of Birth</Label>
+                                <DatePicker
+                                    name="date_of_birth"
+                                    value={form.data.date_of_birth}
+                                    onChange={(date) =>
+                                        form.setData(
+                                            'date_of_birth',
+                                            date || '',
+                                        )
+                                    }
+                                    placeholder="Select date of birth"
+                                />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Rating (0-5)
-                                    </span>
-                                    <input
-                                        type="number"
-                                        name="rating"
-                                        value={form.data.rating}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'rating',
-                                                e.target.value,
-                                            )
-                                        }
-                                        min="0"
-                                        max="5"
-                                        step="0.01"
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    />
-                                </label>
+                            <div className="space-y-2">
+                                <Label htmlFor="rating">Rating (0-5)</Label>
+                                <Input
+                                    id="rating"
+                                    type="number"
+                                    name="rating"
+                                    value={form.data.rating}
+                                    onChange={(e) =>
+                                        form.setData('rating', e.target.value)
+                                    }
+                                    min="0"
+                                    max="5"
+                                    step="0.01"
+                                />
                             </div>
-                            <div className="sm:col-span-2">
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Biography
-                                    </span>
-                                    <textarea
-                                        name="biography"
-                                        value={form.data.biography}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'biography',
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={4}
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    />
-                                </label>
+                            <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor="biography">Biography</Label>
+                                <Textarea
+                                    id="biography"
+                                    name="biography"
+                                    value={form.data.biography || ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'biography',
+                                            e.target.value,
+                                        )
+                                    }
+                                    rows={4}
+                                />
                             </div>
-                            <div className="sm:col-span-2">
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Notes
-                                    </span>
-                                    <textarea
-                                        name="notes"
-                                        value={form.data.notes}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'notes',
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={3}
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    />
-                                </label>
+                            <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor="notes">Notes</Label>
+                                <Textarea
+                                    id="notes"
+                                    name="notes"
+                                    value={form.data.notes || ''}
+                                    onChange={(e) =>
+                                        form.setData('notes', e.target.value)
+                                    }
+                                    rows={3}
+                                />
                             </div>
-                            <div>
-                                <label className="block">
-                                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Status
-                                    </span>
-                                    <select
-                                        name="status_id"
-                                        value={form.data.status_id}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'status_id',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 block w-full rounded-[3px] border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
-                                    >
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <Select
+                                    value={form.data.status_id}
+                                    onValueChange={(value) =>
+                                        form.setData('status_id', value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
                                         {statuses.map((status) => (
-                                            <option
+                                            <SelectItem
                                                 key={status.id}
-                                                value={status.id}
+                                                value={status.id.toString()}
                                             >
                                                 {status.name}
-                                            </option>
+                                            </SelectItem>
                                         ))}
-                                    </select>
-                                </label>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
@@ -616,11 +579,12 @@ export default function CaregiverEdit() {
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-4 space-y-2">
                                 {specialty_types.map((specialty) => (
-                                    <label
+                                    <div
                                         key={specialty.id}
                                         className="flex items-center gap-2"
                                     >
                                         <Checkbox
+                                            id={`specialty-${specialty.id}`}
                                             checked={selectedSpecialtyIds.includes(
                                                 specialty.id,
                                             )}
@@ -641,10 +605,13 @@ export default function CaregiverEdit() {
                                                 }
                                             }}
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label
+                                            htmlFor={`specialty-${specialty.id}`}
+                                            className="font-normal"
+                                        >
                                             {specialty.name}
-                                        </span>
-                                    </label>
+                                        </Label>
+                                    </div>
                                 ))}
                             </CollapsibleContent>
                         </Collapsible>
@@ -667,11 +634,12 @@ export default function CaregiverEdit() {
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-4 space-y-2">
                                 {locations.map((location) => (
-                                    <label
+                                    <div
                                         key={location.id}
                                         className="flex items-center gap-2"
                                     >
                                         <Checkbox
+                                            id={`location-${location.id}`}
                                             checked={selectedLocationIds.includes(
                                                 location.id,
                                             )}
@@ -701,15 +669,19 @@ export default function CaregiverEdit() {
                                                 }
                                             }}
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label
+                                            htmlFor={`location-${location.id}`}
+                                            className="font-normal"
+                                        >
                                             {location.name}
-                                        </span>
+                                        </Label>
                                         {selectedLocationIds.includes(
                                             location.id,
                                         ) && (
-                                            <label className="ml-4 flex items-center gap-1 text-xs text-muted-foreground">
+                                            <div className="ml-4 flex items-center gap-2">
                                                 <input
                                                     type="radio"
+                                                    id={`preferred-${location.id}`}
                                                     name="preferred_location"
                                                     checked={
                                                         preferredLocationId ===
@@ -720,12 +692,17 @@ export default function CaregiverEdit() {
                                                             location.id,
                                                         )
                                                     }
-                                                    className="accent-primary"
+                                                    className="h-4 w-4 border-primary text-primary focus:ring-primary"
                                                 />
-                                                Preferred
-                                            </label>
+                                                <Label
+                                                    htmlFor={`preferred-${location.id}`}
+                                                    className="text-xs font-normal text-muted-foreground"
+                                                >
+                                                    Preferred
+                                                </Label>
+                                            </div>
                                         )}
-                                    </label>
+                                    </div>
                                 ))}
                             </CollapsibleContent>
                         </Collapsible>
@@ -748,11 +725,12 @@ export default function CaregiverEdit() {
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-4 space-y-2">
                                 {attribute_definitions.map((def) => (
-                                    <label
+                                    <div
                                         key={def.id}
                                         className="flex items-center gap-2"
                                     >
                                         <Checkbox
+                                            id={`attribute-${def.id}`}
                                             checked={
                                                 attributeValues[def.id] ===
                                                 'true'
@@ -766,10 +744,13 @@ export default function CaregiverEdit() {
                                                 });
                                             }}
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label
+                                            htmlFor={`attribute-${def.id}`}
+                                            className="font-normal"
+                                        >
                                             {def.name}
-                                        </span>
-                                    </label>
+                                        </Label>
+                                    </div>
                                 ))}
                             </CollapsibleContent>
                         </Collapsible>
@@ -794,49 +775,55 @@ export default function CaregiverEdit() {
                                 {certifications.map((cert) => (
                                     <div
                                         key={cert.id}
-                                        className="flex flex-col gap-2 rounded border border-border p-3"
+                                        className="flex flex-col gap-4 rounded border border-border p-3"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <select
-                                                value={cert.certification_type_id?.toString()}
-                                                onChange={(e) =>
-                                                    updateCertification(
-                                                        cert.id,
-                                                        'certification_type_id',
-                                                        parseInt(
-                                                            e.target.value,
-                                                            10,
-                                                        ),
-                                                    )
-                                                }
-                                                className="rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
-                                            >
-                                                {certification_types.map(
-                                                    (type) => (
-                                                        <option
-                                                            key={type.id}
-                                                            value={type.id}
-                                                        >
-                                                            {type.name}
-                                                        </option>
-                                                    ),
-                                                )}
-                                            </select>
+                                            <div className="max-w-xs flex-1">
+                                                <Select
+                                                    value={cert.certification_type_id?.toString()}
+                                                    onValueChange={(value) =>
+                                                        updateCertification(
+                                                            cert.id,
+                                                            'certification_type_id',
+                                                            parseInt(value, 10),
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select certification" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {certification_types.map(
+                                                            (type) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        type.id
+                                                                    }
+                                                                    value={type.id.toString()}
+                                                                >
+                                                                    {type.name}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                             <Button
                                                 type="button"
                                                 onClick={() =>
                                                     removeCertification(cert.id)
                                                 }
                                                 variant="link"
+                                                className="text-destructive"
                                             >
                                                 Remove
                                             </Button>
                                         </div>
                                         <div className="flex gap-4">
-                                            <div className="flex-1">
-                                                <label className="text-xs text-muted-foreground">
+                                            <div className="flex-1 space-y-2">
+                                                <Label className="text-xs">
                                                     Expiration Date
-                                                </label>
+                                                </Label>
                                                 <DatePicker
                                                     value={
                                                         cert.expiration_date ||
@@ -852,15 +839,17 @@ export default function CaregiverEdit() {
                                                     placeholder="Select date"
                                                 />
                                             </div>
-                                            <label className="flex items-center gap-2">
-                                                <input
-                                                    type="checkbox"
+                                            <div className="flex items-center gap-2 pt-6">
+                                                <Checkbox
+                                                    id={`verified-${cert.id}`}
                                                     checked={!!cert.verified_at}
-                                                    onChange={(e) =>
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
                                                         updateCertification(
                                                             cert.id,
                                                             'verified_at',
-                                                            e.target.checked
+                                                            checked
                                                                 ? new Date()
                                                                       .toISOString()
                                                                       .split(
@@ -869,12 +858,14 @@ export default function CaregiverEdit() {
                                                                 : null,
                                                         )
                                                     }
-                                                    className="accent-primary"
                                                 />
-                                                <span className="text-sm text-foreground">
+                                                <Label
+                                                    htmlFor={`verified-${cert.id}`}
+                                                    className="font-normal"
+                                                >
                                                     Verified
-                                                </span>
-                                            </label>
+                                                </Label>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -908,43 +899,54 @@ export default function CaregiverEdit() {
                                 {educations.map((edu) => (
                                     <div
                                         key={edu.id}
-                                        className="flex flex-col gap-2 rounded border border-border p-3"
+                                        className="flex flex-col gap-4 rounded border border-border p-3"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <select
-                                                value={edu.education_type}
-                                                onChange={(e) =>
-                                                    updateEducation(
-                                                        edu.id,
-                                                        'education_type',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
-                                            >
-                                                <option value="high_school">
-                                                    High School
-                                                </option>
-                                                <option value="college">
-                                                    College
-                                                </option>
-                                            </select>
+                                            <div className="max-w-xs flex-1">
+                                                <Select
+                                                    value={edu.education_type}
+                                                    onValueChange={(value) =>
+                                                        updateEducation(
+                                                            edu.id,
+                                                            'education_type',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select education" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="high_school">
+                                                            High School
+                                                        </SelectItem>
+                                                        <SelectItem value="college">
+                                                            College
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                             <Button
                                                 type="button"
                                                 onClick={() =>
                                                     removeEducation(edu.id)
                                                 }
                                                 variant="link"
+                                                className="text-destructive"
                                             >
                                                 Remove
                                             </Button>
                                         </div>
-                                        <div className="flex flex-col gap-2">
-                                            <div>
-                                                <label className="text-xs text-muted-foreground">
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor={`school-${edu.id}`}
+                                                    className="text-xs"
+                                                >
                                                     School Name
-                                                </label>
-                                                <input
+                                                </Label>
+                                                <Input
+                                                    id={`school-${edu.id}`}
                                                     type="text"
                                                     value={edu.school_name}
                                                     onChange={(e) =>
@@ -954,14 +956,17 @@ export default function CaregiverEdit() {
                                                             e.target.value,
                                                         )
                                                     }
-                                                    className="mt-1 block w-full rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="text-xs text-muted-foreground">
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor={`year-${edu.id}`}
+                                                    className="text-xs"
+                                                >
                                                     Graduation Year
-                                                </label>
-                                                <input
+                                                </Label>
+                                                <Input
+                                                    id={`year-${edu.id}`}
                                                     type="number"
                                                     value={
                                                         edu.graduation_year ||
@@ -981,7 +986,6 @@ export default function CaregiverEdit() {
                                                         )
                                                     }
                                                     placeholder="e.g. 2020"
-                                                    className="mt-1 block w-full rounded-[3px] border border-border bg-card px-2 py-1 text-sm text-foreground outline-none focus:border-ring"
                                                 />
                                             </div>
                                         </div>

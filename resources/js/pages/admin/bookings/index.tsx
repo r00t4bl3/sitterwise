@@ -10,8 +10,7 @@ import {
     Users,
     CreditCard,
 } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
-import type { Message } from '@/components/toaster-message';
+import { useState, useMemo } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import {
@@ -238,34 +237,6 @@ export default function Bookings() {
     const [isAddressLocked, setIsAddressLocked] = useState(false);
     const [showManualAddressInput, setShowManualAddressInput] = useState(false);
     const [addressValue, setAddressValue] = useState('');
-
-    const [message, setMessage] = useState<Message | null>(null);
-
-    // Handle flash messages from server
-    const flash = (usePage().props as Record<string, unknown>).flash as Record<
-        string,
-        string
-    > | null;
-
-    useEffect(() => {
-        // Prioritize flash messages over existing messages
-        if (flash?.success) {
-            setMessage({ type: 'success', content: flash.success });
-        } else if (flash?.error) {
-            setMessage({ type: 'error', content: flash.error });
-        }
-    }, [flash]);
-
-    // Clear message after it has been displayed (with debounce to prevent clearing new messages)
-    useEffect(() => {
-        if (message) {
-            const timer = setTimeout(() => {
-                setMessage(null);
-            }, 5000); // Clear after 5 seconds to allow user to see the message
-
-            return () => clearTimeout(timer);
-        }
-    }, [message]);
 
     const [deletedChildIds, setDeletedChildIds] = useState<number[]>([]);
     const [deletedPetIds, setDeletedPetIds] = useState<number[]>([]);
@@ -1017,7 +988,7 @@ export default function Bookings() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Bookings" />
-            <ToasterMessage message={message} />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>

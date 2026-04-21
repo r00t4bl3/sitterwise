@@ -2,8 +2,19 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 
 interface BookingDetailsSectionProps {
     form: any;
@@ -119,52 +130,52 @@ export function BookingDetailsSection({
                 )}
             </summary>
             <div className="space-y-4 p-4">
-                <div>
-                    <label className="text-sm font-medium text-foreground">
+                <div className="grid gap-2">
+                    <Label htmlFor="service_type">
                         Service Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
+                    </Label>
+                    <Select
                         value={form.data.service_type}
-                        onChange={(e) =>
-                            form.setData('service_type', e.target.value)
+                        onValueChange={(value) =>
+                            form.setData('service_type', value)
                         }
-                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                     >
-                        {service_types.map((type) => (
-                            <option key={type.value} value={type.value}>
-                                {type.label}
-                            </option>
-                        ))}
-                    </select>
+                        <SelectTrigger id="service_type">
+                            <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {service_types.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                    {type.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
+                    <div className="grid gap-2">
+                        <Label>
                             Start DateTime{' '}
                             <span className="text-red-500">*</span>
-                        </label>
-                        <div className="mt-1">
-                            <DateTimePicker
-                                value={startDatetime}
-                                onChange={(datetime) => {
-                                    form.setData('start_datetime', datetime);
-                                }}
-                            />
-                        </div>
+                        </Label>
+                        <DateTimePicker
+                            value={startDatetime}
+                            onChange={(datetime) => {
+                                form.setData('start_datetime', datetime);
+                            }}
+                        />
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
+                    <div className="grid gap-2">
+                        <Label>
                             End DateTime <span className="text-red-500">*</span>
-                        </label>
-                        <div className="mt-1">
-                            <DateTimePicker
-                                value={endDatetime}
-                                onChange={(datetime) => {
-                                    form.setData('end_datetime', datetime);
-                                }}
-                            />
-                        </div>
+                        </Label>
+                        <DateTimePicker
+                            value={endDatetime}
+                            onChange={(datetime) => {
+                                form.setData('end_datetime', datetime);
+                            }}
+                        />
                     </div>
                     {datetimeError && (
                         <div className="col-span-2 text-sm text-destructive">
@@ -173,135 +184,124 @@ export function BookingDetailsSection({
                     )}
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Caregiver
-                    </label>
-                    <div className="mt-1">
-                        <Autocomplete
-                            value={form.data.caregiver_id}
-                            onChange={(id) => form.setData('caregiver_id', id)}
-                            suggestions={caregiverSuggestions}
-                            onSearch={handleCaregiverSearch}
-                            placeholder="Search caregiver..."
-                            displayValue={selectedCaregiverName}
-                            renderItem={(item) => {
-                                const badge = (item as any).matchBadge;
+                <div className="grid gap-2">
+                    <Label>Caregiver</Label>
+                    <Autocomplete
+                        value={form.data.caregiver_id}
+                        onChange={(id) => form.setData('caregiver_id', id)}
+                        suggestions={caregiverSuggestions}
+                        onSearch={handleCaregiverSearch}
+                        placeholder="Search caregiver..."
+                        displayValue={selectedCaregiverName}
+                        renderItem={(item) => {
+                            const badge = (item as any).matchBadge;
 
-                                if (!badge) {
-                                    return item.name;
-                                }
+                            if (!badge) {
+                                return item.name;
+                            }
 
-                                const colorClasses: Record<string, string> = {
-                                    green: 'bg-green-100 text-green-800',
-                                    yellow: 'bg-yellow-100 text-yellow-800',
-                                    orange: 'bg-orange-100 text-orange-800',
-                                    blue: 'bg-blue-100 text-blue-800',
-                                };
+                            const colorClasses: Record<string, string> = {
+                                green: 'bg-green-100 text-green-800',
+                                yellow: 'bg-yellow-100 text-yellow-800',
+                                orange: 'bg-orange-100 text-orange-800',
+                                blue: 'bg-blue-100 text-blue-800',
+                            };
 
-                                return (
-                                    <div className="flex items-center justify-between">
-                                        <span>{item.name}</span>
-                                        <span
-                                            className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                colorClasses[badge.color] ||
-                                                'bg-gray-100 text-gray-800'
-                                            }`}
-                                        >
-                                            {badge.label}
-                                        </span>
-                                    </div>
-                                );
-                            }}
-                        />
-                    </div>
+                            return (
+                                <div className="flex items-center justify-between">
+                                    <span>{item.name}</span>
+                                    <span
+                                        className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            colorClasses[badge.color] ||
+                                            'bg-gray-100 text-gray-800'
+                                        }`}
+                                    >
+                                        {badge.label}
+                                    </span>
+                                </div>
+                            );
+                        }}
+                    />
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Special Considerations
-                    </label>
+                <div className="grid gap-2">
+                    <Label>Special Considerations</Label>
                     <div className="mt-2 grid grid-cols-2 gap-4">
                         {special_consideration_options.map((option) => (
-                            <label
+                            <div
                                 key={option.value}
                                 className="flex items-center gap-2"
                             >
-                                <input
-                                    type="checkbox"
+                                <Checkbox
+                                    id={`sc-${option.value}`}
                                     checked={form.data.special_considerations.includes(
                                         option.value,
                                     )}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         handleSpecialConsiderationChange(
                                             option.value,
-                                            e.target.checked,
+                                            checked === true,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <span className="text-sm text-foreground">
+                                <Label
+                                    htmlFor={`sc-${option.value}`}
+                                    className="text-sm font-normal"
+                                >
                                     {option.label}
-                                </span>
-                            </label>
+                                </Label>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Caregiver Notes
-                    </label>
-                    <textarea
+                <div className="grid gap-2">
+                    <Label htmlFor="caregiver_notes">Caregiver Notes</Label>
+                    <Textarea
+                        id="caregiver_notes"
                         value={form.data.caregiver_notes}
                         onChange={(e) =>
                             form.setData('caregiver_notes', e.target.value)
                         }
                         rows={2}
-                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
                     />
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
+                <div className="grid gap-2">
+                    <Label htmlFor="notes_to_sitterwise">
                         Notes to Sitterwise
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
+                        id="notes_to_sitterwise"
                         value={form.data.notes_to_sitterwise}
                         onChange={(e) =>
                             form.setData('notes_to_sitterwise', e.target.value)
                         }
                         rows={2}
-                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
                     />
                 </div>
 
-                <div>
-                    <label className="text-sm font-medium text-foreground">
-                        Admin Notes
-                    </label>
-                    <textarea
+                <div className="grid gap-2">
+                    <Label htmlFor="admin_notes">Admin Notes</Label>
+                    <Textarea
+                        id="admin_notes"
                         value={form.data.admin_notes}
                         onChange={(e) =>
                             form.setData('admin_notes', e.target.value)
                         }
                         rows={2}
-                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
                     />
                 </div>
 
                 {form.data.service_type === 'corporate_invoiced' && (
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
-                            Corporate ID
-                        </label>
-                        <input
-                            type="text"
+                    <div className="grid gap-2">
+                        <Label htmlFor="corporate_id">Corporate ID</Label>
+                        <Input
+                            id="corporate_id"
                             value={form.data.corporate_id}
                             onChange={(e) =>
                                 form.setData('corporate_id', e.target.value)
                             }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                         />
                     </div>
                 )}
@@ -325,51 +325,56 @@ export function BookingDetailsSection({
 
                 {editingBooking && (
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
+                        <div className="grid gap-2">
+                            <Label htmlFor="status">
                                 Status <span className="text-red-500">*</span>
-                            </label>
-                            <select
+                            </Label>
+                            <Select
                                 value={form.data.status}
-                                onChange={(e) =>
-                                    form.setData('status', e.target.value)
+                                onValueChange={(value) =>
+                                    form.setData('status', value)
                                 }
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                             >
-                                {booking_statuses.map((status) => (
-                                    <option
-                                        key={status.value}
-                                        value={status.value}
-                                    >
-                                        {status.label}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger id="status">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {booking_statuses.map((status) => (
+                                        <SelectItem
+                                            key={status.value}
+                                            value={status.value}
+                                        >
+                                            {status.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div>
-                            <label className="text-sm font-medium text-foreground">
+                        <div className="grid gap-2">
+                            <Label htmlFor="payment_status">
                                 Payment Status{' '}
                                 <span className="text-red-500">*</span>
-                            </label>
-                            <select
+                            </Label>
+                            <Select
                                 value={form.data.payment_status}
-                                onChange={(e) =>
-                                    form.setData(
-                                        'payment_status',
-                                        e.target.value,
-                                    )
+                                onValueChange={(value) =>
+                                    form.setData('payment_status', value)
                                 }
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                             >
-                                {payment_statuses.map((status) => (
-                                    <option
-                                        key={status.value}
-                                        value={status.value}
-                                    >
-                                        {status.label}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger id="payment_status">
+                                    <SelectValue placeholder="Select payment status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {payment_statuses.map((status) => (
+                                        <SelectItem
+                                            key={status.value}
+                                            value={status.value}
+                                        >
+                                            {status.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 )}

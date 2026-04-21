@@ -4,6 +4,16 @@ import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -12,6 +22,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import type { Booking } from './types';
 
 const MONTH_ABBR = [
@@ -303,19 +314,21 @@ export function PersonalInfoSection({
                                     className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
+                                        <Checkbox
+                                            id={`cg-${caregiver.id}`}
                                             checked={selectedCaregivers.includes(
                                                 caregiver.id,
                                             )}
-                                            onChange={() =>
+                                            onCheckedChange={() =>
                                                 toggleCaregiver(caregiver.id)
                                             }
-                                            className="h-4 w-4 rounded border-input"
                                         />
-                                        <span className="text-sm font-medium">
+                                        <Label
+                                            htmlFor={`cg-${caregiver.id}`}
+                                            className="text-sm font-medium"
+                                        >
                                             {caregiver.name}
-                                        </span>
+                                        </Label>
                                     </div>
                                     {badge && (
                                         <span
@@ -1084,8 +1097,7 @@ export function PersonalInfoSection({
                                             className="border-t border-border bg-muted/50"
                                         >
                                             <td className="px-3 py-2">
-                                                <input
-                                                    type="text"
+                                                <Input
                                                     value={pet.name}
                                                     onChange={(e) =>
                                                         onUpdatePet(
@@ -1095,12 +1107,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Name"
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
-                                                <input
-                                                    type="text"
+                                                <Input
                                                     value={pet.type}
                                                     onChange={(e) =>
                                                         onUpdatePet(
@@ -1110,12 +1121,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Type"
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
-                                                <input
-                                                    type="text"
+                                                <Input
                                                     value={pet.breed}
                                                     onChange={(e) =>
                                                         onUpdatePet(
@@ -1125,12 +1135,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Breed"
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
-                                                <input
-                                                    type="text"
+                                                <Input
                                                     value={pet.notes}
                                                     onChange={(e) =>
                                                         onUpdatePet(
@@ -1140,7 +1149,7 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Notes"
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
@@ -1172,12 +1181,12 @@ export function PersonalInfoSection({
                         </div>
                     </div>
 
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
+                    <div className="grid gap-2">
+                        <Label htmlFor="other_adults_present">
                             Other Adults Present
-                        </label>
-                        <input
-                            type="text"
+                        </Label>
+                        <Input
+                            id="other_adults_present"
                             value={form.data.other_adults_present || ''}
                             onChange={(e) =>
                                 form.setData(
@@ -1186,29 +1195,25 @@ export function PersonalInfoSection({
                                 )
                             }
                             placeholder="Other adults present"
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                         />
                     </div>
 
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
-                            Sitter Preferences
-                        </label>
+                    <div className="grid gap-2">
+                        <Label>Sitter Preferences</Label>
                         <div className="mt-2 flex flex-wrap gap-2">
                             <div className="grid grid-cols-3 gap-4">
                                 {sitter_preference_options.map((option) => (
-                                    <label
+                                    <div
                                         key={option.value}
                                         className="flex items-center gap-2"
                                     >
-                                        <input
-                                            type="checkbox"
+                                        <Checkbox
+                                            id={`pref-${option.value}`}
                                             checked={form.data.sitter_preferences.includes(
                                                 option.value,
                                             )}
-                                            onChange={(e) => {
-                                                const newPrefs = e.target
-                                                    .checked
+                                            onCheckedChange={(checked) => {
+                                                const newPrefs = checked
                                                     ? [
                                                           ...form.data
                                                               .sitter_preferences,
@@ -1224,55 +1229,65 @@ export function PersonalInfoSection({
                                                     newPrefs,
                                                 );
                                             }}
-                                            className="h-4 w-4 rounded border-input"
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label
+                                            htmlFor={`pref-${option.value}`}
+                                            className="text-sm font-normal"
+                                        >
                                             {option.label}
-                                        </span>
-                                    </label>
+                                        </Label>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label className="text-sm font-medium text-foreground">
+                    <div className="grid gap-2">
+                        <Label htmlFor="how_did_you_hear">
                             How Did You Hear
-                        </label>
-                        <select
+                        </Label>
+                        <Select
                             value={form.data.how_did_you_hear || ''}
-                            onChange={(e) =>
-                                form.setData('how_did_you_hear', e.target.value)
+                            onValueChange={(value) =>
+                                form.setData('how_did_you_hear', value)
                             }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                         >
-                            <option value="">Select...</option>
-                            <option value="concierge">Concierge</option>
-                            <option value="friend_family">Friend/Family</option>
-                            <option value="google">Google</option>
-                            <option value="returning_client">
-                                Returning Client
-                            </option>
-                            <option value="care_com">Care.com</option>
-                            <option value="other">Other</option>
-                        </select>
+                            <SelectTrigger id="how_did_you_hear">
+                                <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="concierge">
+                                    Concierge
+                                </SelectItem>
+                                <SelectItem value="friend_family">
+                                    Friend/Family
+                                </SelectItem>
+                                <SelectItem value="google">Google</SelectItem>
+                                <SelectItem value="returning_client">
+                                    Returning Client
+                                </SelectItem>
+                                <SelectItem value="care_com">
+                                    Care.com
+                                </SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="save_to_profile"
                             checked={saveChildrenPetsToProfile}
-                            onChange={(e) =>
+                            onCheckedChange={(checked) =>
                                 onSaveChildrenPetsToProfileChange(
-                                    e.target.checked,
+                                    checked === true,
                                 )
                             }
-                            className="h-4 w-4 rounded border-input"
                         />
-                        <span className="text-sm text-foreground">
+                        <Label htmlFor="save_to_profile">
                             Save changes to client profile
-                        </span>
-                    </label>
+                        </Label>
+                    </div>
                 </div>
             </details>
         </>

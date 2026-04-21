@@ -2,6 +2,9 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -10,6 +13,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -247,27 +251,22 @@ export default function HotelsIndex() {
                             onSubmit={handleSubmit}
                             className="flex-grow space-y-4 overflow-y-auto px-4"
                         >
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
                                     value={form.data.name}
                                     onChange={(e) =>
                                         form.setData('name', e.target.value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     required
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        Line 1
-                                    </label>
-                                    <input
-                                        type="text"
+                                <div className="grid gap-2">
+                                    <Label htmlFor="line1">Line 1</Label>
+                                    <Input
+                                        id="line1"
                                         value={form.data.line1}
                                         onChange={(e) =>
                                             form.setData(
@@ -275,16 +274,13 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        Line 2
-                                    </label>
-                                    <input
-                                        type="text"
+                                <div className="grid gap-2">
+                                    <Label htmlFor="line2">Line 2</Label>
+                                    <Input
+                                        id="line2"
                                         value={form.data.line2}
                                         onChange={(e) =>
                                             form.setData(
@@ -292,31 +288,25 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        City
-                                    </label>
-                                    <input
-                                        type="text"
+                                <div className="grid gap-2">
+                                    <Label htmlFor="city">City</Label>
+                                    <Input
+                                        id="city"
                                         value={form.data.city}
                                         onChange={(e) =>
                                             form.setData('city', e.target.value)
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        State
-                                    </label>
-                                    <input
-                                        type="text"
+                                <div className="grid gap-2">
+                                    <Label htmlFor="state">State</Label>
+                                    <Input
+                                        id="state"
                                         value={form.data.state}
                                         onChange={(e) =>
                                             form.setData(
@@ -324,30 +314,27 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
-                                        ZIP
-                                    </label>
-                                    <input
-                                        type="text"
+                                <div className="grid gap-2">
+                                    <Label htmlFor="zip">ZIP</Label>
+                                    <Input
+                                        id="zip"
                                         value={form.data.zip}
                                         onChange={(e) =>
                                             form.setData('zip', e.target.value)
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
+                            <div className="grid gap-2">
+                                <Label htmlFor="parking_instructions">
                                     Parking Instructions
-                                </label>
-                                <textarea
+                                </Label>
+                                <Textarea
+                                    id="parking_instructions"
                                     value={form.data.parking_instructions}
                                     onChange={(e) =>
                                         form.setData(
@@ -355,17 +342,17 @@ export default function HotelsIndex() {
                                             e.target.value,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={2}
                                     required
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="hourly_rate">
                                         Hourly Rate ($)
-                                    </label>
-                                    <input
+                                    </Label>
+                                    <Input
+                                        id="hourly_rate"
                                         type="number"
                                         step="0.01"
                                         min="0"
@@ -376,15 +363,15 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="resort_fee">
                                         Resort Fee ($)
-                                    </label>
-                                    <input
+                                    </Label>
+                                    <Input
+                                        id="resort_fee"
                                         type="number"
                                         step="0.01"
                                         min="0"
@@ -395,17 +382,16 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="contact_name">
                                         Contact Name
-                                    </label>
-                                    <input
-                                        type="text"
+                                    </Label>
+                                    <Input
+                                        id="contact_name"
                                         value={form.data.contact_name}
                                         onChange={(e) =>
                                             form.setData(
@@ -413,15 +399,14 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="contact_phone">
                                         Contact Phone
-                                    </label>
-                                    <input
-                                        type="text"
+                                    </Label>
+                                    <Input
+                                        id="contact_phone"
                                         value={form.data.contact_phone}
                                         onChange={(e) =>
                                             form.setData(
@@ -429,15 +414,13 @@ export default function HotelsIndex() {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Admin Notes
-                                </label>
-                                <textarea
+                            <div className="grid gap-2">
+                                <Label htmlFor="admin_notes">Admin Notes</Label>
+                                <Textarea
+                                    id="admin_notes"
                                     value={form.data.admin_notes}
                                     onChange={(e) =>
                                         form.setData(
@@ -445,44 +428,40 @@ export default function HotelsIndex() {
                                             e.target.value,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
                                     rows={2}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="is_active"
                                     checked={form.data.is_active}
-                                    onChange={(e) =>
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'is_active',
-                                            e.target.checked,
+                                            checked === true,
                                         )
                                     }
-                                    className="h-4 w-4 rounded border-input"
                                 />
-                                <label
-                                    htmlFor="is_active"
-                                    className="text-sm text-foreground"
+                                <Label htmlFor="is_active">Active</Label>
+                            </div>
+                            <div className="mt-10 w-full space-y-2">
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={form.processing}
                                 >
-                                    Active
-                                </label>
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </form>
-                        <SheetFooter>
-                            <Button type="submit" className="w-full">
-                                {form.processing ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                type="button"
-                                onClick={() => setIsSheetOpen(false)}
-                                className="mt-2 w-full"
-                            >
-                                Cancel
-                            </Button>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
             </div>

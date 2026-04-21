@@ -211,7 +211,6 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
      */
     public function show(Request $request, Booking $booking)
     {
-        dd($booking);
         $client = $request->user()->client;
 
         if ($booking->client_id !== $client->id) {

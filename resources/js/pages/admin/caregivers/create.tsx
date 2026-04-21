@@ -4,6 +4,16 @@ import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -81,11 +91,12 @@ export default function CaregiverCreate() {
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="first_name">
                                     First Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="first_name"
                                     type="text"
                                     value={form.data.first_name}
                                     onChange={(e) =>
@@ -94,7 +105,6 @@ export default function CaregiverCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.first_name && (
@@ -104,11 +114,12 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="last_name">
                                     Last Name{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="last_name"
                                     type="text"
                                     value={form.data.last_name}
                                     onChange={(e) =>
@@ -117,7 +128,6 @@ export default function CaregiverCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.last_name && (
@@ -127,17 +137,17 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="email">
                                     Email{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="email"
                                     type="email"
                                     value={form.data.email}
                                     onChange={(e) =>
                                         form.setData('email', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.email && (
@@ -147,22 +157,18 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Phone
-                                </label>
-                                <input
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                    id="phone"
                                     type="text"
                                     value={form.data.phone}
                                     onChange={(e) =>
                                         form.setData('phone', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Date of Birth
-                                </label>
+                                <Label>Date of Birth</Label>
                                 <DatePicker
                                     name="date_of_birth"
                                     value={form.data.date_of_birth}
@@ -176,31 +182,31 @@ export default function CaregiverCreate() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="status_id">
                                     Status{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.status_id}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'status_id',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('status_id', value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
                                     required
                                 >
-                                    <option value="">Select status</option>
-                                    {statuses.map((status) => (
-                                        <option
-                                            key={status.id}
-                                            value={status.id}
-                                        >
-                                            {status.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger id="status_id">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {statuses.map((status) => (
+                                            <SelectItem
+                                                key={status.id}
+                                                value={status.id.toString()}
+                                            >
+                                                {status.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 {form.errors.status_id && (
                                     <p className="text-sm text-destructive">
                                         {form.errors.status_id}
@@ -208,16 +214,14 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Address
-                                </label>
-                                <input
+                                <Label htmlFor="address">Address</Label>
+                                <Input
+                                    id="address"
                                     type="text"
                                     value={form.data.address}
                                     onChange={(e) =>
                                         form.setData('address', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                         </div>
@@ -229,17 +233,17 @@ export default function CaregiverCreate() {
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="password">
                                     Password{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="password"
                                     type="password"
                                     value={form.data.password}
                                     onChange={(e) =>
                                         form.setData('password', e.target.value)
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.password && (
@@ -249,11 +253,12 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
+                                <Label htmlFor="password_confirmation">
                                     Confirm Password{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
+                                    id="password_confirmation"
                                     type="password"
                                     value={form.data.password_confirmation}
                                     onChange={(e) =>
@@ -262,7 +267,6 @@ export default function CaregiverCreate() {
                                             e.target.value,
                                         )
                                     }
-                                    className="h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                     required
                                 />
                                 {form.errors.password_confirmation && (
@@ -280,10 +284,9 @@ export default function CaregiverCreate() {
                         </h2>
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Biography
-                                </label>
-                                <textarea
+                                <Label htmlFor="biography">Biography</Label>
+                                <Textarea
+                                    id="biography"
                                     value={form.data.biography}
                                     onChange={(e) =>
                                         form.setData(
@@ -292,20 +295,17 @@ export default function CaregiverCreate() {
                                         )
                                     }
                                     rows={4}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">
-                                    Notes
-                                </label>
-                                <textarea
+                                <Label htmlFor="notes">Notes</Label>
+                                <Textarea
+                                    id="notes"
                                     value={form.data.notes}
                                     onChange={(e) =>
                                         form.setData('notes', e.target.value)
                                     }
                                     rows={4}
-                                    className="w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20"
                                 />
                             </div>
                         </div>

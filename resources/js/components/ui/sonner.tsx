@@ -16,11 +16,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        success: <CircleCheckIcon className="size-8" />,
+        info: <InfoIcon className="size-8" />,
+        warning: <TriangleAlertIcon className="size-8" />,
+        error: <OctagonXIcon className="size-8" />,
+        loading: <Loader2Icon className="size-8 animate-spin" />,
       }}
       style={
         {
@@ -41,7 +41,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 			'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
 		      cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
 		    success:
-			'group-[.toaster]:bg-emerald-500 group-[.toaster]:text-pale-green-100 group-[.toaster]:border-emerald-500 dark:group-[.toaster]:bg-emerald-500 dark:group-[.toaster]:border-emerald-500',
+			'group-[.toaster]:bg-emerald-100 group-[.toaster]:text-pale-green-100 group-[.toaster]:border-emerald-500 dark:group-[.toaster]:bg-emerald-500 dark:group-[.toaster]:border-emerald-500',
 		    error:
 			'group-[.toaster]:bg-red-300 group-[.toaster]:text-red-900 group-[.toaster]:border-red-200 dark:group-[.toaster]:bg-red-900 dark:group-[.toaster]:text-red-100 dark:group-[.toaster]:border-red-800',
 		    warning:

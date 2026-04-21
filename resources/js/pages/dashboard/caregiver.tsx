@@ -13,6 +13,11 @@ import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ToasterMessage } from '@/components/toaster-message';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -156,7 +161,7 @@ export default function CaregiverDashboard({
             return;
         }
 
-        deleteForm(`/my-availability/availability/${existing.id}`, {
+        deleteForm(`/availabilities/${existing.id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 setAvailabilities((prev) =>
@@ -187,6 +192,7 @@ export default function CaregiverDashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Caregiver Dashboard" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold text-foreground">
@@ -254,27 +260,29 @@ export default function CaregiverDashboard({
                             </label>
                             <div className="mt-2 space-y-2">
                                 {timeSlots.map((slot) => (
-                                    <label
+                                    <div
                                         key={slot.value}
                                         className="flex items-center gap-2"
                                     >
-                                        <input
-                                            type="checkbox"
+                                        <Checkbox
+                                            id={`slot-${slot.value}`}
                                             checked={data.time_slots.includes(
                                                 slot.value,
                                             )}
-                                            onChange={(e) =>
+                                            onCheckedChange={(checked) =>
                                                 handleTimeSlotChange(
                                                     slot.value,
-                                                    e.target.checked,
+                                                    checked === true,
                                                 )
                                             }
-                                            className="h-4 w-4 rounded border-input text-primary"
                                         />
-                                        <span className="text-sm text-foreground">
+                                        <Label
+                                            htmlFor={`slot-${slot.value}`}
+                                            className="text-sm font-normal"
+                                        >
                                             {slot.label}
-                                        </span>
-                                    </label>
+                                        </Label>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -283,7 +291,7 @@ export default function CaregiverDashboard({
                             <label className="text-sm font-medium text-foreground">
                                 Specific Time
                             </label>
-                            <input
+                            <Input
                                 type="text"
                                 value={data.specific_time}
                                 onChange={(e) =>
@@ -294,52 +302,47 @@ export default function CaregiverDashboard({
                             />
                         </div>
 
-                        <SheetFooter>
-                            <div className="flex gap-2 pt-4">
-                                <button
-                                    onClick={handleSave}
-                                    disabled={
-                                        processing ||
-                                        data.time_slots.length === 0
-                                    }
-                                    className="btn-primary flex-1"
-                                >
-                                    {processing && (
-                                        <Spinner className="size-4" />
-                                    )}
-                                    {processing ? 'Saving...' : 'Save'}
-                                </button>
-                                {(() => {
-                                    const map = availabilities.reduce(
-                                        (acc, av) => {
-                                            acc[av.date] = av;
-
-                                            return acc;
-                                        },
-                                        {} as Record<string, Availability>,
-                                    );
-
-                                    return (
-                                        map[selectedDate || ''] && (
-                                            <button
-                                                onClick={handleDelete}
-                                                disabled={processing}
-                                                className="btn-secondary w-1/4"
-                                            >
-                                                Delete
-                                            </button>
-                                        )
-                                    );
-                                })()}
-                            </div>
-
-                            <button
-                                onClick={() => setIsSheetOpen(false)}
-                                className="btn-secondary mt-2 w-full"
+                        <div className="flex gap-2 pt-4">
+                            <Button
+                                onClick={handleSave}
+                                disabled={
+                                    processing || data.time_slots.length === 0
+                                }
+                                className="btn-primary flex-1"
                             >
-                                Cancel
-                            </button>
-                        </SheetFooter>
+                                {processing && <Spinner className="size-4" />}
+                                {processing ? 'Saving...' : 'Save'}
+                            </Button>
+                            {(() => {
+                                const map = availabilities.reduce(
+                                    (acc, av) => {
+                                        acc[av.date] = av;
+
+                                        return acc;
+                                    },
+                                    {} as Record<string, Availability>,
+                                );
+
+                                return (
+                                    map[selectedDate || ''] && (
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            className="btn-secondary w-1/4"
+                                        >
+                                            Delete
+                                        </button>
+                                    )
+                                );
+                            })()}
+                        </div>
+
+                        <Button
+                            onClick={() => setIsSheetOpen(false)}
+                            className="btn-secondary mt-2 w-full"
+                        >
+                            Cancel
+                        </Button>
                     </div>
                 </SheetContent>
             </Sheet>
