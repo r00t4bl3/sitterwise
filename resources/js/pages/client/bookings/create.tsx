@@ -6,6 +6,7 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -15,9 +16,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -389,45 +389,45 @@ export default function ClientBookingCreate() {
                         </summary>
                         <div className="space-y-4 p-4">
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Location Type{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.location_type}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'location_type',
-                                            e.target.value,
-                                        )
+                                    onValueChange={(value) =>
+                                        form.setData('location_type', value)
                                     }
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    required
                                 >
-                                    {location_types.map((type) => (
-                                        <option
-                                            key={type.value}
-                                            value={type.value}
-                                        >
-                                            {type.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select location type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {location_types.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {form.data.location_type === 'private_home' &&
                                 client_addresses.length > 0 &&
                                 !showManualAddressInput && (
                                     <div>
-                                        <label className="text-sm font-medium text-foreground">
+                                        <Label className="text-sm font-medium text-foreground">
                                             Address
-                                        </label>
-                                        <select
-                                            value={form.data.address_id || ''}
-                                            onChange={(e) => {
-                                                if (
-                                                    e.target.value === 'add_new'
-                                                ) {
+                                        </Label>
+                                        <Select
+                                            value={String(
+                                                form.data.address_id || '',
+                                            )}
+                                            onValueChange={(value) => {
+                                                if (value === 'add_new') {
                                                     setShowManualAddressInput(
                                                         true,
                                                     );
@@ -457,10 +457,9 @@ export default function ClientBookingCreate() {
                                                     );
                                                     setAddressValue('');
                                                     setIsAddressLocked(false);
-                                                } else if (e.target.value) {
-                                                    const addrId = Number(
-                                                        e.target.value,
-                                                    );
+                                                } else if (value) {
+                                                    const addrId =
+                                                        Number(value);
                                                     form.setData(
                                                         'address_id',
                                                         addrId,
@@ -532,74 +531,83 @@ export default function ClientBookingCreate() {
                                                     setAddressValue('');
                                                 }
                                             }}
-                                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                         >
-                                            <option value="">
-                                                Select address...
-                                            </option>
-                                            <option value="add_new">
-                                                + Enter manually
-                                            </option>
-                                            {client_addresses.map((addr) => (
-                                                <option
-                                                    key={addr.id}
-                                                    value={addr.id}
-                                                >
-                                                    {addr.line1}, {addr.city},{' '}
-                                                    {addr.state} {addr.zip}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select address..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="add_new">
+                                                    + Enter manually
+                                                </SelectItem>
+                                                {client_addresses.map(
+                                                    (addr) => (
+                                                        <SelectItem
+                                                            key={addr.id}
+                                                            value={String(
+                                                                addr.id,
+                                                            )}
+                                                        >
+                                                            {addr.line1},{' '}
+                                                            {addr.city},{' '}
+                                                            {addr.state}{' '}
+                                                            {addr.zip}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 )}
 
                             {form.data.location_type === 'vacation_rental' && (
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label className="text-sm font-medium text-foreground">
                                         Rental Platform
-                                    </label>
-                                    <select
+                                    </Label>
+                                    <Select
                                         value={form.data.rental_platform}
-                                        onChange={(e) =>
+                                        onValueChange={(value) =>
                                             form.setData(
                                                 'rental_platform',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                     >
-                                        <option value="">
-                                            Select platform...
-                                        </option>
-                                        {booking_attributes
-                                            .filter(
-                                                (attr) =>
-                                                    attr.slug ===
-                                                    'vacation_rental_platform',
-                                            )
-                                            .flatMap(
-                                                (attr) => attr.options || [],
-                                            )
-                                            .map((option) => (
-                                                <option
-                                                    key={option}
-                                                    value={option}
-                                                >
-                                                    {option
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                        option.slice(1)}
-                                                </option>
-                                            ))}
-                                    </select>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select platform..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {booking_attributes
+                                                .filter(
+                                                    (attr) =>
+                                                        attr.slug ===
+                                                        'vacation_rental_platform',
+                                                )
+                                                .flatMap(
+                                                    (attr) =>
+                                                        attr.options || [],
+                                                )
+                                                .map((option) => (
+                                                    <SelectItem
+                                                        key={option}
+                                                        value={option}
+                                                    >
+                                                        {option
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            option.slice(1)}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             )}
 
                             {form.data.location_type === 'hotel' && (
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label className="text-sm font-medium text-foreground">
                                         Hotel
-                                    </label>
+                                    </Label>
                                     <div className="mt-1">
                                         <Autocomplete
                                             value={form.data.hotel_id}
@@ -678,9 +686,9 @@ export default function ClientBookingCreate() {
 
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label className="text-sm font-medium text-foreground">
                                         Children
-                                    </label>
+                                    </Label>
                                     <button
                                         type="button"
                                         onClick={handleAddChild}
@@ -752,8 +760,7 @@ export default function ClientBookingCreate() {
                                                         className="border-t border-border bg-muted/50"
                                                     >
                                                         <td className="px-3 py-2">
-                                                            <input
-                                                                type="text"
+                                                            <Input
                                                                 value={
                                                                     child.name
                                                                 }
@@ -766,93 +773,92 @@ export default function ClientBookingCreate() {
                                                                     )
                                                                 }
                                                                 placeholder="Name"
-                                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
-                                                            <select
+                                                            <Select
                                                                 value={
                                                                     child.gender
                                                                 }
-                                                                onChange={(e) =>
+                                                                onValueChange={(
+                                                                    value,
+                                                                ) =>
                                                                     handleUpdateChild(
                                                                         child.tempId,
                                                                         'gender',
-                                                                        e.target
-                                                                            .value,
+                                                                        value,
                                                                     )
                                                                 }
-                                                                className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                             >
-                                                                <option value="">
-                                                                    Select
-                                                                </option>
-                                                                <option value="male">
-                                                                    Male
-                                                                </option>
-                                                                <option value="female">
-                                                                    Female
-                                                                </option>
-                                                            </select>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="male">
+                                                                        Male
+                                                                    </SelectItem>
+                                                                    <SelectItem value="female">
+                                                                        Female
+                                                                    </SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
                                                         </td>
                                                         <td className="px-3 py-2">
                                                             <div className="flex gap-1">
-                                                                <select
+                                                                <Select
                                                                     value={
                                                                         child.birth_month
                                                                     }
-                                                                    onChange={(
-                                                                        e,
+                                                                    onValueChange={(
+                                                                        value,
                                                                     ) =>
                                                                         handleUpdateChild(
                                                                             child.tempId,
                                                                             'birth_month',
-                                                                            e
-                                                                                .target
-                                                                                .value,
+                                                                            value,
                                                                         )
                                                                     }
-                                                                    className="h-8 w-20 rounded-[3px] border border-input bg-background px-1 text-sm"
                                                                 >
-                                                                    <option value="">
-                                                                        Month
-                                                                    </option>
-                                                                    {[
-                                                                        'Jan',
-                                                                        'Feb',
-                                                                        'Mar',
-                                                                        'Apr',
-                                                                        'May',
-                                                                        'Jun',
-                                                                        'Jul',
-                                                                        'Aug',
-                                                                        'Sep',
-                                                                        'Oct',
-                                                                        'Nov',
-                                                                        'Dec',
-                                                                    ].map(
-                                                                        (
-                                                                            m,
-                                                                            i,
-                                                                        ) => (
-                                                                            <option
-                                                                                key={
-                                                                                    m
-                                                                                }
-                                                                                value={String(
-                                                                                    i +
-                                                                                        1,
-                                                                                )}
-                                                                            >
-                                                                                {
-                                                                                    m
-                                                                                }
-                                                                            </option>
-                                                                        ),
-                                                                    )}
-                                                                </select>
-                                                                <input
-                                                                    type="text"
+                                                                    <SelectTrigger className="w-20">
+                                                                        <SelectValue placeholder="Month" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {[
+                                                                            'Jan',
+                                                                            'Feb',
+                                                                            'Mar',
+                                                                            'Apr',
+                                                                            'May',
+                                                                            'Jun',
+                                                                            'Jul',
+                                                                            'Aug',
+                                                                            'Sep',
+                                                                            'Oct',
+                                                                            'Nov',
+                                                                            'Dec',
+                                                                        ].map(
+                                                                            (
+                                                                                m,
+                                                                                i,
+                                                                            ) => (
+                                                                                <SelectItem
+                                                                                    key={
+                                                                                        m
+                                                                                    }
+                                                                                    value={String(
+                                                                                        i +
+                                                                                            1,
+                                                                                    )}
+                                                                                >
+                                                                                    {
+                                                                                        m
+                                                                                    }
+                                                                                </SelectItem>
+                                                                            ),
+                                                                        )}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <Input
                                                                     value={
                                                                         child.birth_year
                                                                     }
@@ -868,7 +874,7 @@ export default function ClientBookingCreate() {
                                                                         )
                                                                     }
                                                                     placeholder="Year"
-                                                                    className="h-8 w-16 rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                                    className="h-8 w-16"
                                                                 />
                                                             </div>
                                                         </td>
@@ -912,10 +918,10 @@ export default function ClientBookingCreate() {
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Special Needs / Allergies
-                                </label>
-                                <textarea
+                                </Label>
+                                <Textarea
                                     value={form.data.special_needs_notes || ''}
                                     onChange={(e) =>
                                         form.setData(
@@ -924,17 +930,15 @@ export default function ClientBookingCreate() {
                                         )
                                     }
                                     placeholder="Special needs notes"
-                                    className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                                    rows={3}
                                 />
                             </div>
 
                             {form.data.special_needs_notes && (
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label className="text-sm font-medium text-foreground">
                                         Emergency Instructions
-                                    </label>
-                                    <textarea
+                                    </Label>
+                                    <Textarea
                                         value={
                                             form.data.emergency_instructions ||
                                             ''
@@ -946,17 +950,15 @@ export default function ClientBookingCreate() {
                                             )
                                         }
                                         placeholder="What should your caregiver do in an emergency?"
-                                        className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                                        rows={3}
                                     />
                                 </div>
                             )}
 
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label className="text-sm font-medium text-foreground">
                                         Pets
-                                    </label>
+                                    </Label>
                                     <button
                                         type="button"
                                         onClick={handleAddPet}
@@ -1025,8 +1027,7 @@ export default function ClientBookingCreate() {
                                                     className="border-t border-border bg-muted/50"
                                                 >
                                                     <td className="px-3 py-2">
-                                                        <input
-                                                            type="text"
+                                                        <Input
                                                             value={pet.name}
                                                             onChange={(e) =>
                                                                 handleUpdatePet(
@@ -1037,12 +1038,10 @@ export default function ClientBookingCreate() {
                                                                 )
                                                             }
                                                             placeholder="Name"
-                                                            className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        <input
-                                                            type="text"
+                                                        <Input
                                                             value={pet.type}
                                                             onChange={(e) =>
                                                                 handleUpdatePet(
@@ -1053,12 +1052,10 @@ export default function ClientBookingCreate() {
                                                                 )
                                                             }
                                                             placeholder="Type"
-                                                            className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        <input
-                                                            type="text"
+                                                        <Input
                                                             value={pet.breed}
                                                             onChange={(e) =>
                                                                 handleUpdatePet(
@@ -1069,12 +1066,10 @@ export default function ClientBookingCreate() {
                                                                 )
                                                             }
                                                             placeholder="Breed"
-                                                            className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        <input
-                                                            type="text"
+                                                        <Input
                                                             value={pet.notes}
                                                             onChange={(e) =>
                                                                 handleUpdatePet(
@@ -1085,7 +1080,6 @@ export default function ClientBookingCreate() {
                                                                 )
                                                             }
                                                             placeholder="Notes"
-                                                            className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
@@ -1121,11 +1115,10 @@ export default function ClientBookingCreate() {
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Other Adults Present
-                                </label>
-                                <input
-                                    type="text"
+                                </Label>
+                                <Input
                                     value={form.data.other_adults_present || ''}
                                     onChange={(e) =>
                                         form.setData(
@@ -1134,7 +1127,6 @@ export default function ClientBookingCreate() {
                                         )
                                     }
                                     placeholder="Other adults present"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                 />
                             </div>
 
@@ -1364,9 +1356,9 @@ export default function ClientBookingCreate() {
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Caregiver Notes
-                                </label>
+                                </Label>
                                 <textarea
                                     value={form.data.caregiver_notes}
                                     onChange={(e) =>
@@ -1382,9 +1374,9 @@ export default function ClientBookingCreate() {
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Notes to Sitterwise
-                                </label>
+                                </Label>
                                 <textarea
                                     value={form.data.notes_to_sitterwise}
                                     onChange={(e) =>

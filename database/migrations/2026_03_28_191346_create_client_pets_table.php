@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->string('name')->nullable();
-            $table->enum('type', ['dog', 'cat', 'other']);
+            $table->string('type')->nullable();
             $table->string('breed')->nullable();
             $table->text('notes')->nullable();
             $table->softDeletes();

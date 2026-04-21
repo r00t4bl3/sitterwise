@@ -405,15 +405,14 @@ export default function Bookings() {
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, Booking[]> = {};
         bookings.forEach((booking) => {
-            const date = new Date(booking.start_datetime)
-                .toISOString()
-                .split('T')[0];
+            const date = new Date(booking.start_datetime);
+            const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-            if (!grouped[date]) {
-                grouped[date] = [];
+            if (!grouped[localDate]) {
+                grouped[localDate] = [];
             }
 
-            grouped[date].push(booking);
+            grouped[localDate].push(booking);
         });
 
         return grouped;
@@ -869,7 +868,8 @@ export default function Bookings() {
                 },
                 onError: (errors) => {
                     const errorMessage = Object.values(errors).join(', ');
-                    setMessage({ type: 'error', content: errorMessage });
+                    console.log('Error updating booking:', errorMessage);
+                    // setMessage({ type: 'error', content: errorMessage });
                 },
             });
         } else {
@@ -880,7 +880,8 @@ export default function Bookings() {
                 },
                 onError: (errors) => {
                     const errorMessage = Object.values(errors).join(', ');
-                    setMessage({ type: 'error', content: errorMessage });
+                    console.log('Error creating booking:', errorMessage);
+                    // setMessage({ type: 'error', content: errorMessage });
                 },
             });
         }
@@ -898,7 +899,8 @@ export default function Bookings() {
                 },
                 onError: (errors) => {
                     const errorMessage = Object.values(errors).join(', ');
-                    setMessage({ type: 'error', content: errorMessage });
+                    console.log('Error deleting booking:', errorMessage);
+                    // setMessage({ type: 'error', content: errorMessage });
                 },
             });
         }
@@ -1004,37 +1006,44 @@ export default function Bookings() {
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <select
-                        value={statusFilter || ''}
-                        onChange={(e) =>
-                            setStatusFilter(e.target.value || null)
-                        }
-                        className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm"
-                    >
-                        <option value="">All Statuses</option>
-                        {booking_statuses.map((status) => (
-                            <option key={status.value} value={status.value}>
-                                {status.label}
-                            </option>
-                        ))}
-                    </select>
-                    <Button onClick={applyFilters}>Filter</Button>
-                </div>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <select
+                            value={statusFilter || ''}
+                            onChange={(e) =>
+                                setStatusFilter(e.target.value || null)
+                            }
+                            className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm"
+                        >
+                            <option value="">All Statuses</option>
+                            {booking_statuses.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                    {status.label}
+                                </option>
+                            ))}
+                        </select>
+                        <Button onClick={applyFilters}>Filter</Button>
+                    </div>
 
-                <div className="flex flex-wrap gap-3 text-xs">
-                    {Object.entries(statusColors).map(([status, colors]) => (
-                        <div key={status} className="flex items-center gap-1.5">
-                            <span
-                                className={`inline-block h-3 w-3 rounded-[2px] border ${
-                                    colors?.bg || 'bg-gray-100'
-                                } ${colors?.border || 'border-gray-300'}`}
-                            />
-                            <span className="text-muted-foreground">
-                                {statusLabels[status] || status}
-                            </span>
-                        </div>
-                    ))}
+                    <div className="flex flex-wrap gap-3 text-xs">
+                        {Object.entries(statusColors).map(
+                            ([status, colors]) => (
+                                <div
+                                    key={status}
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <span
+                                        className={`inline-block h-3 w-3 rounded-[2px] border ${
+                                            colors?.bg || 'bg-gray-100'
+                                        } ${colors?.border || 'border-gray-300'}`}
+                                    />
+                                    <span className="text-muted-foreground">
+                                        {statusLabels[status] || status}
+                                    </span>
+                                </div>
+                            ),
+                        )}
+                    </div>
                 </div>
 
                 <div className="border border-border bg-card p-4">
@@ -1096,7 +1105,7 @@ export default function Bookings() {
                             return (
                                 <div
                                     key={`${monthOffset}-${day}`}
-                                    className={`flex min-h-32 flex-col gap-1 border p-2 ${
+                                    className={`flex min-h-30 flex-col gap-1 border p-2 ${
                                         isCurrentMonth
                                             ? 'border-border bg-background'
                                             : 'border-dashed border-gray-300 bg-white'

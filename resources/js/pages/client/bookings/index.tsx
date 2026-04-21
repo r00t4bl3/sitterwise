@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Calendar, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -58,29 +59,43 @@ export default function ClientBookingsIndex() {
 
     const getStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
+        const displayStatus = statusLower === 'received' ? 'Received' : status;
 
         if (statusLower === 'confirmed') {
             return (
-                <div className="flex items-center gap-1 text-green-600">
-                    <span className="text-xs font-medium">{status}</span>
-                </div>
+                <Badge
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-600"
+                >
+                    {displayStatus}
+                </Badge>
             );
         }
 
         if (statusLower === 'pending') {
             return (
-                <div className="flex items-center gap-1 text-yellow-600">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-xs font-medium">{status}</span>
-                </div>
+                <Badge
+                    variant="default"
+                    className="bg-yellow-600 hover:bg-yellow-600"
+                >
+                    <Clock className="mr-1 h-3 w-3" />
+                    {displayStatus}
+                </Badge>
             );
         }
 
-        return (
-            <div className="flex items-center gap-1 text-muted-foreground">
-                <span className="text-xs font-medium">{status}</span>
-            </div>
-        );
+        if (statusLower === 'received') {
+            return (
+                <Badge
+                    variant="default"
+                    className="bg-blue-600 hover:bg-blue-600"
+                >
+                    {displayStatus}
+                </Badge>
+            );
+        }
+
+        return <Badge variant="outline">{displayStatus}</Badge>;
     };
 
     return (

@@ -309,7 +309,7 @@ export function PersonalInfoSection({
                             };
 
                             return (
-                                <label
+                                <Label
                                     key={caregiver.id}
                                     className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
                                 >
@@ -340,26 +340,27 @@ export function PersonalInfoSection({
                                             {badge.label}
                                         </span>
                                     )}
-                                </label>
+                                </Label>
                             );
                         })}
                     </div>
 
-                    <div className="mt-4 flex shrink-0 justify-end gap-2 border-t border-border pt-6">
-                        <Button
-                            variant="outline"
-                            onClick={() => setNotifySheetOpen(false)}
-                        >
-                            Cancel
-                        </Button>
+                    <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
                         <Button
                             onClick={handleNotify}
                             disabled={notifyForm.processing}
+                            className="flex-1"
                         >
                             {notifyForm.processing && (
                                 <Spinner className="size-4" />
                             )}
                             Send Notification
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setNotifySheetOpen(false)}
+                        >
+                            Cancel
                         </Button>
                     </div>
                 </SheetContent>
@@ -380,9 +381,9 @@ export function PersonalInfoSection({
                 </summary>
                 <div className="space-y-4 p-4">
                     <div>
-                        <label className="text-sm font-medium text-foreground">
+                        <Label>
                             Client <span className="text-red-500">*</span>
-                        </label>
+                        </Label>
                         <div className="mt-1">
                             <Autocomplete
                                 value={form.data.client_id}
@@ -402,12 +403,11 @@ export function PersonalInfoSection({
                         <div className="space-y-3 rounded-[3px] border border-border p-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         First Name{' '}
                                         <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
+                                    </Label>
+                                    <Input
                                         value={form.data.new_client.first_name}
                                         onChange={(e) =>
                                             form.setData('new_client', {
@@ -416,16 +416,14 @@ export function PersonalInfoSection({
                                             })
                                         }
                                         placeholder="First Name"
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         Last Name{' '}
                                         <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
+                                    </Label>
+                                    <Input
                                         value={form.data.new_client.last_name}
                                         onChange={(e) =>
                                             form.setData('new_client', {
@@ -434,17 +432,16 @@ export function PersonalInfoSection({
                                             })
                                         }
                                         placeholder="Last Name"
-                                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Email{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                </Label>
+                                <Input
                                     type="email"
                                     value={form.data.new_client.email}
                                     onChange={(e) =>
@@ -454,16 +451,14 @@ export function PersonalInfoSection({
                                         })
                                     }
                                     placeholder="Email"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Cell Phone{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
+                                </Label>
+                                <Input
                                     value={form.data.new_client.phone}
                                     onChange={(e) =>
                                         form.setData('new_client', {
@@ -472,48 +467,49 @@ export function PersonalInfoSection({
                                         })
                                     }
                                     placeholder="Cell Phone"
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Client Type{' '}
                                     <span className="text-red-500">*</span>
-                                </label>
-                                <select
+                                </Label>
+                                <Select
                                     value={form.data.new_client.client_type}
-                                    onChange={(e) => {
-                                        const newType = e.target.value;
+                                    onValueChange={(value) => {
                                         form.setData('new_client', {
                                             ...form.data.new_client,
-                                            client_type: newType,
+                                            client_type: value,
                                         });
 
-                                        if (newType === 'resident') {
+                                        if (value === 'resident') {
                                             form.setData(
                                                 'location_type',
                                                 'private_home',
                                             );
-                                        } else if (newType === 'vacationer') {
+                                        } else if (value === 'vacationer') {
                                             form.setData(
                                                 'location_type',
                                                 'hotel',
                                             );
                                         }
                                     }}
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                                    required
                                 >
-                                    {client_type_options.map((type) => (
-                                        <option
-                                            key={type.value}
-                                            value={type.value}
-                                        >
-                                            {type.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select client type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {client_type_options.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Button
                                 onClick={() => {
@@ -535,10 +531,10 @@ export function PersonalInfoSection({
                     )}
 
                     <div>
-                        <label className="text-sm font-medium text-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                             Location Type{' '}
                             <span className="text-red-500">*</span>
-                        </label>
+                        </Label>
                         <select
                             value={form.data.location_type}
                             onChange={(e) =>
@@ -580,9 +576,9 @@ export function PersonalInfoSection({
                         clientAddresses.length > 0 &&
                         !showManualAddressInput && (
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label className="text-sm font-medium text-foreground">
                                     Address
-                                </label>
+                                </Label>
                                 <select
                                     value={form.data.address_id || ''}
                                     onChange={(e) => {
@@ -672,9 +668,9 @@ export function PersonalInfoSection({
 
                     {form.data.location_type === 'vacation_rental' && (
                         <div>
-                            <label className="text-sm font-medium text-foreground">
+                            <Label className="text-sm font-medium text-foreground">
                                 Rental Platform
-                            </label>
+                            </Label>
                             <select
                                 value={form.data.rental_platform}
                                 onChange={(e) =>
@@ -711,9 +707,9 @@ export function PersonalInfoSection({
 
                     {form.data.location_type === 'hotel' && (
                         <div>
-                            <label className="text-sm font-medium text-foreground">
+                            <Label className="text-sm font-medium text-foreground">
                                 Hotel
-                            </label>
+                            </Label>
                             <div className="mt-1">
                                 <Autocomplete
                                     value={form.data.hotel_id}
@@ -787,9 +783,9 @@ export function PersonalInfoSection({
 
                     <div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-foreground">
+                            <Label className="text-sm font-medium text-foreground">
                                 Children
-                            </label>
+                            </Label>
                             <button
                                 type="button"
                                 onClick={onAddChild}
@@ -858,8 +854,7 @@ export function PersonalInfoSection({
                                             className="border-t border-border bg-muted/50"
                                         >
                                             <td className="px-3 py-2">
-                                                <input
-                                                    type="text"
+                                                <Input
                                                     value={child.name}
                                                     onChange={(e) =>
                                                         onUpdateChild(
@@ -869,7 +864,6 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Name"
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
@@ -937,8 +931,7 @@ export function PersonalInfoSection({
                                                             </option>
                                                         ))}
                                                     </select>
-                                                    <input
-                                                        type="text"
+                                                    <Input
                                                         value={child.birth_year}
                                                         onChange={(e) =>
                                                             onUpdateChild(
@@ -948,7 +941,7 @@ export function PersonalInfoSection({
                                                             )
                                                         }
                                                         placeholder="Year"
-                                                        className="h-8 w-16 rounded-[3px] border border-input bg-background px-2 text-sm"
+                                                        className="h-8 w-16"
                                                     />
                                                 </div>
                                             </td>
@@ -990,10 +983,10 @@ export function PersonalInfoSection({
                     </div>
 
                     <div>
-                        <label className="text-sm font-medium text-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                             Special Needs / Allergies
-                        </label>
-                        <textarea
+                        </Label>
+                        <Textarea
                             value={form.data.special_needs_notes || ''}
                             onChange={(e) =>
                                 form.setData(
@@ -1002,17 +995,15 @@ export function PersonalInfoSection({
                                 )
                             }
                             placeholder="Special needs notes"
-                            className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                            rows={3}
                         />
                     </div>
 
                     {form.data.special_needs_notes && (
                         <div>
-                            <label className="text-sm font-medium text-foreground">
+                            <Label className="text-sm font-medium text-foreground">
                                 Emergency Instructions
-                            </label>
-                            <textarea
+                            </Label>
+                            <Textarea
                                 value={form.data.emergency_instructions || ''}
                                 onChange={(e) =>
                                     form.setData(
@@ -1021,17 +1012,15 @@ export function PersonalInfoSection({
                                     )
                                 }
                                 placeholder="What should your caregiver do in an emergency?"
-                                className="mt-1 w-full rounded-[3px] border border-input bg-background px-3 py-2 text-sm"
-                                rows={3}
                             />
                         </div>
                     )}
 
                     <div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-foreground">
+                            <Label className="text-sm font-medium text-foreground">
                                 Pets
-                            </label>
+                            </Label>
                             <button
                                 type="button"
                                 onClick={onAddPet}

@@ -1,6 +1,11 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
+import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -13,11 +18,6 @@ import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ToasterMessage } from '@/components/toaster-message';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

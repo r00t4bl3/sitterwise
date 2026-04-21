@@ -220,6 +220,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         return Inertia::render('client/bookings/show', [
             'booking' => [
                 'id' => $booking->id,
+                'ulid' => $booking->ulid,
                 'service_type' => ServiceType::from($booking->service_type)->label(),
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
@@ -232,14 +233,13 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
-                'special_considerations' => $booking->special_considerations
-                    ? json_decode($booking->special_considerations, true)
-                    : null,
+                'special_considerations' => collect($booking->special_considerations)
+                    ->map(fn ($sc) => SpecialConsideration::from($sc)->label())
+                    ->toArray(),
                 'caregiver_notes' => $booking->caregiver_notes,
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
-                'notified_at' => $notification->notified_at,
-                'viewed_at' => $notification->viewed_at,
+
                 'children' => $booking->children,
                 'pets' => $booking->pets,
             ],

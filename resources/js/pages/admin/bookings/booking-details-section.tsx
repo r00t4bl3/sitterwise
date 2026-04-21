@@ -117,7 +117,7 @@ export function BookingDetailsSection({
 
     return (
         <details
-            className="rounded-[3px] border border-border bg-card"
+            className="mb-4 rounded-[3px] border border-border bg-card"
             open={isOpen}
             onToggle={(e) => setIsOpen(e.currentTarget.open)}
         >
