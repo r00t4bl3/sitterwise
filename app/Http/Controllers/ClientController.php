@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SitterPreference;
 use App\Http\Requests\ResetClientPasswordRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientProfilePhotoRequest;
@@ -231,6 +232,11 @@ class ClientController extends Controller
                 'type' => $a->type,
             ]);
 
+        $sitterPreferences = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            SitterPreference::cases(),
+        );
+
         return Inertia::render('admin/clients/edit', [
             'client' => [
                 'id' => $client->id,
@@ -281,6 +287,7 @@ class ClientController extends Controller
                 ]),
             ],
             'attribute_definitions' => $attributeDefinitions,
+            'sitter_preferences' => $sitterPreferences,
             'csrf_token' => csrf_token(),
         ]);
     }

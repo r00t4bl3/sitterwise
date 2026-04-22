@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('corporate_id')->nullable();
             $table->string('stripe_customer_id')->nullable();
             $table->decimal('rating', 3, 2)->default(0);
-            $table->enum('how_did_you_hear', ['concierge', 'friend_family', 'google', 'returning_client', 'care_com', 'other'])->nullable();
+            $table->string('how_did_you_hear')->nullable();
             $table->json('sitter_preferences')->nullable();
             $table->string('other_adults_present')->nullable();
             $table->text('special_needs_notes')->nullable();

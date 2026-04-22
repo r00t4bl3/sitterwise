@@ -50,10 +50,11 @@ interface PricingRule {
 interface Props {
     [key: string]: unknown;
     pricingRules: PricingRule[];
+    serviceTypes: Array<{ value: string; label: string }>;
 }
 
 export default function PricingRulesIndex() {
-    const { pricingRules } = usePage<Props>().props;
+    const { pricingRules, serviceTypes } = usePage<Props>().props;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -77,16 +78,7 @@ export default function PricingRulesIndex() {
         sitterwise_cut: null,
     });
 
-    const serviceTypeOptions = [
-        'Babysitter',
-        'Petsitter',
-        'Companion Care',
-        'Group Childcare (Invoiced)',
-        'Corporate (Invoiced)',
-        'Overnight Newborn Care',
-        'Comped',
-    ];
-
+    const serviceTypeOptions = serviceTypes;
     const paymentFormOptions = ['Stripe', 'OnPay (Payroll)'];
 
     const openCreateSheet = () => {
@@ -117,6 +109,13 @@ export default function PricingRulesIndex() {
             sitterwise_cut: rule.sitterwise_cut ?? null,
         });
         setIsSheetOpen(true);
+    };
+
+    const getServiceTypeLabel = (value: string): string => {
+        const serviceType = serviceTypeOptions.find(
+            (option) => option.value === value,
+        );
+        return serviceType ? serviceType.label : value;
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -206,7 +205,7 @@ export default function PricingRulesIndex() {
                                     className="border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                        {rule.service_type}
+                                        {getServiceTypeLabel(rule.service_type)}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                         {rule.is_for_pets
@@ -287,10 +286,10 @@ export default function PricingRulesIndex() {
                                     <SelectContent>
                                         {serviceTypeOptions.map((option) => (
                                             <SelectItem
-                                                key={option}
-                                                value={option}
+                                                key={option.value}
+                                                value={option.value}
                                             >
-                                                {option}
+                                                {option.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

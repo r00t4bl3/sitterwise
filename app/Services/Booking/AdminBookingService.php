@@ -6,6 +6,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Mail\BookingNotification;
 use App\Models\AttributeDefinition;
@@ -83,6 +84,11 @@ class AdminBookingService implements BookingServiceInterface
                 'name' => $c->first_name.' '.$c->last_name,
             ]);
 
+        $sitterPreferences = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            SitterPreference::cases(),
+        );
+
         return Inertia::render('admin/bookings/index', [
             'bookings' => $bookings,
             'filters' => [
@@ -123,6 +129,7 @@ class AdminBookingService implements BookingServiceInterface
                     'type' => $attr->type,
                     'options' => $attr->options,
                 ]),
+            'sitter_preferences' => $sitterPreferences,
         ]);
     }
 

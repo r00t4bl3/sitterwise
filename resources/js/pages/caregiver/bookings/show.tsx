@@ -433,30 +433,41 @@ export default function BookingDetail({ booking }: PageProps) {
                                                 >
                                                     {booking.address_line1 && (
                                                         <span>
-                                                            {booking.address_line1}
+                                                            {
+                                                                booking.address_line1
+                                                            }
                                                             ,{' '}
                                                         </span>
                                                     )}{' '}
                                                     {booking.address_line2 && (
                                                         <span>
-                                                            {booking.address_line2}
+                                                            {
+                                                                booking.address_line2
+                                                            }
                                                             ,{' '}
                                                         </span>
                                                     )}
                                                     {booking.address_city && (
                                                         <span>
-                                                            {booking.address_city},{' '}
+                                                            {
+                                                                booking.address_city
+                                                            }
+                                                            ,{' '}
                                                         </span>
                                                     )}
                                                     {booking.address_state && (
                                                         <span>
-                                                            {booking.address_state}
+                                                            {
+                                                                booking.address_state
+                                                            }
                                                             ,{' '}
                                                         </span>
                                                     )}
                                                     {booking.address_zip && (
                                                         <span>
-                                                            {booking.address_zip}
+                                                            {
+                                                                booking.address_zip
+                                                            }
                                                         </span>
                                                     )}
                                                 </a>

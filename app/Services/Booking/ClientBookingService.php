@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -81,6 +82,11 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'zip' => $h->zip,
         ]);
 
+        $sitterPreferences = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            SitterPreference::cases(),
+        );
+
         return Inertia::render('client/bookings/create', [
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
@@ -102,6 +108,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'type' => $attr->type,
                     'options' => $attr->options,
                 ]),
+            'sitter_preferences' => $sitterPreferences,
         ]);
     }
 

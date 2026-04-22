@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SitterPreference;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\ClientAddress;
@@ -68,7 +69,7 @@ describe('Client Booking Creation', function () {
             'special_considerations' => ['infant_care', 'special_needs_care'],
             'caregiver_notes' => 'Please bring toys.',
             'notes_to_sitterwise' => 'Client is VIP.',
-            'sitter_preferences' => ['college_aged', 'non_smoker'],
+            'sitter_preferences' => [SitterPreference::CollegeAged->value],
             'other_adults_present' => 'Grandparents',
             'emergency_instructions' => 'Call 911 first.',
             'special_needs_notes' => 'Allergic to peanuts.',
@@ -114,7 +115,7 @@ describe('Client Booking Creation', function () {
         expect($booking->children)->toHaveCount(3); // 2 existing + 1 new
         expect($booking->pets)->toHaveCount(2); // 1 existing + 1 new
         expect($booking->special_considerations)->toEqual(['infant_care', 'special_needs_care']);
-        expect($booking->sitter_preferences)->toEqual(['college_aged', 'non_smoker']);
+        expect($booking->sitter_preferences)->toEqual([SitterPreference::CollegeAged->value]);
     });
 
     test('client can create a booking with manual address input', function () {

@@ -257,7 +257,8 @@ export default function BookingDetail({ booking }: PageProps) {
                                                 )}
                                                 {booking.address_city && (
                                                     <span>
-                                                        {booking.address_city},{' '}
+                                                        {booking.address_city}
+                                                        ,{' '}
                                                     </span>
                                                 )}
                                                 {booking.address_state && (

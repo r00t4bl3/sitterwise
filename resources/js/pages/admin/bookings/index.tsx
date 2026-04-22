@@ -186,13 +186,7 @@ export default function Bookings() {
         booking_attributes,
     } = usePage<Props>().props;
 
-    const sitter_preference_options = [
-        { value: 'college_aged', label: 'College Aged' },
-        { value: 'seasoned', label: 'Seasoned' },
-        { value: 'baby_specialist', label: 'Baby Specialist' },
-        { value: 'special_needs_exp', label: 'Special Needs Experience' },
-        { value: 'willing_to_swim', label: 'Willing to Swim' },
-    ];
+    const sitter_preference_options = sitter_preferences;
 
     const client_type_options = [
         { value: 'resident', label: 'San Diego Resident' },

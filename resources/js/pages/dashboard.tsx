@@ -17,9 +17,14 @@ interface Props {
         name: string;
     };
     stats?: {
-        total_caregivers: number;
-        active_caregivers: number;
-        total_clients: number;
+        total_caregivers?: number;
+        active_caregivers?: number;
+        total_clients?: number;
+        active_bookings?: number;
+        past_bookings?: number;
+        favorite_caregivers?: number;
+        total_earned?: number;
+        completed_jobs?: number;
     };
     caregiver?: {
         id: number;
@@ -28,11 +33,19 @@ interface Props {
         rating: number | null;
         status: { name: string };
         availabilities: Availability[];
+        next_job?: any;
+        upcoming_jobs?: any[];
+        new_invites?: any[];
+    };
+    client?: {
+        next_booking: any;
+        upcoming_bookings: any[];
+        recent_bookings: any[];
     };
 }
 
 export default function Dashboard() {
-    const { user, stats, caregiver } = usePage<Props>().props;
+    const { user, stats, caregiver, client } = usePage<Props>().props;
 
     switch (user.role) {
         case 'caregiver':
@@ -45,6 +58,13 @@ export default function Dashboard() {
                         rating: caregiver?.rating || null,
                         status: caregiver?.status?.name || 'Unknown',
                         availabilities: caregiver?.availabilities || [],
+                        next_job: caregiver?.next_job,
+                        upcoming_jobs: caregiver?.upcoming_jobs || [],
+                        new_invites: caregiver?.new_invites || [],
+                    }}
+                    stats={{
+                        total_earned: stats?.total_earned || 0,
+                        completed_jobs: stats?.completed_jobs || 0,
                     }}
                 />
             );
@@ -62,6 +82,16 @@ export default function Dashboard() {
 
         case 'client':
         default:
-            return <ClientDashboard user={{ name: user.name }} />;
+            return (
+                <ClientDashboard
+                    user={{ name: user.name }}
+                    stats={{
+                        active_bookings: stats?.active_bookings || 0,
+                        past_bookings: stats?.past_bookings || 0,
+                        favorite_caregivers: stats?.favorite_caregivers || 0,
+                    }}
+                    client={client}
+                />
+            );
     }
 }

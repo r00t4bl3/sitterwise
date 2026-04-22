@@ -85,7 +85,9 @@ export function RatingInput({
                     );
                 })}
                 <span className="ml-2 text-lg font-semibold text-foreground">
-                    {typeof displayValue === 'number' && displayValue > 0 ? displayValue.toFixed(1) : ''}
+                    {typeof displayValue === 'number' && displayValue > 0
+                        ? displayValue.toFixed(1)
+                        : ''}
                 </span>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}

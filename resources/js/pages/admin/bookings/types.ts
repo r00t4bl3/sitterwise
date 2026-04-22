@@ -140,6 +140,7 @@ export interface Props {
         type: string;
         options: string[];
     }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
 }
 
 export interface BookingFormData {

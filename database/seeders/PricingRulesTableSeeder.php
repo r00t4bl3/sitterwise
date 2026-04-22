@@ -86,16 +86,17 @@ class PricingRulesTableSeeder extends Seeder
             ]);
         }
 
-        // Overnight Newborn Care
-        PricingRule::create([
-            'service_type' => 'overnight_newborn_care',
-            'number_of_children' => 1,
-            'is_for_pets' => false,
-            'charge_to_client' => 35.00,
-            'paid_to_caregiver' => 28.00,
-            'payment_form' => 'Stripe',
-            'sitterwise_cut' => 7.00,
-        ]);
+        // Need to ask if this is still valid, but this is what we have in the image
+        // // Overnight Newborn Care
+        // PricingRule::create([
+        //     'service_type' => 'overnight_newborn_care',
+        //     'number_of_children' => 1,
+        //     'is_for_pets' => false,
+        //     'charge_to_client' => 35.00,
+        //     'paid_to_caregiver' => 28.00,
+        //     'payment_form' => 'Stripe',
+        //     'sitterwise_cut' => 7.00,
+        // ]);
 
         // Comped
         foreach ([1, 2] as $children) {

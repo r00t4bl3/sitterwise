@@ -103,7 +103,9 @@ export default function TransactionsIndex() {
     const { bookings, filters } = usePage<Props>().props;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(
+        null,
+    );
     const [showPaymentSheet, setShowPaymentSheet] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -354,11 +356,14 @@ export default function TransactionsIndex() {
                                                 {getStatusBadge(booking.status)}
                                             </td>
                                             <td className="flex justify-end gap-x-2 px-4 py-3">
-                                                {booking.status === 'completed' && (
+                                                {booking.status ===
+                                                    'completed' && (
                                                     <Button
                                                         size="sm"
                                                         onClick={() =>
-                                                            openPaymentSheet(booking)
+                                                            openPaymentSheet(
+                                                                booking,
+                                                            )
                                                         }
                                                     >
                                                         Payment Approval
@@ -417,10 +422,7 @@ export default function TransactionsIndex() {
             </div>
 
             {/* Payment Approval Sheet */}
-            <Sheet
-                open={showPaymentSheet}
-                onOpenChange={setShowPaymentSheet}
-            >
+            <Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet}>
                 <SheetContent side="right" className="sm:max-w-md">
                     <SheetHeader>
                         <SheetTitle>Payment Approval</SheetTitle>
@@ -454,8 +456,9 @@ export default function TransactionsIndex() {
                                 </label>
                                 <Input
                                     value={
-                                        selectedBooking?.total_working_hour?.toFixed(2) ??
-                                        '0.00'
+                                        selectedBooking?.total_working_hour?.toFixed(
+                                            2,
+                                        ) ?? '0.00'
                                     }
                                     readOnly
                                     className="mt-1"
@@ -511,7 +514,8 @@ export default function TransactionsIndex() {
                                     <span className="font-medium">
                                         $
                                         {(
-                                            selectedBooking?.charge_to_client ?? 0
+                                            selectedBooking?.charge_to_client ??
+                                            0
                                         ).toFixed(2)}
                                     </span>
                                 </div>
@@ -522,7 +526,8 @@ export default function TransactionsIndex() {
                                     <span className="font-medium">
                                         $
                                         {(
-                                            selectedBooking?.paid_to_caregiver ?? 0
+                                            selectedBooking?.paid_to_caregiver ??
+                                            0
                                         ).toFixed(2)}
                                     </span>
                                 </div>
@@ -541,32 +546,37 @@ export default function TransactionsIndex() {
                         </div>
 
                         <div>
-<label className="text-sm font-medium text-foreground">
-                                    Reimbursement
-                                </label>
-                                <div className="relative mt-1">
-                                    <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-<Input
-                                        type="text"
-                                        inputMode="decimal"
-                                        placeholder="0.00"
-                                        value={localValues.reimbursement}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9.]/g, '');
-                                            setLocalValues({
-                                                ...localValues,
-                                                reimbursement: val,
-                                            });
-                                        }}
-                                        onBlur={() =>
-                                            paymentForm.setData({
-                                                ...paymentForm.data,
-                                                reimbursement:
-                                                    parseFloat(localValues.reimbursement) || 0,
-                                            })
-                                        }
-                                        className="pl-8"
-                                    />
+                            <label className="text-sm font-medium text-foreground">
+                                Reimbursement
+                            </label>
+                            <div className="relative mt-1">
+                                <DollarSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0.00"
+                                    value={localValues.reimbursement}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(
+                                            /[^0-9.]/g,
+                                            '',
+                                        );
+                                        setLocalValues({
+                                            ...localValues,
+                                            reimbursement: val,
+                                        });
+                                    }}
+                                    onBlur={() =>
+                                        paymentForm.setData({
+                                            ...paymentForm.data,
+                                            reimbursement:
+                                                parseFloat(
+                                                    localValues.reimbursement,
+                                                ) || 0,
+                                        })
+                                    }
+                                    className="pl-8"
+                                />
                             </div>
                         </div>
 
@@ -575,11 +585,14 @@ export default function TransactionsIndex() {
                                 Reimbursement Description
                             </label>
                             <Input
-                                value={paymentForm.data.reimbursement_description}
+                                value={
+                                    paymentForm.data.reimbursement_description
+                                }
                                 onChange={(e) =>
                                     paymentForm.setData({
                                         ...paymentForm.data,
-                                        reimbursement_description: e.target.value,
+                                        reimbursement_description:
+                                            e.target.value,
                                     })
                                 }
                                 placeholder="Enter description..."
@@ -592,13 +605,16 @@ export default function TransactionsIndex() {
                                 Tip
                             </label>
                             <div className="relative mt-1">
-                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-<Input
+                                <DollarSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
                                     type="text"
                                     placeholder="0.00"
                                     value={localValues.tip}
                                     onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                        const val = e.target.value.replace(
+                                            /[^0-9.]/g,
+                                            '',
+                                        );
                                         setLocalValues({
                                             ...localValues,
                                             tip: val,
@@ -607,7 +623,9 @@ export default function TransactionsIndex() {
                                     onBlur={() =>
                                         paymentForm.setData({
                                             ...paymentForm.data,
-                                            tip: parseFloat(localValues.tip) || 0,
+                                            tip:
+                                                parseFloat(localValues.tip) ||
+                                                0,
                                         })
                                     }
                                     className="pl-8"
@@ -620,13 +638,16 @@ export default function TransactionsIndex() {
                                 Bonus
                             </label>
                             <div className="relative mt-1">
-                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <DollarSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     type="text"
                                     placeholder="0.00"
                                     value={localValues.bonus}
                                     onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                        const val = e.target.value.replace(
+                                            /[^0-9.]/g,
+                                            '',
+                                        );
                                         setLocalValues({
                                             ...localValues,
                                             bonus: val,
@@ -635,7 +656,9 @@ export default function TransactionsIndex() {
                                     onBlur={() =>
                                         paymentForm.setData({
                                             ...paymentForm.data,
-                                            bonus: parseFloat(localValues.bonus) || 0,
+                                            bonus:
+                                                parseFloat(localValues.bonus) ||
+                                                0,
                                         })
                                     }
                                     className="pl-8"
@@ -644,11 +667,11 @@ export default function TransactionsIndex() {
                         </div>
                     </div>
 
-                    <div className="mt-10 w-full flex space-y-2 gap-2 px-4">
+                    <div className="mt-10 flex w-full gap-2 space-y-2 px-4">
                         <Button
                             onClick={() => setShowConfirmDialog(true)}
                             disabled={paymentForm.processing}
-                            className='flex-1'
+                            className="flex-1"
                         >
                             {paymentForm.processing && (
                                 <Spinner className="mr-2 h-4 w-4" />
@@ -666,13 +689,16 @@ export default function TransactionsIndex() {
             </Sheet>
 
             {/* Confirm Dialog */}
-            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            <Dialog
+                open={showConfirmDialog}
+                onOpenChange={setShowConfirmDialog}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Confirm Payment Processing</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to process payment for
-                            Booking #{selectedBooking?.id}? This action will update the
+                            Are you sure you want to process payment for Booking
+                            #{selectedBooking?.id}? This action will update the
                             reimbursement, tip, and bonus fields.
                         </DialogDescription>
                     </DialogHeader>

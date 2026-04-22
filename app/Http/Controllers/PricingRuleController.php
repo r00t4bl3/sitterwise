@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ServiceType;
 use App\Http\Requests\StorePricingRuleRequest;
 use App\Http\Requests\UpdatePricingRuleRequest;
 use App\Models\PricingRule;
@@ -16,8 +17,17 @@ class PricingRuleController extends Controller
             ->orderBy('number_of_children')
             ->get();
 
+        $serviceTypes = [];
+        foreach (ServiceType::cases() as $case) {
+            $serviceTypes[] = [
+                'value' => $case->value,
+                'label' => $case->label(),
+            ];
+        }
+
         return Inertia::render('superadmin/pricing-rules/index', [
             'pricingRules' => $pricingRules,
+            'serviceTypes' => $serviceTypes,
         ]);
     }
 

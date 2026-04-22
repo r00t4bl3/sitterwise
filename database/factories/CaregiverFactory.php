@@ -59,7 +59,7 @@ class CaregiverFactory extends Factory
         $lastName = $this->faker->randomElement($lastNames);
 
         return [
-            'user_id' => User::factory(['role' => 'caregiver']),
+            'user_id' => User::factory(['name' => $firstName.' '.$lastName, 'role' => 'caregiver']),
             'first_name' => $firstName,
             'last_name' => $lastName,
             'slug' => Str::slug($firstName.' '.$lastName).'-'.$this->faker->numerify('#####'),

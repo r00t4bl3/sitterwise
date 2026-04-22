@@ -105,6 +105,7 @@ interface Props {
     client: Client;
     attribute_definitions: AttributeDefinition[];
     csrf_token: string;
+    sitter_preferences: Array<{ value: string; label: string }>;
 }
 
 export default function ClientEdit() {
@@ -204,14 +205,6 @@ export default function ClientEdit() {
         setAttributeValues(newValues);
         form.setData('attributes', newValues);
     };
-
-    const sitterPreferenceOptions = [
-        'college_aged',
-        'seasoned',
-        'baby_specialist',
-        'special_needs_exp',
-        'willing_to_swim',
-    ];
 
     const handlePreferenceChange = (pref: string, checked: boolean) => {
         if (checked) {

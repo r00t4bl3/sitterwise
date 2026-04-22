@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\LocationType;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +22,7 @@ class ClientAddressFactory extends Factory
         return [
             'client_id' => Client::factory(),
             'label' => fake()->randomElement(['Home', 'Hotel', 'Airbnb', 'Vacation Rental']),
-            'location_type' => fake()->randomElement(['hotel', 'private_home', 'vacation_rental', 'event_venue']),
+            'location_type' => fake()->randomElement(LocationType::cases())->value,
             'line1' => fake()->streetAddress(),
             'line2' => fake()->optional()->secondaryAddress(),
             'city' => fake()->city(),
