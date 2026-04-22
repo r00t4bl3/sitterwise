@@ -6,6 +6,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\Hotel;
+use App\Models\PricingRule;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -161,5 +162,158 @@ class BookingTest extends TestCase
         $relation = $booking->attributeDefinitions();
 
         $this->assertInstanceOf(BelongsToMany::class, $relation);
+    }
+
+    public function test_calculate_hourly_rate_uses_matching_children_count()
+    {
+        $client = Client::factory()->create();
+
+        PricingRule::factory()->create([
+            'service_type' => 'babysitter',
+            'number_of_children' => 2,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+            'children' => ['child1', 'child2'],
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(30.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(20.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(10.00, $booking->sitterwise_cut_hourly);
+    }
+
+    public function test_calculate_hourly_rate_falls_back_to_max_children_when_exceeds()
+    {
+        $client = Client::factory()->create();
+
+        PricingRule::factory()->create([
+            'service_type' => 'babysitter',
+            'number_of_children' => 4,
+            'is_for_pets' => false,
+            'charge_to_client' => 50.00,
+            'paid_to_caregiver' => 35.00,
+            'sitterwise_cut' => 15.00,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+            'children' => ['child1', 'child2', 'child3', 'child4', 'child5'],
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(50.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(35.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(15.00, $booking->sitterwise_cut_hourly);
+    }
+
+    public function test_calculate_hourly_rate_for_petsitter_with_pets()
+    {
+        $client = Client::factory()->create();
+
+        PricingRule::factory()->create([
+            'service_type' => 'petsitter',
+            'number_of_children' => 0,
+            'is_for_pets' => true,
+            'charge_to_client' => 40.00,
+            'paid_to_caregiver' => 25.00,
+            'sitterwise_cut' => 15.00,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'petsitter',
+            'pets' => ['dog', 'cat'],
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(40.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(25.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(15.00, $booking->sitterwise_cut_hourly);
+    }
+
+    public function test_calculate_hourly_rate_for_petsitter_without_pets()
+    {
+        $client = Client::factory()->create();
+
+        PricingRule::factory()->create([
+            'service_type' => 'petsitter',
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 35.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 15.00,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'petsitter',
+            'pets' => null,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(35.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(20.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(15.00, $booking->sitterwise_cut_hourly);
+    }
+
+    public function test_calculate_hourly_rate_uses_zero_children_when_children_null()
+    {
+        $client = Client::factory()->create();
+
+        PricingRule::factory()->create([
+            'service_type' => 'babysitter',
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 25.00,
+            'paid_to_caregiver' => 15.00,
+            'sitterwise_cut' => 10.00,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+            'children' => null,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(25.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(15.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(10.00, $booking->sitterwise_cut_hourly);
+    }
+
+    public function test_calculate_hourly_rate_defaults_to_zero_when_no_match()
+    {
+        $client = Client::factory()->create();
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+            'children' => ['child1'],
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'total_amount' => 0,
+        ]);
+
+        $this->assertEquals(0.00, $booking->charge_to_client_hourly);
+        $this->assertEquals(0.00, $booking->paid_to_caregiver_hourly);
+        $this->assertEquals(0.00, $booking->sitterwise_cut_hourly);
     }
 }

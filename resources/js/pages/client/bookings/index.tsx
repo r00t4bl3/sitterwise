@@ -59,7 +59,7 @@ export default function ClientBookingsIndex() {
 
     const getStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
-        const displayStatus = statusLower === 'received' ? 'Received' : status;
+        const displayStatus = status.toUpperCase();
 
         if (statusLower === 'confirmed') {
             return (

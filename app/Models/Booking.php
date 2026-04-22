@@ -23,13 +23,15 @@ class Booking extends Model
             }
             $booking->calculateTotalWorkingHours();
             $booking->calculateHourlyRate();
+            $booking->calculateTotalAmount();
         });
 
         static::updating(function (Booking $booking) {
-            if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
-                $booking->calculateTotalWorkingHours();
-                $booking->calculateHourlyRate();
-            }
+            // if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
+            $booking->calculateTotalWorkingHours();
+            $booking->calculateHourlyRate();
+            $booking->calculateTotalAmount();
+            // }
         });
     }
 
@@ -44,9 +46,34 @@ class Booking extends Model
 
     private function calculateHourlyRate(): void
     {
-        // Placeholder for hourly rate calculation logic
-        // This could involve looking up the caregiver's rate, service type, etc.
-        // Set charge_to_client_hourly, paid_to_caregiver_hourly, and sitterwise_cut_hourly accordingly
+        $maxChildren = PricingRule::where('service_type', $this->service_type)->max('number_of_children');
+        $numberOfChildren = min(count($this->children ?? []), $maxChildren ?? 0);
+
+        $query = PricingRule::where('service_type', $this->service_type)
+            ->where('number_of_children', $numberOfChildren);
+
+        if ($this->service_type === 'petsitter') {
+            $query->where('is_for_pets', ! empty($this->pets));
+        }
+
+        $pricingRule = $query->first();
+
+        if ($pricingRule) {
+            $this->charge_to_client_hourly = $pricingRule->charge_to_client;
+            $this->paid_to_caregiver_hourly = $pricingRule->paid_to_caregiver;
+            $this->sitterwise_cut_hourly = $pricingRule->sitterwise_cut;
+        } else {
+            $this->charge_to_client_hourly = 0.00;
+            $this->paid_to_caregiver_hourly = 0.00;
+            $this->sitterwise_cut_hourly = 0.00;
+        }
+    }
+
+    private function calculateTotalAmount(): void
+    {
+        $this->charge_to_client = round($this->charge_to_client_hourly * $this->total_working_hour, 2);
+        $this->paid_to_caregiver = round($this->paid_to_caregiver_hourly * $this->total_working_hour, 2);
+        $this->sitterwise_cut = round($this->sitterwise_cut_hourly * $this->total_working_hour, 2);
     }
 
     public function resolveRouteBinding($value, $field = null)
@@ -56,57 +83,7 @@ class Booking extends Model
             ->firstOrFail();
     }
 
-    protected $fillable = [
-        'booking_group_id',
-        'client_id',
-        'caregiver_id',
-        'availability_id',
-        'hotel_id',
-        'address_id',
-        'address_line1',
-        'address_line2',
-        'address_city',
-        'address_state',
-        'address_zip',
-        'client_first_name',
-        'client_last_name',
-        'client_phone',
-        'client_email',
-        'children',
-        'pets',
-        'service_type',
-        'location_type',
-        'rental_platform',
-        'start_datetime',
-        'end_datetime',
-        'status',
-        'reserved_by',
-        'reservation_expires_at',
-        'confirmed_by',
-        'confirmed_at',
-        'special_considerations',
-        'caregiver_notes',
-        'notes_to_sitterwise',
-        'admin_notes',
-        'corporate_id',
-        'sitter_preferences',
-        'other_adults_present',
-        'special_needs_notes',
-        'emergency_instructions',
-        'how_did_you_hear',
-        'total_amount',
-        'caregiver_amount',
-        'reimbursement',
-        'reimbursement_description',
-        'bonus',
-        'tip',
-        'payment_status',
-        'stripe_payment_intent_id',
-        'actual_amount',
-        'charge_attempt_count',
-        'last_charge_attempt_at',
-        'requires_payment',
-    ];
+    protected $guarded = ['id'];
 
     protected $appends = [
         'service_type_label',
@@ -133,6 +110,9 @@ class Booking extends Model
             'actual_amount' => 'decimal:2',
             'charge_attempt_count' => 'integer',
             'requires_payment' => 'boolean',
+            'charge_to_client_hourly' => 'decimal:2',
+            'paid_to_caregiver_hourly' => 'decimal:2',
+            'sitterwise_cut_hourly' => 'decimal:2',
         ];
     }
 

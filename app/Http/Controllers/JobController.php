@@ -53,6 +53,7 @@ class JobController extends Controller
         ]);
 
         $booking->update([
+            'checkout_at' => now(),
             'start_datetime' => $validated['start_datetime'],
             'end_datetime' => $validated['end_datetime'],
             'reimbursement' => $validated['reimbursement'] ?? null,

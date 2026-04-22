@@ -9,6 +9,10 @@ import {
     Phone,
     Mail,
     Heart,
+    Building,
+    Home,
+    Building2,
+    PartyPopper,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +40,7 @@ interface Booking {
     address_zip: string | null;
     hotel_id: number | null;
     hotel_name: string | null;
+    location_type: string;
     start_datetime: string;
     end_datetime: string;
     status: string;
@@ -290,6 +295,21 @@ export default function BookingDetail({ booking }: PageProps) {
         return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
     };
 
+    const getLocationIcon = (locationType: string) => {
+        switch (locationType) {
+            case 'hotel':
+                return Building;
+            case 'private_home':
+                return Home;
+            case 'vacation_rental':
+                return Building2;
+            case 'event_venue':
+                return PartyPopper;
+            default:
+                return MapPin;
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Bookings" />
@@ -388,51 +408,62 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm text-muted-foreground">
-                                        <a
-                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-500 hover:underline"
-                                        >
-                                            {booking.hotel_name && (
-                                                <span className="font-medium text-foreground">
-                                                    {booking.hotel_name}
-                                                </span>
-                                            )}
-                                            {booking.address_line1 && (
-                                                <span>
-                                                    {booking.address_line1}
-                                                    ,{' '}
-                                                </span>
-                                            )}{' '}
-                                            {booking.address_line2 && (
-                                                <span>
-                                                    {booking.address_line2}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_city && (
-                                                <span>
-                                                    {booking.address_city},{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_state && (
-                                                <span>
-                                                    {booking.address_state}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_zip && (
-                                                <span>
-                                                    {booking.address_zip}
-                                                </span>
-                                            )}
-                                        </a>
-                                    </span>
-                                </div>
+                                {booking.hotel_id !== null && (
+                                    <div className="flex items-center gap-2">
+                                        <Building className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {booking.hotel_name}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {(() => {
+                                    const LocationIcon = getLocationIcon(
+                                        booking.location_type,
+                                    );
+                                    return (
+                                        <div className="flex items-center gap-2">
+                                            <LocationIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-500 hover:underline"
+                                                >
+                                                    {booking.address_line1 && (
+                                                        <span>
+                                                            {booking.address_line1}
+                                                            ,{' '}
+                                                        </span>
+                                                    )}{' '}
+                                                    {booking.address_line2 && (
+                                                        <span>
+                                                            {booking.address_line2}
+                                                            ,{' '}
+                                                        </span>
+                                                    )}
+                                                    {booking.address_city && (
+                                                        <span>
+                                                            {booking.address_city},{' '}
+                                                        </span>
+                                                    )}
+                                                    {booking.address_state && (
+                                                        <span>
+                                                            {booking.address_state}
+                                                            ,{' '}
+                                                        </span>
+                                                    )}
+                                                    {booking.address_zip && (
+                                                        <span>
+                                                            {booking.address_zip}
+                                                        </span>
+                                                    )}
+                                                </a>
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
 

@@ -15,7 +15,7 @@ class PricingRulesTableSeeder extends Seeder
         // Babysitter
         foreach ([1, 2] as $children) {
             PricingRule::create([
-                'service_type' => 'Babysitter',
+                'service_type' => 'babysitter',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 35.00,
@@ -26,7 +26,7 @@ class PricingRulesTableSeeder extends Seeder
         }
         foreach ([3, 4] as $children) {
             PricingRule::create([
-                'service_type' => 'Babysitter',
+                'service_type' => 'babysitter',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 40.00,
@@ -38,7 +38,7 @@ class PricingRulesTableSeeder extends Seeder
 
         // Petsitter
         PricingRule::create([
-            'service_type' => 'Petsitter',
+            'service_type' => 'petsitter',
             'number_of_children' => null,
             'is_for_pets' => true,
             'charge_to_client' => 30.00,
@@ -50,7 +50,7 @@ class PricingRulesTableSeeder extends Seeder
         // Companion Care
         foreach ([1, 2] as $children) {
             PricingRule::create([
-                'service_type' => 'Companion Care',
+                'service_type' => 'companion_care',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 35.00,
@@ -62,7 +62,7 @@ class PricingRulesTableSeeder extends Seeder
 
         // Group Childcare (Invoiced)
         PricingRule::create([
-            'service_type' => 'Group Childcare (Invoiced)',
+            'service_type' => 'group_childcare_invoiced',
             'number_of_children' => 5,
             'is_for_pets' => false,
             'charge_to_client' => 36.00,
@@ -75,7 +75,7 @@ class PricingRulesTableSeeder extends Seeder
         // Corporate (Invoiced)
         foreach ([1, 2] as $children) {
             PricingRule::create([
-                'service_type' => 'Corporate (Invoiced)',
+                'service_type' => 'corporate_invoiced',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 36.00,
@@ -88,7 +88,7 @@ class PricingRulesTableSeeder extends Seeder
 
         // Overnight Newborn Care
         PricingRule::create([
-            'service_type' => 'Overnight Newborn Care',
+            'service_type' => 'overnight_newborn_care',
             'number_of_children' => 1,
             'is_for_pets' => false,
             'charge_to_client' => 35.00,
@@ -100,7 +100,7 @@ class PricingRulesTableSeeder extends Seeder
         // Comped
         foreach ([1, 2] as $children) {
             PricingRule::create([
-                'service_type' => 'Comped',
+                'service_type' => 'comped',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 0.00,
@@ -111,7 +111,7 @@ class PricingRulesTableSeeder extends Seeder
         }
         foreach ([3, 4] as $children) {
             PricingRule::create([
-                'service_type' => 'Comped',
+                'service_type' => 'comped',
                 'number_of_children' => $children,
                 'is_for_pets' => false,
                 'charge_to_client' => 0.00,

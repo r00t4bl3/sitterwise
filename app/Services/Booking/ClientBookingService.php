@@ -8,6 +8,7 @@ use App\Enums\SpecialConsideration;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
+use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
@@ -37,8 +38,8 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             return [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
-                'service_type' => ServiceType::from($booking->service_type)->label(),
-                'caregiver_name' => $booking->caregiver ? $booking->caregiver->user->first_name.' '.$booking->caregiver->user->last_name : null,
+                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                'caregiver_name' => $booking->caregiver ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name : null,
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
@@ -158,6 +159,22 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         // Refresh client data to include updated children and pets for snapshot
         $client->load(['children', 'pets', 'user']);
 
+        // Create new client address if private_home and new address provided
+        $addressId = $request->address_id;
+        if ($request->location_type === 'private_home' &&
+            empty($addressId) &&
+            ! empty($request->address_line1)) {
+            $clientAddress = ClientAddress::create([
+                'client_id' => $client->id,
+                'line1' => $request->address_line1,
+                'line2' => $request->address_line2,
+                'city' => $request->address_city,
+                'state' => $request->address_state,
+                'zip' => $request->address_zip,
+            ]);
+            $addressId = $clientAddress->id;
+        }
+
         $booking = Booking::create([
             'booking_group_id' => $bookingGroup->id,
             'client_id' => $client->id,
@@ -165,7 +182,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'location_type' => $request->location_type,
             'start_datetime' => $request->start_datetime,
             'end_datetime' => $request->end_datetime,
-            'address_id' => $request->address_id,
+            'address_id' => $addressId,
             'hotel_id' => $request->hotel_id,
             'rental_platform' => $request->rental_platform,
             'address_line1' => $request->address_line1,
@@ -221,7 +238,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
-                'service_type' => ServiceType::from($booking->service_type)->label(),
+                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
                 'client_email' => $booking->client_email ?? $booking->client->user?->email,
@@ -234,11 +251,14 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
                 'special_considerations' => collect($booking->special_considerations)
-                    ->map(fn ($sc) => SpecialConsideration::from($sc)->label())
+                    ->map(fn ($sc) => SpecialConsideration::tryFrom($sc)?->label() ?? $sc)
                     ->toArray(),
                 'caregiver_notes' => $booking->caregiver_notes,
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
+                'hotel_id' => $booking->hotel_id,
+                'hotel_name' => $booking->hotel?->name,
+                'location_type' => $booking->location_type,
 
                 'children' => $booking->children,
                 'pets' => $booking->pets,
@@ -278,5 +298,10 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
     public function release(Request $request, Booking $booking)
     {
         abort(403, 'Caregivers cannot delete bookings');
+    }
+
+    public function processPayment(Request $request, Booking $booking)
+    {
+        abort(403, 'Clients cannot process payments');
     }
 }

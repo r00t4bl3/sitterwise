@@ -6,6 +6,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
@@ -43,7 +44,7 @@ class BookingFactory extends Factory
             'start_datetime' => $startDatetime,
             'end_datetime' => $endDatetime,
             'status' => BookingStatus::Received->value,
-            'special_considerations' => null,
+            'special_considerations' => [fake()->randomElement(SpecialConsideration::cases())->value],
             'caregiver_notes' => null,
             'notes_to_sitterwise' => null,
             'admin_notes' => null,

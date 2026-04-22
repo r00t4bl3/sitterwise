@@ -1,12 +1,31 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, useForm } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
     Calendar,
     Clock,
     Receipt,
+    DollarSign,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -34,7 +53,7 @@ interface Caregiver {
     id: number;
     first_name: string;
     last_name: string;
-    user: {
+    user?: {
         email: string;
     };
 }
@@ -45,11 +64,24 @@ interface Booking {
     end_datetime: string;
     total_price: number;
     status: string;
+    checkout_at: string | null;
+    total_working_hour: number | null;
+    children: Array<{ name: string }> | null;
+    pets: Array<{ name: string; type: string | null }> | null;
+    service_type: string;
+    reimbursement: number | null;
+    reimbursement_description: string | null;
+    tip: number | null;
+    bonus: number | null;
+    paid_to_caregiver: number | null;
+    sitterwise_cut: number | null;
+    charge_to_client: number | null;
     client: Client;
     caregiver?: Caregiver;
 }
 
 interface Props {
+    [key: string]: unknown;
     bookings: {
         data: Booking[];
         current_page: number;
@@ -71,6 +103,23 @@ export default function TransactionsIndex() {
     const { bookings, filters } = usePage<Props>().props;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+    const [localValues, setLocalValues] = useState({
+        reimbursement: '',
+        reimbursement_description: '',
+        tip: '',
+        bonus: '',
+    });
+
+    const paymentForm = useForm({
+        reimbursement: 0,
+        reimbursement_description: '',
+        tip: 0,
+        bonus: 0,
+    });
 
     const formatDateTime = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -130,6 +179,35 @@ export default function TransactionsIndex() {
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
         );
+    };
+
+    const openPaymentSheet = (booking: Booking) => {
+        setSelectedBooking(booking);
+        setLocalValues({
+            reimbursement: String(booking.reimbursement ?? ''),
+            reimbursement_description: booking.reimbursement_description ?? '',
+            tip: String(booking.tip ?? ''),
+            bonus: String(booking.bonus ?? ''),
+        });
+        paymentForm.setData({
+            reimbursement: booking.reimbursement ?? 0,
+            reimbursement_description: booking.reimbursement_description ?? '',
+            tip: booking.tip ?? 0,
+            bonus: booking.bonus ?? 0,
+        });
+        setShowPaymentSheet(true);
+    };
+
+    const handlePaymentSubmit = () => {
+        if (!selectedBooking) return;
+
+        paymentForm.post(`/bookings/${selectedBooking.id}/process-payment`, {
+            onSuccess: () => {
+                setShowPaymentSheet(false);
+                setShowConfirmDialog(false);
+                setSelectedBooking(null);
+            },
+        });
     };
 
     return (
@@ -268,20 +346,24 @@ export default function TransactionsIndex() {
                                             </td>
                                             <td className="px-4 py-3 text-sm text-foreground">
                                                 $
-                                                {booking.total_price?.toFixed(
-                                                    2,
-                                                ) ?? '0.00'}
+                                                {Number(
+                                                    booking.total_price ?? 0,
+                                                ).toFixed(2)}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {getStatusBadge(booking.status)}
                                             </td>
                                             <td className="flex justify-end gap-x-2 px-4 py-3">
-                                                <Link
-                                                    href={`/bookings/${booking.id}`}
-                                                    className="btn-primary h-8"
-                                                >
-                                                    View
-                                                </Link>
+                                                {booking.status === 'completed' && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            openPaymentSheet(booking)
+                                                        }
+                                                    >
+                                                        Payment Approval
+                                                    </Button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -333,6 +415,286 @@ export default function TransactionsIndex() {
                     </div>
                 )}
             </div>
+
+            {/* Payment Approval Sheet */}
+            <Sheet
+                open={showPaymentSheet}
+                onOpenChange={setShowPaymentSheet}
+            >
+                <SheetContent side="right" className="sm:max-w-md">
+                    <SheetHeader>
+                        <SheetTitle>Payment Approval</SheetTitle>
+                        <SheetDescription>
+                            Review and process payment for Booking #
+                            {selectedBooking?.id}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className="space-y-4 overflow-y-auto px-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Checkout At
+                                </label>
+                                <Input
+                                    value={
+                                        selectedBooking?.checkout_at
+                                            ? formatDateTime(
+                                                  selectedBooking.checkout_at,
+                                              )
+                                            : '-'
+                                    }
+                                    readOnly
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Total Working Hours
+                                </label>
+                                <Input
+                                    value={
+                                        selectedBooking?.total_working_hour?.toFixed(2) ??
+                                        '0.00'
+                                    }
+                                    readOnly
+                                    className="mt-1"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Children Count
+                                </label>
+                                <Input
+                                    value={
+                                        selectedBooking?.children?.length ?? 0
+                                    }
+                                    readOnly
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Pets Count
+                                </label>
+                                <Input
+                                    value={selectedBooking?.pets?.length ?? 0}
+                                    readOnly
+                                    className="mt-1"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Service Type
+                            </label>
+                            <Input
+                                value={selectedBooking?.service_type ?? '-'}
+                                readOnly
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div className="rounded-md border border-border bg-muted p-4">
+                            <h4 className="mb-3 text-sm font-semibold text-foreground">
+                                Payment Summary
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Charge to Client
+                                    </span>
+                                    <span className="font-medium">
+                                        $
+                                        {(
+                                            selectedBooking?.charge_to_client ?? 0
+                                        ).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Paid to Caregiver
+                                    </span>
+                                    <span className="font-medium">
+                                        $
+                                        {(
+                                            selectedBooking?.paid_to_caregiver ?? 0
+                                        ).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Sitterwise Cut
+                                    </span>
+                                    <span className="font-medium">
+                                        $
+                                        {(
+                                            selectedBooking?.sitterwise_cut ?? 0
+                                        ).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+<label className="text-sm font-medium text-foreground">
+                                    Reimbursement
+                                </label>
+                                <div className="relative mt-1">
+                                    <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+<Input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="0.00"
+                                        value={localValues.reimbursement}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                                            setLocalValues({
+                                                ...localValues,
+                                                reimbursement: val,
+                                            });
+                                        }}
+                                        onBlur={() =>
+                                            paymentForm.setData({
+                                                ...paymentForm.data,
+                                                reimbursement:
+                                                    parseFloat(localValues.reimbursement) || 0,
+                                            })
+                                        }
+                                        className="pl-8"
+                                    />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Reimbursement Description
+                            </label>
+                            <Input
+                                value={paymentForm.data.reimbursement_description}
+                                onChange={(e) =>
+                                    paymentForm.setData({
+                                        ...paymentForm.data,
+                                        reimbursement_description: e.target.value,
+                                    })
+                                }
+                                placeholder="Enter description..."
+                                className="mt-1"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Tip
+                            </label>
+                            <div className="relative mt-1">
+                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+<Input
+                                    type="text"
+                                    placeholder="0.00"
+                                    value={localValues.tip}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                        setLocalValues({
+                                            ...localValues,
+                                            tip: val,
+                                        });
+                                    }}
+                                    onBlur={() =>
+                                        paymentForm.setData({
+                                            ...paymentForm.data,
+                                            tip: parseFloat(localValues.tip) || 0,
+                                        })
+                                    }
+                                    className="pl-8"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-foreground">
+                                Bonus
+                            </label>
+                            <div className="relative mt-1">
+                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder="0.00"
+                                    value={localValues.bonus}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                        setLocalValues({
+                                            ...localValues,
+                                            bonus: val,
+                                        });
+                                    }}
+                                    onBlur={() =>
+                                        paymentForm.setData({
+                                            ...paymentForm.data,
+                                            bonus: parseFloat(localValues.bonus) || 0,
+                                        })
+                                    }
+                                    className="pl-8"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 w-full flex space-y-2 gap-2 px-4">
+                        <Button
+                            onClick={() => setShowConfirmDialog(true)}
+                            disabled={paymentForm.processing}
+                            className='flex-1'
+                        >
+                            {paymentForm.processing && (
+                                <Spinner className="mr-2 h-4 w-4" />
+                            )}
+                            Process Payment
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowPaymentSheet(false)}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Confirm Dialog */}
+            <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Confirm Payment Processing</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to process payment for
+                            Booking #{selectedBooking?.id}? This action will update the
+                            reimbursement, tip, and bonus fields.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowConfirmDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handlePaymentSubmit}
+                            disabled={paymentForm.processing}
+                        >
+                            {paymentForm.processing && (
+                                <Spinner className="mr-2 h-4 w-4" />
+                            )}
+                            Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

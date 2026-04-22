@@ -146,6 +146,7 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         $clientId = $validated['client_id'] ?? null;
+        $addressId = $validated['address_id'] ?? null;
 
         // Create new client if new_client data provided
         if (! empty($validated['new_client']['first_name'])) {
@@ -173,8 +174,9 @@ class AdminBookingService implements BookingServiceInterface
 
             // Create client address if private_home and new address provided
             if ($validated['location_type'] === 'private_home' &&
+                empty($addressId) &&
                 ! empty($validated['address_line1'])) {
-                ClientAddress::create([
+                $clientAddress = ClientAddress::create([
                     'client_id' => $client->id,
                     'line1' => $validated['address_line1'],
                     'line2' => $validated['address_line2'] ?? null,
@@ -182,6 +184,7 @@ class AdminBookingService implements BookingServiceInterface
                     'state' => $validated['address_state'],
                     'zip' => $validated['address_zip'],
                 ]);
+                $addressId = $clientAddress->id;
             }
         }
 
@@ -201,7 +204,7 @@ class AdminBookingService implements BookingServiceInterface
             'caregiver_id' => $validated['caregiver_id'] ?? null,
             'availability_id' => null,
             'hotel_id' => $validated['hotel_id'] ?? null,
-            'address_id' => $validated['address_id'] ?? null,
+            'address_id' => $addressId,
             'address_line1' => $validated['address_line1'] ?? null,
             'address_line2' => $validated['address_line2'] ?? null,
             'address_city' => $validated['address_city'] ?? null,
@@ -304,11 +307,30 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
+        // Create new client address if private_home and new address provided
+        $addressId = $validated['address_id'] ?? null;
+        if (
+            ($validated['location_type'] ?? null) === 'private_home' &&
+            empty($addressId) &&
+            ! empty($validated['address_line1'])
+        ) {
+            $clientAddress = ClientAddress::create([
+                'client_id' => $booking->client_id,
+                'line1' => $validated['address_line1'],
+                'line2' => $validated['address_line2'] ?? null,
+                'city' => $validated['address_city'],
+                'state' => $validated['address_state'],
+                'zip' => $validated['address_zip'],
+            ]);
+            $addressId = $clientAddress->id;
+        }
+
         // Update client snapshot data
         $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
 
         $updateData = [
             ...$validated,
+            'address_id' => $addressId,
             'client_first_name' => $client?->first_name,
             'client_last_name' => $client?->last_name,
             'client_phone' => $client?->phone,
@@ -429,5 +451,32 @@ class AdminBookingService implements BookingServiceInterface
     public function release(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot release bookings');
+    }
+
+    public function processPayment(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'reimbursement' => 'nullable|numeric',
+            'reimbursement_description' => 'nullable|string',
+            'tip' => 'nullable|numeric',
+            'bonus' => 'nullable|numeric',
+        ]);
+
+        // TODO: Call Stripe API to process payment
+        // Placeholder for Stripe integration
+        // Stripe::charges()->create([...])
+
+        // Update booking with payment-related fields
+        $booking->update([
+            'reimbursement' => $validated['reimbursement'] ?? null,
+            'reimbursement_description' => $validated['reimbursement_description'] ?? null,
+            'tip' => $validated['tip'] ?? null,
+            'bonus' => $validated['bonus'] ?? null,
+            // Need to determine payment status based on Stripe response
+            'payment_status' => BookingPaymentStatus::Paid->value, // Let's just set to Paid for now
+            'status' => BookingStatus::Paid->value,
+        ]);
+
+        return redirect()->back()->with('success', 'Payment processed successfully.');
     }
 }

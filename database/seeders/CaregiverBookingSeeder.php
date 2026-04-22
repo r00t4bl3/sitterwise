@@ -6,6 +6,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
@@ -81,7 +82,7 @@ class CaregiverBookingSeeder extends Seeder
                 'client_last_name' => $client->last_name,
                 'client_email' => $client->user->email,
                 'client_phone' => $client->phone,
-                'special_considerations' => fake()->word(),
+                'special_considerations' => [fake()->randomElement(SpecialConsideration::cases())->value],
                 'caregiver_notes' => fake()->sentence(),
                 'status' => BookingStatus::Received->value,
                 'payment_status' => BookingPaymentStatus::Pending->value,

@@ -3,6 +3,7 @@
 namespace App\Services\Booking;
 
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Events\JobConfirmed;
 use App\Events\JobReleased;
 use App\Events\JobReserved;
@@ -116,7 +117,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
-                'service_type' => ServiceType::from($booking->service_type)->label(),
+                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
                 'client_email' => $booking->client_email ?? $booking->client->user?->email,
@@ -125,12 +126,15 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 'address_city' => $booking->address_city,
                 'address_state' => $booking->address_state,
                 'address_zip' => $booking->address_zip,
+                'hotel_id' => $booking->hotel_id,
+                'hotel_name' => $booking->hotel?->name,
+                'location_type' => $booking->location_type,
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
-                'special_considerations' => $booking->special_considerations
-                    ? json_decode($booking->special_considerations, true)
-                    : null,
+                'special_considerations' => collect($booking->special_considerations)
+                    ->map(fn ($sc) => SpecialConsideration::tryFrom($sc)?->label() ?? $sc)
+                    ->toArray(),
                 'caregiver_notes' => $booking->caregiver_notes,
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
@@ -259,5 +263,10 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         broadcast(new JobReleased($booking->id, $caregiver->id))->toOthers();
 
         return back();
+    }
+
+    public function processPayment(Request $request, Booking $booking)
+    {
+        abort(403, 'Caregivers cannot process payments');
     }
 }

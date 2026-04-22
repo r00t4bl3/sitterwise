@@ -17,10 +17,10 @@ import {
     SheetHeader,
     SheetTitle,
     SheetDescription,
-    SheetFooter,
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+import { Spinner } from '@/components/ui/spinner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -253,7 +253,7 @@ export default function JobsIndex() {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div>
                     <h1 className="text-2xl font-semibold text-foreground">
-                        My Jobs
+                        Jobs
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Manage your confirmed and upcoming jobs
@@ -693,10 +693,22 @@ export default function JobsIndex() {
                                         </p>
                                     )}
                                 </div>
-                            </form>
 
-                            <SheetFooter>
                                 <div className="flex gap-2 pt-4">
+                                    <Button
+                                        type="submit"
+                                        disabled={checkoutForm.processing}
+                                        className="flex-1"
+                                    >
+                                        {checkoutForm.processing && (
+                                            <Spinner className="size-4" />
+                                        )}
+                                        {checkoutForm.processing
+                                            ? 'Saving...'
+                                            : hasCheckedOut
+                                              ? 'Submit Rating'
+                                              : 'Checkout'}
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         type="button"
@@ -708,18 +720,8 @@ export default function JobsIndex() {
                                     >
                                         Cancel
                                     </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={checkoutForm.processing}
-                                    >
-                                        {checkoutForm.processing
-                                            ? 'Saving...'
-                                            : hasCheckedOut
-                                              ? 'Submit Rating'
-                                              : 'Checkout'}
-                                    </Button>
                                 </div>
-                            </SheetFooter>
+                            </form>
                         </div>
                     ) : (
                         <div>
@@ -773,29 +775,32 @@ export default function JobsIndex() {
                                         </p>
                                     )}
                                 </div>
+                                <div className="flex gap-2 pt-4">
+                                    <Button
+                                        type="submit"
+                                        disabled={ratingForm.processing}
+                                        className="flex-1"
+                                    >
+                                        {ratingForm.processing && (
+                                            <Spinner className="size-4" />
+                                        )}
+                                        {ratingForm.processing
+                                            ? 'Submitting...'
+                                            : 'Submit Rating'}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setShowCheckout(false);
+                                            setSelectedJob(null);
+                                            ratingForm.reset();
+                                        }}
+                                    >
+                                        Skip
+                                    </Button>
+                                </div>
                             </form>
-                            <SheetFooter>
-                                <Button
-                                    type="submit"
-                                    disabled={ratingForm.processing}
-                                    className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                                >
-                                    {ratingForm.processing
-                                        ? 'Submitting...'
-                                        : 'Submit Rating'}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setShowCheckout(false);
-                                        setSelectedJob(null);
-                                        ratingForm.reset();
-                                    }}
-                                >
-                                    Skip
-                                </Button>
-                            </SheetFooter>
                         </div>
                     )}
                 </SheetContent>

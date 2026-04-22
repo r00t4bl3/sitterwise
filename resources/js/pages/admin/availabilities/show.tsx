@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Link } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -217,12 +217,12 @@ export default function ManageAvailability() {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <a
+                        <Link
                             href="/availabilities"
                             className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
                         >
                             <ChevronLeft className="h-5 w-5" />
-                        </a>
+                        </Link>
                         <div>
                             <h1 className="font-serif text-2xl font-bold text-foreground">
                                 {caregiver.first_name} {caregiver.last_name}

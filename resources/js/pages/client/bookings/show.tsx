@@ -7,6 +7,10 @@ import {
     Mail,
     Heart,
     ArrowLeft,
+    Building,
+    Home,
+    Building2,
+    PartyPopper,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +23,9 @@ interface Booking {
     client_name: string;
     client_phone: string | null;
     client_email: string | null;
+    hotel_id: number | null;
+    hotel_name: string | null;
+    location_type: string;
     address_line1: string | null;
     address_line2: string | null;
     address_city: string | null;
@@ -126,6 +133,21 @@ export default function BookingDetail({ booking }: PageProps) {
         return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
     };
 
+    const getLocationIcon = (locationType: string) => {
+        switch (locationType) {
+            case 'hotel':
+                return Building;
+            case 'private_home':
+                return Home;
+            case 'vacation_rental':
+                return Building2;
+            case 'event_venue':
+                return PartyPopper;
+            default:
+                return MapPin;
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Booking Details" />
@@ -196,44 +218,63 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </div>
                                 )}
 
-                                {(booking.address_line1 ||
-                                    booking.address_city) && (
-                                    <div className="flex items-start gap-2">
-                                        <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                {booking.hotel_id !== null && (
+                                    <div className="flex items-center gap-2">
+                                        <Building className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm text-muted-foreground">
-                                            {booking.address_line1 && (
-                                                <span>
-                                                    {booking.address_line1}
-                                                    {booking.address_line2 && (
-                                                        <span>
-                                                            ,{' '}
-                                                            {
-                                                                booking.address_line2
-                                                            }
-                                                        </span>
-                                                    )}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_city && (
-                                                <span>
-                                                    {booking.address_city},{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_state && (
-                                                <span>
-                                                    {booking.address_state}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_zip && (
-                                                <span>
-                                                    {booking.address_zip}
-                                                </span>
-                                            )}
+                                            {booking.hotel_name}
                                         </span>
                                     </div>
                                 )}
+
+                                {(() => {
+                                    const AddressIcon = getLocationIcon(
+                                        booking.location_type,
+                                    );
+                                    if (
+                                        !booking.address_line1 &&
+                                        !booking.address_city
+                                    ) {
+                                        return null;
+                                    }
+                                    return (
+                                        <div className="flex items-start gap-2">
+                                            <AddressIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">
+                                                {booking.address_line1 && (
+                                                    <span>
+                                                        {booking.address_line1}
+                                                        {booking.address_line2 && (
+                                                            <span>
+                                                                ,{' '}
+                                                                {
+                                                                    booking.address_line2
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_city && (
+                                                    <span>
+                                                        {booking.address_city},{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_state && (
+                                                    <span>
+                                                        {booking.address_state}
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_zip && (
+                                                    <span>
+                                                        {booking.address_zip}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
 
