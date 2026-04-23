@@ -92,11 +92,11 @@ class Booking extends Model
     public function casts(): array
     {
         return [
-            'start_datetime' => 'datetime',
-            'end_datetime' => 'datetime',
-            'reservation_expires_at' => 'datetime',
-            'confirmed_at' => 'datetime',
-            'last_charge_attempt_at' => 'datetime',
+            'start_datetime' => 'datetime:Y-m-d\TH:i:s',
+            'end_datetime' => 'datetime:Y-m-d\TH:i:s',
+            'reservation_expires_at' => 'datetime:Y-m-d\TH:i:s',
+            'confirmed_at' => 'datetime:Y-m-d\TH:i:s',
+            'last_charge_attempt_at' => 'datetime:Y-m-d\TH:i:s',
             'special_considerations' => 'array',
             'sitter_preferences' => 'array',
             'children' => 'array',

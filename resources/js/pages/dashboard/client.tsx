@@ -3,9 +3,7 @@ import {
     Calendar,
     Clock,
     User as UserIcon,
-    Heart,
     Plus,
-    Search,
     ChevronRight,
     CheckCircle2,
     CalendarCheck,
@@ -13,15 +11,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-    },
-];
 
 interface Booking {
     id: number;
@@ -41,36 +33,36 @@ interface ClientDashboardProps {
     user: {
         name: string;
     };
-    stats: {
-        active_bookings: number;
-        past_bookings: number;
-        favorite_caregivers: number;
+    client: {
+        next_booking: Booking & {
+            caregiver: {
+                user: {
+                    name: string;
+                };
+            };
+        };
     };
-    client?: {
-        next_booking: Booking | null;
+    stats: {
+        total_bookings: number;
+        completed_bookings: number;
         upcoming_bookings: Booking[];
         recent_bookings: Booking[];
     };
 }
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+    },
+];
 
 export default function ClientDashboard({
     user,
     stats,
     client,
 }: ClientDashboardProps) {
-    const formatDateTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
-    const getStatusBadge = (status: string) => {
+    const renderStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
         const displayStatus = status.toUpperCase();
 
@@ -97,7 +89,7 @@ export default function ClientDashboard({
         }
 
         return (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="secondary" className="text-[10px]">
                 {displayStatus}
             </Badge>
         );
@@ -105,176 +97,157 @@ export default function ClientDashboard({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                {/* Header & Quick Actions */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <Head title="Client Dashboard" />
+
+            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground">
-                            Welcome back, {user.name}!
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Welcome back, {user.name}
                         </h1>
                         <p className="text-muted-foreground">
-                            Find and book caregivers for your loved ones
+                            Here is what is happening with your bookings.
                         </p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button asChild>
-                            <Link href="/bookings/create">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Create Booking
-                            </Link>
-                        </Button>
+                    <Button asChild>
+                        <Link href="/bookings/create">
+                            <Plus className="mr-2 h-4 w-4" /> New Booking
+                        </Link>
+                    </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium tracking-tight">
+                                Total Bookings
+                            </h3>
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                            {stats.total_bookings}
+                        </div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium tracking-tight">
+                                Completed
+                            </h3>
+                            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                            {stats.completed_bookings}
+                        </div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium tracking-tight">
+                                Upcoming
+                            </h3>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                            {stats.upcoming_bookings.length}
+                        </div>
                     </div>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                            <span className="text-xs font-medium tracking-wider uppercase">
-                                Active Bookings
-                            </span>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                    <div className="col-span-4 rounded-xl border border-border bg-card text-card-foreground shadow">
+                        <div className="flex flex-col space-y-1.5 p-6">
+                            <h3 className="text-lg leading-none font-semibold tracking-tight">
+                                Next Booking
+                            </h3>
                         </div>
-                        <p className="text-2xl font-bold text-foreground">
-                            {stats.active_bookings}
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-xs font-medium tracking-wider uppercase">
-                                Past Bookings
-                            </span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">
-                            {stats.past_bookings}
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Heart className="h-4 w-4 text-pink-500" />
-                            <span className="text-xs font-medium tracking-wider uppercase">
-                                Favorites
-                            </span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">
-                            {stats.favorite_caregivers}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Primary Action / Next Booking */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="flex flex-col gap-4">
-                        <h2 className="text-lg font-semibold text-foreground">
-                            {client?.next_booking
-                                ? 'Your Next Booking'
-                                : 'Get Started'}
-                        </h2>
-
-                        {client?.next_booking ? (
-                            <div className="relative overflow-hidden rounded-xl border-2 border-primary/20 bg-card p-6 shadow-md transition-all hover:border-primary/40">
-                                <div className="absolute top-0 right-0 p-4">
-                                    {getStatusBadge(client.next_booking.status)}
-                                </div>
-
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                        <CalendarCheck className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-medium tracking-tight text-muted-foreground uppercase">
-                                            {client.next_booking.service_type}{' '}
-                                            Service
-                                        </h3>
-                                        <p className="text-lg font-bold">
-                                            {formatDateTime(
-                                                client.next_booking
-                                                    .start_datetime,
-                                            )}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="mb-6 grid gap-2">
-                                    <div className="flex items-center gap-2 text-sm text-foreground">
-                                        <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-medium">
-                                            Caregiver:{' '}
-                                            {client.next_booking.caregiver?.user
-                                                .name || 'Not assigned yet'}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-foreground">
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                        <span>
-                                            Duration:{' '}
-                                            {
-                                                formatDateTime(
+                        <div className="p-6 pt-0">
+                            {client.next_booking ? (
+                                <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                            <CalendarCheck className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-medium tracking-tight text-muted-foreground uppercase">
+                                                {
+                                                    client.next_booking
+                                                        .service_type
+                                                }{' '}
+                                                Service
+                                            </h3>
+                                            <p className="text-lg font-bold">
+                                                {formatDisplayDateTime(
                                                     client.next_booking
                                                         .start_datetime,
-                                                ).split(',')[1]
-                                            }{' '}
-                                            -{' '}
-                                            {
-                                                formatDateTime(
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-6 grid gap-2">
+                                        <div className="flex items-center gap-2 text-sm text-foreground">
+                                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                            <span>
+                                                Caregiver:{' '}
+                                                {client.next_booking.caregiver
+                                                    ?.user.name ||
+                                                    'Not assigned yet'}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-foreground">
+                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                            <span>
+                                                Duration:{' '}
+                                                {formatDisplayTime(
+                                                    client.next_booking
+                                                        .start_datetime,
+                                                )}{' '}
+                                                -{' '}
+                                                {formatDisplayTime(
                                                     client.next_booking
                                                         .end_datetime,
-                                                ).split(',')[1]
-                                            }
-                                        </span>
+                                                )}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <Button asChild className="w-full">
-                                    <Link
-                                        href={`/bookings/${client.next_booking.ulid}`}
-                                    >
-                                        View Booking Details
-                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-8 text-center">
-                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                                    <Button asChild className="w-full">
+                                        <Link
+                                            href={`/bookings/${client.next_booking.ulid}`}
+                                        >
+                                            View Booking Details
+                                        </Link>
+                                    </Button>
                                 </div>
-                                <h3 className="mb-2 text-lg font-medium">
-                                    No upcoming bookings
-                                </h3>
-                                <p className="mb-6 text-sm text-muted-foreground">
-                                    Book a professional caregiver for your kids
-                                    or pets today.
-                                </p>
-                                <Button asChild size="sm">
-                                    <Link href="/bookings/create">
-                                        Schedule Now
-                                    </Link>
-                                </Button>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="flex h-[200px] flex-col items-center justify-center text-center">
+                                    <Calendar className="mb-2 h-10 w-10 text-muted-foreground/30" />
+                                    <p className="text-muted-foreground">
+                                        No upcoming bookings scheduled.
+                                    </p>
+                                    <Button
+                                        variant="link"
+                                        asChild
+                                        className="mt-2"
+                                    >
+                                        <Link href="/bookings/create">
+                                            Book a sitter now
+                                        </Link>
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Secondary Sections */}
-                    <div className="flex flex-col gap-6">
-                        {/* Other Upcoming */}
-                        {client && client.upcoming_bookings.length > 0 && (
-                            <div>
-                                <div className="mb-3 flex items-center justify-between">
-                                    <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-                                        More Upcoming
-                                    </h2>
-                                    <Link
-                                        href="/bookings"
-                                        className="text-xs font-medium text-primary hover:underline"
-                                    >
-                                        View All
-                                    </Link>
-                                </div>
-                                <div className="space-y-3">
-                                    {client.upcoming_bookings.map((booking) => (
+                    <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
+                        <div className="flex flex-col space-y-1.5 p-6">
+                            <h3 className="text-lg leading-none font-semibold tracking-tight">
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div className="p-6 pt-0">
+                            <div className="space-y-4">
+                                {stats.recent_bookings.length > 0 ? (
+                                    stats.recent_bookings.map((booking) => (
                                         <Link
                                             key={booking.id}
                                             href={`/bookings/${booking.ulid}`}
@@ -286,7 +259,7 @@ export default function ClientDashboard({
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium">
-                                                        {formatDateTime(
+                                                        {formatDisplayDateTime(
                                                             booking.start_datetime,
                                                         )}
                                                     </p>
@@ -298,62 +271,73 @@ export default function ClientDashboard({
                                                     </p>
                                                 </div>
                                             </div>
-                                            {getStatusBadge(booking.status)}
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                         </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Recent Activity */}
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-                                    Recent Activity
-                                </h2>
-                                <Link
-                                    href="/bookings"
-                                    className="text-xs font-medium text-primary hover:underline"
-                                >
-                                    History
-                                </Link>
-                            </div>
-                            <div className="space-y-3">
-                                {client && client.recent_bookings.length > 0 ? (
-                                    client.recent_bookings.map((booking) => (
-                                        <div
-                                            key={booking.id}
-                                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 opacity-80"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium">
-                                                        {formatDateTime(
-                                                            booking.start_datetime,
-                                                        )}
-                                                    </p>
-                                                    <p className="text-xs text-foreground text-muted-foreground">
-                                                        {
-                                                            booking.caregiver
-                                                                ?.user.name
-                                                        }
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                                                Completed
-                                            </span>
-                                        </div>
                                     ))
                                 ) : (
-                                    <p className="py-4 text-center text-xs text-muted-foreground">
-                                        No past activity yet.
+                                    <p className="py-4 text-center text-sm text-muted-foreground">
+                                        No recent activity.
                                     </p>
                                 )}
+
+                                <div className="pt-2">
+                                    <Button
+                                        variant="outline"
+                                        asChild
+                                        className="w-full"
+                                    >
+                                        <Link href="/bookings">
+                                            View All Bookings
+                                        </Link>
+                                    </Button>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
+                    <div className="flex flex-col space-y-1.5 p-6">
+                        <h3 className="text-lg leading-none font-semibold tracking-tight">
+                            Upcoming Bookings
+                        </h3>
+                    </div>
+                    <div className="p-6 pt-0">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {stats.upcoming_bookings.length > 0 ? (
+                                stats.upcoming_bookings.map((booking) => (
+                                    <div
+                                        key={booking.id}
+                                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3 opacity-80"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    {formatDisplayDateTime(
+                                                        booking.start_datetime,
+                                                    )}
+                                                </p>
+                                                <p className="text-xs text-foreground text-muted-foreground">
+                                                    {
+                                                        booking.caregiver?.user
+                                                            .name
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {renderStatusBadge(booking.status)}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-full py-8 text-center">
+                                    <p className="text-muted-foreground">
+                                        No upcoming bookings.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

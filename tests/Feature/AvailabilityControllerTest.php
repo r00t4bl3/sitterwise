@@ -92,19 +92,20 @@ describe('AvailabilityController', function () {
     test('admin can update an availability', function () {
         $this->actingAs($this->user);
 
-        $availability = Availability::factory()->create();
+        $availability = Availability::factory(['caregiver_id' => $this->caregiver->id, 'specific_time' => null])->create();
 
         // The update route uses caregiver_id, not availability_id
         $response = $this->patch(route('availabilities.update', $availability->caregiver_id), [
-            'date' => $availability->date->toDateString(),
-            'time_slots' => ['morning', 'afternoon'],
+            'date' => $availability->date,
+            'time_slots' => ['morning', 'evening'],
             'specific_time' => 'Updated availability',
         ]);
 
         $response->assertRedirect();
 
         $availability->refresh();
-        expect($availability->time_slots)->toBe(['morning', 'afternoon']);
+
+        expect($availability->time_slots)->toBe(['morning', 'evening']);
         expect($availability->specific_time)->toBe('Updated availability');
     });
 

@@ -1,5 +1,5 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { ChevronLeft, Link } from 'lucide-react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDate } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 interface Status {
@@ -59,16 +60,6 @@ interface Props {
     caregiver: Caregiver;
     availabilities: Availability[];
     timeSlots: Array<{ value: string; label: string }>;
-}
-
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-    });
 }
 
 export default function ManageAvailability() {
@@ -221,7 +212,7 @@ export default function ManageAvailability() {
                             href="/availabilities"
                             className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <div>
                             <h1 className="font-serif text-2xl font-bold text-foreground">
@@ -244,13 +235,13 @@ export default function ManageAvailability() {
                         <SheetHeader>
                             <SheetTitle>
                                 {selectedDate
-                                    ? formatDate(selectedDate)
+                                    ? formatDisplayDate(selectedDate)
                                     : 'Availability'}
                             </SheetTitle>
                             <SheetDescription>
                                 Manage availability for{' '}
                                 {selectedDate
-                                    ? formatDate(selectedDate)
+                                    ? formatDisplayDate(selectedDate)
                                     : 'the selected date'}
                             </SheetDescription>
                         </SheetHeader>

@@ -52,8 +52,6 @@ const MONTH_ABBR = [
     'Dec',
 ];
 
-const sitter_preference_options = sitter_preferences;
-
 interface NewChild {
     tempId: string;
     name: string;
@@ -160,6 +158,7 @@ export default function ClientBookingCreate() {
         hotels,
         special_consideration_options,
         booking_attributes,
+        sitter_preferences,
     } = usePage().props as unknown as {
         service_types: Array<{ value: string; label: string }>;
         location_types: Array<{ value: string; label: string }>;
@@ -1129,50 +1128,46 @@ export default function ClientBookingCreate() {
                                 <Label>Sitter Preferences</Label>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                                        {sitter_preference_options.map(
-                                            (option) => (
-                                                <div
-                                                    key={option.value}
-                                                    className="flex items-center gap-2"
+                                        {sitter_preferences.map((option) => (
+                                            <div
+                                                key={option.value}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Checkbox
+                                                    id={`pref-${option.value}`}
+                                                    checked={form.data.sitter_preferences.includes(
+                                                        option.value,
+                                                    )}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        const newPrefs = checked
+                                                            ? [
+                                                                  ...form.data
+                                                                      .sitter_preferences,
+                                                                  option.value,
+                                                              ]
+                                                            : form.data.sitter_preferences.filter(
+                                                                  (
+                                                                      pref: string,
+                                                                  ) =>
+                                                                      pref !==
+                                                                      option.value,
+                                                              );
+                                                        form.setData(
+                                                            'sitter_preferences',
+                                                            newPrefs,
+                                                        );
+                                                    }}
+                                                />
+                                                <Label
+                                                    htmlFor={`pref-${option.value}`}
+                                                    className="text-sm font-normal"
                                                 >
-                                                    <Checkbox
-                                                        id={`pref-${option.value}`}
-                                                        checked={form.data.sitter_preferences.includes(
-                                                            option.value,
-                                                        )}
-                                                        onCheckedChange={(
-                                                            checked,
-                                                        ) => {
-                                                            const newPrefs =
-                                                                checked
-                                                                    ? [
-                                                                          ...form
-                                                                              .data
-                                                                              .sitter_preferences,
-                                                                          option.value,
-                                                                      ]
-                                                                    : form.data.sitter_preferences.filter(
-                                                                          (
-                                                                              pref: string,
-                                                                          ) =>
-                                                                              pref !==
-                                                                              option.value,
-                                                                      );
-                                                            form.setData(
-                                                                'sitter_preferences',
-                                                                newPrefs,
-                                                            );
-                                                        }}
-                                                    />
-                                                    <Label
-                                                        htmlFor={`pref-${option.value}`}
-                                                        className="text-sm font-normal"
-                                                    >
-                                                        {option.label}
-                                                    </Label>
-                                                </div>
-                                            ),
-                                        )}
+                                                    {option.label}
+                                                </Label>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

@@ -325,3 +325,258 @@ describe('Client Booking Creation', function () {
         expect($booking->pets[0]['name'])->toBe($petToKeep->name);
     });
 });
+
+describe('DateTime Picker Local Time Handling', function () {
+    beforeEach(function () {
+        $this->user = User::factory()->create(['role' => 'client']);
+        $this->client = Client::factory()->for($this->user)->create();
+        $this->address = ClientAddress::factory()->for($this->client)->create();
+        $this->child = ClientChild::factory()->for($this->client)->create();
+        $this->actingAs($this->user);
+    });
+
+    test('stores datetime exactly as provided without UTC conversion', function () {
+        $startDate = now()->addDays(2)->copy()->setHour(9)->setMinute(15);
+        $endDate = now()->addDays(2)->copy()->setHour(15)->setMinute(30);
+
+        $response = $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::latest('id')->first();
+        expect($booking->start_datetime->format('H:i'))->toBe('09:15');
+        expect($booking->end_datetime->format('H:i'))->toBe('15:30');
+    });
+
+    test('morning time is stored and retrieved correctly', function () {
+        $startDate = now()->addDays(2)->copy()->setHour(6)->setMinute(0);
+        $endDate = now()->addDays(2)->copy()->setHour(10)->setMinute(0);
+
+        $response = $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::latest('id')->first();
+        expect($booking->start_datetime->format('H:i'))->toBe('06:00');
+        expect($booking->end_datetime->format('H:i'))->toBe('10:00');
+    });
+
+    test('afternoon time is stored and retrieved correctly', function () {
+        $startDate = now()->addDays(2)->copy()->setHour(14)->setMinute(0);
+        $endDate = now()->addDays(2)->copy()->setHour(18)->setMinute(0);
+
+        $response = $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::latest('id')->first();
+        expect($booking->start_datetime->format('H:i'))->toBe('14:00');
+        expect($booking->end_datetime->format('H:i'))->toBe('18:00');
+    });
+
+    test('midnight time is stored and retrieved correctly', function () {
+        $startDate = now()->addDays(3)->copy()->setHour(0)->setMinute(0);
+        $endDate = now()->addDays(3)->copy()->setHour(4)->setMinute(0);
+
+        $response = $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::latest('id')->first();
+        expect($booking->start_datetime->format('H:i'))->toBe('00:00');
+        expect($booking->end_datetime->format('H:i'))->toBe('04:00');
+    });
+
+    test('datetime is retrieved correctly from database without timezone shift', function () {
+        $startDate = now()->addDays(2)->copy()->setHour(9)->setMinute(15);
+        $endDate = now()->addDays(2)->copy()->setHour(15)->setMinute(30);
+
+        $response = $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::latest('id')->first();
+
+        // Verify the stored timestamp matches what was submitted (no timezone shift)
+        $submittedStart = $booking->start_datetime->toISOString();
+        $submittedEnd = $booking->end_datetime->toISOString();
+
+        // Extract time portion and compare
+        $storedStartTime = substr($submittedStart, 11, 5);
+        $storedEndTime = substr($submittedEnd, 11, 5);
+
+        expect($storedStartTime)->toBe('09:15');
+        expect($storedEndTime)->toBe('15:30');
+    });
+
+    test('booking show page returns correct datetime values', function () {
+        $startDate = now()->addDays(2)->copy()->setHour(9)->setMinute(0);
+        $endDate = now()->addDays(2)->copy()->setHour(15)->setMinute(0);
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDate->toISOString(),
+            'end_datetime' => $endDate->toISOString(),
+            'address_id' => $this->address->id,
+            'hotel_id' => null,
+            'rental_platform' => '',
+            'address_line1' => $this->address->line1,
+            'address_line2' => $this->address->line2,
+            'address_city' => $this->address->city,
+            'address_state' => $this->address->state,
+            'address_zip' => $this->address->zip,
+            'special_considerations' => [],
+            'caregiver_notes' => '',
+            'notes_to_sitterwise' => '',
+            'sitter_preferences' => [],
+            'other_adults_present' => '',
+            'emergency_instructions' => '',
+            'special_needs_notes' => '',
+            'how_did_you_hear' => '',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ]);
+
+        $booking = Booking::latest('id')->first();
+
+        // Fetch the booking fresh from database to ensure retrieval is correct
+        $retrieved = Booking::find($booking->id);
+
+        expect($retrieved->start_datetime->format('Y-m-d H:i'))->toBe($startDate->format('Y-m-d H:i'));
+        expect($retrieved->end_datetime->format('Y-m-d H:i'))->toBe($endDate->format('Y-m-d H:i'));
+    });
+});

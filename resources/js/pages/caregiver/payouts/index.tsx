@@ -18,6 +18,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
+import { formatPointInTime } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -251,21 +252,6 @@ export default function CaregiverPayoutsIndex() {
         }).format(amount);
     };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) {
-            return '—';
-        }
-
-        return new Date(dateString).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        });
-    };
-
     const handleConnect = () => {
         connectForm.post('/payouts/stripe/connect', {
             onSuccess: () => {
@@ -402,7 +388,7 @@ export default function CaregiverPayoutsIndex() {
                                             className="border-b border-border transition hover:bg-blush"
                                         >
                                             <td className="px-4 py-3 text-sm text-foreground">
-                                                {formatDate(
+                                                {formatPointInTime(
                                                     payout.payout_date ||
                                                         payout.created_at,
                                                 )}

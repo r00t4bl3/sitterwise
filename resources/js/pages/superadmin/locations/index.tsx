@@ -3,13 +3,20 @@ import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -45,6 +52,8 @@ export default function LocationsIndex() {
     const { locations } = usePage<Props>().props;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const form = useForm<{
         name: string;
@@ -91,9 +100,21 @@ export default function LocationsIndex() {
     };
 
     const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this location?')) {
-            form.delete(`/locations/${id}`);
+        setDeletingId(id);
+        setIsDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (deletingId) {
+            form.delete(`/locations/${deletingId}`);
+            setIsDialogOpen(false);
+            setDeletingId(null);
         }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDialogOpen(false);
+        setDeletingId(null);
     };
 
     return (
@@ -282,6 +303,32 @@ export default function LocationsIndex() {
                         </form>
                     </SheetContent>
                 </Sheet>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Confirm Delete</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete this location?
+                                This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelDelete}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmDelete}
+                                disabled={form.processing}
+                            >
+                                {form.processing ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

@@ -1,5 +1,8 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { Label } from './label';
+import { Button } from './button';
+import { Input } from './input';
 
 interface Props {
     form: any;
@@ -285,21 +288,20 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
     if (isLocked) {
         return (
             <div className="space-y-3" ref={containerRef}>
-                <label className="block">
-                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                        {label}
-                    </span>
+                <Label>
+                    {label}
+                </Label>
                     <div className="mt-1 flex items-center gap-2 rounded-[3px] border border-input bg-muted px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">{addressValue}</span>
-                        <button
+                        <Button
+                            variant="link"
                             type="button"
                             onClick={handleUnlock}
-                            className="text-xs text-ring hover:text-foreground"
+                            size="xs"
                         >
                             Edit
-                        </button>
+                        </Button>
                     </div>
-                </label>
             </div>
         );
     }
@@ -307,21 +309,18 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
     return (
         <div className="space-y-3" ref={containerRef}>
             <div className="relative">
-                <label className="block">
-                    <span className="text-xs tracking-wider text-muted-foreground uppercase">
-                        {label}
-                    </span>
-                    <input
-                        ref={inputRef}
+                <Label>
+                    {label}
+                </Label>
+                <Input
+                    ref={inputRef}
                         type="text"
                         value={inputValue}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onFocus={() => predictions.length > 0 && setShowPredictions(true)}
                         placeholder="Start typing address..."
-                        className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                         autoComplete="off"
                     />
-                </label>
                 {loading && (
                     <div className="absolute top-9 right-3">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />

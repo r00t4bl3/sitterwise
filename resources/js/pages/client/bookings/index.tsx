@@ -3,6 +3,7 @@ import { Calendar, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDateTime } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,19 +44,6 @@ interface Props {
 
 export default function ClientBookingsIndex() {
     const { bookings } = usePage().props as unknown as Props;
-
-    const formatDateTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
 
     const getStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
@@ -146,11 +134,11 @@ export default function ClientBookingsIndex() {
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                                 <span className="text-sm text-muted-foreground">
-                                                    {formatDateTime(
+                                                    {formatDisplayDateTime(
                                                         booking.start_datetime,
                                                     )}{' '}
                                                     -{' '}
-                                                    {formatDateTime(
+                                                    {formatDisplayDateTime(
                                                         booking.end_datetime,
                                                     )}
                                                 </span>

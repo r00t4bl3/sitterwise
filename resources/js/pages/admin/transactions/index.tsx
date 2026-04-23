@@ -10,13 +10,6 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet';
-import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -25,6 +18,13 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -201,7 +201,9 @@ export default function TransactionsIndex() {
     };
 
     const handlePaymentSubmit = () => {
-        if (!selectedBooking) return;
+        if (!selectedBooking) {
+            return;
+        }
 
         paymentForm.post(`/bookings/${selectedBooking.id}/process-payment`, {
             onSuccess: () => {

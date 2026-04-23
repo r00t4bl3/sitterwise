@@ -14,6 +14,14 @@ import { useState, useMemo } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     Sheet,
     SheetContent,
     SheetDescription,
@@ -21,6 +29,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayTime, parseAsLocal } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 import { BookingDetailsSection } from './booking-details-section';
 import { PersonalInfoSection } from './personal-info-section';
@@ -121,14 +130,6 @@ function getDaysInMonth(
     return cells;
 }
 
-function formatTime(datetime: string): string {
-    return new Date(datetime).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
-}
-
 function formatDateTimeLocal(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -184,9 +185,8 @@ export default function Bookings() {
         payment_statuses,
         special_consideration_options,
         booking_attributes,
+        sitter_preferences,
     } = usePage<Props>().props;
-
-    const sitter_preference_options = sitter_preferences;
 
     const client_type_options = [
         { value: 'resident', label: 'San Diego Resident' },
@@ -204,6 +204,7 @@ export default function Bookings() {
     );
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const [clientSuggestions, setClientSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
@@ -399,7 +400,12 @@ export default function Bookings() {
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, Booking[]> = {};
         bookings.forEach((booking) => {
-            const date = new Date(booking.start_datetime);
+            const date = parseAsLocal(booking.start_datetime);
+
+            if (!date) {
+                return;
+            }
+
             const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
             if (!grouped[localDate]) {
@@ -414,7 +420,11 @@ export default function Bookings() {
 
     const currentMonthBookings = useMemo(() => {
         return bookings.filter((booking) => {
-            const startDate = new Date(booking.start_datetime);
+            const startDate = parseAsLocal(booking.start_datetime);
+
+            if (!startDate) {
+                return false;
+            }
 
             return (
                 startDate.getMonth() + 1 === currentMonth &&
@@ -704,9 +714,11 @@ export default function Bookings() {
             service_type: booking.service_type,
             location_type: booking.location_type,
             start_datetime: formatDateTimeLocal(
-                new Date(booking.start_datetime),
+                parseAsLocal(booking.start_datetime) as Date,
             ),
-            end_datetime: formatDateTimeLocal(new Date(booking.end_datetime)),
+            end_datetime: formatDateTimeLocal(
+                parseAsLocal(booking.end_datetime) as Date,
+            ),
             hotel_id: booking.hotel_id,
             address_id: booking.address_id,
             caregiver_id: booking.caregiver_id,
@@ -882,22 +894,29 @@ export default function Bookings() {
     };
 
     const handleDelete = () => {
-        if (
-            editingBooking &&
-            confirm('Are you sure you want to delete this booking?')
-        ) {
+        if (editingBooking) {
+            setShowDeleteDialog(true);
+        }
+    };
+
+    const handleConfirmDelete = () => {
+        if (editingBooking) {
             form.delete(`/bookings/${editingBooking.id}`, {
                 onSuccess: () => {
                     setIsSheetOpen(false);
+                    setShowDeleteDialog(false);
                     applyFilters();
                 },
                 onError: (errors) => {
                     const errorMessage = Object.values(errors).join(', ');
                     console.log('Error deleting booking:', errorMessage);
-                    // setMessage({ type: 'error', content: errorMessage });
                 },
             });
         }
+    };
+
+    const handleCancelDelete = () => {
+        setShowDeleteDialog(false);
     };
 
     const handleSpecialConsiderationChange = (
@@ -1154,14 +1173,14 @@ export default function Bookings() {
                                                 >
                                                     <ServiceIcon className="h-3 w-3 flex-shrink-0" />
                                                     <span className="truncate">
-                                                        {formatTime(
+                                                        {formatDisplayTime(
                                                             booking.start_datetime,
                                                         )}
                                                         -
-                                                        {formatTime(
+                                                        {formatDisplayTime(
                                                             booking.end_datetime,
                                                         )}
-                                                    </span>
+                                                    </span>{' '}
                                                 </button>
                                                 {canCharge && (
                                                     <button
@@ -1254,9 +1273,7 @@ export default function Bookings() {
                                 handleClientChange={handleClientChange}
                                 selectedClientType={selectedClientType}
                                 location_types={location_types}
-                                sitter_preference_options={
-                                    sitter_preference_options
-                                }
+                                sitter_preference_options={sitter_preferences}
                                 client_type_options={client_type_options}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}
@@ -1297,6 +1314,35 @@ export default function Bookings() {
                         </div>
                     </SheetContent>
                 </Sheet>
+
+                <Dialog
+                    open={showDeleteDialog}
+                    onOpenChange={setShowDeleteDialog}
+                >
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Confirm Delete</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete this booking?
+                                This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelDelete}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmDelete}
+                                disabled={form.processing}
+                            >
+                                {form.processing ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

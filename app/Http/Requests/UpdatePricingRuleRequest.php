@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ServiceType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,22 +28,13 @@ class UpdatePricingRuleRequest extends FormRequest
             'service_type' => [
                 'required',
                 'string',
-                Rule::in([
-                    'Babysitter',
-                    'Petsitter',
-                    'Companion Care',
-                    'Group Childcare (Invoiced)',
-                    'Corporate (Invoiced)',
-                    'Overnight Newborn Care',
-                    'Comped',
-                ]),
+                Rule::in(array_column(ServiceType::cases(), 'value')),
             ],
             'number_of_children' => [
                 'nullable',
                 'integer',
                 'min:1',
                 'required_if:is_for_pets,false',
-                'prohibits:is_for_pets',
             ],
             'is_for_pets' => ['required', 'boolean'],
             'charge_to_client' => ['required', 'numeric', 'min:0'],

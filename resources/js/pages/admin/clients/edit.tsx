@@ -104,12 +104,11 @@ interface Props {
     [key: string]: unknown;
     client: Client;
     attribute_definitions: AttributeDefinition[];
-    csrf_token: string;
     sitter_preferences: Array<{ value: string; label: string }>;
 }
 
 export default function ClientEdit() {
-    const { client, attribute_definitions, csrf_token } =
+    const { client, attribute_definitions, sitter_preferences } =
         usePage<Props>().props;
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
@@ -461,19 +460,19 @@ export default function ClientEdit() {
                             Sitter Preferences
                         </h2>
                         <div className="flex flex-wrap gap-4">
-                            {sitterPreferenceOptions.map((pref) => (
+                            {sitter_preferences.map((pref) => (
                                 <div
-                                    key={pref}
+                                    key={pref.value}
                                     className="flex items-center gap-2"
                                 >
                                     <Checkbox
-                                        id={`pref-${pref}`}
+                                        id={`pref-${pref.value}`}
                                         checked={form.data.sitter_preferences.includes(
-                                            pref,
+                                            pref.value,
                                         )}
                                         onCheckedChange={(checked) =>
                                             handlePreferenceChange(
-                                                pref,
+                                                pref.value,
                                                 checked as boolean,
                                             )
                                         }
@@ -482,7 +481,7 @@ export default function ClientEdit() {
                                         htmlFor={`pref-${pref}`}
                                         className="capitalize"
                                     >
-                                        {pref.replace(/_/g, ' ')}
+                                        {pref.value.replace(/_/g, ' ')}
                                     </Label>
                                 </div>
                             ))}

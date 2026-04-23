@@ -14,6 +14,7 @@ import {
     Building2,
     PartyPopper,
 } from 'lucide-react';
+import React from 'react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface Booking {
     id: number;
@@ -229,30 +231,6 @@ export default function BookingDetail({ booking }: PageProps) {
         };
     }, [booking.id, booking.reserved_by]);
 
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-            // hour: 'numeric',
-            // minute: '2-digit',
-            // hour12: true,
-        });
-    };
-
-    const formatTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
     const calculateAge = (
         birthYear: number | null,
         birthMonth: number | null,
@@ -401,10 +379,17 @@ export default function BookingDetail({ booking }: PageProps) {
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
-                                        {formatDate(booking.start_datetime)}{' '}
+                                        {formatDisplayDate(
+                                            booking.start_datetime,
+                                        )}{' '}
                                         from{' '}
-                                        {formatTime(booking.start_datetime)} to{' '}
-                                        {formatTime(booking.end_datetime)}
+                                        {formatDisplayTime(
+                                            booking.start_datetime,
+                                        )}{' '}
+                                        to{' '}
+                                        {formatDisplayTime(
+                                            booking.end_datetime,
+                                        )}
                                     </span>
                                 </div>
 
@@ -417,64 +402,52 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </div>
                                 )}
 
-                                {(() => {
-                                    const LocationIcon = getLocationIcon(
-                                        booking.location_type,
-                                    );
-                                    return (
-                                        <div className="flex items-center gap-2">
-                                            <LocationIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm text-muted-foreground">
-                                                <a
-                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-500 hover:underline"
-                                                >
-                                                    {booking.address_line1 && (
-                                                        <span>
-                                                            {
-                                                                booking.address_line1
-                                                            }
-                                                            ,{' '}
-                                                        </span>
-                                                    )}{' '}
-                                                    {booking.address_line2 && (
-                                                        <span>
-                                                            {
-                                                                booking.address_line2
-                                                            }
-                                                            ,{' '}
-                                                        </span>
-                                                    )}
-                                                    {booking.address_city && (
-                                                        <span>
-                                                            {
-                                                                booking.address_city
-                                                            }
-                                                            ,{' '}
-                                                        </span>
-                                                    )}
-                                                    {booking.address_state && (
-                                                        <span>
-                                                            {
-                                                                booking.address_state
-                                                            }
-                                                            ,{' '}
-                                                        </span>
-                                                    )}
-                                                    {booking.address_zip && (
-                                                        <span>
-                                                            {
-                                                                booking.address_zip
-                                                            }
-                                                        </span>
-                                                    )}
-                                                </a>
-                                            </span>
-                                        </div>
-                                    );
-                                })()}
+                                <div className="flex items-center gap-2">
+                                    {React.createElement(
+                                        getLocationIcon(booking.location_type),
+                                        {
+                                            className:
+                                                'mt-0.5 h-4 w-4 text-muted-foreground',
+                                        },
+                                    )}
+                                    <span className="text-sm text-muted-foreground">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            {booking.address_line1 && (
+                                                <span>
+                                                    {booking.address_line1}
+                                                    ,{' '}
+                                                </span>
+                                            )}{' '}
+                                            {booking.address_line2 && (
+                                                <span>
+                                                    {booking.address_line2}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_city && (
+                                                <span>
+                                                    {booking.address_city},{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_state && (
+                                                <span>
+                                                    {booking.address_state}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_zip && (
+                                                <span>
+                                                    {booking.address_zip}
+                                                </span>
+                                            )}
+                                        </a>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -615,9 +588,16 @@ export default function BookingDetail({ booking }: PageProps) {
                                             {booking.client_name}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            {formatDate(booking.start_datetime)}{' '}
-                                            {formatTime(booking.start_datetime)}{' '}
-                                            - {formatTime(booking.end_datetime)}
+                                            {formatDisplayDate(
+                                                booking.start_datetime,
+                                            )}{' '}
+                                            {formatDisplayTime(
+                                                booking.start_datetime,
+                                            )}{' '}
+                                            -{' '}
+                                            {formatDisplayTime(
+                                                booking.end_datetime,
+                                            )}
                                         </p>
                                     </div>
                                     <div className="text-center">

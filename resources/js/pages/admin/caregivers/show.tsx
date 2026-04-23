@@ -27,7 +27,6 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -310,6 +309,12 @@ export default function CaregiverShow() {
                     </div>
                     <div className="flex gap-2">
                         <Link
+                            href={`/availabilities/${caregiver.id}`}
+                            className="btn-secondary"
+                        >
+                            View Availability
+                        </Link>
+                        <Link
                             href={`/bio/${caregiver.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -453,7 +458,14 @@ export default function CaregiverShow() {
                                     Email
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {caregiver.email}
+                                    {caregiver.email && (
+                                        <a
+                                            href={`mailto:${caregiver.email}`}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {caregiver.email}
+                                        </a>
+                                    )}
                                 </p>
                             </div>
                             <div>
@@ -461,7 +473,14 @@ export default function CaregiverShow() {
                                     Phone
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {caregiver.phone || '—'}
+                                    {caregiver.phone && (
+                                        <a
+                                            href={`tel:${caregiver.phone}`}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {caregiver.phone}
+                                        </a>
+                                    )}
                                 </p>
                             </div>
                             <div className="sm:col-span-2">

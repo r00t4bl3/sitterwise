@@ -1,15 +1,23 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -54,6 +62,8 @@ export default function HotelsIndex() {
     const { hotels } = usePage<Props>().props;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const form = useForm<{
         name: string;
@@ -136,9 +146,21 @@ export default function HotelsIndex() {
     };
 
     const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this hotel?')) {
-            form.delete(`/hotels/${id}`);
+        setDeletingId(id);
+        setIsDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (deletingId) {
+            form.delete(`/hotels/${deletingId}`);
+            setIsDialogOpen(false);
+            setDeletingId(null);
         }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDialogOpen(false);
+        setDeletingId(null);
     };
 
     return (
@@ -262,73 +284,7 @@ export default function HotelsIndex() {
                                     required
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="line1">Line 1</Label>
-                                    <Input
-                                        id="line1"
-                                        value={form.data.line1}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'line1',
-                                                e.target.value,
-                                            )
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="line2">Line 2</Label>
-                                    <Input
-                                        id="line2"
-                                        value={form.data.line2}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'line2',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Input
-                                        id="city"
-                                        value={form.data.city}
-                                        onChange={(e) =>
-                                            form.setData('city', e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="state">State</Label>
-                                    <Input
-                                        id="state"
-                                        value={form.data.state}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'state',
-                                                e.target.value,
-                                            )
-                                        }
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="zip">ZIP</Label>
-                                    <Input
-                                        id="zip"
-                                        value={form.data.zip}
-                                        onChange={(e) =>
-                                            form.setData('zip', e.target.value)
-                                        }
-                                        required
-                                    />
-                                </div>
-                            </div>
+                            <AddressAutocomplete form={form} prefix="" />
                             <div className="grid gap-2">
                                 <Label htmlFor="parking_instructions">
                                     Parking Instructions
@@ -464,6 +420,32 @@ export default function HotelsIndex() {
                         </form>
                     </SheetContent>
                 </Sheet>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Confirm Delete</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete this hotel? This
+                                action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelDelete}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmDelete}
+                                disabled={form.processing}
+                            >
+                                {form.processing ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

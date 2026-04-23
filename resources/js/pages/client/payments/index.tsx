@@ -11,6 +11,7 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
+import { formatPointInTime } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -200,18 +201,6 @@ export default function ClientPaymentsIndex() {
         }).format(amount);
     };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) {
-            return '—';
-        }
-
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
-
     const handleAddCardClick = async () => {
         setIsLoading(true);
 
@@ -320,7 +309,7 @@ export default function ClientPaymentsIndex() {
                                     className="border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {formatDate(payment.created_at)}
+                                        {formatPointInTime(payment.created_at)}
                                     </td>
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                                         {formatCurrency(

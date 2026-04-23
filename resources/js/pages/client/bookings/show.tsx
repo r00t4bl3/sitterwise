@@ -12,9 +12,11 @@ import {
     Building2,
     PartyPopper,
 } from 'lucide-react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface Booking {
     id: number;
@@ -70,27 +72,6 @@ const breadcrumbs = [
 ];
 
 export default function BookingDetail({ booking }: PageProps) {
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-        });
-    };
-
-    const formatTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
     const calculateAge = (
         birthYear: number | null,
         birthMonth: number | null,
@@ -186,13 +167,19 @@ export default function BookingDetail({ booking }: PageProps) {
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
-                                        {formatDate(booking.start_datetime)}{' '}
+                                        {formatDisplayDate(
+                                            booking.start_datetime,
+                                        )}{' '}
                                         from{' '}
-                                        {formatTime(booking.start_datetime)} to{' '}
-                                        {formatTime(booking.end_datetime)}
+                                        {formatDisplayTime(
+                                            booking.start_datetime,
+                                        )}{' '}
+                                        to{' '}
+                                        {formatDisplayTime(
+                                            booking.end_datetime,
+                                        )}
                                     </span>
                                 </div>
-
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
@@ -227,55 +214,52 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </div>
                                 )}
 
-                                {(() => {
-                                    const AddressIcon = getLocationIcon(
-                                        booking.location_type,
-                                    );
-                                    if (
-                                        !booking.address_line1 &&
-                                        !booking.address_city
-                                    ) {
-                                        return null;
-                                    }
-                                    return (
-                                        <div className="flex items-start gap-2">
-                                            <AddressIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm text-muted-foreground">
-                                                {booking.address_line1 && (
-                                                    <span>
-                                                        {booking.address_line1}
-                                                        {booking.address_line2 && (
-                                                            <span>
-                                                                ,{' '}
-                                                                {
-                                                                    booking.address_line2
-                                                                }
-                                                            </span>
-                                                        )}
-                                                        ,{' '}
-                                                    </span>
-                                                )}
-                                                {booking.address_city && (
-                                                    <span>
-                                                        {booking.address_city}
-                                                        ,{' '}
-                                                    </span>
-                                                )}
-                                                {booking.address_state && (
-                                                    <span>
-                                                        {booking.address_state}
-                                                        ,{' '}
-                                                    </span>
-                                                )}
-                                                {booking.address_zip && (
-                                                    <span>
-                                                        {booking.address_zip}
-                                                    </span>
-                                                )}
-                                            </span>
-                                        </div>
-                                    );
-                                })()}
+                                {!booking.address_line1 &&
+                                !booking.address_city ? null : (
+                                    <div className="flex items-start gap-2">
+                                        {React.createElement(
+                                            getLocationIcon(
+                                                booking.location_type,
+                                            ),
+                                            {
+                                                className:
+                                                    'mt-0.5 h-4 w-4 text-muted-foreground',
+                                            },
+                                        )}
+                                        <span className="text-sm text-muted-foreground">
+                                            {booking.address_line1 && (
+                                                <span>
+                                                    {booking.address_line1}
+                                                    {booking.address_line2 && (
+                                                        <span>
+                                                            ,{' '}
+                                                            {
+                                                                booking.address_line2
+                                                            }
+                                                        </span>
+                                                    )}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_city && (
+                                                <span>
+                                                    {booking.address_city},{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_state && (
+                                                <span>
+                                                    {booking.address_state}
+                                                    ,{' '}
+                                                </span>
+                                            )}
+                                            {booking.address_zip && (
+                                                <span>
+                                                    {booking.address_zip}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

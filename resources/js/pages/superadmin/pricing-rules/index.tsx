@@ -3,6 +3,14 @@ import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,10 +24,10 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -57,6 +65,8 @@ export default function PricingRulesIndex() {
     const { pricingRules, serviceTypes } = usePage<Props>().props;
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const form = useForm<{
         service_type: string;
@@ -115,6 +125,7 @@ export default function PricingRulesIndex() {
         const serviceType = serviceTypeOptions.find(
             (option) => option.value === value,
         );
+
         return serviceType ? serviceType.label : value;
     };
 
@@ -145,10 +156,22 @@ export default function PricingRulesIndex() {
         }
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this pricing rule?')) {
-            form.delete(`/pricing-rules/${id}`);
+    const handleDeleteClick = (id: number) => {
+        setDeletingId(id);
+        setIsDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (deletingId) {
+            form.delete(`/pricing-rules/${deletingId}`);
+            setIsDialogOpen(false);
+            setDeletingId(null);
         }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDialogOpen(false);
+        setDeletingId(null);
     };
 
     return (
@@ -238,7 +261,7 @@ export default function PricingRulesIndex() {
                                         <Button
                                             variant="secondary"
                                             onClick={() =>
-                                                handleDelete(rule.id)
+                                                handleDeleteClick(rule.id)
                                             }
                                             className="h-8"
                                         >
@@ -481,7 +504,12 @@ export default function PricingRulesIndex() {
                                 )}
                             </div>
                             <div className="mt-10 w-full space-y-2">
-                                <Button type="submit" className="w-full">
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={form.processing}
+                                >
+                                    {form.processing ? <Spinner /> : null}
                                     {form.processing ? 'Saving...' : 'Save'}
                                 </Button>
                                 <Button
@@ -497,6 +525,30 @@ export default function PricingRulesIndex() {
                     </SheetContent>
                 </Sheet>
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this pricing rule?
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCancelDelete}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleConfirmDelete}
+                            disabled={form.processing}
+                        >
+                            {form.processing ? <Spinner /> : null}
+                            {form.processing ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

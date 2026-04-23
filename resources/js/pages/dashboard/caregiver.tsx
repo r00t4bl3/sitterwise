@@ -1,10 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import {
     Calendar,
     Clock,
     User as UserIcon,
-    Award,
     DollarSign,
     Briefcase,
     MapPin,
@@ -13,23 +11,24 @@ import {
     Star,
     Bell,
 } from 'lucide-react';
+import { useState } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDate, formatDisplayDateTime } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -112,29 +111,6 @@ export default function CaregiverDashboard({
         time_slots: [] as string[],
         specific_time: '',
     });
-
-    const formatDateTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
-    const formatDateOnly = (dateString: string): string => {
-        const date = new Date(dateString);
-
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
 
     const openSheet = (date: string) => {
         const availabilityMap = availabilities.reduce(
@@ -330,7 +306,7 @@ export default function CaregiverDashboard({
                                             Job
                                         </h3>
                                         <p className="text-lg font-bold">
-                                            {formatDateTime(
+                                            {formatDisplayDateTime(
                                                 caregiver.next_job
                                                     .start_datetime,
                                             )}
@@ -418,7 +394,7 @@ export default function CaregiverDashboard({
                                                     </span>
                                                 </div>
                                                 <p className="text-sm font-medium">
-                                                    {formatDateTime(
+                                                    {formatDisplayDateTime(
                                                         invite.start_datetime,
                                                     )}
                                                 </p>
@@ -471,7 +447,7 @@ export default function CaregiverDashboard({
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium">
-                                                            {formatDateTime(
+                                                            {formatDisplayDateTime(
                                                                 job.start_datetime,
                                                             )}
                                                         </p>
@@ -513,8 +489,8 @@ export default function CaregiverDashboard({
                     <SheetHeader>
                         <SheetTitle>
                             {selectedDate
-                                ? formatDateOnly(selectedDate)
-                                : 'Availability'}
+                                ? formatDisplayDate(selectedDate)
+                                : 'Availability'}{' '}
                         </SheetTitle>
                         <SheetDescription>
                             Set availability for the selected date.

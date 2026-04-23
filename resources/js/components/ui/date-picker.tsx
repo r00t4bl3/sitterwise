@@ -3,6 +3,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
+import { parseAsLocal } from "@/lib/datetime"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -26,13 +27,13 @@ export function DatePicker({
   name,
 }: DatePickerProps) {
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined
+    value ? parseAsLocal(value) ?? undefined : undefined
   )
   const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (value) {
-      setDate(new Date(value))
+      setDate(parseAsLocal(value) ?? undefined)
     }
   }, [value])
 
