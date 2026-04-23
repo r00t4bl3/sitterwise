@@ -130,7 +130,11 @@ export interface Props {
     caregivers: Caregiver[];
     service_types: Array<{ value: string; label: string }>;
     location_types: Array<{ value: string; label: string }>;
-    booking_statuses: Array<{ value: string; label: string }>;
+    booking_statuses: Array<{ 
+        value: string; 
+        label: string; 
+        colors: { bg: string; text: string; border: string } 
+    }>;
     payment_statuses: Array<{ value: string; label: string }>;
     special_consideration_options: Array<{ value: string; label: string }>;
     booking_attributes: Array<{

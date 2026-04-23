@@ -9,10 +9,13 @@ import {
     Building,
     Users,
     CreditCard,
+    Grid3X3,
+    List,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import {
     Dialog,
     DialogContent,
@@ -51,45 +54,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '#',
     },
 ];
-
-const statusColors: Record<
-    string,
-    { bg: string; text: string; border: string }
-> = {
-    received: {
-        bg: 'bg-blue-100',
-        text: 'text-blue-800',
-        border: 'border-blue-300',
-    },
-    pending: {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
-        border: 'border-yellow-300',
-    },
-    confirmed: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
-        border: 'border-green-300',
-    },
-    completed: {
-        bg: 'bg-gray-100',
-        text: 'text-gray-800',
-        border: 'border-gray-300',
-    },
-    cancelled: {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
-        border: 'border-red-300',
-    },
-};
-
-const statusLabels: Record<string, string> = {
-    received: 'Received',
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-};
 
 const serviceTypeIcons: Record<string, React.ElementType> = {
     babysitter: Baby,
@@ -205,6 +169,16 @@ export default function Bookings() {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [isTableView, setIsTableView] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('bookings_view_mode') === 'table';
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        localStorage.setItem('bookings_view_mode', isTableView ? 'table' : 'calendar');
+    }, [isTableView]);
 
     const [clientSuggestions, setClientSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
@@ -1014,9 +988,27 @@ export default function Bookings() {
                             {currentMonthBookings.length} bookings this month
                         </p>
                     </div>
-                    <Button onClick={() => openCreateSheet()}>
-                        Create Booking
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <ButtonGroup>
+                            <Button
+                                variant={!isTableView ? 'default' : 'outline'}
+                                onClick={() => setIsTableView(false)}
+                                title="Calendar View"
+                            >
+                                <Grid3X3 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant={isTableView ? 'default' : 'outline'}
+                                onClick={() => setIsTableView(true)}
+                                title="Table View"
+                            >
+                                <List className="h-4 w-4" />
+                            </Button>
+                        </ButtonGroup>
+                        <Button onClick={() => openCreateSheet()}>
+                            Create Booking
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
@@ -1038,25 +1030,26 @@ export default function Bookings() {
                         <Button onClick={applyFilters}>Filter</Button>
                     </div>
 
-                    <div className="flex flex-wrap gap-3 text-xs">
-                        {Object.entries(statusColors).map(
-                            ([status, colors]) => (
-                                <div
-                                    key={status}
-                                    className="flex items-center gap-1.5"
+                    { !isTableView && (
+                        <div className="flex flex-wrap gap-3 text-xs">
+                            {booking_statuses.map(
+                                (status) => (
+                                    <div
+                                        key={status.value}
+                                        className="flex items-center gap-1.5"
                                 >
                                     <span
                                         className={`inline-block h-3 w-3 rounded-[2px] border ${
-                                            colors?.bg || 'bg-gray-100'
-                                        } ${colors?.border || 'border-gray-300'}`}
+                                            status.colors.bg
+                                        } ${status.colors.border}`}
                                     />
                                     <span className="text-muted-foreground">
-                                        {statusLabels[status] || status}
+                                        {status.label}
                                     </span>
                                 </div>
                             ),
                         )}
-                    </div>
+                    </div>)}
                 </div>
 
                 <div className="border border-border bg-card p-4">
@@ -1078,151 +1071,264 @@ export default function Bookings() {
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                            (day) => (
-                                <div
-                                    key={day}
-                                    className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
-                                >
-                                    {day}
-                                </div>
-                            ),
-                        )}
-
-                        {days.map(({ day, monthOffset }) => {
-                            // compute actual month/year accounting for monthOffset
-                            let cellMonth = currentMonth + monthOffset;
-                            let cellYear = currentYear;
-
-                            if (cellMonth < 1) {
-                                cellMonth = 12;
-                                cellYear--;
-                            } else if (cellMonth > 12) {
-                                cellMonth = 1;
-                                cellYear++;
-                            }
-
-                            const dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            const dayBookings = bookingsByDate[dateStr] || [];
-                            const displayBookings = dayBookings.slice(0, 5);
-                            const remainingCount = dayBookings.length - 5;
-
-                            const today = new Date();
-                            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-                            const isToday = dateStr === todayStr;
-                            const isTodayOrFuture = dateStr >= todayStr;
-
-                            const isCurrentMonth = monthOffset === 0;
-
-                            return (
-                                <div
-                                    key={`${monthOffset}-${day}`}
-                                    className={`flex min-h-30 flex-col gap-1 border p-2 ${
-                                        isCurrentMonth
-                                            ? 'border-border bg-background'
-                                            : 'border-dashed border-gray-300 bg-white'
-                                    } ${isToday ? 'bg-blush' : ''}`}
-                                >
-                                    <span
-                                        className={`text-sm ${
-                                            isToday
-                                                ? 'font-bold text-foreground'
-                                                : isCurrentMonth
-                                                  ? 'font-medium text-foreground'
-                                                  : 'text-gray-300'
-                                        }`}
+                    {!isTableView ? (
+                        <div className="grid grid-cols-7 gap-1">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                                (day) => (
+                                    <div
+                                        key={day}
+                                        className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
                                     >
                                         {day}
-                                    </span>
-                                    {displayBookings.map((booking) => {
-                                        const statusKey =
-                                            booking.status?.toLowerCase() ||
-                                            'received';
-                                        const colors =
-                                            statusColors[statusKey] ||
-                                            statusColors.received;
-                                        const ServiceIcon =
-                                            serviceTypeIcons[
-                                                booking.service_type
-                                            ] || CalendarIcon;
-                                        const canCharge =
-                                            (statusKey === 'completed' ||
-                                                statusKey === 'pending') &&
-                                            booking.payment_status !== 'paid';
+                                    </div>
+                                ),
+                            )}
 
-                                        return (
-                                            <div
-                                                key={booking.id}
-                                                className="group relative"
-                                            >
-                                                <button
-                                                    onClick={() =>
-                                                        openEditSheet(booking)
-                                                    }
-                                                    className={`flex w-full cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
-                                                        colors?.bg ||
-                                                        'bg-blue-100'
-                                                    } ${
-                                                        colors?.text ||
-                                                        'text-blue-800'
-                                                    } ${
-                                                        colors?.border ||
-                                                        'border-blue-300'
-                                                    }`}
+                            {days.map(({ day, monthOffset }) => {
+                                // compute actual month/year accounting for monthOffset
+                                let cellMonth = currentMonth + monthOffset;
+                                let cellYear = currentYear;
+
+                                if (cellMonth < 1) {
+                                    cellMonth = 12;
+                                    cellYear--;
+                                } else if (cellMonth > 12) {
+                                    cellMonth = 1;
+                                    cellYear++;
+                                }
+
+                                const dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const dayBookings = bookingsByDate[dateStr] || [];
+                                const displayBookings = dayBookings.slice(0, 5);
+                                const remainingCount = dayBookings.length - 5;
+
+                                const today = new Date();
+                                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                                const isToday = dateStr === todayStr;
+                                const isTodayOrFuture = dateStr >= todayStr;
+
+                                const isCurrentMonth = monthOffset === 0;
+
+                                return (
+                                    <div
+                                        key={`${monthOffset}-${day}`}
+                                        className={`flex min-h-30 flex-col gap-1 border p-2 ${
+                                            isCurrentMonth
+                                                ? 'border-border bg-background'
+                                                : 'border-dashed border-gray-300 bg-white'
+                                        } ${isToday ? 'bg-blush' : ''}`}
+                                    >
+                                        <span
+                                            className={`text-sm ${
+                                                isToday
+                                                    ? 'font-bold text-foreground'
+                                                    : isCurrentMonth
+                                                      ? 'font-medium text-foreground'
+                                                      : 'text-gray-300'
+                                            }`}
+                                        >
+                                            {day}
+                                        </span>
+                                        {displayBookings.map((booking) => {
+                                            const statusKey =
+                                                booking.status?.toLowerCase() ||
+                                                'received';
+                                            const statusObj = booking_statuses.find(s => s.value === statusKey) || booking_statuses.find(s => s.value === 'received');
+                                            const colors = statusObj?.colors;
+                                            const ServiceIcon =
+                                                serviceTypeIcons[
+                                                    booking.service_type
+                                                ] || CalendarIcon;
+                                            const canCharge =
+                                                (statusKey === 'completed' ||
+                                                    statusKey === 'pending') &&
+                                                booking.payment_status !== 'paid';
+                                            return (
+                                                <div
+                                                    key={booking.id}
+                                                    className="group relative"
                                                 >
-                                                    <ServiceIcon className="h-3 w-3 flex-shrink-0" />
-                                                    <span className="truncate">
-                                                        {formatDisplayTime(
-                                                            booking.start_datetime,
-                                                        )}
-                                                        -
-                                                        {formatDisplayTime(
-                                                            booking.end_datetime,
-                                                        )}
-                                                    </span>{' '}
-                                                </button>
-                                                {canCharge && (
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            window.location.href =
-                                                                '/admin/bookings/charge?booking_id=' +
-                                                                booking.id;
-                                                        }}
-                                                        className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white group-hover:flex hover:bg-green-700"
-                                                        title="Charge"
+                                                        onClick={() =>
+                                                            openEditSheet(booking)
+                                                        }
+                                                        className={`flex w-full cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
+                                                            colors?.bg ||
+                                                            'bg-blue-100'
+                                                        } ${
+                                                            colors?.text ||
+                                                            'text-blue-800'
+                                                        } ${
+                                                            colors?.border ||
+                                                            'border-blue-300'
+                                                        }`}
                                                     >
-                                                        <CreditCard className="h-2.5 w-2.5" />
+                                                        <ServiceIcon className="h-3 w-3 flex-shrink-0" />
+                                                        <span className="truncate">
+                                                            {formatDisplayTime(
+                                                                booking.start_datetime,
+                                                            )}
+                                                            -
+                                                            {formatDisplayTime(
+                                                                booking.end_datetime,
+                                                            )}
+                                                        </span>{' '}
                                                     </button>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    {remainingCount > 0 && (
-                                        <button
-                                            onClick={() =>
-                                                openCreateSheet(dateStr)
-                                            }
-                                            className="text-xs font-medium text-ring hover:text-foreground"
-                                        >
-                                            + {remainingCount} more
-                                        </button>
+                                                    {canCharge && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                window.location.href =
+                                                                    '/admin/bookings/charge?booking_id=' +
+                                                                    booking.id;
+                                                            }}
+                                                            className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white group-hover:flex hover:bg-green-700"
+                                                            title="Charge"
+                                                        >
+                                                            <CreditCard className="h-2.5 w-2.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                        {remainingCount > 0 && (
+                                            <button
+                                                onClick={() =>
+                                                    openCreateSheet(dateStr)
+                                                }
+                                                className="text-xs font-medium text-ring hover:text-foreground"
+                                            >
+                                                + {remainingCount} more
+                                            </button>
+                                        )}
+                                        {isTodayOrFuture && remainingCount <= 0 && (
+                                            <button
+                                                onClick={() =>
+                                                    openCreateSheet(dateStr)
+                                                }
+                                                className="mt-auto text-xs text-ring hover:text-foreground"
+                                            >
+                                                + Add
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto -mx-4 -mb-4">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-foreground">
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Date</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Client Name</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Time</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Location</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Caregiver Name</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Status</th>
+                                        <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-background">
+                                    {currentMonthBookings.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground italic">
+                                                No bookings found for this month.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        [...currentMonthBookings]
+                                            .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
+                                            .map((booking) => {
+                                                const statusKey = booking.status?.toLowerCase() || 'received';
+                                                const statusObj = booking_statuses.find(s => s.value === statusKey) || booking_statuses.find(s => s.value === 'received');
+                                                const colors = statusObj?.colors || { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' };
+                                                const isHotel = booking.location_type === 'hotel';
+                                                const hotel = isHotel ? hotels.find(h => h.id === booking.hotel_id) : null;
+                                                const location = isHotel 
+                                                    ? hotel?.name 
+                                                    : booking.address_line1;
+                                                const addressQuery = isHotel && hotel 
+                                                    ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
+                                                    : `${booking.address_line1 || ''} ${booking.address_line2 || ''} ${booking.address_city || ''} ${booking.address_state || ''} ${booking.address_zip || ''}`.trim();
+                                                const mapsUrl = addressQuery 
+                                                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
+                                                    : null;
+                                                
+                                                return (
+                                                    <tr key={booking.id} className="border-b border-border transition hover:bg-blush">
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground">
+                                                            {parseAsLocal(booking.start_datetime)?.toLocaleDateString('en-US', { 
+                                                                month: 'short', 
+                                                                day: 'numeric', 
+                                                                year: 'numeric' 
+                                                            })}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm font-medium text-ring">
+                                                            {booking.client.first_name} {booking.client.last_name}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground">
+                                                            {formatDisplayTime(booking.start_datetime)} - {formatDisplayTime(booking.end_datetime)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-foreground">
+                                                            {mapsUrl ? (
+                                                                <a 
+                                                                    href={mapsUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-ring hover:underline"
+                                                                    title={addressQuery}
+                                                                >
+                                                                    {location || '—'}
+                                                                </a>
+                                                            ) : (
+                                                                <div className="max-w-[200px] truncate" title={location || ''}>
+                                                                    {location || '—'}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-foreground">
+                                                            {booking.caregiver 
+                                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                : <span className="text-muted-foreground italic">Unassigned</span>
+                                                            }
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-semibold border ${colors.bg} ${colors.text} ${colors.border}`}>
+                                                                {statusObj?.label || statusKey}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                {((statusKey === 'completed' || statusKey === 'pending') && booking.payment_status !== 'paid') && (
+                                                                    <Button 
+                                                                        variant="ghost" 
+                                                                        size="icon" 
+                                                                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                        onClick={() => window.location.href = '/admin/bookings/charge?booking_id=' + booking.id}
+                                                                        title="Charge"
+                                                                    >
+                                                                        <CreditCard className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm"
+                                                                    className="h-8 px-2"
+                                                                    onClick={() => openEditSheet(booking)}
+                                                                >
+                                                                    Edit
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                     )}
-                                    {isTodayOrFuture && remainingCount <= 0 && (
-                                        <button
-                                            onClick={() =>
-                                                openCreateSheet(dateStr)
-                                            }
-                                            className="mt-auto text-xs text-ring hover:text-foreground"
-                                        >
-                                            + Add
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

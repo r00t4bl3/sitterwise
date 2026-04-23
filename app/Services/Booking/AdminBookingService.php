@@ -108,7 +108,11 @@ class AdminBookingService implements BookingServiceInterface
                 LocationType::cases()
             ),
             'booking_statuses' => array_map(
-                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                    'colors' => $case->colors(),
+                ],
                 BookingStatus::cases()
             ),
             'payment_statuses' => array_map(
