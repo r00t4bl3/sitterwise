@@ -104,6 +104,7 @@ interface Client {
     sitter_preferences: string[] | null;
     other_adults_present: string | null;
     emergency_instructions: string | null;
+    biography: string | null;
     special_needs_notes: string | null;
     user: {
         profile_photo_path: string | null;
@@ -124,14 +125,14 @@ interface Props {
 
 function ClientTypeBadge({ type }: { type: string }) {
     const colors: Record<string, { bg: string; text: string }> = {
-        sd_resident: { bg: '#DBEAFE', text: '#1E40AF' },
+        resident: { bg: '#DBEAFE', text: '#1E40AF' },
         vacationer: { bg: '#FEF3C7', text: '#B45309' },
         invoiced: { bg: '#E0E7FF', text: '#3730A3' },
     };
 
     const style = colors[type] || { bg: '#F3F4F6', text: '#374151' };
     const labels: Record<string, string> = {
-        sd_resident: 'SD Resident',
+        resident: 'San Diego Resident',
         vacationer: 'Vacationer',
         invoiced: 'Invoiced',
     };
@@ -471,13 +472,13 @@ export default function ClientShow() {
                                     {client.other_adults_present || '—'}
                                 </p>
                             </div>
-                            {client.emergency_instructions && (
+                            {client.biography && (
                                 <div className="sm:col-span-2">
                                     <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Emergency Instructions
+                                        Biography
                                     </p>
                                     <p className="text-sm text-foreground">
-                                        {client.emergency_instructions}
+                                        {client.biography}
                                     </p>
                                 </div>
                             )}
