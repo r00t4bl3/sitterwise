@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
@@ -137,6 +137,8 @@ export default function ClientEdit() {
         profile_photo: null as File | null,
     });
 
+    const photoFormRef = useRef(photoForm);
+
     const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
 
@@ -150,9 +152,16 @@ export default function ClientEdit() {
         }
     };
 
+     
     useEffect(() => {
-        if (photoForm.data.profile_photo) {
-            photoForm.post(`/clients/${client.id}/profile-photo`, {
+        photoFormRef.current = photoForm;
+    }, [photoForm]);
+
+    useEffect(() => {
+        const form = photoFormRef.current;
+
+        if (form.data.profile_photo) {
+            form.post(`/clients/${client.id}/profile-photo`, {
                 onSuccess: (page) => {
                     const newPath = (page.props as any).client?.user
                         ?.profile_photo_path;
@@ -161,7 +170,7 @@ export default function ClientEdit() {
                         setCurrentProfilePhoto(newPath);
                     }
 
-                    photoForm.reset();
+                    form.reset();
                 },
                 onError: (errors) => {
                     if (errors.profile_photo) {
@@ -171,11 +180,11 @@ export default function ClientEdit() {
                         );
                     }
 
-                    photoForm.reset();
+                    form.reset();
                 },
             });
         }
-    }, [photoForm.data.profile_photo, client.id, photoForm]);
+    }, [photoForm.data.profile_photo, client.id]);
 
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();

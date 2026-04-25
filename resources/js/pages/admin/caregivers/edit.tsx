@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
@@ -185,6 +185,8 @@ export default function CaregiverEdit() {
         profile_photo: null,
     });
 
+    const photoFormRef = useRef(photoForm);
+
     const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
 
@@ -199,8 +201,14 @@ export default function CaregiverEdit() {
     };
 
     useEffect(() => {
-        if (photoForm.data.profile_photo) {
-            photoForm.post(`/caregivers/${caregiver.id}/profile-photo`, {
+        photoFormRef.current = photoForm;
+    }, [photoForm]);
+
+    useEffect(() => {
+        const form = photoFormRef.current;
+
+        if (form.data.profile_photo) {
+            form.post(`/caregivers/${caregiver.id}/profile-photo`, {
                 onSuccess: (page) => {
                     const newPath = (page.props as any).caregiver?.user
                         ?.profile_photo_path;
@@ -209,7 +217,7 @@ export default function CaregiverEdit() {
                         setCurrentProfilePhoto(newPath);
                     }
 
-                    photoForm.reset();
+                    form.reset();
                 },
                 onError: (errors) => {
                     if (errors.profile_photo) {
@@ -219,11 +227,11 @@ export default function CaregiverEdit() {
                         );
                     }
 
-                    photoForm.reset();
+                    form.reset();
                 },
             });
         }
-    }, [photoForm.data.profile_photo, caregiver.id, photoForm]);
+    }, [photoForm.data.profile_photo, caregiver.id]);
 
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();
