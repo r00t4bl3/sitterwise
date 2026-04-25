@@ -168,16 +168,23 @@ export default function Bookings() {
     );
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+    const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'duplicate'>(
+        'create',
+    );
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isTableView, setIsTableView] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('bookings_view_mode') === 'table';
         }
+
         return false;
     });
 
     useEffect(() => {
-        localStorage.setItem('bookings_view_mode', isTableView ? 'table' : 'calendar');
+        localStorage.setItem(
+            'bookings_view_mode',
+            isTableView ? 'table' : 'calendar',
+        );
     }, [isTableView]);
 
     const [clientSuggestions, setClientSuggestions] = useState<
@@ -605,6 +612,7 @@ export default function Bookings() {
 
     const openCreateSheet = (date?: string) => {
         setEditingBooking(null);
+        setSheetMode('create');
 
         let defaultStart: Date;
 
@@ -677,11 +685,16 @@ export default function Bookings() {
         setSelectedClientName('');
         setSelectedHotelName('');
         setSelectedCaregiverName('');
+        // Reset suggestions to prevent auto-focus
+        setClientSuggestions([]);
+        setHotelSuggestions([]);
+        setCaregiverSuggestions([]);
         setIsSheetOpen(true);
     };
 
     const openEditSheet = (booking: Booking) => {
         setEditingBooking(booking);
+        setSheetMode('edit');
 
         const formData = {
             client_id: booking.client_id,
@@ -760,11 +773,12 @@ export default function Bookings() {
 
             if (client) {
                 setSelectedClientName(client.name);
-                handleClientSearch(client.name);
+                setClientSuggestions([client] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
             }
-
-            // Fetch client specific data without overriding form.setData for client_id/address_id
-            fetchClientDataOnly(booking.client_id);
         }
 
         if (booking.hotel_id) {
@@ -772,7 +786,11 @@ export default function Bookings() {
 
             if (hotel) {
                 setSelectedHotelName(hotel.name);
-                handleHotelSearch(hotel.name);
+                setHotelSuggestions([hotel] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
             }
         }
 
@@ -783,9 +801,116 @@ export default function Bookings() {
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
-                handleCaregiverSearch(caregiver.name);
+                setCaregiverSuggestions([caregiver] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
             }
         }
+
+        // Reset suggestions to prevent auto-focus
+        setClientSuggestions([]);
+        setHotelSuggestions([]);
+        setCaregiverSuggestions([]);
+
+        setIsSheetOpen(true);
+    };
+
+    const openDuplicateSheet = (booking: Booking) => {
+        setEditingBooking(null);
+        setSheetMode('duplicate');
+
+        const formData = {
+            client_id: booking.client_id,
+            service_type: booking.service_type,
+            location_type: booking.location_type,
+            start_datetime: '',
+            end_datetime: '',
+            hotel_id: booking.hotel_id,
+            address_id: null,
+            caregiver_id: null,
+            special_considerations: booking.special_considerations || [],
+            caregiver_notes: '',
+            notes_to_sitterwise: '',
+            admin_notes: '',
+            corporate_id: booking.corporate_id || '',
+            sitter_preferences: booking.sitter_preferences || [],
+            other_adults_present: booking.other_adults_present || '',
+            emergency_instructions: '',
+            special_needs_notes: '',
+            how_did_you_hear: booking.how_did_you_hear || '',
+            requires_payment: booking.requires_payment,
+            status: 'received',
+            payment_status: 'pending',
+            rental_platform: booking.rental_platform || null,
+            address_line1: '',
+            address_line2: '',
+            address_city: '',
+            address_state: '',
+            address_zip: '',
+            new_client: {
+                first_name: '',
+                last_name: '',
+                email: '',
+                phone: '',
+                client_type: 'individual',
+            },
+            new_children: [],
+            new_pets: [],
+            deleted_child_ids: [],
+            deleted_pet_ids: [],
+            save_children_pets_to_profile: true,
+        };
+
+        form.setData(formData);
+
+        if (booking.client_id) {
+            fetchClientDataOnly(booking.client_id);
+            const client = clients.find((c) => c.id === booking.client_id);
+
+            if (client) {
+                setSelectedClientName(client.name);
+                setClientSuggestions([client] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
+            }
+        }
+
+        if (booking.hotel_id) {
+            const hotel = hotels.find((h) => h.id === booking.hotel_id);
+
+            if (hotel) {
+                setSelectedHotelName(hotel.name);
+                setHotelSuggestions([hotel] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
+            }
+        }
+
+        setSelectedCaregiverName('');
+        setCaregiverSuggestions([]);
+
+        setClientChildren([]);
+        setClientPets([]);
+        setNewChildren([]);
+        setNewPets([]);
+        setDeletedChildIds([]);
+        setDeletedPetIds([]);
+        setAddressMode('select');
+        setClientMode('select');
+        setIsAddressLocked(false);
+        setShowManualAddressInput(false);
+        setAddressValue('');
+
+        // Reset suggestions to prevent auto-focus
+        setClientSuggestions([]);
+        setHotelSuggestions([]);
+        setCaregiverSuggestions([]);
 
         setIsSheetOpen(true);
     };
@@ -1030,13 +1155,12 @@ export default function Bookings() {
                         <Button onClick={applyFilters}>Filter</Button>
                     </div>
 
-                    { !isTableView && (
+                    {!isTableView && (
                         <div className="flex flex-wrap gap-3 text-xs">
-                            {booking_statuses.map(
-                                (status) => (
-                                    <div
-                                        key={status.value}
-                                        className="flex items-center gap-1.5"
+                            {booking_statuses.map((status) => (
+                                <div
+                                    key={status.value}
+                                    className="flex items-center gap-1.5"
                                 >
                                     <span
                                         className={`inline-block h-3 w-3 rounded-[2px] border ${
@@ -1047,9 +1171,9 @@ export default function Bookings() {
                                         {status.label}
                                     </span>
                                 </div>
-                            ),
-                        )}
-                    </div>)}
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="border border-border bg-card p-4">
@@ -1073,16 +1197,22 @@ export default function Bookings() {
 
                     {!isTableView ? (
                         <div className="grid grid-cols-7 gap-1">
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                                (day) => (
-                                    <div
-                                        key={day}
-                                        className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
-                                    >
-                                        {day}
-                                    </div>
-                                ),
-                            )}
+                            {[
+                                'Sun',
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat',
+                            ].map((day) => (
+                                <div
+                                    key={day}
+                                    className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
+                                >
+                                    {day}
+                                </div>
+                            ))}
 
                             {days.map(({ day, monthOffset }) => {
                                 // compute actual month/year accounting for monthOffset
@@ -1098,7 +1228,13 @@ export default function Bookings() {
                                 }
 
                                 const dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                const dayBookings = bookingsByDate[dateStr] || [];
+                                const dayBookings = (
+                                    bookingsByDate[dateStr] || []
+                                ).sort(
+                                    (a, b) =>
+                                        new Date(a.start_datetime).getTime() -
+                                        new Date(b.start_datetime).getTime(),
+                                );
                                 const displayBookings = dayBookings.slice(0, 5);
                                 const remainingCount = dayBookings.length - 5;
 
@@ -1133,7 +1269,15 @@ export default function Bookings() {
                                             const statusKey =
                                                 booking.status?.toLowerCase() ||
                                                 'received';
-                                            const statusObj = booking_statuses.find(s => s.value === statusKey) || booking_statuses.find(s => s.value === 'received');
+                                            const statusObj =
+                                                booking_statuses.find(
+                                                    (s) =>
+                                                        s.value === statusKey,
+                                                ) ||
+                                                booking_statuses.find(
+                                                    (s) =>
+                                                        s.value === 'received',
+                                                );
                                             const colors = statusObj?.colors;
                                             const ServiceIcon =
                                                 serviceTypeIcons[
@@ -1142,7 +1286,9 @@ export default function Bookings() {
                                             const canCharge =
                                                 (statusKey === 'completed' ||
                                                     statusKey === 'pending') &&
-                                                booking.payment_status !== 'paid';
+                                                booking.payment_status !==
+                                                    'paid';
+
                                             return (
                                                 <div
                                                     key={booking.id}
@@ -1150,7 +1296,9 @@ export default function Bookings() {
                                                 >
                                                     <button
                                                         onClick={() =>
-                                                            openEditSheet(booking)
+                                                            openEditSheet(
+                                                                booking,
+                                                            )
                                                         }
                                                         className={`flex w-full cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
                                                             colors?.bg ||
@@ -1201,121 +1349,233 @@ export default function Bookings() {
                                                 + {remainingCount} more
                                             </button>
                                         )}
-                                        {isTodayOrFuture && remainingCount <= 0 && (
-                                            <button
-                                                onClick={() =>
-                                                    openCreateSheet(dateStr)
-                                                }
-                                                className="mt-auto text-xs text-ring hover:text-foreground"
-                                            >
-                                                + Add
-                                            </button>
-                                        )}
+                                        {isTodayOrFuture &&
+                                            remainingCount <= 0 && (
+                                                <button
+                                                    onClick={() =>
+                                                        openCreateSheet(dateStr)
+                                                    }
+                                                    className="mt-auto text-xs text-ring hover:text-foreground"
+                                                >
+                                                    + Add
+                                                </button>
+                                            )}
                                     </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="overflow-x-auto -mx-4 -mb-4">
+                        <div className="-mx-4 -mb-4 overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-foreground">
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Date</th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Client Name</th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Time</th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Location</th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Caregiver Name</th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">Status</th>
-                                        <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">Actions</th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Date
+                                        </th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Client Name
+                                        </th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Time
+                                        </th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Location
+                                        </th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Caregiver Name
+                                        </th>
+                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-background">
                                     {currentMonthBookings.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground italic">
-                                                No bookings found for this month.
+                                            <td
+                                                colSpan={7}
+                                                className="px-4 py-8 text-center text-sm text-muted-foreground italic"
+                                            >
+                                                No bookings found for this
+                                                month.
                                             </td>
                                         </tr>
                                     ) : (
                                         [...currentMonthBookings]
-                                            .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
+                                            .sort(
+                                                (a, b) =>
+                                                    new Date(
+                                                        a.start_datetime,
+                                                    ).getTime() -
+                                                    new Date(
+                                                        b.start_datetime,
+                                                    ).getTime(),
+                                            )
                                             .map((booking) => {
-                                                const statusKey = booking.status?.toLowerCase() || 'received';
-                                                const statusObj = booking_statuses.find(s => s.value === statusKey) || booking_statuses.find(s => s.value === 'received');
-                                                const colors = statusObj?.colors || { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' };
-                                                const isHotel = booking.location_type === 'hotel';
-                                                const hotel = isHotel ? hotels.find(h => h.id === booking.hotel_id) : null;
-                                                const location = isHotel 
-                                                    ? hotel?.name 
+                                                const statusKey =
+                                                    booking.status?.toLowerCase() ||
+                                                    'received';
+                                                const statusObj =
+                                                    booking_statuses.find(
+                                                        (s) =>
+                                                            s.value ===
+                                                            statusKey,
+                                                    ) ||
+                                                    booking_statuses.find(
+                                                        (s) =>
+                                                            s.value ===
+                                                            'received',
+                                                    );
+                                                const colors =
+                                                    statusObj?.colors || {
+                                                        bg: 'bg-blue-100',
+                                                        text: 'text-blue-800',
+                                                        border: 'border-blue-300',
+                                                    };
+                                                const isHotel =
+                                                    booking.location_type ===
+                                                    'hotel';
+                                                const hotel = isHotel
+                                                    ? hotels.find(
+                                                          (h) =>
+                                                              h.id ===
+                                                              booking.hotel_id,
+                                                      )
+                                                    : null;
+                                                const location = isHotel
+                                                    ? hotel?.name
                                                     : booking.address_line1;
-                                                const addressQuery = isHotel && hotel 
-                                                    ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
-                                                    : `${booking.address_line1 || ''} ${booking.address_line2 || ''} ${booking.address_city || ''} ${booking.address_state || ''} ${booking.address_zip || ''}`.trim();
-                                                const mapsUrl = addressQuery 
+                                                const addressQuery =
+                                                    isHotel && hotel
+                                                        ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
+                                                        : `${booking.address_line1 || ''} ${booking.address_line2 || ''} ${booking.address_city || ''} ${booking.address_state || ''} ${booking.address_zip || ''}`.trim();
+                                                const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
-                                                
+
                                                 return (
-                                                    <tr key={booking.id} className="border-b border-border transition hover:bg-blush">
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground">
-                                                            {parseAsLocal(booking.start_datetime)?.toLocaleDateString('en-US', { 
-                                                                month: 'short', 
-                                                                day: 'numeric', 
-                                                                year: 'numeric' 
-                                                            })}
+                                                    <tr
+                                                        key={booking.id}
+                                                        className="border-b border-border transition hover:bg-blush"
+                                                    >
+                                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                                            {parseAsLocal(
+                                                                booking.start_datetime,
+                                                            )?.toLocaleDateString(
+                                                                'en-US',
+                                                                {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric',
+                                                                },
+                                                            )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
-                                                            {booking.client.first_name} {booking.client.last_name}
+                                                            {
+                                                                booking.client
+                                                                    .first_name
+                                                            }{' '}
+                                                            {
+                                                                booking.client
+                                                                    .last_name
+                                                            }
                                                         </td>
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground">
-                                                            {formatDisplayTime(booking.start_datetime)} - {formatDisplayTime(booking.end_datetime)}
+                                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                                            {formatDisplayTime(
+                                                                booking.start_datetime,
+                                                            )}{' '}
+                                                            -{' '}
+                                                            {formatDisplayTime(
+                                                                booking.end_datetime,
+                                                            )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm text-foreground">
                                                             {mapsUrl ? (
-                                                                <a 
-                                                                    href={mapsUrl}
+                                                                <a
+                                                                    href={
+                                                                        mapsUrl
+                                                                    }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="text-ring hover:underline"
-                                                                    title={addressQuery}
+                                                                    title={
+                                                                        addressQuery
+                                                                    }
                                                                 >
-                                                                    {location || '—'}
+                                                                    {location ||
+                                                                        '—'}
                                                                 </a>
                                                             ) : (
-                                                                <div className="max-w-[200px] truncate" title={location || ''}>
-                                                                    {location || '—'}
+                                                                <div
+                                                                    className="max-w-[200px] truncate"
+                                                                    title={
+                                                                        location ||
+                                                                        ''
+                                                                    }
+                                                                >
+                                                                    {location ||
+                                                                        '—'}
                                                                 </div>
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm text-foreground">
-                                                            {booking.caregiver 
-                                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
-                                                                : <span className="text-muted-foreground italic">Unassigned</span>
-                                                            }
+                                                            {booking.caregiver ? (
+                                                                `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                            ) : (
+                                                                <span className="text-muted-foreground italic">
+                                                                    Unassigned
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="px-4 py-3">
-                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-semibold border ${colors.bg} ${colors.text} ${colors.border}`}>
-                                                                {statusObj?.label || statusKey}
+                                                            <span
+                                                                className={`inline-flex items-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${colors.bg} ${colors.text} ${colors.border}`}
+                                                            >
+                                                                {statusObj?.label ||
+                                                                    statusKey}
                                                             </span>
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex justify-end gap-2">
-                                                                {((statusKey === 'completed' || statusKey === 'pending') && booking.payment_status !== 'paid') && (
-                                                                    <Button 
-                                                                        variant="ghost" 
-                                                                        size="icon" 
-                                                                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                                        onClick={() => window.location.href = '/admin/bookings/charge?booking_id=' + booking.id}
-                                                                        title="Charge"
-                                                                    >
-                                                                        <CreditCard className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                                <Button 
-                                                                    variant="ghost" 
-                                                                    size="sm"
-                                                                    className="h-8 px-2"
-                                                                    onClick={() => openEditSheet(booking)}
+                                                                {(statusKey ===
+                                                                    'completed' ||
+                                                                    statusKey ===
+                                                                        'pending') &&
+                                                                    booking.payment_status !==
+                                                                        'paid' && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                                            onClick={() =>
+                                                                                (window.location.href =
+                                                                                    '/admin/bookings/charge?booking_id=' +
+                                                                                    booking.id)
+                                                                            }
+                                                                            title="Charge"
+                                                                        >
+                                                                            <CreditCard className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        openDuplicateSheet(
+                                                                            booking,
+                                                                        )
+                                                                    }
+                                                                    variant="outline"
+                                                                >
+                                                                    Duplicate
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        openEditSheet(
+                                                                            booking,
+                                                                        )
+                                                                    }
                                                                 >
                                                                     Edit
                                                                 </Button>
@@ -1338,14 +1598,18 @@ export default function Bookings() {
                     >
                         <SheetHeader>
                             <SheetTitle>
-                                {editingBooking
-                                    ? 'Edit Booking'
-                                    : 'Create Booking'}
+                                {sheetMode === 'edit' && 'Edit Booking'}
+                                {sheetMode === 'duplicate' &&
+                                    'Duplicate Booking'}
+                                {sheetMode === 'create' && 'Create Booking'}
                             </SheetTitle>
                             <SheetDescription>
-                                {editingBooking
-                                    ? 'Update booking details below.'
-                                    : 'Fill in the details to create a new booking.'}
+                                {sheetMode === 'edit' &&
+                                    'Update booking details below.'}
+                                {sheetMode === 'duplicate' &&
+                                    'Create a copy of this booking.'}
+                                {sheetMode === 'create' &&
+                                    'Fill in the details to create a new booking.'}
                             </SheetDescription>
                         </SheetHeader>
 

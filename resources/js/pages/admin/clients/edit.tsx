@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
@@ -137,32 +137,47 @@ export default function ClientEdit() {
 
     const handlePhotoFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] ?? null;
-        photoForm.setData('profile_photo', file);
 
-        if (file && e.target.form) {
-            e.target.form.requestSubmit();
+        if (file) {
+            photoForm.setData('profile_photo', file);
+        }
+
+        // Reset input value to allow same file to be selected again
+        if (e.target) {
+            e.target.value = '';
         }
     };
 
+    useEffect(() => {
+        if (photoForm.data.profile_photo) {
+            photoForm.post(`/clients/${client.id}/profile-photo`, {
+                onSuccess: (page) => {
+                    const newPath = (page.props as any).client?.user
+                        ?.profile_photo_path;
+
+                    if (newPath) {
+                        setCurrentProfilePhoto(newPath);
+                    }
+
+                    photoForm.reset();
+                },
+                onError: (errors) => {
+                    if (errors.profile_photo) {
+                        console.error(
+                            'Photo upload error:',
+                            errors.profile_photo,
+                        );
+                    }
+
+                    photoForm.reset();
+                },
+            });
+        }
+    }, [photoForm.data.profile_photo, client.id, photoForm]);
+
     const submitPhotoForm: SubmitEventHandler = (e) => {
         e.preventDefault();
-
-        if (photoForm.data.profile_photo === null) {
-            return;
-        }
-
-        photoForm.post(`/clients/${client.id}/profile-photo`, {
-            onSuccess: (page) => {
-                const newPath = (page.props as any).client?.user
-                    ?.profile_photo_path;
-
-                if (newPath) {
-                    setCurrentProfilePhoto(newPath);
-                }
-
-                photoForm.reset();
-            },
-        });
+        // The upload is now handled by the useEffect above
     };
 
     const form = useForm({
@@ -299,6 +314,11 @@ export default function ClientEdit() {
                             <p className="text-muted-foreground">
                                 Edit Client Profile
                             </p>
+                            {photoForm.errors.profile_photo && (
+                                <p className="mt-1 text-xs font-medium text-destructive">
+                                    {photoForm.errors.profile_photo}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

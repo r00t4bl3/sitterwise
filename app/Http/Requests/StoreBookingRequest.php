@@ -57,6 +57,9 @@ class StoreBookingRequest extends FormRequest
             'new_client.email' => ['nullable', 'email'],
             'new_client.phone' => ['nullable', 'string'],
             'new_client.client_type' => ['nullable', 'string'],
+            'new_children' => ['nullable', 'array'],
+            'new_pets' => ['nullable', 'array'],
+            'save_children_pets_to_profile' => ['nullable', 'boolean'],
         ];
     }
 

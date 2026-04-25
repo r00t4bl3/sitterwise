@@ -199,15 +199,66 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
+        // Get client data for snapshot
+        $client = Client::with(['children', 'pets', 'user'])->find($clientId);
+
+        // Prepare children snapshot (existing + new)
+        $childrenSnapshot = ($client?->children ?? collect())->map(fn ($child) => [
+            'name' => $child->name,
+            'gender' => $child->gender,
+            'birth_month' => $child->birth_month,
+            'birth_year' => $child->birth_year,
+        ])->toArray();
+
+        if (! empty($validated['new_children'])) {
+            foreach ($validated['new_children'] as $childData) {
+                if (! empty($childData['name'])) {
+                    $childrenSnapshot[] = [
+                        'name' => $childData['name'],
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    ];
+                }
+            }
+        }
+
+        // Prepare pets snapshot (existing + new)
+        $petsSnapshot = ($client?->pets ?? collect())->map(fn ($pet) => [
+            'name' => $pet->name,
+            'type' => $pet->type,
+            'breed' => $pet->breed,
+            'notes' => $pet->notes,
+        ])->toArray();
+
+        if (! empty($validated['new_pets'])) {
+            foreach ($validated['new_pets'] as $petData) {
+                if (! empty($petData['name'])) {
+                    $petsSnapshot[] = [
+                        'name' => $petData['name'],
+                        'type' => $petData['type'] ?? null,
+                        'breed' => $petData['breed'] ?? null,
+                        'notes' => $petData['notes'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        // Handle saving new children/pets to client profile if requested
+        if (! empty($validated['new_children']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+            $this->saveNewChildren($clientId, $validated['new_children']);
+        }
+
+        if (! empty($validated['new_pets']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+            $this->saveNewPets($clientId, $validated['new_pets']);
+        }
+
         $bookingGroup = BookingGroup::create([
             'client_id' => $clientId,
             'submitted_at' => now(),
             'submission_type' => 'admin',
             'is_split' => false,
         ]);
-
-        // Get client data for snapshot
-        $client = Client::with(['children', 'pets', 'user'])->find($clientId);
 
         Booking::create([
             'booking_group_id' => $bookingGroup->id,
@@ -225,18 +276,8 @@ class AdminBookingService implements BookingServiceInterface
             'client_last_name' => $client?->last_name,
             'client_phone' => $client?->phone,
             'client_email' => $client?->user?->email,
-            'children' => $client?->children->map(fn ($child) => [
-                'name' => $child->name,
-                'gender' => $child->gender,
-                'birth_month' => $child->birth_month,
-                'birth_year' => $child->birth_year,
-            ])->toArray(),
-            'pets' => $client?->pets->map(fn ($pet) => [
-                'name' => $pet->name,
-                'type' => $pet->type,
-                'breed' => $pet->breed,
-                'notes' => $pet->notes,
-            ])->toArray(),
+            'children' => $childrenSnapshot,
+            'pets' => $petsSnapshot,
             'service_type' => $validated['service_type'],
             'location_type' => $validated['location_type'],
             'rental_platform' => $validated['rental_platform'] ?? null,
@@ -284,40 +325,6 @@ class AdminBookingService implements BookingServiceInterface
             ClientPet::whereIn('id', $validated['deleted_pet_ids'])->delete();
         }
 
-        // Handle new children - save to client profile
-        if (
-            ! empty($validated['new_children']) &&
-            $validated['save_children_pets_to_profile'] &&
-            $booking->client_id
-        ) {
-            foreach ($validated['new_children'] as $childData) {
-                ClientChild::create([
-                    'client_id' => $booking->client_id,
-                    'name' => $childData['name'] ?? null,
-                    'gender' => $childData['gender'] ?? null,
-                    'birth_month' => $childData['birth_month'] ? (int) $childData['birth_month'] : null,
-                    'birth_year' => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
-                ]);
-            }
-        }
-
-        // Handle new pets - save to client profile
-        if (
-            ! empty($validated['new_pets']) &&
-            $validated['save_children_pets_to_profile'] &&
-            $booking->client_id
-        ) {
-            foreach ($validated['new_pets'] as $petData) {
-                ClientPet::create([
-                    'client_id' => $booking->client_id,
-                    'name' => $petData['name'] ?? null,
-                    'type' => $petData['type'] ?? null,
-                    'breed' => $petData['breed'] ?? null,
-                    'notes' => $petData['notes'] ?? null,
-                ]);
-            }
-        }
-
         // Create new client address if private_home and new address provided
         $addressId = $validated['address_id'] ?? null;
         if (
@@ -339,6 +346,67 @@ class AdminBookingService implements BookingServiceInterface
         // Update client snapshot data
         $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
 
+        // Prepare children snapshot (existing + new)
+        // If new_children is provided, start from client's saved children
+        // Otherwise, retain the existing booking's children (in case they weren't saved to profile)
+        if (! empty($validated['new_children'])) {
+            $childrenSnapshot = ($client?->children ?? collect())->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
+                'birth_month' => $child->birth_month,
+                'birth_year' => $child->birth_year,
+            ])->toArray();
+
+            foreach ($validated['new_children'] as $childData) {
+                if (! empty($childData['name'])) {
+                    $childrenSnapshot[] = [
+                        'name' => $childData['name'],
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    ];
+                }
+            }
+        } else {
+            // No new children provided - retain existing booking's children snapshot
+            $childrenSnapshot = $booking->children ?? [];
+        }
+
+        // Prepare pets snapshot (existing + new)
+        // If new_pets is provided, start from client's saved pets
+        // Otherwise, retain the existing booking's pets (in case they weren't saved to profile)
+        if (! empty($validated['new_pets'])) {
+            $petsSnapshot = ($client?->pets ?? collect())->map(fn ($pet) => [
+                'name' => $pet->name,
+                'type' => $pet->type,
+                'breed' => $pet->breed,
+                'notes' => $pet->notes,
+            ])->toArray();
+
+            foreach ($validated['new_pets'] as $petData) {
+                if (! empty($petData['name'])) {
+                    $petsSnapshot[] = [
+                        'name' => $petData['name'],
+                        'type' => $petData['type'] ?? null,
+                        'breed' => $petData['breed'] ?? null,
+                        'notes' => $petData['notes'] ?? null,
+                    ];
+                }
+            }
+        } else {
+            // No new pets provided - retain existing booking's pets snapshot
+            $petsSnapshot = $booking->pets ?? [];
+        }
+
+        // Handle saving new children/pets to client profile if requested
+        if (! empty($validated['new_children']) && ($validated['save_children_pets_to_profile'] ?? true) && $booking->client_id) {
+            $this->saveNewChildren($booking->client_id, $validated['new_children']);
+        }
+
+        if (! empty($validated['new_pets']) && ($validated['save_children_pets_to_profile'] ?? true) && $booking->client_id) {
+            $this->saveNewPets($booking->client_id, $validated['new_pets']);
+        }
+
         $updateData = [
             ...$validated,
             'address_id' => $addressId,
@@ -346,23 +414,45 @@ class AdminBookingService implements BookingServiceInterface
             'client_last_name' => $client?->last_name,
             'client_phone' => $client?->phone,
             'client_email' => $client?->user?->email,
-            'children' => ($client?->children ?? collect())->map(fn ($child) => [
-                'name' => $child->name,
-                'gender' => $child->gender,
-                'birth_month' => $child->birth_month,
-                'birth_year' => $child->birth_year,
-            ])->toArray(),
-            'pets' => ($client?->pets ?? collect())->map(fn ($pet) => [
-                'name' => $pet->name,
-                'type' => $pet->type,
-                'breed' => $pet->breed,
-                'notes' => $pet->notes,
-            ])->toArray(),
+            'children' => $childrenSnapshot,
+            'pets' => $petsSnapshot,
         ];
 
         $booking->update($updateData);
 
         return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
+    }
+
+    /**
+     * Save new children to client profile.
+     */
+    protected function saveNewChildren(int $clientId, array $children): void
+    {
+        foreach ($children as $childData) {
+            ClientChild::create([
+                'client_id' => $clientId,
+                'name' => $childData['name'] ?? null,
+                'gender' => $childData['gender'] ?? null,
+                'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+            ]);
+        }
+    }
+
+    /**
+     * Save new pets to client profile.
+     */
+    protected function saveNewPets(int $clientId, array $pets): void
+    {
+        foreach ($pets as $petData) {
+            ClientPet::create([
+                'client_id' => $clientId,
+                'name' => $petData['name'] ?? null,
+                'type' => $petData['type'] ?? null,
+                'breed' => $petData['breed'] ?? null,
+                'notes' => $petData['notes'] ?? null,
+            ]);
+        }
     }
 
     public function destroy(Booking $booking)
