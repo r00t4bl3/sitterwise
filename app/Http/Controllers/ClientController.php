@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SitterPreference;
+use App\Enums\ClientType;
 use App\Http\Requests\ResetClientPasswordRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientProfilePhotoRequest;
@@ -64,6 +65,7 @@ class ClientController extends Controller
             'user_id' => $user->id,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
+            'biography' => $validated['biography'],
             'phone' => $validated['phone'],
             'client_type' => $validated['client_type'],
             'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
@@ -150,6 +152,7 @@ class ClientController extends Controller
                 'id' => $client->id,
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
+                'biography' => $client->biography,
                 'email' => $client->user->email,
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
@@ -237,11 +240,18 @@ class ClientController extends Controller
             SitterPreference::cases(),
         );
 
+        $clientTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ClientType::cases(),
+        );
+
+
         return Inertia::render('admin/clients/edit', [
             'client' => [
                 'id' => $client->id,
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
+                'biography' => $client->biography,
                 'email' => $client->user->email,
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
@@ -288,7 +298,7 @@ class ClientController extends Controller
             ],
             'attribute_definitions' => $attributeDefinitions,
             'sitter_preferences' => $sitterPreferences,
-            'csrf_token' => csrf_token(),
+            'client_types' => $clientTypes,
         ]);
     }
 

@@ -116,6 +116,7 @@ describe('ClientController', function () {
         $response = $this->post(route('clients.store'), [
             'first_name' => 'Test',
             'last_name' => 'Client',
+            'biography' => 'Just a common client',
             'email' => 'newclient@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
@@ -128,21 +129,32 @@ describe('ClientController', function () {
         $this->assertDatabaseHas('users', [
             'email' => 'newclient@example.com',
         ]);
+
+        $this->assertDatabaseHas('clients', [
+            'first_name' => 'Test',
+            'last_name' => 'Client',
+            'biography' => 'Just a common client',
+            'phone' => '1234567890',
+            'client_type' => 'vacationer',
+        ]);
     });
 
     test('admin users can update a client', function () {
         $this->actingAs($this->user);
+        $newBiography = 'Updated biography';
 
         $response = $this->patch(route('clients.update', $this->client), [
             'first_name' => 'UpdatedFirstName',
             'last_name' => $this->client->last_name,
             'phone' => $this->client->phone,
             'client_type' => $this->client->client_type,
+            'biography' => $newBiography,
         ]);
 
         $response->assertRedirect();
         $this->client->refresh();
         expect($this->client->first_name)->toBe('UpdatedFirstName');
+        expect($this->client->biography)->toBe($newBiography);
     });
 
     test('admin users can search clients', function () {

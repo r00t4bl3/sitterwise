@@ -67,6 +67,7 @@ interface Client {
     id: number;
     first_name: string;
     last_name: string;
+    biography: string;
     email: string;
     phone: string;
     client_type: string;
@@ -105,10 +106,11 @@ interface Props {
     client: Client;
     attribute_definitions: AttributeDefinition[];
     sitter_preferences: Array<{ value: string; label: string }>;
+    client_types: Array<{ value: string; label: string }>;
 }
 
 export default function ClientEdit() {
-    const { client, attribute_definitions, sitter_preferences } =
+    const { client, attribute_definitions, sitter_preferences, client_types } =
         usePage<Props>().props;
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
@@ -183,6 +185,7 @@ export default function ClientEdit() {
     const form = useForm({
         first_name: client.first_name,
         last_name: client.last_name,
+        biography: client.biography,
         phone: client.phone,
         client_type: client.client_type,
         how_did_you_hear: client.how_did_you_hear || '',
@@ -395,15 +398,11 @@ export default function ClientEdit() {
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="vacationer">
-                                            Vacationer
-                                        </SelectItem>
-                                        <SelectItem value="sd_resident">
-                                            SD Resident
-                                        </SelectItem>
-                                        <SelectItem value="invoiced">
-                                            Invoiced
-                                        </SelectItem>
+                                        {client_types.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -439,6 +438,22 @@ export default function ClientEdit() {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="biography">
+                                    Biography
+                                </Label>
+                                <Textarea
+                                    id="biography"
+                                    value={form.data.biography || ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'biography',
+                                            e.target.value,
+                                        )
+                                    }
+                                    rows={3}
+                                />
                             </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="special_needs_notes">

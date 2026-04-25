@@ -25,6 +25,7 @@ class ClientFactory extends Factory
             'user_id' => User::factory(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
+            'biography' => $this->faker->optional()->paragraph(),
             'phone' => fake()->phoneNumber(),
             'client_type' => fake()->randomElement(ClientType::cases())->value,
             'corporate_id' => null,
