@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import AdminDashboard from './dashboard/admin';
+import SuperAdminDashboard from './dashboard/superadmin';
 import CaregiverDashboard from './dashboard/caregiver';
 import ClientDashboard from './dashboard/client';
 
@@ -72,6 +73,17 @@ export default function Dashboard() {
         case 'admin':
             return (
                 <AdminDashboard
+                    stats={{
+                        total_caregivers: stats?.total_caregivers || 0,
+                        active_caregivers: stats?.active_caregivers || 0,
+                        total_clients: stats?.total_clients || 0,
+                    }}
+                />
+            );
+
+        case 'super_admin':
+            return (
+                <SuperAdminDashboard
                     stats={{
                         total_caregivers: stats?.total_caregivers || 0,
                         active_caregivers: stats?.active_caregivers || 0,

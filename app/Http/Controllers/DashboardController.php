@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $caregiverData = null;
         $clientData = null;
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
             $stats = [
                 'total_caregivers' => Caregiver::count(),
                 'active_caregivers' => Caregiver::whereHas('status', function ($query) {

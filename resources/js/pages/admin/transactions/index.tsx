@@ -257,8 +257,8 @@ export default function TransactionsIndex() {
                             </p>
                         </div>
                     ) : (
-                        <>
-                            <table className="w-full">
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[800px]">
                                 <thead>
                                     <tr className="bg-foreground">
                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -375,8 +375,8 @@ export default function TransactionsIndex() {
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
-                        </>
+</table>
+                        </div>
                     )}
                 </div>
 

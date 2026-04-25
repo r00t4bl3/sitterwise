@@ -134,8 +134,8 @@ export default function CertificationsIndex() {
                     <Button onClick={openCreateSheet}>Add Certification</Button>
                 </div>
 
-                <div className="border border-border bg-card">
-                    <table className="w-full">
+                <div className="border border-border bg-card overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
                         <thead>
                             <tr className="bg-foreground">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
