@@ -19,7 +19,7 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-describe('Client Booking Creation', function () {
+describe('Booking - Client', function () {
     test('client can view the create booking page', function () {
         $response = $this->get(route('bookings.create'));
         $response->assertSuccessful();

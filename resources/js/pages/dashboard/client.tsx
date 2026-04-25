@@ -62,6 +62,9 @@ export default function ClientDashboard({
     stats,
     client,
 }: ClientDashboardProps) {
+    const upcoming_bookings = stats?.upcoming_bookings || [];
+    const recent_bookings = stats?.recent_bookings || [];
+
     const renderStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
         const displayStatus = status.toUpperCase();
@@ -147,7 +150,7 @@ export default function ClientDashboard({
                             <Clock className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="text-2xl font-bold">
-                            {stats.upcoming_bookings.length}
+                            {upcoming_bookings.length}
                         </div>
                     </div>
                 </div>
@@ -246,8 +249,8 @@ export default function ClientDashboard({
                         </div>
                         <div className="p-6 pt-0">
                             <div className="space-y-4">
-                                {stats.recent_bookings.length > 0 ? (
-                                    stats.recent_bookings.map((booking) => (
+                                {recent_bookings.length > 0 ? (
+                                    recent_bookings.map((booking) => (
                                         <Link
                                             key={booking.id}
                                             href={`/bookings/${booking.ulid}`}
@@ -304,8 +307,8 @@ export default function ClientDashboard({
                     </div>
                     <div className="p-6 pt-0">
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {stats.upcoming_bookings.length > 0 ? (
-                                stats.upcoming_bookings.map((booking) => (
+                            {upcoming_bookings.length > 0 ? (
+                                upcoming_bookings.map((booking) => (
                                     <div
                                         key={booking.id}
                                         className="flex items-center justify-between rounded-lg border border-border bg-card p-3 opacity-80"

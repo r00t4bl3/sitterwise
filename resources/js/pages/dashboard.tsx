@@ -86,11 +86,12 @@ export default function Dashboard() {
                 <ClientDashboard
                     user={{ name: user.name }}
                     stats={{
-                        active_bookings: stats?.active_bookings || 0,
-                        past_bookings: stats?.past_bookings || 0,
-                        favorite_caregivers: stats?.favorite_caregivers || 0,
+                        total_bookings: stats?.active_bookings || 0,
+                        completed_bookings: stats?.past_bookings || 0,
+                        upcoming_bookings: client?.upcoming_bookings || [],
+                        recent_bookings: client?.recent_bookings || [],
                     }}
-                    client={client}
+                    client={client as any}
                 />
             );
     }

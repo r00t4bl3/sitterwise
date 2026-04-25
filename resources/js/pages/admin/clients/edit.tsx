@@ -399,7 +399,10 @@ export default function ClientEdit() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {client_types.map((type) => (
-                                            <SelectItem key={type.value} value={type.value}>
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
                                                 {type.label}
                                             </SelectItem>
                                         ))}
@@ -440,9 +443,7 @@ export default function ClientEdit() {
                                 </Select>
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="biography">
-                                    Biography
-                                </Label>
+                                <Label htmlFor="biography">Biography</Label>
                                 <Textarea
                                     id="biography"
                                     value={form.data.biography || ''}

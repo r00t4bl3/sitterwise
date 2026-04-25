@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->caregiver = Caregiver::factory()->create();
 });
 
-describe('AvailabilityController', function () {
+describe('Availability - Admin', function () {
     test('guests cannot view availabilities index', function () {
         $response = $this->get(route('availabilities.index'));
         $response->assertRedirect(route('login'));

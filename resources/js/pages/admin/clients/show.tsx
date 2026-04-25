@@ -462,16 +462,17 @@ export default function ClientShow() {
                                     {client.how_did_you_hear || '—'}
                                 </p>
                             </div>
-                            {client.client_type !== 'vacationer' && client.biography && (
-                                <div className="sm:col-span-2">
-                                    <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                        Biography
-                                    </p>
-                                    <p className="text-sm text-foreground">
-                                        {client.biography}
-                                    </p>
-                                </div>
-                            )}
+                            {client.client_type !== 'vacationer' &&
+                                client.biography && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Biography
+                                        </p>
+                                        <p className="text-sm text-foreground">
+                                            {client.biography}
+                                        </p>
+                                    </div>
+                                )}
                         </div>
 
                         {client.children.length > 0 && (

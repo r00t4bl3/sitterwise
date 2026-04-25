@@ -32,7 +32,7 @@ beforeEach(function () {
     $this->inactiveStatus = CaregiverStatus::where('is_active', false)->first();
 });
 
-describe('CaregiverRecommendationService', function () {
+describe('Recommendation Service - Caregiver', function () {
     test('returns only active caregivers', function () {
         $client = Client::factory()->create();
         $caregiver1 = Caregiver::factory()->create(['status_id' => $this->activeStatus->id]);

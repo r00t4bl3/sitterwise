@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
 use App\Models\User;
@@ -26,6 +27,29 @@ class DashboardController extends Controller
                     $query->where('name', 'Active');
                 })->count(),
                 'total_clients' => User::where('role', 'client')->count(),
+                'total_bookings' => Booking::count(),
+            ];
+
+            $adminData = [
+                'bookings_needing_attention' => Booking::with(['client.user'])
+                    ->whereNull('caregiver_id')
+                    ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
+                    ->where('start_datetime', '>', now())
+                    ->orderBy('start_datetime', 'asc')
+                    ->limit(5)
+                    ->get(),
+                'todays_bookings' => Booking::with(['client.user', 'caregiver.user'])
+                    ->whereDate('start_datetime', today())
+                    ->orderBy('start_datetime', 'asc')
+                    ->get(),
+                'recent_bookings' => Booking::with(['client.user'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get(),
+                'recent_caregivers' => Caregiver::with('user')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get(),
             ];
         }
 
@@ -144,6 +168,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'caregiver' => $caregiverData,
             'client' => $clientData,
+            'admin' => $adminData ?? null,
         ]);
     }
 }

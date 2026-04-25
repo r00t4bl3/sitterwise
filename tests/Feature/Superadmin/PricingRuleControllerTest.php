@@ -4,18 +4,18 @@ use App\Enums\ServiceType;
 use App\Models\PricingRule;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class PricingRuleControllerTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_admin_can_view_pricing_rules_index()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
+describe('Pricing Rules - Superadmin', function () {
+    beforeEach(function () {
+        $this->user = User::factory()->create(['role' => 'admin']);
+    });
+
+    test('admin can view pricing rules index', function () {
         PricingRule::factory()->count(3)->create();
 
-        $response = $this->actingAs($admin)->get('/pricing-rules');
+        $response = $this->actingAs($this->user)->get('/pricing-rules');
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -23,21 +23,18 @@ class PricingRuleControllerTest extends TestCase
             ->has('pricingRules', 3)
             ->has('serviceTypes')
         );
-    }
+    });
 
-    public function test_guest_cannot_access_pricing_rules()
-    {
+    test('guest cannot access pricing rules', function () {
         $response = $this->get('/pricing-rules');
 
         $response->assertRedirect('/login');
-    }
+    });
 
-    public function test_admin_can_create_pricing_rule()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
+    test('admin can create pricing rule', function () {
         $serviceType = fake()->randomElement(array_column(ServiceType::cases(), 'value'));
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => $serviceType,
             'is_for_pets' => true,
             'charge_to_client' => 25.00,
@@ -59,18 +56,17 @@ class PricingRuleControllerTest extends TestCase
             'payment_form' => 'Stripe',
             'sitterwise_cut' => 5.00,
         ]);
-    }
+    });
 
-    public function test_admin_can_update_pricing_rule()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
+    test('admin can update pricing rule', function () {
         $pricingRule = PricingRule::factory()->create([
             'service_type' => fake()->randomElement(array_column(ServiceType::cases(), 'value')),
             'number_of_children' => 1,
         ]);
 
         $newServiceType = fake()->randomElement(array_column(ServiceType::cases(), 'value'));
-        $response = $this->actingAs($admin)->put("/pricing-rules/{$pricingRule->id}", [
+
+        $response = $this->actingAs($this->user)->put("/pricing-rules/{$pricingRule->id}", [
             'service_type' => $newServiceType,
             'number_of_children' => null,
             'is_for_pets' => true,
@@ -94,14 +90,12 @@ class PricingRuleControllerTest extends TestCase
             'payment_form' => 'OnPay (Payroll)',
             'sitterwise_cut' => 5.00,
         ]);
-    }
+    });
 
-    public function test_admin_can_delete_pricing_rule()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
+    test('admin can delete pricing rule', function () {
         $pricingRule = PricingRule::factory()->create();
 
-        $response = $this->actingAs($admin)->delete("/pricing-rules/{$pricingRule->id}");
+        $response = $this->actingAs($this->user)->delete("/pricing-rules/{$pricingRule->id}");
 
         $response->assertStatus(302);
         $response->assertSessionHas('success', 'Pricing Rule deleted successfully');
@@ -109,13 +103,10 @@ class PricingRuleControllerTest extends TestCase
         $this->assertDatabaseMissing('pricing_rules', [
             'id' => $pricingRule->id,
         ]);
-    }
+    });
 
-    public function test_validation_requires_service_type()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+    test('validation requires service_type', function () {
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => '',
             'number_of_children' => 2,
             'is_for_pets' => false,
@@ -126,13 +117,10 @@ class PricingRuleControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['service_type']);
-    }
+    });
 
-    public function test_validation_requires_charge_to_client()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+    test('validation requires charge_to_client', function () {
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => fake()->randomElement(array_column(ServiceType::cases(), 'value')),
             'number_of_children' => 2,
             'is_for_pets' => false,
@@ -143,13 +131,10 @@ class PricingRuleControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['charge_to_client']);
-    }
+    });
 
-    public function test_validation_requires_paid_to_caregiver()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+    test('validation requires paid_to_caregiver', function () {
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => 'Babysitter',
             'number_of_children' => 2,
             'is_for_pets' => false,
@@ -160,13 +145,10 @@ class PricingRuleControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['paid_to_caregiver']);
-    }
+    });
 
-    public function test_validation_requires_payment_form()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+    test('validation requires payment_form', function () {
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => fake()->randomElement(array_column(ServiceType::cases(), 'value')),
             'number_of_children' => 2,
             'is_for_pets' => false,
@@ -177,13 +159,10 @@ class PricingRuleControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['payment_form']);
-    }
+    });
 
-    public function test_validation_requires_sitterwise_cut()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $response = $this->actingAs($admin)->post('/pricing-rules', [
+    test('validation requires sitterwise_cut', function () {
+        $response = $this->actingAs($this->user)->post('/pricing-rules', [
             'service_type' => fake()->randomElement(array_column(ServiceType::cases(), 'value')),
             'number_of_children' => 2,
             'is_for_pets' => false,
@@ -194,5 +173,5 @@ class PricingRuleControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['sitterwise_cut']);
-    }
-}
+    });
+});

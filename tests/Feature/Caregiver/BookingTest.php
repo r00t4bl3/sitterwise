@@ -28,7 +28,7 @@ beforeEach(function () {
     ]);
 });
 
-describe('BookingController - Caregiver', function () {
+describe('Booking - Caregiver', function () {
     test('caregiver can view their notified bookings', function () {
         // Create notification record
         BookingCaregiverNotification::create([

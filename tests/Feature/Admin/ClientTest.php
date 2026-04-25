@@ -12,7 +12,7 @@ beforeEach(function () {
     $this->client = Client::factory()->create();
 });
 
-describe('ClientController', function () {
+describe('Client - Admin', function () {
     // Guest tests
     test('guests are redirected to login when accessing clients index', function () {
         $response = $this->get(route('clients.index'));
