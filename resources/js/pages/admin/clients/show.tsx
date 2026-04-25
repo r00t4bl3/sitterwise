@@ -102,8 +102,6 @@ interface Client {
     client_type: string;
     how_did_you_hear: string | null;
     sitter_preferences: string[] | null;
-    other_adults_present: string | null;
-    emergency_instructions: string | null;
     biography: string | null;
     special_needs_notes: string | null;
     user: {
@@ -464,15 +462,7 @@ export default function ClientShow() {
                                     {client.how_did_you_hear || '—'}
                                 </p>
                             </div>
-                            <div>
-                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                    Other Adults in Home
-                                </p>
-                                <p className="text-sm font-medium text-foreground">
-                                    {client.other_adults_present || '—'}
-                                </p>
-                            </div>
-                            {client.biography && (
+                            {client.client_type !== 'vacationer' && client.biography && (
                                 <div className="sm:col-span-2">
                                     <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                         Biography
