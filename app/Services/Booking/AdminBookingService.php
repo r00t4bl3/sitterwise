@@ -8,7 +8,9 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
-use App\Mail\BookingNotification;
+use App\Events\BookingAccepted;
+use App\Events\BookingCreated;
+use App\Events\BookingInvitationSent;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
@@ -23,7 +25,6 @@ use App\Models\User;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -272,7 +273,7 @@ class AdminBookingService implements BookingServiceInterface
             'is_split' => false,
         ]);
 
-        Booking::create([
+        $booking = Booking::create([
             'booking_group_id' => $bookingGroup->id,
             'client_id' => $clientId,
             'caregiver_id' => $validated['caregiver_id'] ?? null,
@@ -309,6 +310,12 @@ class AdminBookingService implements BookingServiceInterface
             'payment_status' => $validated['payment_status'],
             'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
+
+        event(new BookingCreated($booking));
+
+        if ($booking->caregiver_id) {
+            event(new BookingAccepted($booking));
+        }
 
         return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
     }
@@ -408,7 +415,12 @@ class AdminBookingService implements BookingServiceInterface
             'pets' => $petsSnapshot,
         ];
 
+        $oldCaregiverId = $booking->caregiver_id;
         $booking->update($updateData);
+
+        if ($booking->caregiver_id && $booking->caregiver_id != $oldCaregiverId) {
+            event(new BookingAccepted($booking));
+        }
 
         return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
     }
@@ -582,11 +594,8 @@ class AdminBookingService implements BookingServiceInterface
                     ]
                 );
 
-                // Send email notification
-                if ($caregiver->user && $caregiver->user->email) {
-                    Mail::to($caregiver->user->email)
-                        ->send(new BookingNotification($booking, $caregiver));
-                }
+                // Dispatch event for each caregiver
+                event(new BookingInvitationSent($booking, $caregiver));
             }
 
             return back()->with('success', 'Caregivers have been notified.');

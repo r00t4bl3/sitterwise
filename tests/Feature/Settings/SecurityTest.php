@@ -2,8 +2,13 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
+
+beforeEach(function () {
+    Notification::fake();
+});
 
 test('security page is displayed', function () {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());

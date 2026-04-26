@@ -4,10 +4,12 @@ use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Notification::fake();
     $this->user = User::factory()->create(['role' => 'admin']);
     $this->client = Client::factory()->create();
 });

@@ -834,10 +834,12 @@ export default function Bookings() {
 
         let clientChildren: any[] = [];
         let clientPets: any[] = [];
+        let clientData: any = null;
 
         // Fetch latest client data if client exists
         if (booking.client_id) {
             const data = await fetchClientDataOnly(booking.client_id);
+            clientData = data;
 
             if (data && data.client) {
                 // Use client PROFILE data (latest) for children/pets
@@ -889,11 +891,11 @@ export default function Bookings() {
             notes_to_sitterwise: '',
             admin_notes: '',
             corporate_id: booking.corporate_id || '',
-            sitter_preferences: data?.client?.sitter_preferences || [], // From client profile
-            other_adults_present: data?.client?.other_adults_present || '', // From client profile
+            sitter_preferences: clientData?.client?.sitter_preferences || [], // From client profile
+            other_adults_present: clientData?.client?.other_adults_present || '', // From client profile
             emergency_instructions: '', // Reset (use from profile if needed)
             special_needs_notes: '', // Reset
-            how_did_you_hear: data?.client?.how_did_you_hear || '', // From client profile
+            how_did_you_hear: clientData?.client?.how_did_you_hear || '', // From client profile
             requires_payment: booking.requires_payment,
             status: 'received', // Reset
             payment_status: 'pending', // Reset

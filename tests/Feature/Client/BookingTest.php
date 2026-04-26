@@ -9,11 +9,13 @@ use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Notification::fake();
     $this->user = User::factory()->create(['role' => 'client']);
     $this->client = Client::factory()->for($this->user)->create();
     $this->actingAs($this->user);

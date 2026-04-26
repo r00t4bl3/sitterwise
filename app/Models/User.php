@@ -73,4 +73,20 @@ class User extends Authenticatable
             default => 'Unknown',
         };
     }
+
+    /**
+     * Route notifications for the SMS channel.
+     */
+    public function routeNotificationForSms(): ?string
+    {
+        if ($this->isClient()) {
+            return $this->client?->phone;
+        }
+
+        if ($this->isCaregiver()) {
+            return $this->caregiver?->phone;
+        }
+
+        return null;
+    }
 }

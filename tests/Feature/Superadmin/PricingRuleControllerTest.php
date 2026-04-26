@@ -4,11 +4,13 @@ use App\Enums\ServiceType;
 use App\Models\PricingRule;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
 describe('Pricing Rules - Superadmin', function () {
     beforeEach(function () {
+        Notification::fake();
         $this->user = User::factory()->create(['role' => 'admin']);
     });
 

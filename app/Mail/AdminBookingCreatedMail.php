@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -10,17 +11,14 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class JobAccepted extends Mailable
+class AdminBookingCreatedMail extends Mailable
 {
     use Queueable, SendGrid, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(public Booking $booking) {}
 
     /**
      * Get the message envelope.
@@ -30,25 +28,15 @@ class JobAccepted extends Mailable
         $this->sendgrid([
             'personalizations' => [
                 [
-                    'dynamic_template_data' => [
-                        'client_name' => 'Jason Smith',
-                        'caregiver_name' => 'Jane Doe',
-                        'service_date_pretty' => 'Wed, Sep 27, 2023',
-                        'service_time_range' => '9:00 AM - 5:00 PM',
-                        'service_location' => '123 Main St, Anytown, USA',
-                        'service_hotel' => 'Grand Hotel',
-                        'cg_url' => 'https://sitterwise.com/caregivers/123',
-                        'job_id' => '456',
-                    ],
+                    'dynamic_template_data' => $this->booking->toEmailData(),
                 ],
             ],
-            'template_id' => 'd-636bec70c9e74cf8a708086896e84539',
+            'template_id' => 'd-de8ddf0050cf4ec29caee8c210c6263f',
         ]);
 
         return new Envelope(
-            from: 'admin@sitterwise.io',
-            // replyTo: 'reply@example.com',
-            // subject: 'Caregiver Job Invitation',
+            from: config('mail.from.address', 'admin@sitterwise.io'),
+            subject: 'New Booking Created',
         );
     }
 
@@ -58,7 +46,7 @@ class JobAccepted extends Mailable
     public function content(): Content
     {
         return new Content(
-            htmlString: ' ', // Setting a space as the content
+            htmlString: ' ',
         );
     }
 

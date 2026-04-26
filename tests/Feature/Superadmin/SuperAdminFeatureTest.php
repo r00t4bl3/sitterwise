@@ -7,8 +7,13 @@ use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    Notification::fake();
+});
 
 // CertificationTypeController Tests
 describe('CertificationTypeController', function () {

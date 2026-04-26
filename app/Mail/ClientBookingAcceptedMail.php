@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -10,17 +11,14 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class JobReminder extends Mailable
+class ClientBookingAcceptedMail extends Mailable
 {
     use Queueable, SendGrid, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(public Booking $booking) {}
 
     /**
      * Get the message envelope.
@@ -30,21 +28,15 @@ class JobReminder extends Mailable
         $this->sendgrid([
             'personalizations' => [
                 [
-                    'dynamic_template_data' => [
-                        'client_name' => 'Jason Smith',
-                        'service_time' => '9:00 AM',
-                        'service_date_pretty' => 'Wednesday, June 12th, 2024',
-                        'bio_link' => 'https://sitterwise.io/caregivers/12345',
-                    ],
+                    'dynamic_template_data' => $this->booking->toEmailData(),
                 ],
             ],
-            'template_id' => 'd-c141f95e479746dd8af8d96aa1c64067',
+            'template_id' => 'd-3cdfa4a1b83746009e07db0f0261afa4',
         ]);
 
         return new Envelope(
-            from: 'admin@sitterwise.io',
-            // replyTo: 'reply@example.com',
-            // subject: 'Caregiver Job Invitation',
+            from: config('mail.from.address', 'admin@sitterwise.io'),
+            subject: 'Sitter Matched for Your Booking',
         );
     }
 
@@ -54,7 +46,7 @@ class JobReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            htmlString: ' ', // Setting a space as the content
+            htmlString: ' ',
         );
     }
 

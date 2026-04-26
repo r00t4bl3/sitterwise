@@ -240,4 +240,62 @@ class Booking extends Model
 
         return ServiceType::tryFrom($this->service_type)?->label() ?? $this->service_type;
     }
+
+    /**
+     * Get the dynamic data for SendGrid email templates.
+     */
+    public function toEmailData(): array
+    {
+        $start = $this->start_datetime instanceof Carbon ? $this->start_datetime : Carbon::parse($this->start_datetime);
+        $end = $this->end_datetime instanceof Carbon ? $this->end_datetime : Carbon::parse($this->end_datetime);
+
+        $childrenCount = count($this->children ?? []);
+        $childrenSummary = collect($this->children ?? [])
+            ->map(fn ($c) => ($c['name'] ?? 'Child').' ('.(isset($c['birth_year']) ? now()->year - $c['birth_year'] : '?').'yr)')
+            ->join(', ');
+
+        $clientName = ($this->client?->first_name ?? $this->client_first_name).' '.($this->client?->last_name ?? $this->client_last_name);
+
+        return [
+            'booking_id' => $this->id,
+            'job_id' => $this->id,
+            'ulid' => $this->ulid,
+            'client_first_name' => $this->client?->first_name ?? $this->client_first_name,
+            'client_name' => $clientName,
+            'client_email' => $this->client?->user?->email ?? $this->client_email,
+            'client_phone' => $this->client?->phone ?? $this->client_phone,
+            'service_requested' => $this->service_type_label,
+            'service_name' => $this->service_type_label,
+            'date' => $start->format('l, F j, Y'),
+            'date_times' => $start->format('l, F j, Y'),
+            'service_date_pretty' => $start->format('D, M j, Y'),
+            'start_time' => $start->format('g:i A'),
+            'end_time' => $end->format('g:i A'),
+            'service_time' => $start->format('g:i A'),
+            'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),
+            'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
+            'children_summary' => $childrenSummary ?: 'None',
+            'location' => $this->hotel?->name ?? $this->address_line1,
+            'address' => trim($this->address_line1.' '.$this->address_line2.', '.$this->address_city.', '.$this->address_state.' '.$this->address_zip),
+            'hotel_name' => $this->hotel?->name ?? 'N/A',
+            'service_hotel' => $this->hotel?->name ?? 'N/A',
+            'is_hotel' => $this->location_type === 'hotel' ? $this->hotel?->name : false,
+            'is_hotel_text' => $this->location_type === 'hotel' ? $this->hotel?->name.' Booking' : 'Private Residence',
+            'special_considerations' => collect($this->special_considerations ?? [])->join(', ') ?: 'None',
+            'notes' => $this->caregiver_notes,
+            'notes_to_sitter' => $this->caregiver_notes,
+            'notes_for_sitter' => $this->caregiver_notes,
+            'notes_to_admin' => $this->notes_to_sitterwise,
+            'hourly_rate' => number_format($this->charge_to_client_hourly, 2),
+            'admin_booking_url' => config('app.url').'/admin/bookings?month='.$start->month.'&year='.$start->year,
+            'caregiver_first_name' => $this->caregiver?->first_name ?? 'Sitter',
+            'caregiver_name' => $this->caregiver ? $this->caregiver->first_name.' '.$this->caregiver->last_name : 'Sitter',
+            'sitter_first_name' => $this->caregiver?->first_name ?? 'Sitter',
+            'sitter_name' => $this->caregiver ? $this->caregiver->first_name.' '.$this->caregiver->last_name : 'Sitter',
+            'sitter_phone' => $this->caregiver?->phone ?? 'N/A',
+            'sitter_profile_url' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
+            'cg_url' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
+            'bio_link' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
+        ];
+    }
 }

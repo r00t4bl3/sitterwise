@@ -14,10 +14,12 @@ use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Notification::fake();
     $this->seed(AttributeDefinitionSeeder::class);
     $this->seed(CaregiverStatusSeeder::class);
     $this->seed(CertificationTypeSeeder::class);

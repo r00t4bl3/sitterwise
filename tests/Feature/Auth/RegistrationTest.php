@@ -1,8 +1,10 @@
 <?php
 
 use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
+    Notification::fake();
     $this->skipUnlessFortifyFeature(Features::registration());
 });
 

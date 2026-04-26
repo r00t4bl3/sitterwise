@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Enums\ServiceType;
 use App\Enums\SpecialConsideration;
+use App\Events\BookingAccepted;
 use App\Events\JobConfirmed;
 use App\Events\JobReleased;
 use App\Events\JobReserved;
@@ -239,6 +240,8 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->update(['claimed' => true, 'responded_at' => now()]);
 
         broadcast(new JobConfirmed($booking->id, $caregiver->id))->toOthers();
+
+        event(new BookingAccepted($booking));
 
         return to_route('jobs.index')->with('success', 'Booking confirmed successfully');
     }

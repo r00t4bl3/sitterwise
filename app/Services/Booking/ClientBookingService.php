@@ -6,6 +6,7 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
+use App\Events\BookingCreated;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
@@ -226,6 +227,8 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'requires_payment' => true,
             'total_amount' => 0,
         ]);
+
+        event(new BookingCreated($booking));
 
         return redirect('/bookings');
     }

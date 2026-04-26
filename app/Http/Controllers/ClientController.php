@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SitterPreference;
 use App\Enums\ClientType;
+use App\Enums\SitterPreference;
 use App\Http\Requests\ResetClientPasswordRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientProfilePhotoRequest;
@@ -244,7 +244,6 @@ class ClientController extends Controller
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             ClientType::cases(),
         );
-
 
         return Inertia::render('admin/clients/edit', [
             'client' => [

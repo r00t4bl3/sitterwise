@@ -10,10 +10,12 @@ use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Notification::fake();
     $this->seed(CaregiverStatusSeeder::class);
     $this->seed(CertificationTypeSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);

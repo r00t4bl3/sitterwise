@@ -11,6 +11,7 @@ use App\Http\Controllers\ChargingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuestBookingController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
@@ -28,6 +29,11 @@ Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('care
 
 // Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
+
+// Guest booking routes (public, no auth required)
+Route::get('/book', [GuestBookingController::class, 'create'])->name('guest.bookings.create');
+Route::post('/book', [GuestBookingController::class, 'store'])->name('guest.bookings.store');
+Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
