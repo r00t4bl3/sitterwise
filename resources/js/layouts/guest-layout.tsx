@@ -1,29 +1,23 @@
 import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
-import type { BreadcrumbItem } from '@/types';
 
 interface GuestLayoutProps {
     children: React.ReactNode;
-    breadcrumbs?: BreadcrumbItem[];
 }
 
-export default function GuestLayout({
-    children,
-    breadcrumbs = [],
-}: GuestLayoutProps) {
+export default function GuestLayout({ children }: GuestLayoutProps) {
     return (
         <div className="flex min-h-svh flex-col">
             <header className="border-b bg-background">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4">
                     <Link href="/" className="flex items-center gap-2">
-                        <AppLogoIcon className="h-8 w-8 fill-current text-foreground" />
-                        <span className="text-lg font-semibold">Sitterwise</span>
+                        <img
+                            src="/sitterwise.png"
+                            alt="Sitterwise"
+                            className="h-10 w-auto object-contain"
+                        />
                     </Link>
                     <div className="flex items-center gap-4">
-                        <Link
-                            href="/login"
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                        >
+                        <Link href="/login" className="btn-primary">
                             Sign In
                         </Link>
                     </div>

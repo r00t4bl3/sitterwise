@@ -152,7 +152,6 @@ export default function ClientEdit() {
         }
     };
 
-     
     useEffect(() => {
         photoFormRef.current = photoForm;
     }, [photoForm]);

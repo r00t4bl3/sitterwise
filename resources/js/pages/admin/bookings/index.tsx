@@ -892,7 +892,8 @@ export default function Bookings() {
             admin_notes: '',
             corporate_id: booking.corporate_id || '',
             sitter_preferences: clientData?.client?.sitter_preferences || [], // From client profile
-            other_adults_present: clientData?.client?.other_adults_present || '', // From client profile
+            other_adults_present:
+                clientData?.client?.other_adults_present || '', // From client profile
             emergency_instructions: '', // Reset (use from profile if needed)
             special_needs_notes: '', // Reset
             how_did_you_hear: clientData?.client?.how_did_you_hear || '', // From client profile

@@ -191,7 +191,7 @@ export default function PricingRulesIndex() {
                     <Button onClick={openCreateSheet}>Add Pricing Rule</Button>
                 </div>
 
-                <div className="border border-border bg-card overflow-x-auto">
+                <div className="overflow-x-auto border border-border bg-card">
                     <table className="w-full min-w-[800px]">
                         <thead>
                             <tr className="bg-foreground">

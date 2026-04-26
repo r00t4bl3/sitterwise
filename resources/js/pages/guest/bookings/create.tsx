@@ -2,6 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
+import InputError from '@/components/input-error';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
@@ -16,25 +17,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import GuestLayout from '@/layouts/guest-layout';
 import type { BreadcrumbItem } from '@/types';
-
-const MONTH_ABBR = [
-    '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-];
 
 interface NewChild {
     tempId: string;
@@ -60,33 +46,6 @@ function formatDateTimeLocal(date: Date): string {
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
     return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function calculateAge(
-    birthYear: number | null,
-    birthMonth: number | null,
-): string {
-    if (!birthYear) {
-        return '';
-    }
-
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
-    let years = currentYear - birthYear;
-    let months = currentMonth - (birthMonth || 1);
-
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-
-    if (years === 0) {
-        return `${months}m`;
-    }
-
-    return `${years}y ${months}m`;
 }
 
 function validateDatetime(start: string, end: string): string | null {
@@ -136,19 +95,25 @@ function validateClientDetails(data: ClientDetailsFormData): string | null {
     if (!data.first_name.trim()) {
         return 'First name is required.';
     }
+
     if (!data.last_name.trim()) {
         return 'Last name is required.';
     }
+
     if (!data.email.trim()) {
         return 'Email is required.';
     }
+
     if (!data.phone.trim()) {
         return 'Phone is required.';
     }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(data.email)) {
         return 'Please enter a valid email address.';
     }
+
     return null;
 }
 
@@ -197,6 +162,7 @@ export default function GuestBookingCreate() {
         sitter_preferences: Array<{ value: string; label: string }>;
     };
 
+    const [isFormSubmitting, setIsFormSubmitting] = useState(false);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(9, 0, 0, 0);
@@ -235,7 +201,6 @@ export default function GuestBookingCreate() {
     const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(true);
 
     const [isAddressLocked, setIsAddressLocked] = useState(false);
-    const [showManualAddressInput, setShowManualAddressInput] = useState(false);
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
 
@@ -313,7 +278,15 @@ export default function GuestBookingCreate() {
     };
 
     const handleSubmit = () => {
-        form.post('/book');
+        setIsFormSubmitting(true);
+        form.post('/book', {
+            onSuccess: () => {
+                setIsFormSubmitting(false);
+            },
+            onError: () => {
+                setIsFormSubmitting(false);
+            },
+        });
     };
 
     const handleSpecialConsiderationChange = (
@@ -336,7 +309,7 @@ export default function GuestBookingCreate() {
     const hasNewPets = form.data.new_pets.length > 0;
 
     return (
-        <GuestLayout breadcrumbs={breadcrumbs}>
+        <GuestLayout>
             <Head title="Book a Caregiver" />
             <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
@@ -383,6 +356,13 @@ export default function GuestBookingCreate() {
                                         }
                                         placeholder="First name"
                                     />
+                                    {form.errors.client_first_name && (
+                                        <InputError
+                                            message={
+                                                form.errors.client_first_name
+                                            }
+                                        />
+                                    )}
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium text-foreground">
@@ -399,6 +379,13 @@ export default function GuestBookingCreate() {
                                         }
                                         placeholder="Last name"
                                     />
+                                    {form.errors.client_last_name && (
+                                        <InputError
+                                            message={
+                                                form.errors.client_last_name
+                                            }
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -419,6 +406,11 @@ export default function GuestBookingCreate() {
                                         }
                                         placeholder="your@email.com"
                                     />
+                                    {form.errors.client_email && (
+                                        <InputError
+                                            message={form.errors.client_email}
+                                        />
+                                    )}
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium text-foreground">
@@ -436,6 +428,11 @@ export default function GuestBookingCreate() {
                                         }
                                         placeholder="(555) 123-4567"
                                     />
+                                    {form.errors.client_phone && (
+                                        <InputError
+                                            message={form.errors.client_phone}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -493,12 +490,20 @@ export default function GuestBookingCreate() {
                                     <Select
                                         value={form.data.location_type}
                                         onValueChange={(value) => {
-                                            form.setData('location_type', value);
+                                            form.setData(
+                                                'location_type',
+                                                value,
+                                            );
+
                                             if (value !== 'hotel') {
                                                 form.setData('hotel_id', null);
                                             }
+
                                             if (value !== 'vacation_rental') {
-                                                form.setData('rental_platform', '');
+                                                form.setData(
+                                                    'rental_platform',
+                                                    '',
+                                                );
                                             }
                                         }}
                                     >
@@ -527,7 +532,10 @@ export default function GuestBookingCreate() {
                                     <Select
                                         value={form.data.rental_platform}
                                         onValueChange={(value) =>
-                                            form.setData('rental_platform', value)
+                                            form.setData(
+                                                'rental_platform',
+                                                value,
+                                            )
                                         }
                                     >
                                         <SelectTrigger>
@@ -540,13 +548,18 @@ export default function GuestBookingCreate() {
                                                         attr.slug ===
                                                         'vacation_rental_platform',
                                                 )
-                                                .flatMap((attr) => attr.options || [])
+                                                .flatMap(
+                                                    (attr) =>
+                                                        attr.options || [],
+                                                )
                                                 .map((option) => (
                                                     <SelectItem
                                                         key={option}
                                                         value={option}
                                                     >
-                                                        {option.charAt(0).toUpperCase() +
+                                                        {option
+                                                            .charAt(0)
+                                                            .toUpperCase() +
                                                             option.slice(1)}
                                                     </SelectItem>
                                                 ))}
@@ -620,9 +633,11 @@ export default function GuestBookingCreate() {
                                     <DateTimePicker
                                         value={form.data.start_datetime}
                                         onChange={(value) =>
-                                            form.setData('start_datetime', value)
+                                            form.setData(
+                                                'start_datetime',
+                                                value,
+                                            )
                                         }
-                                        min={new Date().toISOString().slice(0, 16)}
                                     />
                                 </div>
                                 <div>
@@ -635,7 +650,6 @@ export default function GuestBookingCreate() {
                                         onChange={(value) =>
                                             form.setData('end_datetime', value)
                                         }
-                                        min={form.data.start_datetime}
                                     />
                                 </div>
                             </div>
@@ -645,15 +659,17 @@ export default function GuestBookingCreate() {
                                     {datetimeError}
                                 </p>
                             )}
+                            {form.errors.end_datetime && (
+                                <InputError
+                                    message={form.errors.end_datetime}
+                                />
+                            )}
 
                             <BookingAddressFields
                                 form={form}
                                 isAddressLocked={isAddressLocked}
                                 addressValue={addressValue}
-                                onAddressLock={(
-                                    locked,
-                                    newAddressValue,
-                                ) => {
+                                onAddressLock={(locked, newAddressValue) => {
                                     setIsAddressLocked(locked);
 
                                     if (locked && newAddressValue) {
@@ -706,7 +722,9 @@ export default function GuestBookingCreate() {
                                                     >
                                                         <td className="px-3 py-2">
                                                             <Input
-                                                                value={child.name}
+                                                                value={
+                                                                    child.name
+                                                                }
                                                                 onChange={(e) =>
                                                                     handleUpdateChild(
                                                                         child.tempId,
@@ -720,7 +738,9 @@ export default function GuestBookingCreate() {
                                                         </td>
                                                         <td className="px-3 py-2">
                                                             <Select
-                                                                value={child.gender}
+                                                                value={
+                                                                    child.gender
+                                                                }
                                                                 onValueChange={(
                                                                     value,
                                                                 ) =>
@@ -787,10 +807,13 @@ export default function GuestBookingCreate() {
                                                                                         m
                                                                                     }
                                                                                     value={String(
-                                                                                        i + 1,
+                                                                                        i +
+                                                                                            1,
                                                                                     )}
                                                                                 >
-                                                                                    {m}
+                                                                                    {
+                                                                                        m
+                                                                                    }
                                                                                 </SelectItem>
                                                                             ),
                                                                         )}
@@ -876,7 +899,8 @@ export default function GuestBookingCreate() {
                                     </Label>
                                     <Textarea
                                         value={
-                                            form.data.emergency_instructions || ''
+                                            form.data.emergency_instructions ||
+                                            ''
                                         }
                                         onChange={(e) =>
                                             form.setData(
@@ -1205,7 +1229,10 @@ export default function GuestBookingCreate() {
                                 !!datetimeError
                             }
                         >
-                            Submit Booking Request
+                            {isFormSubmitting ? <Spinner /> : null}
+                            {isFormSubmitting
+                                ? 'Submitting...'
+                                : 'Submit Booking Request'}
                         </Button>
                     </div>
                 </div>

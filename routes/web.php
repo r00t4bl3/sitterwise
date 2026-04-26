@@ -33,6 +33,10 @@ Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.s
 // Guest booking routes (public, no auth required)
 Route::get('/book', [GuestBookingController::class, 'create'])->name('guest.bookings.create');
 Route::post('/book', [GuestBookingController::class, 'store'])->name('guest.bookings.store');
+Route::get('/book/payment/{token}', [GuestBookingController::class, 'payment'])->name('guest.bookings.payment');
+Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class, 'getSetupIntent'])->name('guest.bookings.setupIntent');
+Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status');
+Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify');
 Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
 
 // Authenticated routes

@@ -375,7 +375,7 @@ export default function TransactionsIndex() {
                                         </tr>
                                     ))}
                                 </tbody>
-</table>
+                            </table>
                         </div>
                     )}
                 </div>

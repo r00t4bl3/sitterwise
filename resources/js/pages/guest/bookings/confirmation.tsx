@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
 
 interface BookingData {
@@ -17,12 +17,9 @@ interface BookingData {
     address_zip: string;
 }
 
-interface PageProps {
-    booking: BookingData;
-}
-
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
+
     return date.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -33,6 +30,7 @@ function formatDate(dateString: string): string {
 
 function formatTime(dateString: string): string {
     const date = new Date(dateString);
+
     return date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -41,7 +39,9 @@ function formatTime(dateString: string): string {
 }
 
 export default function GuestBookingConfirmation() {
-    const { booking } = window as unknown as PageProps;
+    const { booking } = usePage().props as unknown as {
+        booking: BookingData;
+    };
 
     return (
         <GuestLayout>
@@ -49,7 +49,7 @@ export default function GuestBookingConfirmation() {
             <div className="mx-auto max-w-lg">
                 <div className="rounded-lg border bg-card p-6 text-card-foreground">
                     <div className="mb-6 text-center">
-                        <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-green-100">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                             <svg
                                 className="h-8 w-8 text-green-600"
                                 fill="none"
@@ -76,12 +76,14 @@ export default function GuestBookingConfirmation() {
                     <div className="space-y-4 rounded-lg bg-muted p-4">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                                Confirmation #
+                                Booking #
                             </span>
                             <span className="font-medium">{booking.ulid}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status</span>
+                            <span className="text-muted-foreground">
+                                Status
+                            </span>
                             <span className="font-medium capitalize">
                                 {booking.status}
                             </span>

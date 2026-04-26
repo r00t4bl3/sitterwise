@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Services\Booking\GuestBookingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class GuestBookingController extends Controller
@@ -20,7 +21,178 @@ class GuestBookingController extends Controller
 
     public function store(Request $request)
     {
-        return $this->guestBookingService->store($request);
+        return $this->guestBookingService->validateOnly($request);
+    }
+
+    public function payment(Request $request, string $token)
+    {
+        $bookingData = $this->guestBookingService->getPaymentData($request);
+
+        if (empty($bookingData)) {
+            return redirect()->route('guest.bookings.create')
+                ->with('error', 'Your session has expired. Please try again.');
+        }
+
+        $sessionId = null;
+
+        if ($request->has('session_id')) {
+            $sessionId = $request->query('session_id');
+            $pendingData = $this->guestBookingService->getPendingData($request);
+
+            if ($pendingData) {
+                $paymentResult = $this->guestBookingService->processSetupSession($request, $sessionId);
+
+                if ($paymentResult) {
+                    try {
+                        $booking = $this->guestBookingService->createBookingWithPayment(
+                            $pendingData,
+                            $paymentResult['payment_method_id'],
+                        );
+
+                        $request->session()->forget('guest_booking_pending');
+                        $request->session()->forget('guest_booking_payment_token');
+
+                        return redirect()->route('guest.bookings.confirmation', $booking->ulid);
+                    } catch (\Exception $e) {
+                        Log::error('Guest booking payment failed: '.$e->getMessage());
+                    }
+                }
+            }
+        }
+
+        return Inertia::render('guest/bookings/payment', [
+            'booking' => $bookingData,
+            'token' => $token,
+            'stripe_public_key' => config('services.stripe.public'),
+            'session_id' => $sessionId,
+        ]);
+    }
+
+    public function processPayment(Request $request, string $token)
+    {
+        $bookingData = $this->guestBookingService->getPaymentData($request);
+
+        if (empty($bookingData)) {
+            return redirect()->route('guest.bookings.create')
+                ->with('error', 'Your session has expired. Please try again.');
+        }
+
+        $setupIntent = $this->guestBookingService->createSetupIntent($request);
+
+        return Inertia::render('guest/bookings/payment', [
+            'booking' => $bookingData,
+            'token' => $token,
+            'stripe_public_key' => config('services.stripe.public'),
+            'client_secret' => $setupIntent['client_secret'] ?? null,
+            'session_id' => $setupIntent['session_id'] ?? null,
+        ]);
+    }
+
+    public function getSetupIntent(Request $request, string $token)
+    {
+        $bookingData = $this->guestBookingService->getPaymentData($request);
+
+        if (empty($bookingData)) {
+            return response()->json(['error' => 'Session expired'], 400);
+        }
+
+        $setupIntent = $this->guestBookingService->createSetupIntent($request);
+
+        return response()->json($setupIntent);
+    }
+
+    public function checkPaymentStatus(Request $request, string $token)
+    {
+        $request->validate([
+            'client_secret' => 'required|string',
+        ]);
+
+        $clientSecret = $request->input('client_secret');
+        $pendingData = $this->guestBookingService->getPendingData($request);
+
+        if (! $pendingData) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Your session has expired. Please try again.',
+            ], 400);
+        }
+
+        $paymentResult = $this->guestBookingService->checkSetupSessionComplete($clientSecret);
+
+        if (! $paymentResult) {
+            return response()->json([
+                'success' => false,
+                'complete' => false,
+            ]);
+        }
+
+        try {
+            $booking = $this->guestBookingService->createBookingWithPayment(
+                $pendingData,
+                $paymentResult['payment_method_id'],
+            );
+
+            $request->session()->forget('guest_booking_pending');
+            $request->session()->forget('guest_booking_payment_token');
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => route('guest.bookings.confirmation', $booking->ulid),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to create booking. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function verifyPayment(Request $request, string $token)
+    {
+        $request->validate([
+            'session_id' => 'required|string',
+        ]);
+
+        $pendingData = $this->guestBookingService->getPendingData($request);
+
+        if (! $pendingData) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Your session has expired. Please try again.',
+            ], 400);
+        }
+
+        $paymentResult = $this->guestBookingService->processSetupSession(
+            $request,
+            $request->input('session_id'),
+        );
+
+        if (! $paymentResult) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment setup failed. Please try again.',
+            ], 400);
+        }
+
+        try {
+            $booking = $this->guestBookingService->createBookingWithPayment(
+                $pendingData,
+                $paymentResult['payment_method_id'],
+            );
+
+            $request->session()->forget('guest_booking_pending');
+            $request->session()->forget('guest_booking_payment_token');
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => route('guest.bookings.confirmation', $booking->ulid),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to create booking. Please try again.',
+            ], 500);
+        }
     }
 
     public function confirmation(Booking $booking)

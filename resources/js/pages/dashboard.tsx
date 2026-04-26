@@ -1,8 +1,8 @@
 import { usePage } from '@inertiajs/react';
 import AdminDashboard from './dashboard/admin';
-import SuperAdminDashboard from './dashboard/superadmin';
 import CaregiverDashboard from './dashboard/caregiver';
 import ClientDashboard from './dashboard/client';
+import SuperAdminDashboard from './dashboard/superadmin';
 
 interface Availability {
     id: number;
