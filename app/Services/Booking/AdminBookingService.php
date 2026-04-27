@@ -9,6 +9,7 @@ use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingCreated;
+use App\Events\BookingAccepted;
 use App\Events\BookingInvitationSent;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -17,6 +18,7 @@ use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientChild;
+use App\Models\ClientAddress;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
@@ -80,7 +82,11 @@ class AdminBookingService implements BookingServiceInterface
         );
 
         $bookingStatuses = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
             BookingStatus::cases()
         );
 
@@ -94,6 +100,31 @@ class AdminBookingService implements BookingServiceInterface
             SitterPreference::cases()
         );
 
+        $hotels = Hotel::where('is_active', true)->get()->map(fn ($h) => [
+            'id' => $h->id,
+            'name' => $h->name,
+            'city' => $h->city,
+            'line1' => $h->line1,
+            'line2' => $h->line2,
+            'state' => $h->state,
+            'zip' => $h->zip,
+        ]);
+
+        
+        $clients = Client::with('user')->get()->map(fn ($c) => [
+            'id' => $c->id,
+            'name' => $c->first_name.' '.$c->last_name,
+            'email' => $c->user->email,
+        ]);
+
+        $caregivers = Caregiver::with('user')
+            ->whereHas('status', fn ($q) => $q->where('is_active', true))
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->first_name.' '.$c->last_name,
+        ]);
+            
         return Inertia::render('admin/bookings/index', [
             'bookings' => $bookings,
             'service_types' => $serviceTypes,
@@ -108,60 +139,40 @@ class AdminBookingService implements BookingServiceInterface
                 ['value' => 'vacationer', 'label' => 'Vacationer'],
             ],
             'filters' => [
-                'month' => $month,
-                'year' => $year,
+                'month' => (int) $month,
+                'year' => (int) $year,
                 'status' => $status,
             ],
-            'hotels' => Hotel::orderBy('name')->get(),
+            'hotels' => $hotels,
+            'clients' => $clients,
+            'caregivers' => $caregivers,
+
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'client_id' => 'required_without:new_client|exists:clients,id',
-            'new_client' => 'required_without:client_id|array',
-            'new_client.first_name' => 'required_with:new_client|string|max:255',
-            'new_client.last_name' => 'required_with:new_client|string|max:255',
-            'new_client.email' => 'required_with:new_client|email|max:255',
-            'new_client.phone' => 'required_with:new_client|string|max:50',
-            'new_client.client_type' => 'required_with:new_client|string',
-            'service_type' => 'required|string',
-            'location_type' => 'required|string',
-            'start_datetime' => 'required|date',
-            'end_datetime' => 'required|date|after:start_datetime',
-            'address_id' => 'nullable|exists:client_addresses,id',
-            'address_line1' => 'required_without:address_id|string|max:500',
-            'address_line2' => 'nullable|string|max:500',
-            'address_city' => 'required_without:address_id|string|max:255',
-            'address_state' => 'required_without:address_id|string|max:100',
-            'address_zip' => 'required_without:address_id|string|max:20',
-            'hotel_id' => 'nullable|exists:hotels,id',
-            'rental_platform' => 'nullable|string|max:255',
-            'special_considerations' => 'array',
-            'caregiver_notes' => 'nullable|string',
-            'notes_to_sitterwise' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-            'corporate_id' => 'nullable|string|max:255',
-            'sitter_preferences' => 'array',
-            'other_adults_present' => 'nullable|string|max:500',
-            'emergency_instructions' => 'nullable|string',
-            'special_needs_notes' => 'nullable|string',
-            'how_did_you_hear' => 'nullable|string|max:255',
-            'save_to_profile' => 'boolean',
-            'new_children' => 'array',
-            'new_pets' => 'array',
-            'caregiver_id' => 'nullable|exists:caregivers,id',
-            'status' => 'required|string',
-            'payment_status' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
-        $client = null;
-        if ($request->has('new_client')) {
+        // Validate minimum 4-hour duration
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
+        $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
+        if ($diffHours < 4) {
+            throw ValidationException::withMessages([
+                'end_datetime' => 'Booking must be at least 4 hours long.',
+            ]);
+        }
+
+        $clientId = $validated['client_id'] ?? null;
+        $addressId = $validated['address_id'] ?? null;
+
+        // Create new client if new_client data provided
+        if (! empty($validated['new_client']['first_name'])) {
             $user = User::create([
                 'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
                 'email' => $validated['new_client']['email'],
-                'password' => bcrypt(str()->random(16)),
+                'password' => \Hash::make(\Str::random(16)),
                 'role' => 'client',
             ]);
 
@@ -169,81 +180,149 @@ class AdminBookingService implements BookingServiceInterface
                 'user_id' => $user->id,
                 'first_name' => $validated['new_client']['first_name'],
                 'last_name' => $validated['new_client']['last_name'],
-                'phone' => $validated['new_client']['phone'],
-                'client_type' => $validated['new_client']['client_type'],
+                'phone' => $validated['new_client']['phone'] ?? null,
+                'client_type' => $validated['new_client']['client_type'] ?? 'vacationer',
+                'corporate_id' => $validated['corporate_id'] ?? null,
+                'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
+                'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+                'other_adults_present' => $validated['other_adults_present'] ?? null,
+                'emergency_instructions' => $validated['emergency_instructions'] ?? null,
             ]);
-        } else {
-            $client = Client::find($validated['client_id']);
+
+            $clientId = $client->id;
+
+            // Create client address if private_home and new address provided
+            if ($validated['location_type'] === 'private_home' &&
+                empty($addressId) &&
+                ! empty($validated['address_line1'])) {
+                $clientAddress = ClientAddress::create([
+                    'client_id' => $client->id,
+                    'line1' => $validated['address_line1'],
+                    'line2' => $validated['address_line2'] ?? null,
+                    'city' => $validated['address_city'],
+                    'state' => $validated['address_state'],
+                    'zip' => $validated['address_zip'],
+                ]);
+                $addressId = $clientAddress->id;
+            }
         }
 
-        if ($validated['save_to_profile']) {
-            $client->update([
-                'special_needs_notes' => $validated['special_needs_notes'],
-                'emergency_instructions' => $validated['emergency_instructions'],
-                'sitter_preferences' => $validated['sitter_preferences'],
-                'other_adults_present' => $validated['other_adults_present'],
-            ]);
+        // Get client data for snapshot
+        $client = Client::with(['children', 'pets', 'user'])->find($clientId);
 
-            foreach ($validated['new_children'] as $child) {
-                ClientChild::create([
-                    'client_id' => $client->id,
-                    'name' => $child['name'],
-                    'gender' => $child['gender'],
-                    'birth_month' => $child['birth_month'],
-                    'birth_year' => $child['birth_year'],
-                ]);
-            }
+        // Prepare children snapshot (filter profile by child_ids + add new_children)
+        $childrenQuery = $client?->children ?? collect();
+        if (array_key_exists('child_ids', $validated)) {
+            $selectedChildIds = $validated['child_ids'] ?? [];
+            $childrenQuery = $childrenQuery->filter(fn ($child) => in_array($child->id, $selectedChildIds));
+        }
 
-            foreach ($validated['new_pets'] as $pet) {
-                ClientPet::create([
-                    'client_id' => $client->id,
-                    'name' => $pet['name'],
-                    'type' => $pet['type'],
-                    'breed' => $pet['breed'],
-                    'notes' => $pet['notes'],
-                ]);
+        $childrenSnapshot = $childrenQuery->map(fn ($child) => [
+            'name' => $child->name,
+            'gender' => $child->gender,
+            'birth_month' => $child->birth_month,
+            'birth_year' => $child->birth_year,
+        ])->values()->toArray();
+
+        if (! empty($validated['new_children'])) {
+            foreach ($validated['new_children'] as $childData) {
+                if (! empty($childData['name'])) {
+                    $childrenSnapshot[] = [
+                        'name' => $childData['name'],
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    ];
+                }
             }
+        }
+
+        // Prepare pets snapshot (filter profile by pet_ids + add new_pets)
+        $petsQuery = $client?->pets ?? collect();
+        if (array_key_exists('pet_ids', $validated)) {
+            $selectedPetIds = $validated['pet_ids'] ?? [];
+            $petsQuery = $petsQuery->filter(fn ($pet) => in_array($pet->id, $selectedPetIds));
+        }
+
+        $petsSnapshot = $petsQuery->map(fn ($pet) => [
+            'name' => $pet->name,
+            'type' => $pet->type,
+            'breed' => $pet->breed,
+            'notes' => $pet->notes,
+        ])->values()->toArray();
+
+        if (! empty($validated['new_pets'])) {
+            foreach ($validated['new_pets'] as $petData) {
+                if (! empty($petData['name'])) {
+                    $petsSnapshot[] = [
+                        'name' => $petData['name'],
+                        'type' => $petData['type'] ?? null,
+                        'breed' => $petData['breed'] ?? null,
+                        'notes' => $petData['notes'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        // Handle saving new children/pets to client profile if requested
+        if (! empty($validated['new_children']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+            $this->saveNewChildren($clientId, $validated['new_children']);
+        }
+
+        if (! empty($validated['new_pets']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+            $this->saveNewPets($clientId, $validated['new_pets']);
         }
 
         $bookingGroup = BookingGroup::create([
-            'client_id' => $client->id,
+            'client_id' => $clientId,
             'submitted_at' => now(),
             'submission_type' => 'admin',
+            'is_split' => false,
         ]);
 
         $booking = Booking::create([
             'booking_group_id' => $bookingGroup->id,
-            'client_id' => $client->id,
+            'client_id' => $clientId,
             'caregiver_id' => $validated['caregiver_id'] ?? null,
-            'hotel_id' => $validated['hotel_id'],
-            'address_id' => $validated['address_id'],
-            'address_line1' => $validated['address_line1'],
-            'address_line2' => $validated['address_line2'],
-            'address_city' => $validated['address_city'],
-            'address_state' => $validated['address_state'],
-            'address_zip' => $validated['address_zip'],
+            'availability_id' => null,
+            'hotel_id' => $validated['hotel_id'] ?? null,
+            'address_id' => $addressId,
+            'address_line1' => $validated['address_line1'] ?? null,
+            'address_line2' => $validated['address_line2'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+            'address_state' => $validated['address_state'] ?? null,
+            'address_zip' => $validated['address_zip'] ?? null,
+            'client_first_name' => $client?->first_name,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => $childrenSnapshot,
+            'pets' => $petsSnapshot,
             'service_type' => $validated['service_type'],
             'location_type' => $validated['location_type'],
-            'rental_platform' => $validated['rental_platform'],
+            'rental_platform' => $validated['rental_platform'] ?? null,
             'start_datetime' => $validated['start_datetime'],
             'end_datetime' => $validated['end_datetime'],
             'status' => $validated['status'],
+            'special_considerations' => $validated['special_considerations'] ?? null,
+            'caregiver_notes' => $validated['caregiver_notes'] ?? null,
+            'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
+            'admin_notes' => $validated['admin_notes'] ?? null,
+            'corporate_id' => $validated['corporate_id'] ?? null,
+            'sitter_preferences' => $validated['sitter_preferences'] ?? null,
+            'other_adults_present' => $validated['other_adults_present'] ?? null,
+            'special_needs_notes' => $validated['special_needs_notes'] ?? null,
+            'emergency_instructions' => $validated['emergency_instructions'] ?? null,
+            'total_amount' => 0,
             'payment_status' => $validated['payment_status'],
-            'special_considerations' => $validated['special_considerations'],
-            'caregiver_notes' => $validated['caregiver_notes'],
-            'notes_to_sitterwise' => $validated['notes_to_sitterwise'],
-            'admin_notes' => $validated['admin_notes'],
-            'corporate_id' => $validated['corporate_id'],
-            'sitter_preferences' => $validated['sitter_preferences'],
-            'other_adults_present' => $validated['other_adults_present'],
-            'special_needs_notes' => $validated['special_needs_notes'],
-            'emergency_instructions' => $validated['emergency_instructions'],
-            'how_did_you_hear' => $validated['how_did_you_hear'],
-            'children' => $validated['new_children'],
-            'pets' => $validated['new_pets'],
+            'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
 
         event(new BookingCreated($booking));
+
+        if ($booking->caregiver_id) {
+            event(new BookingAccepted($booking));
+        }
 
         return redirect()->back()->with('success', 'Booking created successfully.');
     }
@@ -265,38 +344,245 @@ class AdminBookingService implements BookingServiceInterface
 
     public function update(Request $request, Booking $booking)
     {
-        $validated = $request->validate([
-            'caregiver_id' => 'nullable|exists:caregivers,id',
-            'hotel_id' => 'nullable|exists:hotels,id',
-            'address_id' => 'nullable|exists:client_addresses,id',
-            'address_line1' => 'required|string|max:500',
-            'address_line2' => 'nullable|string|max:500',
-            'address_city' => 'required|string|max:255',
-            'address_state' => 'required|string|max:100',
-            'address_zip' => 'required|string|max:20',
-            'service_type' => 'required|string',
-            'location_type' => 'required|string',
-            'rental_platform' => 'nullable|string|max:255',
-            'start_datetime' => 'required|date',
-            'end_datetime' => 'required|date|after:start_datetime',
-            'status' => 'required|string',
-            'payment_status' => 'required|string',
-            'special_considerations' => 'array',
-            'caregiver_notes' => 'nullable|string',
-            'notes_to_sitterwise' => 'nullable|string',
-            'admin_notes' => 'nullable|string',
-            'corporate_id' => 'nullable|string|max:255',
-            'sitter_preferences' => 'array',
-            'other_adults_present' => 'nullable|string|max:500',
-            'special_needs_notes' => 'nullable|string',
-            'emergency_instructions' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
-        $booking->update($validated);
+        // Validate minimum 4-hour duration
+        $start = new \DateTime($validated['start_datetime']);
+        $end = new \DateTime($validated['end_datetime']);
+        $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
+        if ($diffHours < 4) {
+            throw ValidationException::withMessages([
+                'end_datetime' => 'Booking must be at least 4 hours long.',
+            ]);
+        }
+
+        // Create new client address if private_home and new address provided
+        $addressId = $validated['address_id'] ?? null;
+        if (
+            ($validated['location_type'] ?? null) === 'private_home' &&
+            empty($addressId) &&
+            ! empty($validated['address_line1'])
+        ) {
+            $clientAddress = ClientAddress::create([
+                'client_id' => $booking->client_id,
+                'line1' => $validated['address_line1'],
+                'line2' => $validated['address_line2'] ?? null,
+                'city' => $validated['address_city'],
+                'state' => $validated['address_state'],
+                'zip' => $validated['address_zip'],
+            ]);
+            $addressId = $clientAddress->id;
+        }
+
+        // Update client snapshot data
+        $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
+
+        // Build children snapshot directly from new_children input
+        $childrenSnapshot = [];
+        if ($request->has('new_children')) {
+            // Only process if new_children is explicitly provided
+            if (! empty($validated['new_children'])) {
+                foreach ($validated['new_children'] as $childData) {
+                    if (! empty($childData['name'])) {
+                        $childrenSnapshot[] = [
+                            'name' => $childData['name'],
+                            'gender' => $childData['gender'] ?? null,
+                            'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                            'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                        ];
+                    }
+                }
+            }
+        } else {
+            // Keep existing children if new_children not provided
+            $childrenSnapshot = $booking->children ?? [];
+        }
+
+        // Build pets snapshot directly from new_pets input
+        $petsSnapshot = [];
+        if ($request->has('new_pets')) {
+            // Only process if new_pets is explicitly provided
+            if (! empty($validated['new_pets'])) {
+                foreach ($validated['new_pets'] as $petData) {
+                    if (! empty($petData['name'])) {
+                        $petsSnapshot[] = [
+                            'name' => $petData['name'],
+                            'type' => $petData['type'] ?? null,
+                            'breed' => $petData['breed'] ?? null,
+                            'notes' => $petData['notes'] ?? null,
+                        ];
+                    }
+                }
+            }
+        } else {
+            // Keep existing pets if new_pets not provided
+            $petsSnapshot = $booking->pets ?? [];
+        }
+
+        // Sync to client profile when checkbox is checked
+        if (($validated['save_children_pets_to_profile'] ?? false) && $booking->client_id) {
+            // Use childrenSnapshot (which may be existing or new)
+            $this->syncClientChildren($booking->client_id, $childrenSnapshot);
+            $this->syncClientPets($booking->client_id, $petsSnapshot);
+        }
+
+        $updateData = [
+            ...$validated,
+            'address_id' => $addressId,
+            'client_first_name' => $client?->first_name,
+            'client_last_name' => $client?->last_name,
+            'client_phone' => $client?->phone,
+            'client_email' => $client?->user?->email,
+            'children' => $childrenSnapshot,
+            'pets' => $petsSnapshot,
+        ];
+
+        $oldCaregiverId = $booking->caregiver_id;
+        $booking->update($updateData);
+
+        if ($booking->caregiver_id && $booking->caregiver_id != $oldCaregiverId) {
+            event(new BookingAccepted($booking));
+        }
 
         return redirect()->back()->with('success', 'Booking updated successfully.');
     }
 
+    /**
+     * Sync children between booking snapshot and client profile.
+     * Upsert based on name + birth_year match.
+     * Delete profile children not in booking snapshot.
+     */
+    protected function syncClientChildren(int $clientId, array $childrenSnapshot): void
+    {
+        $existingChildren = ClientChild::where('client_id', $clientId)->get();
+
+        // Build lookup keys for existing children: "name|birth_year"
+        $existingKeys = $existingChildren->mapWithKeys(function ($child) {
+            return [$child->name.'|'.$child->birth_year => $child];
+        });
+
+        // Track which existing children are still in snapshot
+        $keptChildIds = [];
+
+        foreach ($childrenSnapshot as $snapshotChild) {
+            $key = ($snapshotChild['name'] ?? '').'|'.($snapshotChild['birth_year'] ?? '');
+
+            if (isset($existingKeys[$key])) {
+                // Update existing child
+                $existingKeys[$key]->update([
+                    'name' => $snapshotChild['name'],
+                    'gender' => $snapshotChild['gender'] ?? null,
+                    'birth_month' => $snapshotChild['birth_month'] ?? null,
+                    'birth_year' => $snapshotChild['birth_year'] ?? null,
+                ]);
+                $keptChildIds[] = $existingKeys[$key]->id;
+            } else {
+                // Insert new child
+                $newChild = ClientChild::create([
+                    'client_id' => $clientId,
+                    'name' => $snapshotChild['name'],
+                    'gender' => $snapshotChild['gender'] ?? null,
+                    'birth_month' => $snapshotChild['birth_month'] ?? null,
+                    'birth_year' => $snapshotChild['birth_year'] ?? null,
+                ]);
+                $keptChildIds[] = $newChild->id;
+            }
+        }
+
+        // Delete any profile children not in booking snapshot
+        ClientChild::where('client_id', $clientId)
+            ->whereNotIn('id', $keptChildIds)
+            ->delete();
+    }
+
+    /**
+     * Sync pets between booking snapshot and client profile.
+     * Upsert based on name match.
+     * Delete profile pets not in booking snapshot.
+     */
+    protected function syncClientPets(int $clientId, array $petsSnapshot): void
+    {
+        $existingPets = ClientPet::where('client_id', $clientId)->get();
+
+        // Build lookup keys for existing pets: "name"
+        $existingKeys = $existingPets->mapWithKeys(function ($pet) {
+            return [$pet->name => $pet];
+        });
+
+        // Track which existing pets are still in snapshot
+        $keptPetIds = [];
+
+        foreach ($petsSnapshot as $snapshotPet) {
+            $name = $snapshotPet['name'] ?? '';
+
+            if (isset($existingKeys[$name])) {
+                // Update existing pet
+                $existingKeys[$name]->update([
+                    'name' => $snapshotPet['name'],
+                    'type' => $snapshotPet['type'] ?? null,
+                    'breed' => $snapshotPet['breed'] ?? null,
+                    'notes' => $snapshotPet['notes'] ?? null,
+                ]);
+                $keptPetIds[] = $existingKeys[$name]->id;
+            } else {
+                // Insert new pet
+                $newPet = ClientPet::create([
+                    'client_id' => $clientId,
+                    'name' => $snapshotPet['name'],
+                    'type' => $snapshotPet['type'] ?? null,
+                    'breed' => $snapshotPet['breed'] ?? null,
+                    'notes' => $snapshotPet['notes'] ?? null,
+                ]);
+                $keptPetIds[] = $newPet->id;
+            }
+        }
+
+        // Delete any profile pets not in booking snapshot
+        ClientPet::where('client_id', $clientId)
+            ->whereNotIn('id', $keptPetIds)
+            ->delete();
+    }
+
+    /**
+     * Save new children to client profile (legacy method - kept for store).
+     */
+    protected function saveNewChildren(int $clientId, array $children): void
+    {
+        foreach ($children as $childData) {
+            ClientChild::updateOrCreate(
+                [
+                    'client_id' => $clientId,
+                    'name' => $childData['name'] ?? null,
+                ],
+                [
+                    'gender' => $childData['gender'] ?? null,
+                    'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                    'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Save new pets to client profile.
+     */
+    protected function saveNewPets(int $clientId, array $pets): void
+    {
+        foreach ($pets as $petData) {
+            ClientPet::updateOrCreate(
+                [
+                    'client_id' => $clientId,
+                    'name' => $petData['name'] ?? null,
+                ],
+                [
+                    'type' => $petData['type'] ?? null,
+                    'breed' => $petData['breed'] ?? null,
+                    'notes' => $petData['notes'] ?? null,
+                ]
+            );
+        }
+    }
+    
     public function destroy(Booking $booking)
     {
         $booking->delete();

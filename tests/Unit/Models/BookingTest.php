@@ -26,14 +26,19 @@ class BookingTest extends TestCase
 
     public function test_has_correct_fillable_fields()
     {
+        $startDatetime = now()->addDays(rand(1, 30))->setHour(rand(8, 18))->setMinute(0);
+        $endDatetime = (clone $startDatetime)->addHours(4);
+
         $client = Client::factory()->create();
         $booking = Booking::factory()->create([
             'client_id' => $client->id,
+            'start_datetime' => $startDatetime,
+            'end_datetime' => $endDatetime,
             'service_type' => 'babysitter',
             'location_type' => 'hotel',
             'status' => 'received',
             'payment_status' => 'pending',
-            'total_amount' => 100.00,
+            'total_working_hour' => 4,
             'requires_payment' => true,
         ]);
 
@@ -42,7 +47,7 @@ class BookingTest extends TestCase
         $this->assertEquals('hotel', $booking->location_type);
         $this->assertEquals('received', $booking->status);
         $this->assertEquals('pending', $booking->payment_status);
-        $this->assertEquals(100.00, $booking->total_amount);
+        $this->assertEquals(4, $booking->total_working_hour);
         $this->assertTrue($booking->requires_payment);
     }
 
@@ -53,7 +58,6 @@ class BookingTest extends TestCase
         $booking = Booking::factory()->create([
             'start_datetime' => $startDateTime,
             'end_datetime' => $endDateTime,
-            'total_amount' => 150.50,
             'requires_payment' => false,
         ]);
 
@@ -61,7 +65,7 @@ class BookingTest extends TestCase
         $this->assertEquals($startDateTime->timestamp, $booking->start_datetime->timestamp);
         $this->assertInstanceOf(CarbonImmutable::class, $booking->end_datetime);
         $this->assertEquals($endDateTime->timestamp, $booking->end_datetime->timestamp);
-        $this->assertEquals(150.50, $booking->total_amount);
+        $this->assertEquals($booking->total_service_amount, $booking->charge_to_client + $booking->reimbursement + $booking->bonus);
         $this->assertFalse($booking->requires_payment);
     }
 

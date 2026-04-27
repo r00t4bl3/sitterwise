@@ -149,8 +149,8 @@ export default function Bookings() {
         payment_statuses,
         special_consideration_options,
         booking_attributes,
-        sitter_preferences,
-    } = usePage<Props>().props;
+        sitter_preference_options,
+        } = usePage<Props>().props;
 
     const client_type_options = [
         { value: 'resident', label: 'San Diego Resident' },
@@ -1213,8 +1213,8 @@ export default function Bookings() {
                                 >
                                     <span
                                         className={`inline-block h-3 w-3 rounded-[2px] border ${
-                                            status.colors.bg
-                                        } ${status.colors.border}`}
+                                            status.colors?.bg || ''
+                                        } ${status.colors?.border || ''}`}
                                     />
                                     <span className="text-muted-foreground">
                                         {status.label}
@@ -1692,7 +1692,7 @@ export default function Bookings() {
                                 handleClientChange={handleClientChange}
                                 selectedClientType={selectedClientType}
                                 location_types={location_types}
-                                sitter_preference_options={sitter_preferences}
+                                sitter_preference_options={sitter_preference_options}
                                 client_type_options={client_type_options}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}
