@@ -7,6 +7,7 @@ import {
     ChevronRight,
     CheckCircle2,
     CalendarCheck,
+    Activity,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -102,7 +103,7 @@ export default function ClientDashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Client Dashboard" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
@@ -119,55 +120,53 @@ export default function ClientDashboard({
                     </Button>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
-                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <h3 className="text-sm font-medium tracking-tight">
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span className="text-xs font-medium tracking-wider uppercase">
                                 Total Bookings
-                            </h3>
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            </span>
                         </div>
-                        <div className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-foreground">
                             {stats.total_bookings}
-                        </div>
+                        </p>
                     </div>
-                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
-                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <h3 className="text-sm font-medium tracking-tight">
+                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <span className="text-xs font-medium tracking-wider uppercase">
                                 Completed
-                            </h3>
-                            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                            </span>
                         </div>
-                        <div className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-foreground">
                             {stats.completed_bookings}
-                        </div>
+                        </p>
                     </div>
-                    <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow">
-                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <h3 className="text-sm font-medium tracking-tight">
+                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4 text-blue-500" />
+                            <span className="text-xs font-medium tracking-wider uppercase">
                                 Upcoming
-                            </h3>
-                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            </span>
                         </div>
-                        <div className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-foreground">
                             {upcoming_bookings.length}
-                        </div>
+                        </p>
                     </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                    <div className="col-span-4 rounded-xl border border-border bg-card text-card-foreground shadow">
-                        <div className="flex flex-col space-y-1.5 p-6">
-                            <h3 className="text-lg leading-none font-semibold tracking-tight">
-                                Next Booking
-                            </h3>
-                        </div>
-                        <div className="p-6 pt-0">
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="flex flex-col gap-4">
+                        <h3 className="text-lg leading-none font-semibold tracking-tight">
+                            Next Booking
+                        </h3>
+                        <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
                             {client.next_booking ? (
                                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
                                     <div className="mb-4 flex items-center gap-3">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                            <CalendarCheck className="h-6 w-6" />
+                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                        <Calendar className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <div>
                                             <h3 className="text-sm font-medium tracking-tight text-muted-foreground uppercase">
@@ -223,14 +222,14 @@ export default function ClientDashboard({
                                 </div>
                             ) : (
                                 <div className="flex h-[200px] flex-col items-center justify-center text-center">
-                                    <Calendar className="mb-2 h-10 w-10 text-muted-foreground/30" />
-                                    <p className="text-muted-foreground">
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                        <Calendar className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="mb-4 text-lg font-medium">
                                         No upcoming bookings scheduled.
-                                    </p>
+                                    </h3>
                                     <Button
-                                        variant="link"
                                         asChild
-                                        className="mt-2"
                                     >
                                         <Link href="/bookings/create">
                                             Book a sitter now
@@ -241,14 +240,12 @@ export default function ClientDashboard({
                         </div>
                     </div>
 
-                    <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
-                        <div className="flex flex-col space-y-1.5 p-6">
-                            <h3 className="text-lg leading-none font-semibold tracking-tight">
-                                Recent Activity
-                            </h3>
-                        </div>
-                        <div className="p-6 pt-0">
-                            <div className="space-y-4">
+                    <div className="flex flex-col gap-4">
+                        <h3 className="text-lg leading-none font-semibold tracking-tight">
+                            Recent Activity
+                        </h3>
+                        <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
+                            <div className="flex h-[200px] flex-col items-center justify-center text-center">
                                 {recent_bookings.length > 0 ? (
                                     recent_bookings.map((booking) => (
                                         <Link
@@ -258,7 +255,7 @@ export default function ClientDashboard({
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    <Activity className="h-4 w-4 text-muted-foreground" />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium">
@@ -278,34 +275,33 @@ export default function ClientDashboard({
                                         </Link>
                                     ))
                                 ) : (
-                                    <p className="py-4 text-center text-sm text-muted-foreground">
-                                        No recent activity.
-                                    </p>
+                                    <>
+                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                            <Activity className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <h3 className="mb-4 text-lg font-medium">
+                                            No recent activity.
+                                        </h3>
+                                    </>
                                 )}
 
-                                <div className="pt-2">
-                                    <Button
-                                        variant="outline"
-                                        asChild
-                                        className="w-full"
-                                    >
-                                        <Link href="/bookings">
-                                            View All Bookings
-                                        </Link>
-                                    </Button>
-                                </div>
+                                <Button
+                                    asChild
+                                >
+                                    <Link href="/bookings">
+                                        View All Bookings
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                    <div className="flex flex-col space-y-1.5 p-6">
-                        <h3 className="text-lg leading-none font-semibold tracking-tight">
-                            Upcoming Bookings
-                        </h3>
-                    </div>
-                    <div className="p-6 pt-0">
+                <div className="flex flex-col gap-4">
+                    <h3 className="text-lg leading-none font-semibold tracking-tight">
+                        Upcoming Bookings
+                    </h3>
+                    <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {upcoming_bookings.length > 0 ? (
                                 upcoming_bookings.map((booking) => (
@@ -336,9 +332,9 @@ export default function ClientDashboard({
                                 ))
                             ) : (
                                 <div className="col-span-full py-8 text-center">
-                                    <p className="text-muted-foreground">
+                                    <h3 className="mb-4 text-lg font-medium">
                                         No upcoming bookings.
-                                    </p>
+                                    </h3>
                                 </div>
                             )}
                         </div>

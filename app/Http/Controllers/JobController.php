@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Http\Requests\RateBookingRequest;
 use App\Models\Booking;
 use App\Models\BookingRating;
@@ -29,6 +31,49 @@ class JobController extends Controller
 
         return Inertia::render('caregiver/jobs/index', [
             'jobs' => $bookings,
+        ]);
+    }
+
+    public function show(Request $request, Booking $booking)
+    {
+        $caregiver = $request->user()->caregiver;
+
+        if (! $caregiver) {
+            abort(403, 'Caregiver profile not found');
+        }
+
+        if ($booking->caregiver_id !== $caregiver->id) {
+            abort(403, 'You are not authorized to view this job');
+        }
+
+        $booking->load('client.user', 'hotel', 'address');
+
+        return Inertia::render('caregiver/jobs/show', [
+            'booking' => [
+                'id' => $booking->id,
+                'ulid' => $booking->ulid,
+                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
+                'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
+                'client_email' => $booking->client_email ?? $booking->client->user?->email,
+                'address_line1' => $booking->address_line1,
+                'address_line2' => $booking->address_line2,
+                'address_city' => $booking->address_city,
+                'address_state' => $booking->address_state,
+                'address_zip' => $booking->address_zip,
+                'hotel_id' => $booking->hotel_id,
+                'hotel_name' => $booking->hotel?->name,
+                'location_type' => $booking->location_type,
+                'start_datetime' => $booking->start_datetime,
+                'end_datetime' => $booking->end_datetime,
+                'status' => $booking->status,
+                'special_considerations' => collect($booking->special_considerations)
+                    ->map(fn ($sc) => SpecialConsideration::tryFrom($sc)?->label() ?? $sc)
+                    ->toArray(),
+                'caregiver_notes' => $booking->caregiver_notes,
+                'children' => $booking->children,
+                'pets' => $booking->pets,
+            ],
         ]);
     }
 

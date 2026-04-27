@@ -7,15 +7,14 @@ use App\Mail\ClientBookingCreatedMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 
-class BookingCreatedNotification extends Notification implements ShouldQueue
+class BookingCreatedNotification extends BaseNotification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(public Booking $booking) {}
 
-    public function via(object $notifiable): array
+    protected function channels(object $notifiable): array
     {
         return ['database', 'mail'];
     }

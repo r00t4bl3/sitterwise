@@ -7,7 +7,7 @@ import {
     Receipt,
     DollarSign,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -28,6 +28,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+import { Label } from '@/components/ui/label';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -47,6 +48,7 @@ interface Client {
     user: {
         email: string;
     };
+    has_active_payment_method: boolean;
 }
 
 interface Caregiver {
@@ -76,6 +78,9 @@ interface Booking {
     paid_to_caregiver: number | null;
     sitterwise_cut: number | null;
     charge_to_client: number | null;
+    charge_to_client_hourly: number | null;
+    paid_to_caregiver_hourly: number | null;
+    sitterwise_cut_hourly: number | null;
     client: Client;
     caregiver?: Caregiver;
 }
@@ -97,12 +102,21 @@ interface Props {
     filters: {
         search: string | null;
     };
+    booking_statuses: Array<{
+        value: string;
+        label: string;
+        colors: {
+            bg: string;
+            text: string;
+            border: string;
+        };
+    }>;
 }
 
 export default function TransactionsIndex() {
-    const { bookings, filters } = usePage<Props>().props;
+    const { bookings, filters, booking_statuses } = usePage<Props>().props;
 
-    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+        const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(
         null,
     );
@@ -110,13 +124,21 @@ export default function TransactionsIndex() {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     const [localValues, setLocalValues] = useState({
+        total_working_hour: '',
         reimbursement: '',
         reimbursement_description: '',
         tip: '',
         bonus: '',
     });
 
+    const [recalculatedValues, setRecalculatedValues] = useState({
+        charge_to_client: 0,
+        paid_to_caregiver: 0,
+        sitterwise_cut: 0,
+    });
+
     const paymentForm = useForm({
+        total_working_hour: 0,
         reimbursement: 0,
         reimbursement_description: '',
         tip: 0,
@@ -136,39 +158,16 @@ export default function TransactionsIndex() {
         });
     };
 
-    const getStatusBadge = (status: string) => {
-        const colors: Record<
-            string,
-            { bg: string; text: string; border: string }
-        > = {
-            received: {
-                bg: 'bg-blue-100',
-                text: 'text-blue-800',
-                border: 'border-blue-300',
-            },
-            reserved: {
-                bg: 'bg-yellow-100',
-                text: 'text-yellow-800',
-                border: 'border-yellow-300',
-            },
-            confirmed: {
-                bg: 'bg-green-100',
-                text: 'text-green-800',
-                border: 'border-green-300',
-            },
-            completed: {
-                bg: 'bg-gray-100',
-                text: 'text-gray-800',
-                border: 'border-gray-300',
-            },
-            cancelled: {
-                bg: 'bg-red-100',
-                text: 'text-red-800',
-                border: 'border-red-300',
-            },
-        };
+    const statusColorsMap = useMemo(() => {
+        const map: Record<string, { bg: string; text: string; border: string }> = {};
+        booking_statuses.forEach((status: { value: string; colors: { bg: string; text: string; border: string } }) => {
+            map[status.value] = status.colors;
+        });
+        return map;
+    }, [booking_statuses]);
 
-        const style = colors[status] || {
+    const getStatusBadge = (status: string) => {
+        const style = statusColorsMap[status.toLowerCase()] || {
             bg: 'bg-gray-100',
             text: 'text-gray-800',
             border: 'border-gray-300',
@@ -184,18 +183,30 @@ export default function TransactionsIndex() {
     };
 
     const openPaymentSheet = (booking: Booking) => {
+        const hourlyRate = booking.charge_to_client_hourly ?? 0;
+        const caregiverHourly = booking.paid_to_caregiver_hourly ?? 0;
+        const cutHourly = booking.sitterwise_cut_hourly ?? 0;
+        const hours = booking.total_working_hour ?? 0;
+
         setSelectedBooking(booking);
         setLocalValues({
+            total_working_hour: String(booking.total_working_hour ?? ''),
             reimbursement: String(booking.reimbursement ?? ''),
             reimbursement_description: booking.reimbursement_description ?? '',
             tip: String(booking.tip ?? ''),
             bonus: String(booking.bonus ?? ''),
         });
         paymentForm.setData({
+            total_working_hour: booking.total_working_hour ?? 0,
             reimbursement: booking.reimbursement ?? 0,
             reimbursement_description: booking.reimbursement_description ?? '',
             tip: booking.tip ?? 0,
             bonus: booking.bonus ?? 0,
+        });
+        setRecalculatedValues({
+            charge_to_client: hourlyRate * hours,
+            paid_to_caregiver: caregiverHourly * hours,
+            sitterwise_cut: cutHourly * hours,
         });
         setShowPaymentSheet(true);
     };
@@ -211,6 +222,25 @@ export default function TransactionsIndex() {
                 setShowConfirmDialog(false);
                 setSelectedBooking(null);
             },
+        });
+    };
+
+    const recalculatePayment = (hoursStr: string) => {
+        if (!selectedBooking) return;
+
+        const hours = parseFloat(hoursStr) || 0;
+        const hourlyRate = selectedBooking.charge_to_client_hourly ?? 0;
+        const caregiverHourly = selectedBooking.paid_to_caregiver_hourly ?? 0;
+        const cutHourly = selectedBooking.sitterwise_cut_hourly ?? 0;
+
+        setRecalculatedValues({
+            charge_to_client: hourlyRate * hours,
+            paid_to_caregiver: caregiverHourly * hours,
+            sitterwise_cut: cutHourly * hours,
+        });
+
+        paymentForm.setData({
+            total_working_hour: hours,
         });
     };
 
@@ -357,19 +387,27 @@ export default function TransactionsIndex() {
                                             <td className="px-4 py-3">
                                                 {getStatusBadge(booking.status)}
                                             </td>
-                                            <td className="flex justify-end gap-x-2 px-4 py-3">
+                                            <td className="flex flex-col items-end gap-y-1 px-4 py-3">
                                                 {booking.status ===
                                                     'completed' && (
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openPaymentSheet(
-                                                                booking,
-                                                            )
-                                                        }
-                                                    >
-                                                        Payment Approval
-                                                    </Button>
+                                                    <div className="flex flex-col items-center gap-y-1">
+                                                        <Button
+                                                            size="sm"
+                                                            disabled={!booking.client.has_active_payment_method}
+                                                            onClick={() =>
+                                                                openPaymentSheet(
+                                                                    booking,
+                                                                )
+                                                            }
+                                                        >
+                                                            Payment Approval
+                                                        </Button>
+                                                        {!booking.client.has_active_payment_method && (
+                                                            <span className="text-[10px] text-destructive font-medium">
+                                                                No active payment method
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -437,114 +475,63 @@ export default function TransactionsIndex() {
                     <div className="space-y-4 overflow-y-auto px-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label>
                                     Checkout At
-                                </label>
-                                <Input
-                                    value={
-                                        selectedBooking?.checkout_at
-                                            ? formatDateTime(
-                                                  selectedBooking.checkout_at,
-                                              )
-                                            : '-'
-                                    }
-                                    readOnly
-                                    className="mt-1"
-                                />
+                                </Label>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {selectedBooking?.checkout_at
+                                        ? formatDateTime(selectedBooking.checkout_at)
+                                        : '-'}
+                                </p>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-foreground">
-                                    Total Working Hours
-                                </label>
-                                <Input
-                                    value={
-                                        selectedBooking?.total_working_hour?.toFixed(
-                                            2,
-                                        ) ?? '0.00'
-                                    }
-                                    readOnly
-                                    className="mt-1"
-                                />
+                                <Label>
+                                    Service Type
+                                </Label>
+                                <p className="mt-1 text-sm text-muted-foreground capitalize">
+                                    {selectedBooking?.service_type?.replace(/_/g, ' ') ?? '-'}
+                                </p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label>
                                     Children Count
-                                </label>
-                                <Input
-                                    value={
-                                        selectedBooking?.children?.length ?? 0
-                                    }
-                                    readOnly
-                                    className="mt-1"
-                                />
+                                </Label>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {selectedBooking?.children?.length ?? 0}
+                                </p>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-foreground">
+                                <Label>
                                     Pets Count
-                                </label>
-                                <Input
-                                    value={selectedBooking?.pets?.length ?? 0}
-                                    readOnly
-                                    className="mt-1"
-                                />
+                                </Label>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {selectedBooking?.pets?.length ?? 0}
+                                </p>
                             </div>
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium text-foreground">
-                                Service Type
-                            </label>
+                            <Label>
+                                Total Working Hours
+                            </Label>
                             <Input
-                                value={selectedBooking?.service_type ?? '-'}
-                                readOnly
+                                type="text"
+                                inputMode="decimal"
+                                value={localValues.total_working_hour}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                                    setLocalValues({
+                                        ...localValues,
+                                        total_working_hour: val,
+                                    });
+                                    recalculatePayment(val);
+                                }}
+                                placeholder="0.00"
                                 className="mt-1"
                             />
-                        </div>
-
-                        <div className="rounded-md border border-border bg-muted p-4">
-                            <h4 className="mb-3 text-sm font-semibold text-foreground">
-                                Payment Summary
-                            </h4>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Charge to Client
-                                    </span>
-                                    <span className="font-medium">
-                                        $
-                                        {(
-                                            selectedBooking?.charge_to_client ??
-                                            0
-                                        ).toFixed(2)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Paid to Caregiver
-                                    </span>
-                                    <span className="font-medium">
-                                        $
-                                        {(
-                                            selectedBooking?.paid_to_caregiver ??
-                                            0
-                                        ).toFixed(2)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        Sitterwise Cut
-                                    </span>
-                                    <span className="font-medium">
-                                        $
-                                        {(
-                                            selectedBooking?.sitterwise_cut ?? 0
-                                        ).toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
                         </div>
 
                         <div>
@@ -665,6 +652,68 @@ export default function TransactionsIndex() {
                                     }
                                     className="pl-8"
                                 />
+                            </div>
+                        </div>
+
+                        <div className="rounded-md border border-border bg-muted p-4">
+                            <h4 className="mb-3 text-sm font-semibold text-foreground">
+                                Payment Summary
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Caregiver Service
+                                    </span>
+                                    <span className="font-medium">
+                                        ${recalculatedValues.paid_to_caregiver.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Sitterwise Fee
+                                    </span>
+                                    <span className="font-medium">
+                                        ${recalculatedValues.sitterwise_cut.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Reimbursement
+                                    </span>
+                                    <span className="font-medium">
+                                        ${(parseFloat(localValues.reimbursement) || 0).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Bonus
+                                    </span>
+                                    <span className="font-medium">
+                                        ${(parseFloat(localValues.bonus) || 0).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Tip
+                                    </span>
+                                    <span className="font-medium">
+                                        ${(parseFloat(localValues.tip) || 0).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between border-t border-border pt-2 mt-2">
+                                    <span className="font-medium text-foreground">
+                                        Charged to Client
+                                    </span>
+                                    <span className="font-medium text-foreground">
+                                        $
+                                        {(
+                                            recalculatedValues.charge_to_client +
+                                            (parseFloat(localValues.reimbursement) || 0) +
+                                            (parseFloat(localValues.bonus) || 0) +
+                                            (parseFloat(localValues.tip) || 0)
+                                        ).toFixed(2)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

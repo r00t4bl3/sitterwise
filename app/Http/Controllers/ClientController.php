@@ -30,7 +30,7 @@ class ClientController extends Controller
             });
         }
 
-        if ($request->has('client_type') && $request->client_type) {
+        if ($request->has('client_type') && $request->client_type && $request->client_type !== 'all') {
             $query->where('client_type', $request->client_type);
         }
 
@@ -40,7 +40,7 @@ class ClientController extends Controller
             'clients' => $clients,
             'filters' => [
                 'search' => $request->search,
-                'client_type' => $request->client_type,
+                'client_type' => $request->client_type ?? 'all',
             ],
         ]);
     }

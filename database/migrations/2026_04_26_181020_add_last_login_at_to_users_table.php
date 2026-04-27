@@ -12,9 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['caregiver', 'client', 'admin', 'super_admin'])->default('client')->after('email');
-            $table->string('profile_photo_path')->nullable()->after('role');
-            $table->string('profile_photo_url')->nullable();
             $table->timestamp('last_login_at')->nullable();
         });
     }
@@ -25,9 +22,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-            $table->dropColumn('profile_photo_path');
-            $table->dropColumn('profile_photo_url');
             $table->dropColumn('last_login_at');
         });
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,11 @@ class TransactionController extends Controller
 
         $bookings = Booking::query()
             ->whereIn('status', ['completed', 'paid'])
-            ->with(['client.user', 'caregiver'])
+            ->with(['client' => function ($query) {
+                $query->withExists(['paymentMethods as has_active_payment_method' => function ($query) {
+                    $query->where('status', 'active');
+                }]);
+            }, 'client.user', 'caregiver'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('id', 'like', "%{$search}%")
@@ -50,10 +55,15 @@ class TransactionController extends Controller
                     'paid_to_caregiver' => $booking->paid_to_caregiver,
                     'sitterwise_cut' => $booking->sitterwise_cut,
                     'charge_to_client' => $booking->charge_to_client,
+                    'charge_to_client_hourly' => $booking->charge_to_client_hourly,
+                    'paid_to_caregiver_hourly' => $booking->paid_to_caregiver_hourly,
+                    'sitterwise_cut_hourly' => $booking->sitterwise_cut_hourly,
                     'client' => $booking->client ? [
+                        'id' => $booking->client->id,
                         'first_name' => $booking->client->first_name,
                         'last_name' => $booking->client->last_name,
                         'user' => ['email' => $booking->client->user?->email],
+                        'has_active_payment_method' => (bool) $booking->client->has_active_payment_method,
                     ] : null,
                     'caregiver' => $booking->caregiver ? [
                         'id' => $booking->caregiver->id,
@@ -69,6 +79,14 @@ class TransactionController extends Controller
             'filters' => [
                 'search' => $search,
             ],
+            'booking_statuses' => array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                    'colors' => $case->colors(),
+                ],
+                BookingStatus::cases()
+            ),
         ]);
     }
 }

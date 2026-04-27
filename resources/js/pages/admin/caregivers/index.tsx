@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Rating } from '@/components/ui/rating';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
     Tooltip,
@@ -207,18 +214,25 @@ export default function CaregiversIndex() {
                                 }}
                             />
                         </div>
-                        <select
+                        <Select
                             name="status"
-                            defaultValue={filters.status || ''}
-                            className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                            defaultValue={filters.status || 'all'}
                         >
-                            <option value="">All Statuses</option>
-                            {statuses.map((status) => (
-                                <option key={status.id} value={status.id}>
-                                    {status.name}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="All Statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                {statuses.map((status) => (
+                                    <SelectItem
+                                        key={status.id}
+                                        value={status.id.toString()}
+                                    >
+                                        {status.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <Button type="submit">Filter</Button>
                     </form>
                 </div>

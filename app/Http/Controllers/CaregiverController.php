@@ -34,7 +34,7 @@ class CaregiverController extends Controller
             });
         }
 
-        if ($request->has('status') && $request->status) {
+        if ($request->has('status') && $request->status && $request->status !== 'all') {
             $query->where('status_id', $request->status);
         }
 
@@ -46,7 +46,7 @@ class CaregiverController extends Controller
             'statuses' => $statuses,
             'filters' => [
                 'search' => $request->search,
-                'status' => $request->status,
+                'status' => $request->status ?? 'all',
             ],
         ]);
     }

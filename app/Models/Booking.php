@@ -27,11 +27,15 @@ class Booking extends Model
         });
 
         static::updating(function (Booking $booking) {
-            // if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
-            $booking->calculateTotalWorkingHours();
-            $booking->calculateHourlyRate();
+            if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
+                $booking->calculateTotalWorkingHours();
+            }
+
+            if ($booking->isDirty(['service_type', 'children', 'pets'])) {
+                $booking->calculateHourlyRate();
+            }
+
             $booking->calculateTotalAmount();
-            // }
         });
     }
 
@@ -74,6 +78,13 @@ class Booking extends Model
         $this->charge_to_client = round($this->charge_to_client_hourly * $this->total_working_hour, 2);
         $this->paid_to_caregiver = round($this->paid_to_caregiver_hourly * $this->total_working_hour, 2);
         $this->sitterwise_cut = round($this->sitterwise_cut_hourly * $this->total_working_hour, 2);
+
+        $reimbursement = (float) ($this->getAttribute('reimbursement') ?? 0);
+        $bonus = (float) ($this->getAttribute('bonus') ?? 0);
+        $tip = (float) ($this->getAttribute('tip') ?? 0);
+
+        $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
+        $this->total_amount = round($this->total_service_amount + $tip, 2);
     }
 
     public function resolveRouteBinding($value, $field = null)
@@ -113,6 +124,7 @@ class Booking extends Model
             'charge_to_client_hourly' => 'decimal:2',
             'paid_to_caregiver_hourly' => 'decimal:2',
             'sitterwise_cut_hourly' => 'decimal:2',
+            'total_service_amount' => 'decimal:2',
         ];
     }
 

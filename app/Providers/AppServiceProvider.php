@@ -10,7 +10,9 @@ use App\Listeners\SendBookingAcceptedNotifications;
 use App\Listeners\SendBookingCreatedNotifications;
 use App\Listeners\SendBookingInvitationNotifications;
 use App\Listeners\SendBookingReminderNotifications;
+use App\Listeners\UpdateLastLogin;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -33,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Event::listen(
+            Login::class,
+            UpdateLastLogin::class,
+        );
 
         Event::listen(
             BookingCreated::class,

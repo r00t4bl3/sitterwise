@@ -54,6 +54,8 @@ class BookingFactory extends Factory
             'special_needs_notes' => null,
             'emergency_instructions' => null,
             'total_amount' => rand(50, 200),
+            'total_service_amount' => rand(50, 200),
+            'charge_to_client_hourly' => 25.00,
             'paid_to_caregiver' => rand(10, 50),
             'payment_status' => BookingPaymentStatus::Pending->value,
             'stripe_payment_intent_id' => null,

@@ -11,13 +11,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class BookingAcceptedNotification extends Notification implements ShouldQueue
+class BookingAcceptedNotification extends BaseNotification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(public Booking $booking) {}
 
-    public function via(object $notifiable): array
+    protected function channels(object $notifiable): array
     {
         $channels = ['database', 'mail'];
 

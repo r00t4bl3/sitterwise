@@ -21,11 +21,15 @@ class ClientPayment extends Model
         'provider_payment_id',
         'provider_charge_id',
         'paid_at',
+        'metadata',
+        'error_code',
+        'error_message',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     public function client(): BelongsTo

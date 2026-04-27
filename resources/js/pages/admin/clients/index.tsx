@@ -3,6 +3,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -177,16 +184,26 @@ export default function ClientsIndex() {
                                 }}
                             />
                         </div>
-                        <select
+                        <Select
                             name="client_type"
-                            defaultValue={filters.client_type || ''}
-                            className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm outline-none focus:border-ring"
+                            defaultValue={filters.client_type || 'all'}
                         >
-                            <option value="">All Types</option>
-                            <option value="sd_resident">SD Resident</option>
-                            <option value="vacationer">Vacationer</option>
-                            <option value="invoiced">Invoiced</option>
-                        </select>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="All Types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
+                                <SelectItem value="resident">
+                                    SD Resident
+                                </SelectItem>
+                                <SelectItem value="vacationer">
+                                    Vacationer
+                                </SelectItem>
+                                <SelectItem value="invoiced">
+                                    Invoiced
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                         <Button type="submit">Filter</Button>
                     </form>
                 </div>

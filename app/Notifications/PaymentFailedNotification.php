@@ -5,9 +5,8 @@ namespace App\Notifications;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 
-class PaymentFailedNotification extends Notification implements ShouldQueue
+class PaymentFailedNotification extends BaseNotification implements ShouldQueue
 {
     use Queueable;
 
@@ -18,7 +17,7 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
         public string $recipientType
     ) {}
 
-    public function via(object $notifiable): array
+    protected function channels(object $notifiable): array
     {
         return ['database'];
     }

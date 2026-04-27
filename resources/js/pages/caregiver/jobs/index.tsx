@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, parseAsLocal } from '@/lib/datetime';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Booking {
     id: number;
@@ -183,7 +184,7 @@ export default function CaregiverJobsIndex() {
             return;
         }
 
-        checkoutForm.post(`/bookings/${selectedJob.ulid}/checkout`, {
+        checkoutForm.post(`/jobs/${selectedJob.ulid}/checkout`, {
             onSuccess: () => {
                 setIsCheckoutSheetOpen(false);
             },
@@ -310,7 +311,7 @@ export default function CaregiverJobsIndex() {
                                                     asChild
                                                 >
                                                     <Link
-                                                        href={`/bookings/${job.ulid}`}
+                                                        href={`/jobs/${job.ulid}`}
                                                     >
                                                         Details
                                                     </Link>
@@ -509,6 +510,9 @@ export default function CaregiverJobsIndex() {
                                     type="submit"
                                     disabled={checkoutForm.processing}
                                 >
+                                    {checkoutForm.processing && (
+                                        <Spinner className="mr-2 h-4 w-4" />
+                                    )}
                                     {checkoutForm.processing
                                         ? 'Processing...'
                                         : 'Confirm Checkout'}
