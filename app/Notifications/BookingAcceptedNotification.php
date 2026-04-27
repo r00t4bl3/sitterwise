@@ -50,7 +50,7 @@ class BookingAcceptedNotification extends BaseNotification implements ShouldQueu
         $caregiverName = $this->booking->caregiver ? ($this->booking->caregiver->first_name.' '.$this->booking->caregiver->last_name) : 'A sitter';
         $date = $this->booking->start_datetime->format('n/j/y');
         $time = $this->booking->start_datetime->format('g:i A');
-        $profileLink = $this->booking->caregiver ? config('app.url').'/caregivers/'.$this->booking->caregiver->id : 'our platform';
+        $profileLink = $this->booking->caregiver ? config('app.url').'/bio/'.$this->booking->caregiver->slug : 'our platform';
 
         return (object) [
             'message' => "Hello {$clientLastName} family! We wanted to let you know your caregiver on {$date} at {$time} will be {$caregiverName}. Here is her profile: {$profileLink}. We look forward to helping your family!",
