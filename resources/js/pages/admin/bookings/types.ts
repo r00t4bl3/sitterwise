@@ -105,6 +105,20 @@ export interface Booking {
         };
         children_count?: number;
         pets_count?: number;
+        children?: Array<{
+            id: number;
+            name: string;
+            gender: string | null;
+            birth_month: number | null;
+            birth_year: number | null;
+        }>;
+        pets?: Array<{
+            id: number;
+            name: string;
+            type: string | null;
+            breed: string | null;
+            notes: string | null;
+        }>;
     };
     hotel: {
         id: number;

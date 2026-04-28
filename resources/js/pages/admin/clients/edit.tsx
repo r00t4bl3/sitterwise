@@ -107,11 +107,17 @@ interface Props {
     attribute_definitions: AttributeDefinition[];
     sitter_preferences: Array<{ value: string; label: string }>;
     client_types: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
 }
 
 export default function ClientEdit() {
-    const { client, attribute_definitions, sitter_preferences, client_types } =
-        usePage<Props>().props;
+    const {
+        client,
+        attribute_definitions,
+        sitter_preferences,
+        client_types,
+        discovery_sources,
+    } = usePage<Props>().props;
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
         client.user.profile_photo_path,
@@ -418,35 +424,27 @@ export default function ClientEdit() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>How did you hear about us?</Label>
+                                <Label htmlFor="how_did_you_hear">
+                                    How did you hear about us?
+                                </Label>
                                 <Select
                                     value={form.data.how_did_you_hear}
                                     onValueChange={(value) =>
                                         form.setData('how_did_you_hear', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger id="how_did_you_hear">
                                         <SelectValue placeholder="Select an option" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="concierge">
-                                            Concierge
-                                        </SelectItem>
-                                        <SelectItem value="friend_family">
-                                            Friend/Family
-                                        </SelectItem>
-                                        <SelectItem value="google">
-                                            Google
-                                        </SelectItem>
-                                        <SelectItem value="returning_client">
-                                            Returning Client
-                                        </SelectItem>
-                                        <SelectItem value="care_com">
-                                            Care.com
-                                        </SelectItem>
-                                        <SelectItem value="other">
-                                            Other
-                                        </SelectItem>
+                                        {discovery_sources.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

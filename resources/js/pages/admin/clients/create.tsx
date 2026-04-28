@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -30,7 +30,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface Props {
+    [key: string]: unknown;
+    client_types: Array<{ value: string; label: string }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
+}
+
 export default function ClientCreate() {
+    const { client_types, sitter_preferences, discovery_sources } =
+        usePage<Props>().props;
+
     const form = useForm({
         first_name: '',
         last_name: '',
@@ -174,15 +184,14 @@ export default function ClientCreate() {
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="vacationer">
-                                            Vacationer
-                                        </SelectItem>
-                                        <SelectItem value="sd_resident">
-                                            SD Resident
-                                        </SelectItem>
-                                        <SelectItem value="invoiced">
-                                            Invoiced
-                                        </SelectItem>
+                                        {client_types.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -200,24 +209,14 @@ export default function ClientCreate() {
                                         <SelectValue placeholder="Select an option" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="concierge">
-                                            Concierge
-                                        </SelectItem>
-                                        <SelectItem value="friend_family">
-                                            Friend/Family
-                                        </SelectItem>
-                                        <SelectItem value="google">
-                                            Google
-                                        </SelectItem>
-                                        <SelectItem value="returning_client">
-                                            Returning Client
-                                        </SelectItem>
-                                        <SelectItem value="care_com">
-                                            Care.com
-                                        </SelectItem>
-                                        <SelectItem value="other">
-                                            Other
-                                        </SelectItem>
+                                        {discovery_sources.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

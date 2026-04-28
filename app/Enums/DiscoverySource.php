@@ -9,6 +9,7 @@ enum DiscoverySource: string
     case Google = 'google';
     case ReturningClient = 'returning_client';
     case CareCom = 'care_com';
+    case ArtificialIntelligence = 'AI - ChatGPT, Claude, Grok, Gemini, etc.';
     case Other = 'other';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum DiscoverySource: string
             self::Google => 'Google',
             self::ReturningClient => 'Returning Client',
             self::CareCom => 'Care.com',
+            self::ArtificialIntelligence => 'AI - ChatGPT, Claude, Grok, Gemini, etc.',
             self::Other => 'Other',
         };
     }

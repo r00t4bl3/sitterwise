@@ -116,7 +116,7 @@ interface Props {
 export default function TransactionsIndex() {
     const { bookings, filters, booking_statuses } = usePage<Props>().props;
 
-        const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(
         null,
     );
@@ -159,10 +159,18 @@ export default function TransactionsIndex() {
     };
 
     const statusColorsMap = useMemo(() => {
-        const map: Record<string, { bg: string; text: string; border: string }> = {};
-        booking_statuses.forEach((status: { value: string; colors: { bg: string; text: string; border: string } }) => {
-            map[status.value] = status.colors;
-        });
+        const map: Record<
+            string,
+            { bg: string; text: string; border: string }
+        > = {};
+        booking_statuses.forEach(
+            (status: {
+                value: string;
+                colors: { bg: string; text: string; border: string };
+            }) => {
+                map[status.value] = status.colors;
+            },
+        );
         return map;
     }, [booking_statuses]);
 
@@ -393,7 +401,10 @@ export default function TransactionsIndex() {
                                                     <div className="flex flex-col items-center gap-y-1">
                                                         <Button
                                                             size="sm"
-                                                            disabled={!booking.client.has_active_payment_method}
+                                                            disabled={
+                                                                !booking.client
+                                                                    .has_active_payment_method
+                                                            }
                                                             onClick={() =>
                                                                 openPaymentSheet(
                                                                     booking,
@@ -402,9 +413,11 @@ export default function TransactionsIndex() {
                                                         >
                                                             Payment Approval
                                                         </Button>
-                                                        {!booking.client.has_active_payment_method && (
-                                                            <span className="text-[10px] text-destructive font-medium">
-                                                                No active payment method
+                                                        {!booking.client
+                                                            .has_active_payment_method && (
+                                                            <span className="text-[10px] font-medium text-destructive">
+                                                                No active
+                                                                payment method
                                                             </span>
                                                         )}
                                                     </div>
@@ -475,38 +488,35 @@ export default function TransactionsIndex() {
                     <div className="space-y-4 overflow-y-auto px-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>
-                                    Checkout At
-                                </Label>
+                                <Label>Checkout At</Label>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     {selectedBooking?.checkout_at
-                                        ? formatDateTime(selectedBooking.checkout_at)
+                                        ? formatDateTime(
+                                              selectedBooking.checkout_at,
+                                          )
                                         : '-'}
                                 </p>
                             </div>
                             <div>
-                                <Label>
-                                    Service Type
-                                </Label>
+                                <Label>Service Type</Label>
                                 <p className="mt-1 text-sm text-muted-foreground capitalize">
-                                    {selectedBooking?.service_type?.replace(/_/g, ' ') ?? '-'}
+                                    {selectedBooking?.service_type?.replace(
+                                        /_/g,
+                                        ' ',
+                                    ) ?? '-'}
                                 </p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>
-                                    Children Count
-                                </Label>
+                                <Label>Children Count</Label>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     {selectedBooking?.children?.length ?? 0}
                                 </p>
                             </div>
                             <div>
-                                <Label>
-                                    Pets Count
-                                </Label>
+                                <Label>Pets Count</Label>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     {selectedBooking?.pets?.length ?? 0}
                                 </p>
@@ -514,15 +524,16 @@ export default function TransactionsIndex() {
                         </div>
 
                         <div>
-                            <Label>
-                                Total Working Hours
-                            </Label>
+                            <Label>Total Working Hours</Label>
                             <Input
                                 type="text"
                                 inputMode="decimal"
                                 value={localValues.total_working_hour}
                                 onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                                    const val = e.target.value.replace(
+                                        /[^0-9.]/g,
+                                        '',
+                                    );
                                     setLocalValues({
                                         ...localValues,
                                         total_working_hour: val,
@@ -665,7 +676,10 @@ export default function TransactionsIndex() {
                                         Caregiver Service
                                     </span>
                                     <span className="font-medium">
-                                        ${recalculatedValues.paid_to_caregiver.toFixed(2)}
+                                        $
+                                        {recalculatedValues.paid_to_caregiver.toFixed(
+                                            2,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -673,7 +687,10 @@ export default function TransactionsIndex() {
                                         Sitterwise Fee
                                     </span>
                                     <span className="font-medium">
-                                        ${recalculatedValues.sitterwise_cut.toFixed(2)}
+                                        $
+                                        {recalculatedValues.sitterwise_cut.toFixed(
+                                            2,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -681,7 +698,12 @@ export default function TransactionsIndex() {
                                         Reimbursement
                                     </span>
                                     <span className="font-medium">
-                                        ${(parseFloat(localValues.reimbursement) || 0).toFixed(2)}
+                                        $
+                                        {(
+                                            parseFloat(
+                                                localValues.reimbursement,
+                                            ) || 0
+                                        ).toFixed(2)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -689,7 +711,10 @@ export default function TransactionsIndex() {
                                         Bonus
                                     </span>
                                     <span className="font-medium">
-                                        ${(parseFloat(localValues.bonus) || 0).toFixed(2)}
+                                        $
+                                        {(
+                                            parseFloat(localValues.bonus) || 0
+                                        ).toFixed(2)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -697,10 +722,13 @@ export default function TransactionsIndex() {
                                         Tip
                                     </span>
                                     <span className="font-medium">
-                                        ${(parseFloat(localValues.tip) || 0).toFixed(2)}
+                                        $
+                                        {(
+                                            parseFloat(localValues.tip) || 0
+                                        ).toFixed(2)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between border-t border-border pt-2 mt-2">
+                                <div className="mt-2 flex justify-between border-t border-border pt-2">
                                     <span className="font-medium text-foreground">
                                         Charged to Client
                                     </span>
@@ -708,8 +736,11 @@ export default function TransactionsIndex() {
                                         $
                                         {(
                                             recalculatedValues.charge_to_client +
-                                            (parseFloat(localValues.reimbursement) || 0) +
-                                            (parseFloat(localValues.bonus) || 0) +
+                                            (parseFloat(
+                                                localValues.reimbursement,
+                                            ) || 0) +
+                                            (parseFloat(localValues.bonus) ||
+                                                0) +
                                             (parseFloat(localValues.tip) || 0)
                                         ).toFixed(2)}
                                     </span>

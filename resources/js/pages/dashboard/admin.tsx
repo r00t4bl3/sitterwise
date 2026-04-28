@@ -208,8 +208,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             </h3>
                             <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
                                 <div className="p-6">
-                                    {safeAdmin.bookings_needing_attention.length >
-                                    0 ? (
+                                    {safeAdmin.bookings_needing_attention
+                                        .length > 0 ? (
                                         <div className="space-y-3">
                                             {safeAdmin.bookings_needing_attention.map(
                                                 (booking) => (
@@ -229,7 +229,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     )}
                                                                 </p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {booking.client
+                                                                    {booking
+                                                                        .client
                                                                         ?.user
                                                                         .name ||
                                                                         'Unknown Client'}{' '}
@@ -284,7 +285,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 <div className="p-6">
                                     <div className="space-y-4">
                                         {/* Recent Bookings */}
-                                        {safeAdmin.recent_bookings.length > 0 && (
+                                        {safeAdmin.recent_bookings.length >
+                                            0 && (
                                             <div>
                                                 <h4 className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                                     New Bookings
@@ -330,7 +332,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                         )}
 
                                         {/* Recent Caregivers */}
-                                        {safeAdmin.recent_caregivers.length > 0 && (
+                                        {safeAdmin.recent_caregivers.length >
+                                            0 && (
                                             <div>
                                                 <h4 className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                                     New Caregivers
@@ -340,7 +343,9 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                         .slice(0, 2)
                                                         .map((caregiver) => (
                                                             <Link
-                                                                key={caregiver.id}
+                                                                key={
+                                                                    caregiver.id
+                                                                }
                                                                 href={`/caregivers/${caregiver.id}`}
                                                                 className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                                             >
@@ -369,9 +374,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             </div>
                                         )}
 
-                                        {safeAdmin.recent_bookings.length === 0 &&
-                                            safeAdmin.recent_caregivers.length ===
-                                                0 && (
+                                        {safeAdmin.recent_bookings.length ===
+                                            0 &&
+                                            safeAdmin.recent_caregivers
+                                                .length === 0 && (
                                                 <p className="py-4 text-center text-sm text-muted-foreground">
                                                     No recent activity
                                                 </p>
@@ -409,7 +415,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                             </div>
                                                             <div>
                                                                 <p className="text-sm font-medium">
-                                                                    {booking.client
+                                                                    {booking
+                                                                        .client
                                                                         ?.user
                                                                         .name ||
                                                                         'Unknown'}

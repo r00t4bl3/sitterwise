@@ -8,8 +8,8 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
-use App\Events\BookingCreated;
 use App\Events\BookingAccepted;
+use App\Events\BookingCreated;
 use App\Events\BookingInvitationSent;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -17,8 +17,8 @@ use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
-use App\Models\ClientChild;
 use App\Models\ClientAddress;
+use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
@@ -64,7 +64,27 @@ class AdminBookingService implements BookingServiceInterface
                 ->orWhereBetween('end_datetime', [$startDate, $endDate]);
         })
             ->orderBy('start_datetime', 'asc')
-            ->get();
+            ->get()
+            ->map(function (Booking $booking) {
+                if ($booking->client) {
+                    $booking->client->setAttribute('children', $booking->client->children->map(fn ($c) => [
+                        // 'id' => $c->id,
+                        'name' => $c['name'],
+                        'gender' => $c['gender'],
+                        'birth_month' => $c['birth_month'],
+                        'birth_year' => $c['birth_year'],
+                    ]));
+                    $booking->client->setAttribute('pets', $booking->client->pets->map(fn ($p) => [
+                        // 'id' => $p->id,
+                        'name' => $p['name'],
+                        'type' => $p['type'],
+                        'breed' => $p['breed'],
+                        'notes' => $p['notes'],
+                    ]));
+                }
+
+                return $booking;
+            });
 
         $serviceTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -110,7 +130,6 @@ class AdminBookingService implements BookingServiceInterface
             'zip' => $h->zip,
         ]);
 
-        
         $clients = Client::with('user')->get()->map(fn ($c) => [
             'id' => $c->id,
             'name' => $c->first_name.' '.$c->last_name,
@@ -123,8 +142,8 @@ class AdminBookingService implements BookingServiceInterface
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->first_name.' '.$c->last_name,
-        ]);
-            
+            ]);
+
         return Inertia::render('admin/bookings/index', [
             'bookings' => $bookings,
             'service_types' => $serviceTypes,
@@ -582,7 +601,7 @@ class AdminBookingService implements BookingServiceInterface
             );
         }
     }
-    
+
     public function destroy(Booking $booking)
     {
         $booking->delete();

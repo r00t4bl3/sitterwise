@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { UserAvatar } from '@/components/user-avatar';
+import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -135,6 +136,7 @@ export default function ClientsIndex() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Clients" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>

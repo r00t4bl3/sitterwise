@@ -192,7 +192,7 @@ export function PersonalInfoSection({
     setAddressValue,
     caregiverSuggestions,
 }: PersonalInfoSectionProps) {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
     const [selectedCaregivers, setSelectedCaregivers] = useState<number[]>([]);
@@ -223,53 +223,77 @@ export function PersonalInfoSection({
             {editingBooking && form.data.status === 'received' && (
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
-                        <h2 className="font-semibold">
+                        <p className="font-semibold">
                             {editingBooking.client.first_name}{' '}
                             {editingBooking.client.last_name} -{' '}
-                            {editingBooking.client.phone || 'No phone'}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            {new Date(form.data.start_datetime).toLocaleString(
-                                'en-US',
-                                {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                },
-                            )}{' '}
-                            -{' '}
-                            {new Date(form.data.end_datetime).toLocaleString(
-                                'en-US',
-                                {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                },
-                            )}
+                            {(editingBooking.client.phone && (
+                                <a
+                                    href={`tel:${editingBooking.client.phone}`}
+                                    className="text-primary hover:underline"
+                                >
+                                    {editingBooking.client.phone}
+                                </a>
+                            )) ||
+                                'No phone'}
                         </p>
-                        {editingBooking.client.children_count ||
-                        editingBooking.client.pets_count ? (
+                        <p className="text-sm text-muted-foreground">
+                            {(() => {
+                                const start = new Date(
+                                    form.data.start_datetime,
+                                );
+                                const end = new Date(form.data.end_datetime);
+                                const isSameDay =
+                                    start.getFullYear() === end.getFullYear() &&
+                                    start.getMonth() === end.getMonth() &&
+                                    start.getDate() === end.getDate();
+
+                                const dateOptions: Intl.DateTimeFormatOptions =
+                                    {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                    };
+                                const timeOptions: Intl.DateTimeFormatOptions =
+                                    {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true,
+                                    };
+
+                                if (isSameDay) {
+                                    return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                                }
+
+                                return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                            })()}
+                        </p>
+                        {editingBooking.client.children &&
+                        editingBooking.client.children.length > 0 ? (
                             <p className="text-sm text-muted-foreground">
-                                {editingBooking.client.children_count
-                                    ? `(${editingBooking.client.children_count} ${editingBooking.client.children_count === 1 ? 'child' : 'children'})`
-                                    : ''}
-                                {editingBooking.client.children_count &&
-                                editingBooking.client.pets_count
-                                    ? ', '
-                                    : ''}
-                                {editingBooking.client.pets_count
-                                    ? `(${editingBooking.client.pets_count} ${editingBooking.client.pets_count === 1 ? 'pet' : 'pets'})`
-                                    : ''}
+                                {editingBooking.client.children.map(
+                                    (child, index) => (
+                                        <span key={child.id}>
+                                            {child.name}
+                                            {child.birth_month &&
+                                            child.birth_year
+                                                ? ` (${calculateAge(
+                                                      child.birth_year,
+                                                      child.birth_month,
+                                                  )})`
+                                                : ''}
+                                            {index <
+                                            editingBooking.client.children!
+                                                .length -
+                                                1
+                                                ? ', '
+                                                : ''}
+                                        </span>
+                                    ),
+                                )}
                             </p>
                         ) : (
                             <p className="text-sm text-muted-foreground">
-                                (No children/pets)
+                                (No children)
                             </p>
                         )}
                     </div>

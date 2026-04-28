@@ -159,6 +159,7 @@ export default function ClientBookingCreate() {
         special_consideration_options,
         booking_attributes,
         sitter_preferences,
+        discovery_sources,
     } = usePage().props as unknown as {
         service_types: Array<{ value: string; label: string }>;
         location_types: Array<{ value: string; label: string }>;
@@ -202,6 +203,7 @@ export default function ClientBookingCreate() {
             options: string[];
         }>;
         sitter_preferences: Array<{ value: string; label: string }>;
+        discovery_sources: Array<{ value: string; label: string }>;
     };
 
     const tomorrow = new Date();
@@ -868,7 +870,7 @@ export default function ClientBookingCreate() {
                                                                         )
                                                                     }
                                                                     placeholder="Year"
-                                                                    className="h-8 w-16"
+                                                                    className="w-16"
                                                                 />
                                                             </div>
                                                         </td>
@@ -1183,27 +1185,17 @@ export default function ClientBookingCreate() {
                                     }
                                 >
                                     <SelectTrigger id="how_did_you_hear">
-                                        <SelectValue placeholder="Select..." />
+                                        <SelectValue placeholder="Select an option" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="concierge">
-                                            Concierge
-                                        </SelectItem>
-                                        <SelectItem value="friend_family">
-                                            Friend/Family
-                                        </SelectItem>
-                                        <SelectItem value="google">
-                                            Google
-                                        </SelectItem>
-                                        <SelectItem value="returning_client">
-                                            Returning Client
-                                        </SelectItem>
-                                        <SelectItem value="care_com">
-                                            Care.com
-                                        </SelectItem>
-                                        <SelectItem value="other">
-                                            Other
-                                        </SelectItem>
+                                        {discovery_sources.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

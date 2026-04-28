@@ -101,6 +101,7 @@ interface Client {
     phone: string;
     client_type: string;
     how_did_you_hear: string | null;
+    how_did_you_hear_label: string | null;
     sitter_preferences: string[] | null;
     biography: string | null;
     special_needs_notes: string | null;
@@ -433,7 +434,14 @@ export default function ClientShow() {
                                     Email
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {client.email}
+                                    {client.email && (
+                                        <a
+                                            href={`mailto:${client.email}`}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {client.email}
+                                        </a>
+                                    )}
                                 </p>
                             </div>
                             <div>
@@ -441,7 +449,14 @@ export default function ClientShow() {
                                     Phone
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {client.phone}
+                                    {client.phone && (
+                                        <a
+                                            href={`tel:${client.phone}`}
+                                            className="text-primary hover:underline"
+                                        >
+                                            {client.phone}
+                                        </a>
+                                    )}
                                 </p>
                             </div>
                             <div>
@@ -459,7 +474,9 @@ export default function ClientShow() {
                                     How did you hear about us
                                 </p>
                                 <p className="text-sm font-medium text-foreground">
-                                    {client.how_did_you_hear || '—'}
+                                    {client.how_did_you_hear_label ||
+                                        client.how_did_you_hear ||
+                                        '—'}
                                 </p>
                             </div>
                             {client.client_type !== 'vacationer' &&

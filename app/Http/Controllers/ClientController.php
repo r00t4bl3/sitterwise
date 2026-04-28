@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ClientType;
+use App\Enums\DiscoverySource;
 use App\Enums\SitterPreference;
 use App\Http\Requests\ResetClientPasswordRequest;
 use App\Http\Requests\StoreClientRequest;
@@ -17,6 +18,22 @@ use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    public function __construct()
+    {
+        $this->clientType = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ClientType::cases(),
+        );
+        $this->sitterPreference = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            SitterPreference::cases(),
+        );
+        $this->discoverySources = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            DiscoverySource::cases(),
+        );
+    }
+
     public function index(Request $request)
     {
         $query = Client::with(['user'])->withCount(['children', 'pets']);
@@ -47,7 +64,11 @@ class ClientController extends Controller
 
     public function create()
     {
-        return Inertia::render('admin/clients/create');
+        return Inertia::render('admin/clients/create', [
+            'client_types' => $this->clientType,
+            'sitter_preferences' => $this->sitterPreference,
+            'discovery_sources' => $this->discoverySources,
+        ]);
     }
 
     public function store(StoreClientRequest $request)
@@ -65,7 +86,7 @@ class ClientController extends Controller
             'user_id' => $user->id,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
-            'biography' => $validated['biography'],
+            'biography' => $validated['biography'] ?? null,
             'phone' => $validated['phone'],
             'client_type' => $validated['client_type'],
             'how_did_you_hear' => $validated['how_did_you_hear'] ?? null,
@@ -157,6 +178,7 @@ class ClientController extends Controller
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
+                'how_did_you_hear_label' => $client->how_did_you_hear ? DiscoverySource::tryFrom($client->how_did_you_hear)?->label() : null,
                 'sitter_preferences' => $client->sitter_preferences,
                 'other_adults_present' => $client->other_adults_present,
                 'emergency_instructions' => $client->emergency_instructions,
@@ -235,16 +257,6 @@ class ClientController extends Controller
                 'type' => $a->type,
             ]);
 
-        $sitterPreferences = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            SitterPreference::cases(),
-        );
-
-        $clientTypes = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            ClientType::cases(),
-        );
-
         return Inertia::render('admin/clients/edit', [
             'client' => [
                 'id' => $client->id,
@@ -296,8 +308,9 @@ class ClientController extends Controller
                 ]),
             ],
             'attribute_definitions' => $attributeDefinitions,
-            'sitter_preferences' => $sitterPreferences,
-            'client_types' => $clientTypes,
+            'sitter_preferences' => $this->sitterPreference,
+            'client_types' => $this->clientType,
+            'discovery_sources' => $this->discoverySources,
         ]);
     }
 

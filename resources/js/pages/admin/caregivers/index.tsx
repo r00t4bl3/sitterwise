@@ -18,6 +18,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { UserAvatar } from '@/components/user-avatar';
+import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -163,6 +164,7 @@ export default function CaregiversIndex() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Caregivers" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
@@ -222,7 +224,9 @@ export default function CaregiversIndex() {
                                 <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="all">
+                                    All Statuses
+                                </SelectItem>
                                 {statuses.map((status) => (
                                     <SelectItem
                                         key={status.id}

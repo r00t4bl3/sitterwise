@@ -697,184 +697,157 @@ export default function GuestBookingCreate() {
                                         Add Child
                                     </button>
                                 </div>
-                                <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Name
-                                                </th>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Gender
-                                                </th>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Birth (Age)
-                                                </th>
-                                                <th className="w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {form.data.new_children.map(
-                                                (child) => (
-                                                    <tr
-                                                        key={child.tempId}
-                                                        className="border-t border-border bg-muted/50"
+                                <div className="grid gap-4">
+                                    {form.data.new_children.map((child) => (
+                                        <div
+                                            key={child.tempId}
+                                            className="rounded-lg border bg-card p-4"
+                                        >
+                                            <div className="mb-3 flex items-start justify-between">
+                                                <p className="text-sm font-medium text-foreground">
+                                                    Add New Child
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemoveChild(
+                                                            child.tempId,
+                                                        )
+                                                    }
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                                <div className="sm:col-span-1">
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Name
+                                                    </Label>
+                                                    <Input
+                                                        value={child.name}
+                                                        onChange={(e) =>
+                                                            handleUpdateChild(
+                                                                child.tempId,
+                                                                'name',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Name"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Gender
+                                                    </Label>
+                                                    <Select
+                                                        value={child.gender}
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
+                                                            handleUpdateChild(
+                                                                child.tempId,
+                                                                'gender',
+                                                                value,
+                                                            )
+                                                        }
                                                     >
-                                                        <td className="px-3 py-2">
-                                                            <Input
-                                                                value={
-                                                                    child.name
-                                                                }
-                                                                onChange={(e) =>
-                                                                    handleUpdateChild(
-                                                                        child.tempId,
-                                                                        'name',
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Name"
-                                                            />
-                                                        </td>
-                                                        <td className="px-3 py-2">
-                                                            <Select
-                                                                value={
-                                                                    child.gender
-                                                                }
-                                                                onValueChange={(
-                                                                    value,
-                                                                ) =>
-                                                                    handleUpdateChild(
-                                                                        child.tempId,
-                                                                        'gender',
-                                                                        value,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="male">
-                                                                        Male
-                                                                    </SelectItem>
-                                                                    <SelectItem value="female">
-                                                                        Female
-                                                                    </SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </td>
-                                                        <td className="px-3 py-2">
-                                                            <div className="flex gap-1">
-                                                                <Select
-                                                                    value={
-                                                                        child.birth_month
-                                                                    }
-                                                                    onValueChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        handleUpdateChild(
-                                                                            child.tempId,
-                                                                            'birth_month',
-                                                                            value,
-                                                                        )
-                                                                    }
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="male">
+                                                                Male
+                                                            </SelectItem>
+                                                            <SelectItem value="female">
+                                                                Female
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Month
+                                                    </Label>
+                                                    <Select
+                                                        value={
+                                                            child.birth_month
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
+                                                            handleUpdateChild(
+                                                                child.tempId,
+                                                                'birth_month',
+                                                                value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Month" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {[
+                                                                'Jan',
+                                                                'Feb',
+                                                                'Mar',
+                                                                'Apr',
+                                                                'May',
+                                                                'Jun',
+                                                                'Jul',
+                                                                'Aug',
+                                                                'Sep',
+                                                                'Oct',
+                                                                'Nov',
+                                                                'Dec',
+                                                            ].map((m, i) => (
+                                                                <SelectItem
+                                                                    key={m}
+                                                                    value={String(
+                                                                        i + 1,
+                                                                    )}
                                                                 >
-                                                                    <SelectTrigger className="w-20">
-                                                                        <SelectValue placeholder="Month" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {[
-                                                                            'Jan',
-                                                                            'Feb',
-                                                                            'Mar',
-                                                                            'Apr',
-                                                                            'May',
-                                                                            'Jun',
-                                                                            'Jul',
-                                                                            'Aug',
-                                                                            'Sep',
-                                                                            'Oct',
-                                                                            'Nov',
-                                                                            'Dec',
-                                                                        ].map(
-                                                                            (
-                                                                                m,
-                                                                                i,
-                                                                            ) => (
-                                                                                <SelectItem
-                                                                                    key={
-                                                                                        m
-                                                                                    }
-                                                                                    value={String(
-                                                                                        i +
-                                                                                            1,
-                                                                                    )}
-                                                                                >
-                                                                                    {
-                                                                                        m
-                                                                                    }
-                                                                                </SelectItem>
-                                                                            ),
-                                                                        )}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <Input
-                                                                    value={
-                                                                        child.birth_year
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleUpdateChild(
-                                                                            child.tempId,
-                                                                            'birth_year',
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                    placeholder="Year"
-                                                                    className="h-8 w-16"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleRemoveChild(
-                                                                        child.tempId,
-                                                                    )
-                                                                }
-                                                                className="text-red-500 hover:text-red-700"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ),
-                                            )}
-                                            {!hasNewChildren && (
-                                                <tr className="border-t border-border">
-                                                    <td
-                                                        colSpan={4}
-                                                        className="px-3 py-4 text-center text-muted-foreground"
-                                                    >
-                                                        No children added
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                                    {m}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Year
+                                                    </Label>
+                                                    <Input
+                                                        value={child.birth_year}
+                                                        onChange={(e) =>
+                                                            handleUpdateChild(
+                                                                child.tempId,
+                                                                'birth_year',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Year"
+                                                        className=""
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {!hasNewChildren && (
+                                        <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                            <p className="text-sm text-muted-foreground">
+                                                No children added
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 {!hasNewChildren && (
-                                    <p className="text-sm text-destructive">
+                                    <p className="mt-2 text-sm text-destructive">
                                         At least one child is required.
                                     </p>
                                 )}
                             </div>
-
+                            
                             {/* Special Needs */}
                             <div>
                                 <Label className="text-sm font-medium text-foreground">
@@ -928,114 +901,103 @@ export default function GuestBookingCreate() {
                                         Add Pet
                                     </button>
                                 </div>
-                                <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Name
-                                                </th>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Type
-                                                </th>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Breed
-                                                </th>
-                                                <th className="px-3 py-2 text-left font-medium">
-                                                    Notes
-                                                </th>
-                                                <th className="w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {form.data.new_pets.map((pet) => (
-                                                <tr
-                                                    key={pet.tempId}
-                                                    className="border-t border-border bg-muted/50"
+                                <div className="grid gap-4">
+                                    {form.data.new_pets.map((pet) => (
+                                        <div
+                                            key={pet.tempId}
+                                            className="rounded-lg border bg-card p-4"
+                                        >
+                                            <div className="mb-3 flex items-start justify-between">
+                                                <p className="text-sm font-medium text-foreground">
+                                                    Add New Pet
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemovePet(
+                                                            pet.tempId,
+                                                        )
+                                                    }
+                                                    className="text-red-500 hover:text-red-700"
                                                 >
-                                                    <td className="px-3 py-2">
-                                                        <Input
-                                                            value={pet.name}
-                                                            onChange={(e) =>
-                                                                handleUpdatePet(
-                                                                    pet.tempId,
-                                                                    'name',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Name"
-                                                        />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <Input
-                                                            value={pet.type}
-                                                            onChange={(e) =>
-                                                                handleUpdatePet(
-                                                                    pet.tempId,
-                                                                    'type',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Type"
-                                                        />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <Input
-                                                            value={pet.breed}
-                                                            onChange={(e) =>
-                                                                handleUpdatePet(
-                                                                    pet.tempId,
-                                                                    'breed',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Breed"
-                                                        />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <Input
-                                                            value={pet.notes}
-                                                            onChange={(e) =>
-                                                                handleUpdatePet(
-                                                                    pet.tempId,
-                                                                    'notes',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Notes"
-                                                        />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleRemovePet(
-                                                                    pet.tempId,
-                                                                )
-                                                            }
-                                                            className="text-red-500 hover:text-red-700"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {!hasNewPets && (
-                                                <tr className="border-t border-border">
-                                                    <td
-                                                        colSpan={5}
-                                                        className="px-3 py-4 text-center text-muted-foreground"
-                                                    >
-                                                        No pets added
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                                <div className="sm:col-span-1">
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Name
+                                                    </Label>
+                                                    <Input
+                                                        value={pet.name}
+                                                        onChange={(e) =>
+                                                            handleUpdatePet(
+                                                                pet.tempId,
+                                                                'name',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Name"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Type
+                                                    </Label>
+                                                    <Input
+                                                        value={pet.type}
+                                                        onChange={(e) =>
+                                                            handleUpdatePet(
+                                                                pet.tempId,
+                                                                'type',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Type"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Breed
+                                                    </Label>
+                                                    <Input
+                                                        value={pet.breed}
+                                                        onChange={(e) =>
+                                                            handleUpdatePet(
+                                                                pet.tempId,
+                                                                'breed',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Breed"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Notes
+                                                    </Label>
+                                                    <Input
+                                                        value={pet.notes}
+                                                        onChange={(e) =>
+                                                            handleUpdatePet(
+                                                                pet.tempId,
+                                                                'notes',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Notes"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {!hasNewPets && (
+                                        <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                            <p className="text-sm text-muted-foreground">
+                                                No pets added
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1060,7 +1022,7 @@ export default function GuestBookingCreate() {
                             <div className="grid gap-2">
                                 <Label>Sitter Preferences</Label>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                    <div className="flex-1 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                                         {sitter_preferences.map((option) => (
                                             <div
                                                 key={option.value}
@@ -1109,7 +1071,7 @@ export default function GuestBookingCreate() {
                             <div className="grid gap-2">
                                 <Label>Special Considerations</Label>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                    <div className="flex-1 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                                         {special_consideration_options.map(
                                             (option) => (
                                                 <div

@@ -150,7 +150,7 @@ export default function Bookings() {
         special_consideration_options,
         booking_attributes,
         sitter_preference_options,
-        } = usePage<Props>().props;
+    } = usePage<Props>().props;
 
     const client_type_options = [
         { value: 'resident', label: 'San Diego Resident' },
@@ -1589,10 +1589,11 @@ export default function Bookings() {
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex justify-end gap-2">
-                                                                {false && (statusKey ===
-                                                                    'completed' ||
-                                                                    statusKey ===
-                                                                        'pending') &&
+                                                                {false &&
+                                                                    (statusKey ===
+                                                                        'completed' ||
+                                                                        statusKey ===
+                                                                            'pending') &&
                                                                     booking.payment_status !==
                                                                         'paid' && (
                                                                         <Button
@@ -1692,7 +1693,9 @@ export default function Bookings() {
                                 handleClientChange={handleClientChange}
                                 selectedClientType={selectedClientType}
                                 location_types={location_types}
-                                sitter_preference_options={sitter_preference_options}
+                                sitter_preference_options={
+                                    sitter_preference_options
+                                }
                                 client_type_options={client_type_options}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}

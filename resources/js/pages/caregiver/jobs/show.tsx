@@ -205,7 +205,9 @@ export default function JobDetail({ booking }: PageProps) {
                                             booking.start_datetime,
                                         )}{' '}
                                         to{' '}
-                                        {formatDisplayTime(booking.end_datetime)}
+                                        {formatDisplayTime(
+                                            booking.end_datetime,
+                                        )}
                                     </span>
                                 </div>
 
@@ -301,15 +303,20 @@ export default function JobDetail({ booking }: PageProps) {
                                         Pets ({booking.pets?.length})
                                     </h2>
                                     <div className="space-y-4">
-                                        {booking.pets && booking.pets.length > 0 && (
-                                            <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                                                {booking.pets.map((pet, i) => (
-                                                    <li key={i}>
-                                                        {pet.name} ({pet.breed} / {pet.type})
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
+                                        {booking.pets &&
+                                            booking.pets.length > 0 && (
+                                                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                                                    {booking.pets.map(
+                                                        (pet, i) => (
+                                                            <li key={i}>
+                                                                {pet.name} (
+                                                                {pet.breed} /{' '}
+                                                                {pet.type})
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
                                     </div>
                                 </div>
                             )}

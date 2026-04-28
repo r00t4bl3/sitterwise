@@ -166,7 +166,7 @@ export default function ClientDashboard({
                                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
                                     <div className="mb-4 flex items-center gap-3">
                                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                        <Calendar className="h-8 w-8 text-muted-foreground" />
+                                            <Calendar className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <div>
                                             <h3 className="text-sm font-medium tracking-tight text-muted-foreground uppercase">
@@ -228,9 +228,7 @@ export default function ClientDashboard({
                                     <h3 className="mb-4 text-lg font-medium">
                                         No upcoming bookings scheduled.
                                     </h3>
-                                    <Button
-                                        asChild
-                                    >
+                                    <Button asChild>
                                         <Link href="/bookings/create">
                                             Book a sitter now
                                         </Link>
@@ -285,9 +283,7 @@ export default function ClientDashboard({
                                     </>
                                 )}
 
-                                <Button
-                                    asChild
-                                >
+                                <Button asChild>
                                     <Link href="/bookings">
                                         View All Bookings
                                     </Link>

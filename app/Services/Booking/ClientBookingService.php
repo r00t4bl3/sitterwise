@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
@@ -88,6 +89,11 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             SitterPreference::cases(),
         );
 
+        $discoverySources = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            DiscoverySource::cases(),
+        );
+
         return Inertia::render('client/bookings/create', [
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
@@ -110,6 +116,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'options' => $attr->options,
                 ]),
             'sitter_preferences' => $sitterPreferences,
+            'discovery_sources' => $discoverySources,
         ]);
     }
 

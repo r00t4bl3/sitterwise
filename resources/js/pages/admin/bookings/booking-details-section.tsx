@@ -97,7 +97,7 @@ export function BookingDetailsSection({
     handleDelete,
     setIsSheetOpen,
 }: BookingDetailsSectionProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
     const startDatetime = form.data.start_datetime;
     const endDatetime = form.data.end_datetime;
     const datetimeError = validateDatetime(startDatetime, endDatetime);
