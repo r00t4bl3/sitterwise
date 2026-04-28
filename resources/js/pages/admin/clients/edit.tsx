@@ -1055,11 +1055,12 @@ export default function ClientEdit() {
                         )}
                     </div>
 
-                    <div className="border border-border bg-card p-6">
-                        <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                            Additional Information
-                        </h2>
-                        <div className="space-y-4">
+                    {false && (
+                        <div className="border border-border bg-card p-6">
+                            <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                Additional Information
+                            </h2>
+                            <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="emergency_instructions">
                                     Emergency Instructions
@@ -1079,6 +1080,7 @@ export default function ClientEdit() {
                             </div>
                         </div>
                     </div>
+                    )}
 
                     <div className="flex justify-end gap-2">
                         <Button

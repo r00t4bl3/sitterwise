@@ -929,7 +929,7 @@ export default function ClientBookingCreate() {
                                 />
                             </div>
 
-                            {form.data.special_needs_notes && (
+                            {false && form.data.special_needs_notes && (
                                 <div>
                                     <Label className="text-sm font-medium text-foreground">
                                         Emergency Instructions
