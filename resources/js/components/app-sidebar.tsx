@@ -38,12 +38,12 @@ const baseNavItems: NavItem[] = [
 
 const caregiverNavItems: NavItem[] = [
     {
-        title: 'Jobs',
+        title: 'My Jobs',
         href: '/jobs',
         icon: ClipboardList,
     },
     {
-        title: 'Bookings',
+        title: 'Available Jobs',
         href: '/bookings',
         icon: ClipboardList,
     },
