@@ -441,7 +441,9 @@ class ImportCaregivers extends Command
         $client = Client::createChromeClient(
             $chromeDriverPath,
             [
-                '--headless=new',
+                // '--headless=new',
+                // '--disable-gpu',
+                // '--disable-software-rasterizer',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
                 '--window-size=1920,1080',
@@ -450,8 +452,6 @@ class ImportCaregivers extends Command
                 '--disable-extensions',
                 '--disable-default-apps',
                 '--user-data-dir='.$userDataDir,
-                '--disable-software-rasterizer',
-                '--disable-gpu',
                 '--enable-logging',
                 '--v=1',
             ],
@@ -615,13 +615,15 @@ class ImportCaregivers extends Command
         usleep(2000000);
 
         // Click select all
+        $this->line('Clicking "Select all" button...');
         $client->executeScript("
             const selectAll = document.querySelector('.select-all.bubble-ui.light-grey-btn');
-            if (selectAll) selectAll.click();
+            if (!selectAll.innerText.toLowerCase().includes('deselect')) selectAll.click();
         ");
         usleep(1000000);
 
         // Click SAVE
+        $this->line('Clicking "Save" button...');
         $client->executeScript("
             const saveButton = document.querySelector('.btn.btn-create.bubble-ui');
             if (saveButton) saveButton.click();
