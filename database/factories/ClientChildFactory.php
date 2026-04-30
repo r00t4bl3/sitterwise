@@ -21,7 +21,7 @@ class ClientChildFactory extends Factory
         return [
             'client_id' => Client::factory(),
             'name' => fake()->firstName(),
-            'gender' => fake()->randomElement(['male', 'female', 'other']),
+            'gender' => fake()->randomElement(['male', 'female']),
             'birth_month' => fake()->numberBetween(1, 12),
             'birth_year' => fake()->numberBetween(2010, 2024),
         ];
