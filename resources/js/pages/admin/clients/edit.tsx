@@ -478,22 +478,21 @@ export default function ClientEdit() {
                                     rows={3}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="other_adults_present">
-                                    Other Adults in Home
-                                </Label>
-                                <Input
-                                    id="other_adults_present"
-                                    type="text"
-                                    value={form.data.other_adults_present}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'other_adults_present',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
+<div className="space-y-2 flex items-center gap-2">
+                                 <Checkbox
+                                     id="other_adults_present"
+                                     checked={!!form.data.other_adults_present}
+                                     onCheckedChange={(checked) =>
+                                         form.setData(
+                                             'other_adults_present',
+                                             checked ? '1' : ''
+                                         )
+                                     }
+                                 />
+                                 <Label htmlFor="other_adults_present">
+                                     Other Adults in Home
+                                 </Label>
+                             </div>
                         </div>
                     </div>
 

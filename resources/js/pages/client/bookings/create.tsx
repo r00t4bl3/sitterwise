@@ -1110,20 +1110,23 @@ export default function ClientBookingCreate() {
                                 </div>
                             </div>
 
-                            <div>
-                                <Label className="text-sm font-medium text-foreground">
-                                    Other Adults Present
-                                </Label>
-                                <Input
-                                    value={form.data.other_adults_present || ''}
-                                    onChange={(e) =>
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="other_adults_present"
+                                    checked={!!form.data.other_adults_present}
+                                    onCheckedChange={(checked) =>
                                         form.setData(
                                             'other_adults_present',
-                                            e.target.value,
+                                            checked ? '1' : '',
                                         )
                                     }
-                                    placeholder="Other adults present"
                                 />
+                                <Label
+                                    htmlFor="other_adults_present"
+                                    className="text-sm font-medium"
+                                >
+                                    Other Adults Present
+                                </Label>
                             </div>
 
                             <div className="grid gap-2">

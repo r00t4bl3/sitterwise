@@ -1194,21 +1194,23 @@ export function PersonalInfoSection({
                         </div>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="other_adults_present">
-                            Other Adults Present
-                        </Label>
-                        <Input
+                    <div className="flex items-center gap-2">
+                        <Checkbox
                             id="other_adults_present"
-                            value={form.data.other_adults_present || ''}
-                            onChange={(e) =>
+                            checked={!!form.data.other_adults_present}
+                            onCheckedChange={(checked) =>
                                 form.setData(
                                     'other_adults_present',
-                                    e.target.value,
+                                    checked ? '1' : '',
                                 )
                             }
-                            placeholder="Other adults present"
                         />
+                        <Label
+                            htmlFor="other_adults_present"
+                            className="text-sm font-medium"
+                        >
+                            Other Adults Present
+                        </Label>
                     </div>
 
                     <div className="grid gap-2">
