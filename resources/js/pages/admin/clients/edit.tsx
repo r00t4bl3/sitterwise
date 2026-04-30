@@ -640,9 +640,6 @@ export default function ClientEdit() {
                                                     <SelectItem value="female">
                                                         Female
                                                     </SelectItem>
-                                                    <SelectItem value="other">
-                                                        Other
-                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>

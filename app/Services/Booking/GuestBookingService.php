@@ -108,7 +108,7 @@ class GuestBookingService
             'how_did_you_hear' => 'nullable|string|max:255',
             'new_children' => 'required|array|min:1',
             'new_children.*.name' => 'required|string|max:255',
-            'new_children.*.gender' => 'nullable|string|max:20',
+            'new_children.*.gender' => 'nullable|in:male,female',
             'new_children.*.birth_month' => 'nullable|string',
             'new_children.*.birth_year' => 'nullable|string',
             'new_pets' => 'array',

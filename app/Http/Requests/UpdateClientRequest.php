@@ -30,7 +30,7 @@ class UpdateClientRequest extends FormRequest
             'attributes' => ['nullable', 'array'],
             'children' => ['nullable', 'array'],
             'children.*.name' => ['nullable', 'string', 'max:255'],
-            'children.*.gender' => ['nullable', 'in:male,female,other'],
+            'children.*.gender' => ['nullable', 'in:male,female'],
             'children.*.birth_month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'children.*.birth_year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'pets' => ['nullable', 'array'],
