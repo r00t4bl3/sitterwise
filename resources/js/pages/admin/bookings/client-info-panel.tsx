@@ -36,7 +36,9 @@ function CaregiverNames({ caregivers, variant = 'default' }: { caregivers: Careg
 }
 
 export function ClientInfoPanel({ client }: ClientInfoPanelProps) {
-    if (!client) return null;
+    if (!client) {
+return null;
+}
 
     const hasFavorite = client.favorite_caregivers && client.favorite_caregivers.length > 0;
     const hasBlocked = client.blocked_caregivers && client.blocked_caregivers.length > 0;

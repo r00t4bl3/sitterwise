@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,8 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import type { Booking } from './types';
 import { ClientInfoPanel } from './client-info-panel';
+import type { Booking } from './types';
 
 const MONTH_ABBR = [
     '',
@@ -150,6 +150,7 @@ interface PersonalInfoSectionProps {
         name: string;
         [key: string]: unknown;
     }>;
+    onOpenNotifySheet?: () => void;
 }
 
 export function PersonalInfoSection({
@@ -192,29 +193,54 @@ export function PersonalInfoSection({
     addressValue,
     setAddressValue,
     caregiverSuggestions,
+    onOpenNotifySheet,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
     const [selectedCaregivers, setSelectedCaregivers] = useState<number[]>([]);
+    const [processing, setProcessing] = useState(false);
+    
+    // Create a ref to keep track of the current selected caregivers
+    const selectedCaregiversRef = useRef(selectedCaregivers);
+    
+    // Update the ref whenever selectedCaregivers changes
+    useEffect(() => {
+        console.log('Updating selectedCaregiversRef to:', selectedCaregivers);
+        selectedCaregiversRef.current = selectedCaregivers;
+    }, [selectedCaregivers]);
 
     const notifyForm = useForm({
         caregiver_ids: [] as number[],
     });
-
+    
     const toggleCaregiver = (id: number) => {
-        setSelectedCaregivers((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
-        );
+        console.log('Toggling caregiver ID:', id);
+        console.log('Current selected caregivers before toggle:', selectedCaregivers);
+        setSelectedCaregivers((prev) => {
+            const newState = prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id];
+            console.log('New state after toggle:', newState);
+
+            return newState;
+        });
     };
 
     const handleNotify = () => {
+        if (selectedCaregivers.length === 0) {
+            return;
+        }
+
+        setProcessing(true);
         notifyForm.setData('caregiver_ids', selectedCaregivers);
-        notifyForm.post(`/bookings/${editingBooking?.id}/notify`, {
-            preserveScroll: true,
+        notifyForm.post(`/bookings/${editingBooking!.id}/notify`, {
             onSuccess: () => {
+                setProcessing(false);
                 setNotifySheetOpen(false);
                 setSelectedCaregivers([]);
+                notifyForm.setData('caregiver_ids', []);
+            },
+            onError: () => {
+                setProcessing(false);
             },
         });
     };
@@ -303,6 +329,7 @@ export function PersonalInfoSection({
                         onClick={() => {
                             const currentId = form.data.caregiver_id;
                             setSelectedCaregivers(currentId ? [currentId] : []);
+                            onOpenNotifySheet?.();
                             setNotifySheetOpen(true);
                         }}
                     >
@@ -375,10 +402,10 @@ export function PersonalInfoSection({
                     <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
                         <Button
                             onClick={handleNotify}
-                            disabled={notifyForm.processing}
+                            disabled={processing}
                             className="flex-1"
                         >
-                            {notifyForm.processing && (
+                            {processing && (
                                 <Spinner className="size-4" />
                             )}
                             Send Notification
@@ -503,7 +530,7 @@ export function PersonalInfoSection({
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
-                                    value={form.data.new_client.client_type}
+                                    value={form.data.new_client.client_type || ''}
                                     onValueChange={(value) => {
                                         form.setData('new_client', {
                                             ...form.data.new_client,
@@ -562,14 +589,17 @@ export function PersonalInfoSection({
                             Location Type{' '}
                             <span className="text-red-500">*</span>
                         </Label>
-                        <select
-                            value={form.data.location_type}
-                            onChange={(e) =>
-                                form.setData('location_type', e.target.value)
+                        <Select
+                            value={form.data.location_type || ''}
+                            onValueChange={(value) =>
+                                form.setData('location_type', value)
                             }
-                            className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
-                            required
                         >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select location type" />
+                            </SelectTrigger>
+                                <SelectContent>
+
                             {location_types
                                 .filter((type) => {
                                     const clientType =
@@ -592,11 +622,15 @@ export function PersonalInfoSection({
                                     return true;
                                 })
                                 .map((type) => (
-                                    <option key={type.value} value={type.value}>
+                                    <SelectItem
+                                        key={type.value}
+                                        value={type.value}
+                                    >
                                         {type.label}
-                                    </option>
+                                    </SelectItem>
                                 ))}
-                        </select>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {form.data.location_type === 'private_home' &&
@@ -606,10 +640,10 @@ export function PersonalInfoSection({
                                 <Label className="text-sm font-medium text-foreground">
                                     Address
                                 </Label>
-                                <select
-                                    value={form.data.address_id || ''}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'add_new') {
+                                <Select
+                                    value={form.data.address_id?.toString() || ''}
+                                    onValueChange={(value) => {
+                                        if (value === 'add_new') {
                                             setShowManualAddressInput(true);
                                             form.setData('address_id', null);
                                             form.setData('address_line1', '');
@@ -619,9 +653,9 @@ export function PersonalInfoSection({
                                             form.setData('address_zip', '');
                                             setAddressValue('');
                                             setIsAddressLocked(false);
-                                        } else if (e.target.value) {
+                                        } else if (value) {
                                             const addrId = Number(
-                                                e.target.value,
+                                                value,
                                             );
                                             form.setData('address_id', addrId);
                                             const addr = clientAddresses.find(
@@ -668,20 +702,30 @@ export function PersonalInfoSection({
                                             setIsAddressLocked(false);
                                             setAddressValue('');
                                         }
-                                    }}
-                                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                                        
+                                        form.setData('address_id', value)
+                                        }
+                                    }
                                 >
-                                    <option value="">Select address...</option>
-                                    <option value="add_new">
-                                        + Enter manually
-                                    </option>
-                                    {clientAddresses.map((addr) => (
-                                        <option key={addr.id} value={addr.id}>
-                                            {addr.line1}, {addr.city},{' '}
-                                            {addr.state} {addr.zip}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select address" />
+                                    </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="add_new">
+                                                + Enter manually
+                                            </SelectItem>
+                                            {clientAddresses.map((addr) => (
+                                                <SelectItem
+                                                    key={addr.id}
+                                                    value={addr.id.toString()}
+                                                >
+                                                    {addr.line1}, {addr.city}, {addr.state} {addr.zip}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                
+                                
                             </div>
                         )}
 
@@ -698,17 +742,16 @@ export function PersonalInfoSection({
                             <Label className="text-sm font-medium text-foreground">
                                 Rental Platform
                             </Label>
-                            <select
-                                value={form.data.rental_platform}
-                                onChange={(e) =>
-                                    form.setData(
-                                        'rental_platform',
-                                        e.target.value,
-                                    )
+                            <Select
+                                value={form.data.rental_platform || ''}
+                                onValueChange={(value) =>
+                                    form.setData('rental_platform', value)
                                 }
-                                className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                             >
-                                <option value="">Select platform...</option>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select platform" />
+                                </SelectTrigger>
+                                <SelectContent>
                                 {booking_attributes
                                     .filter(
                                         (attr) =>
@@ -717,12 +760,13 @@ export function PersonalInfoSection({
                                     )
                                     .flatMap((attr) => attr.options || [])
                                     .map((option) => (
-                                        <option key={option} value={option}>
+                                        <SelectItem key={option} value={option}>
                                             {option.charAt(0).toUpperCase() +
                                                 option.slice(1)}
-                                        </option>
+                                        </SelectItem>
                                     ))}
-                            </select>
+                                </SelectContent>
+                            </Select>
                         </div>
                     )}
 
@@ -813,14 +857,14 @@ export function PersonalInfoSection({
                             <Label className="text-sm font-medium text-foreground">
                                 Children
                             </Label>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onAddChild}
-                                className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
+                                size='xs'
                             >
                                 <Plus className="h-3 w-3" />
                                 Add Child
-                            </button>
+                            </Button>
                         </div>
                         <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
                             <table className="w-full text-sm">
@@ -860,7 +904,7 @@ export function PersonalInfoSection({
                                                     : '-'}
                                             </td>
                                             <td className="px-3 py-2">
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         onRemoveChild(
@@ -868,10 +912,10 @@ export function PersonalInfoSection({
                                                             child.id,
                                                         )
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="hover:text-red-700"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -894,70 +938,62 @@ export function PersonalInfoSection({
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
-                                                <select
-                                                    value={child.gender}
-                                                    onChange={(e) =>
+                                                <Select
+                                                    value={child.gender || ''}
+                                                    onValueChange={(value) =>
                                                         onUpdateChild(
                                                             child.tempId,
                                                             'gender',
-                                                            e.target.value,
+                                                            value
                                                         )
                                                     }
-                                                    className="h-8 w-full rounded-[3px] border border-input bg-background px-2 text-sm"
                                                 >
-                                                    <option value="">
-                                                        Select
-                                                    </option>
-                                                    <option value="male">
-                                                        Male
-                                                    </option>
-                                                    <option value="female">
-                                                        Female
-                                                    </option>
-                                                </select>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select gender" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </td>
                                             <td className="px-3 py-2">
                                                 <div className="flex gap-1">
-                                                    <select
-                                                        value={
-                                                            child.birth_month
-                                                        }
-                                                        onChange={(e) =>
+                                                    <Select
+                                                        value={child.birth_month || ''}
+                                                        onValueChange={(value) =>
                                                             onUpdateChild(
                                                                 child.tempId,
                                                                 'birth_month',
-                                                                e.target.value,
+                                                                value
                                                             )
                                                         }
-                                                        className="h-8 w-20 rounded-[3px] border border-input bg-background px-1 text-sm"
                                                     >
-                                                        <option value="">
-                                                            Month
-                                                        </option>
-                                                        {[
-                                                            'Jan',
-                                                            'Feb',
-                                                            'Mar',
-                                                            'Apr',
-                                                            'May',
-                                                            'Jun',
-                                                            'Jul',
-                                                            'Aug',
-                                                            'Sep',
-                                                            'Oct',
-                                                            'Nov',
-                                                            'Dec',
-                                                        ].map((m, i) => (
-                                                            <option
-                                                                key={m}
-                                                                value={String(
-                                                                    i + 1,
-                                                                )}
-                                                            >
-                                                                {m}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Month" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {[
+                                                                'Jan',
+                                                                'Feb',
+                                                                'Mar',
+                                                                'Apr',
+                                                                'May',
+                                                                'Jun',
+                                                                'Jul',
+                                                                'Aug',
+                                                                'Sep',
+                                                                'Oct',
+                                                                'Nov',
+                                                                'Dec',
+                                                            ].map((m) => (
+                                                                <SelectItem key={m} value={m}>
+                                                                    {m}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+
                                                     <Input
                                                         value={child.birth_year}
                                                         onChange={(e) =>
@@ -968,22 +1004,22 @@ export function PersonalInfoSection({
                                                             )
                                                         }
                                                         placeholder="Year"
-                                                        className="h-8 w-16"
+                                                        className="w-24"
                                                     />
                                                 </div>
                                             </td>
                                             <td className="px-3 py-2">
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         onRemoveChild(
                                                             child.tempId,
                                                         )
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="hover:text-red-700"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1048,14 +1084,14 @@ export function PersonalInfoSection({
                             <Label className="text-sm font-medium text-foreground">
                                 Pets
                             </Label>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={onAddPet}
-                                className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
+                                size='xs'
                             >
                                 <Plus className="h-3 w-3" />
                                 Add Pet
-                            </button>
+                            </Button>
                         </div>
                         <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
                             <table className="w-full text-sm">
@@ -1095,15 +1131,15 @@ export function PersonalInfoSection({
                                                 {pet.notes || '-'}
                                             </td>
                                             <td className="px-3 py-2">
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         onRemovePet('', pet.id)
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="hover:text-red-700"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1123,12 +1159,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Name"
-                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
                                                 <Input
-                                                    value={pet.type}
+                                                    value={pet.type || ''}
                                                     onChange={(e) =>
                                                         onUpdatePet(
                                                             pet.tempId,
@@ -1137,12 +1172,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Type"
-                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
                                                 <Input
-                                                    value={pet.breed}
+                                                    value={pet.breed || ''}
                                                     onChange={(e) =>
                                                         onUpdatePet(
                                                             pet.tempId,
@@ -1151,12 +1185,11 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Breed"
-                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
                                                 <Input
-                                                    value={pet.notes}
+                                                    value={pet.notes || ''}
                                                     onChange={(e) =>
                                                         onUpdatePet(
                                                             pet.tempId,
@@ -1165,19 +1198,18 @@ export function PersonalInfoSection({
                                                         )
                                                     }
                                                     placeholder="Notes"
-                                                    className="h-8"
                                                 />
                                             </td>
                                             <td className="px-3 py-2">
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         onRemovePet(pet.tempId)
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="hover:text-red-700"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}

@@ -18,6 +18,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -28,7 +29,6 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { Label } from '@/components/ui/label';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -171,6 +171,7 @@ export default function TransactionsIndex() {
                 map[status.value] = status.colors;
             },
         );
+
         return map;
     }, [booking_statuses]);
 
@@ -234,7 +235,9 @@ export default function TransactionsIndex() {
     };
 
     const recalculatePayment = (hoursStr: string) => {
-        if (!selectedBooking) return;
+        if (!selectedBooking) {
+return;
+}
 
         const hours = parseFloat(hoursStr) || 0;
         const hourlyRate = selectedBooking.charge_to_client_hourly ?? 0;

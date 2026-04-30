@@ -196,6 +196,45 @@ export default function Bookings() {
     const [caregiverSuggestions, setCaregiverSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
     >([]);
+
+    const populateCaregiverSuggestions = async () => {
+        if (!editingBooking?.client_id) {
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams({
+                client_id: editingBooking.client_id.toString(),
+            });
+
+            if (form.data.service_type) {
+                params.append('service_type', form.data.service_type);
+            }
+
+            if (form.data.start_datetime) {
+                params.append('start_datetime', form.data.start_datetime);
+            }
+
+            if (form.data.end_datetime) {
+                params.append('end_datetime', form.data.end_datetime);
+            }
+
+            const response = await fetch(
+                `/bookings/recommended-caregivers?${params}`,
+            );
+            const data = await response.json();
+            setCaregiverSuggestions(data);
+        } catch (error) {
+            console.error('Error fetching recommended caregivers:', error);
+            // Fallback to all caregivers
+            setCaregiverSuggestions(
+                caregivers.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                }))
+            );
+        }
+    };
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [clientChildren, setClientChildren] = useState<ClientChild[]>([]);
     const [clientPets, setClientPets] = useState<ClientPet[]>([]);
@@ -353,10 +392,12 @@ export default function Bookings() {
     const prevMonth = () => {
         let newMonth = currentMonth - 1;
         let newYear = currentYear;
+
         if (newMonth < 1) {
             newMonth = 12;
             newYear--;
         }
+
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
@@ -367,10 +408,12 @@ export default function Bookings() {
     const nextMonth = () => {
         let newMonth = currentMonth + 1;
         let newYear = currentYear;
+
         if (newMonth > 12) {
             newMonth = 1;
             newYear++;
         }
+
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
@@ -1729,7 +1772,8 @@ export default function Bookings() {
                                 addressValue={addressValue}
                                 setAddressValue={setAddressValue}
                                 caregiverSuggestions={caregiverSuggestions}
-                            />
+                                onOpenNotifySheet={populateCaregiverSuggestions}
+                             />
 
                             <BookingDetailsSection
                                 form={form}

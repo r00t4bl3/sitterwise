@@ -1132,7 +1132,11 @@ export default function ClientEdit() {
                             <div className="mb-4 space-y-3">
                                 {favoriteIds.map((id) => {
                                     const c = (caregivers ?? []).find((cg) => cg.id === id);
-                                    if (!c) return null;
+
+                                    if (!c) {
+return null;
+}
+
                                     return (
                                         <div
                                             key={id}
@@ -1206,7 +1210,11 @@ export default function ClientEdit() {
                             <div className="mb-4 space-y-3">
                                 {blockedIds.map((id) => {
                                     const c = (caregivers ?? []).find((cg) => cg.id === id);
-                                    if (!c) return null;
+
+                                    if (!c) {
+return null;
+}
+
                                     return (
                                         <div
                                             key={id}
