@@ -48,6 +48,10 @@ class UpdateClientRequest extends FormRequest
             'addresses.*.state' => ['nullable', 'string', 'max:255'],
             'addresses.*.zip' => ['nullable', 'string', 'max:20'],
             'addresses.*.is_primary' => ['nullable', 'boolean'],
+            'favorite_caregiver_ids' => ['nullable', 'array'],
+            'favorite_caregiver_ids.*' => ['integer', Rule::exists('caregivers', 'id')],
+            'blocked_caregiver_ids' => ['nullable', 'array'],
+            'blocked_caregiver_ids.*' => ['integer', Rule::exists('caregivers', 'id')],
         ];
     }
 }

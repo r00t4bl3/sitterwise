@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             BookingGroupSeeder::class,
             BookingSeeder::class,
             PricingRulesTableSeeder::class,
+            ClientCaregiverRelationshipsSeeder::class,
         ]);
 
         User::factory()->create([

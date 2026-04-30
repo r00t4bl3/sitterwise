@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -351,35 +351,40 @@ export default function Bookings() {
     ];
 
     const prevMonth = () => {
-        if (currentMonth === 1) {
-            setCurrentMonth(12);
-            setCurrentYear(currentYear - 1);
-        } else {
-            setCurrentMonth(currentMonth - 1);
+        let newMonth = currentMonth - 1;
+        let newYear = currentYear;
+        if (newMonth < 1) {
+            newMonth = 12;
+            newYear--;
         }
+        router.get('/bookings', {
+            month: newMonth,
+            year: newYear,
+            ...(statusFilter && { status: statusFilter })
+        });
     };
 
     const nextMonth = () => {
-        if (currentMonth === 12) {
-            setCurrentMonth(1);
-            setCurrentYear(currentYear + 1);
-        } else {
-            setCurrentMonth(currentMonth + 1);
+        let newMonth = currentMonth + 1;
+        let newYear = currentYear;
+        if (newMonth > 12) {
+            newMonth = 1;
+            newYear++;
         }
+        router.get('/bookings', {
+            month: newMonth,
+            year: newYear,
+            ...(statusFilter && { status: statusFilter })
+        });
     };
 
     const applyFilters = () => {
-        const params = new URLSearchParams();
-        params.set('month', String(currentMonth));
-        params.set('year', String(currentYear));
-
-        if (statusFilter) {
-            params.set('status', statusFilter);
-        }
-
-        console.log('Applying filters with params:', params.toString());
-
-        // window.location.href = `/bookings?${params}`;
+        const params = {
+            month: currentMonth,
+            year: currentYear,
+            ...(statusFilter && { status: statusFilter }),
+        };
+        router.get('/bookings', params);
     };
 
     const bookingsByDate = useMemo(() => {
@@ -680,6 +685,14 @@ export default function Bookings() {
     const openEditSheet = async (booking: Booking) => {
         setEditingBooking(booking);
         setSheetMode('edit');
+
+        try {
+            const response = await fetch(`/bookings/${booking.id}`);
+            const fullBooking = await response.json();
+            setEditingBooking(fullBooking);
+        } catch (error) {
+            console.error('Error fetching booking details:', error);
+        }
 
         const matchedChildIds: number[] = [];
         const unmatchedChildren: any[] = [];
@@ -1523,6 +1536,7 @@ export default function Bookings() {
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
+                                                            <Link href={`/clients/${booking.client.id}`} className='hover:underline'>
                                                             {
                                                                 booking.client
                                                                     .first_name
@@ -1531,6 +1545,7 @@ export default function Bookings() {
                                                                 booking.client
                                                                     .last_name
                                                             }
+                                                            </Link>
                                                         </td>
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                             {formatDisplayTime(
@@ -1570,9 +1585,11 @@ export default function Bookings() {
                                                                 </div>
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm text-foreground">
+                                                        <td className="px-4 py-3 text-sm">
                                                             {booking.caregiver ? (
-                                                                `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                <Link href={`/caregivers/${booking.caregiver.id}`} className="font-medium text-ring hover:underline">
+                                                                    {booking.caregiver.first_name} {booking.caregiver.last_name}
+                                                                </Link>
                                                             ) : (
                                                                 <span className="text-muted-foreground italic">
                                                                     Unassigned

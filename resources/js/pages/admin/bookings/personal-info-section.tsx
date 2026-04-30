@@ -24,6 +24,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import type { Booking } from './types';
+import { ClientInfoPanel } from './client-info-panel';
 
 const MONTH_ABBR = [
     '',
@@ -309,6 +310,8 @@ export function PersonalInfoSection({
                     </Button>
                 </div>
             )}
+
+            {editingBooking && <ClientInfoPanel client={editingBooking.client} />}
 
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
                 <SheetContent

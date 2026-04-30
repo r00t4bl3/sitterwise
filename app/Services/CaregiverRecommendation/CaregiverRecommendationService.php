@@ -24,7 +24,7 @@ class CaregiverRecommendationService
         $startDate = $booking?->start_datetime;
         $endDate = $booking?->end_datetime;
 
-        // Get all active caregivers
+        // Get all active caregivers, excluding blocked ones
         $caregivers = Caregiver::with([
             'status',
             'certifications',
@@ -32,6 +32,7 @@ class CaregiverRecommendationService
             'availabilities',
         ])
             ->whereHas('status', fn ($q) => $q->where('is_active', true))
+            ->whereDoesntHave('blockedClients', fn ($q) => $q->where('client_id', $client->id))
             ->get();
 
         // Score and rank each caregiver

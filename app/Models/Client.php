@@ -102,6 +102,21 @@ class Client extends Model
         return $this->belongsToMany(Caregiver::class, 'client_favorite_caregivers');
     }
 
+    public function blockedCaregivers(): BelongsToMany
+    {
+        return $this->belongsToMany(Caregiver::class, 'client_blocked_caregivers');
+    }
+
+    public function previousCaregivers(): BelongsToMany
+    {
+        return $this->belongsToMany(Caregiver::class, 'bookings')
+            ->whereNotNull('bookings.caregiver_id')
+            ->whereIn('bookings.status', ['completed', 'confirmed'])
+            ->withPivot('start_datetime')
+            ->orderByPivot('start_datetime', 'desc')
+            ->distinct();
+    }
+
     public function typeChanges(): HasMany
     {
         return $this->hasMany(ClientTypeChange::class);

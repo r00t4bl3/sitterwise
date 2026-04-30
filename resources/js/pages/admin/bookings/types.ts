@@ -100,6 +100,7 @@ export interface Booking {
         first_name: string;
         last_name: string;
         phone: string | null;
+        biography: string | null;
         user: {
             profile_photo_path: string | null;
         };
@@ -118,6 +119,33 @@ export interface Booking {
             type: string | null;
             breed: string | null;
             notes: string | null;
+        }>;
+        favorite_caregivers?: Array<{
+            id: number;
+            first_name: string;
+            last_name: string;
+            user: {
+                profile_photo_path: string | null;
+                profile_photo_url: string | null;
+            };
+        }>;
+        blocked_caregivers?: Array<{
+            id: number;
+            first_name: string;
+            last_name: string;
+            user: {
+                profile_photo_path: string | null;
+                profile_photo_url: string | null;
+            };
+        }>;
+        previous_caregivers?: Array<{
+            id: number;
+            first_name: string;
+            last_name: string;
+            user: {
+                profile_photo_path: string | null;
+                profile_photo_url: string | null;
+            };
         }>;
     };
     hotel: {

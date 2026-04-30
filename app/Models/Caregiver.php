@@ -187,6 +187,11 @@ class Caregiver extends Model
             ->wherePivot('entity_type', 'caregiver');
     }
 
+    public function blockedClients(): BelongsToMany
+    {
+        return $this->belongsToMany(Client::class, 'client_blocked_caregivers');
+    }
+
     public function availabilities(): HasMany
     {
         return $this->hasMany(Availability::class)->orderBy('date');

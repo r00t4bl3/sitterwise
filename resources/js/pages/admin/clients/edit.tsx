@@ -101,6 +101,16 @@ interface AttributeDefinition {
     type: string;
 }
 
+interface CaregiverSelect {
+    id: number;
+    first_name: string;
+    last_name: string;
+    user: {
+        profile_photo_path: string | null;
+        profile_photo_url: string | null;
+    };
+}
+
 interface Props {
     [key: string]: unknown;
     client: Client;
@@ -108,6 +118,9 @@ interface Props {
     sitter_preferences: Array<{ value: string; label: string }>;
     client_types: Array<{ value: string; label: string }>;
     discovery_sources: Array<{ value: string; label: string }>;
+    caregivers: CaregiverSelect[];
+    favorite_caregivers: CaregiverSelect[];
+    blocked_caregivers: CaregiverSelect[];
 }
 
 export default function ClientEdit() {
@@ -117,7 +130,19 @@ export default function ClientEdit() {
         sitter_preferences,
         client_types,
         discovery_sources,
+        caregivers,
+        favorite_caregivers,
+        blocked_caregivers,
     } = usePage<Props>().props;
+
+    const [favoriteIds, setFavoriteIds] = useState<number[]>(
+        favorite_caregivers?.map((c) => c.id) ?? [],
+    );
+    const [blockedIds, setBlockedIds] = useState<number[]>(
+        blocked_caregivers?.map((c) => c.id) ?? [],
+    );
+    const [searchFav, setSearchFav] = useState('');
+    const [searchBlock, setSearchBlock] = useState('');
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
         client.user.profile_photo_path,
@@ -211,10 +236,56 @@ export default function ClientEdit() {
         children: client.children,
         pets: client.pets,
         addresses: client.addresses,
+        favorite_caregiver_ids: [] as number[],
+        blocked_caregiver_ids: [] as number[],
     });
+
+    const addFavorite = (id: number) => {
+        if (!favoriteIds.includes(id)) {
+            setFavoriteIds([...favoriteIds, id]);
+        }
+    };
+
+    const removeFavorite = (id: number) => {
+        setFavoriteIds(favoriteIds.filter((x) => x !== id));
+    };
+
+    const addBlocked = (id: number) => {
+        if (!blockedIds.includes(id)) {
+            setBlockedIds([...blockedIds, id]);
+        }
+    };
+
+    const removeBlocked = (id: number) => {
+        setBlockedIds(blockedIds.filter((x) => x !== id));
+    };
+
+    const filteredFavCaregivers = (caregivers ?? []).filter(
+        (c) =>
+            !favoriteIds.includes(c.id) &&
+            !blockedIds.includes(c.id) &&
+            `${c.first_name} ${c.last_name}`
+                .toLowerCase()
+                .includes(searchFav.toLowerCase()),
+    );
+
+    const filteredBlockCaregivers = (caregivers ?? []).filter(
+        (c) =>
+            !favoriteIds.includes(c.id) &&
+            !blockedIds.includes(c.id) &&
+            `${c.first_name} ${c.last_name}`
+                .toLowerCase()
+                .includes(searchBlock.toLowerCase()),
+    );
 
     const submit: SubmitEventHandler = (e) => {
         e.preventDefault();
+
+        form.transform((data) => ({
+            ...data,
+            favorite_caregiver_ids: favoriteIds,
+            blocked_caregiver_ids: blockedIds,
+        }));
 
         form.patch(`/clients/${client.id}`, {
             onSuccess: () => {
@@ -1049,6 +1120,154 @@ export default function ClientEdit() {
                                 No addresses on file
                             </p>
                         )}
+                    </div>
+
+                    <div className="border border-green-200 bg-green-50 p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-serif text-lg font-semibold text-green-800">
+                                Favorite Caregivers ({favoriteIds.length})
+                            </h2>
+                        </div>
+                        {favoriteIds.length > 0 ? (
+                            <div className="mb-4 space-y-3">
+                                {favoriteIds.map((id) => {
+                                    const c = (caregivers ?? []).find((cg) => cg.id === id);
+                                    if (!c) return null;
+                                    return (
+                                        <div
+                                            key={id}
+                                            className="flex items-center justify-between rounded-[3px] border border-green-200 bg-white p-3"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-medium text-foreground">
+                                                    {c.first_name} {c.last_name}
+                                                </span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                type="button"
+                                                onClick={() => removeFavorite(id)}
+                                                className="text-destructive hover:text-destructive"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="mb-4 text-sm text-muted-foreground">
+                                No favorite caregivers
+                            </p>
+                        )}
+                        <div>
+                            <Input
+                                type="text"
+                                placeholder="Search caregivers to add..."
+                                value={searchFav}
+                                onChange={(e) => setSearchFav(e.target.value)}
+                                className="mb-2"
+                            />
+                            {searchFav && filteredFavCaregivers.length > 0 && (
+                                <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-green-200 bg-white">
+                                    {filteredFavCaregivers.slice(0, 5).map((c) => (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onClick={() => {
+                                                addFavorite(c.id);
+                                                setSearchFav('');
+                                            }}
+                                            className="flex w-full items-center gap-2 p-2 text-left hover:bg-green-50"
+                                        >
+                                            <span className="font-medium text-foreground">
+                                                {c.first_name} {c.last_name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {searchFav && filteredFavCaregivers.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    No caregivers found
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="border border-red-200 bg-red-50 p-6">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="font-serif text-lg font-semibold text-red-800">
+                                Blocked Caregivers ({blockedIds.length})
+                            </h2>
+                        </div>
+                        {blockedIds.length > 0 ? (
+                            <div className="mb-4 space-y-3">
+                                {blockedIds.map((id) => {
+                                    const c = (caregivers ?? []).find((cg) => cg.id === id);
+                                    if (!c) return null;
+                                    return (
+                                        <div
+                                            key={id}
+                                            className="flex items-center justify-between rounded-[3px] border border-red-200 bg-white p-3"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-medium text-foreground">
+                                                    {c.first_name} {c.last_name}
+                                                </span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                type="button"
+                                                onClick={() => removeBlocked(id)}
+                                                className="text-destructive hover:text-destructive"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="mb-4 text-sm text-muted-foreground">
+                                No blocked caregivers
+                            </p>
+                        )}
+                        <div>
+                            <Input
+                                type="text"
+                                placeholder="Search caregivers to block..."
+                                value={searchBlock}
+                                onChange={(e) => setSearchBlock(e.target.value)}
+                                className="mb-2"
+                            />
+                            {searchBlock && filteredBlockCaregivers.length > 0 && (
+                                <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-200 bg-white">
+                                    {filteredBlockCaregivers.slice(0, 5).map((c) => (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onClick={() => {
+                                                addBlocked(c.id);
+                                                setSearchBlock('');
+                                            }}
+                                            className="flex w-full items-center gap-2 p-2 text-left hover:bg-red-50"
+                                        >
+                                            <span className="font-medium text-foreground">
+                                                {c.first_name} {c.last_name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {searchBlock && filteredBlockCaregivers.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    No caregivers found
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     {false && (

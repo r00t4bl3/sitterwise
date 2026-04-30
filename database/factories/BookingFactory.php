@@ -29,7 +29,7 @@ class BookingFactory extends Factory
             'ulid' => Str::ulid(),
             'booking_group_id' => BookingGroup::factory(),
             'client_id' => Client::factory(),
-            'caregiver_id' => null,
+            'caregiver_id' => Caregiver::query()->exists() && fake()->boolean(60) ? Caregiver::inRandomOrder()->first()?->id : null,
             'availability_id' => null,
             'hotel_id' => null,
             'address_id' => ClientAddress::factory(),

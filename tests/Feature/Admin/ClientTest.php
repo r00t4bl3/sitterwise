@@ -1,7 +1,13 @@
 <?php
 
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
+use Database\Seeders\AttributeDefinitionSeeder;
+use Database\Seeders\CaregiverStatusSeeder;
+use Database\Seeders\CertificationTypeSeeder;
+use Database\Seeders\LocationSeeder;
+use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -10,6 +16,13 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Notification::fake();
+    $this->seed([
+        CaregiverStatusSeeder::class,
+        CertificationTypeSeeder::class,
+        SpecialtyTypeSeeder::class,
+        LocationSeeder::class,
+        AttributeDefinitionSeeder::class,
+    ]);
     $this->user = User::factory()->create(['role' => 'admin']);
     $this->client = Client::factory()->create();
 });
@@ -239,5 +252,96 @@ describe('Client - Admin', function () {
 
         $this->client->refresh();
         expect($this->client->user->password)->toBe($oldPassword);
+    });
+
+    test('admin can see favorite and blocked caregivers on edit page', function () {
+        $this->actingAs($this->user);
+        $caregiver1 = Caregiver::factory()->create();
+        $caregiver2 = Caregiver::factory()->create();
+        $this->client->favoriteCaregivers()->attach($caregiver1->id);
+        $this->client->blockedCaregivers()->attach($caregiver2->id);
+
+        $response = $this->get(route('clients.edit', $this->client));
+
+        $response->assertSuccessful();
+        $response->assertInertia(fn ($page) => $page
+            ->has('favorite_caregivers')
+            ->has('blocked_caregivers')
+            ->has('caregivers')
+        );
+    });
+
+    test('admin can update favorite caregivers', function () {
+        $this->actingAs($this->user);
+        $caregivers = Caregiver::factory()->count(3)->create();
+        $ids = $caregivers->pluck('id')->toArray();
+
+        $response = $this->patch(route('clients.update', $this->client), [
+            'first_name' => $this->client->first_name,
+            'last_name' => $this->client->last_name,
+            'phone' => $this->client->phone,
+            'client_type' => $this->client->client_type,
+            'favorite_caregiver_ids' => $ids,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('client_favorite_caregivers', [
+            'client_id' => $this->client->id,
+            'caregiver_id' => $ids[0],
+        ]);
+    });
+
+    test('admin can update blocked caregivers', function () {
+        $this->actingAs($this->user);
+        $caregivers = Caregiver::factory()->count(2)->create();
+        $ids = $caregivers->pluck('id')->toArray();
+
+        $response = $this->patch(route('clients.update', $this->client), [
+            'first_name' => $this->client->first_name,
+            'last_name' => $this->client->last_name,
+            'phone' => $this->client->phone,
+            'client_type' => $this->client->client_type,
+            'blocked_caregiver_ids' => $ids,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('client_blocked_caregivers', [
+            'client_id' => $this->client->id,
+            'caregiver_id' => $ids[0],
+        ]);
+    });
+
+    test('validation fails for invalid caregiver ids', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->patch(route('clients.update', $this->client), [
+            'first_name' => $this->client->first_name,
+            'last_name' => $this->client->last_name,
+            'phone' => $this->client->phone,
+            'client_type' => $this->client->client_type,
+            'favorite_caregiver_ids' => [999],
+        ]);
+
+        $response->assertSessionHasErrors();
+    });
+
+    test('admin can remove favorite caregivers', function () {
+        $this->actingAs($this->user);
+        $caregiver = Caregiver::factory()->create();
+        $this->client->favoriteCaregivers()->attach($caregiver->id);
+
+        $response = $this->patch(route('clients.update', $this->client), [
+            'first_name' => $this->client->first_name,
+            'last_name' => $this->client->last_name,
+            'phone' => $this->client->phone,
+            'client_type' => $this->client->client_type,
+            'favorite_caregiver_ids' => [],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('client_favorite_caregivers', [
+            'client_id' => $this->client->id,
+            'caregiver_id' => $caregiver->id,
+        ]);
     });
 });

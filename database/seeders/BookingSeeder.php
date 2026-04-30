@@ -22,5 +22,15 @@ class BookingSeeder extends Seeder
             ->confirmed()
             ->hotel()
             ->create();
+
+        Booking::factory()
+            ->count(10)
+            ->completed()
+            ->create();
+
+        Booking::factory()
+            ->count(5)
+            ->confirmed()
+            ->create();
     }
 }

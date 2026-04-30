@@ -41,19 +41,25 @@ class GuestBookingService
                 'zip' => $h->zip,
             ]);
 
-        $serviceTypes = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            ServiceType::cases(),
+        $serviceTypes = array_values(
+            array_map(
+                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
+                array_filter(ServiceType::cases(), fn ($type) => (! str_contains($type->value, 'invoiced')) && (! str_contains($type->value, 'comped')) && (! str_contains($type->value, 'companion')))
+            )
         );
 
-        $locationTypes = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            LocationType::cases(),
+        $locationTypes = array_values(
+            array_map(
+                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
+                array_filter(LocationType::cases(), fn ($type) => ! str_contains($type->value, 'event'))
+            )
         );
 
-        $sitterPreferences = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            SitterPreference::cases(),
+        $sitterPreferences = array_values(
+            array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                SitterPreference::cases(),
+            )
         );
 
         return Inertia::render('guest/bookings/create', [

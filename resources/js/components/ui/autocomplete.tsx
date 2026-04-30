@@ -98,7 +98,7 @@ export function Autocomplete({
                     suggestions.length > 0 && setShowSuggestions(true)
                 }
                 placeholder={placeholder}
-                className="h-10 w-full rounded-[3px] border border-input bg-background px-3 pr-10 text-sm outline-none focus:border-ring"
+                className="h-11 w-full rounded-[3px] border border-input bg-background px-3 pr-10 text-sm outline-none focus:border-ring"
             />
             {value && (
                 <button

@@ -64,7 +64,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         $serviceTypes = array_values(
             array_map(
                 fn ($type) => ['value' => $type->value, 'label' => $type->label()],
-                array_filter(ServiceType::cases(), fn ($type) => (! str_contains($type->value, 'invoiced')) && (! str_contains($type->value, 'comped')))
+                array_filter(ServiceType::cases(), fn ($type) => (! str_contains($type->value, 'invoiced')) && (! str_contains($type->value, 'comped')) && (! str_contains($type->value, 'companion')))
             )
         );
         $locationTypes = array_values(

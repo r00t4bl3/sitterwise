@@ -75,6 +75,20 @@ describe('Recommendation Service - Caregiver', function () {
             ->and($match['matchBadge']['color'])->toBe('green');
     });
 
+    test('blocked caregiver is excluded from recommendations', function () {
+        $client = Client::factory()->create();
+        $blockedCaregiver = Caregiver::factory()->create([
+            'status_id' => $this->activeStatus->id,
+            'rating' => 4.5,
+        ]);
+
+        $client->blockedCaregivers()->attach($blockedCaregiver->id);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        expect($recommended->pluck('caregiver.id')->contains($blockedCaregiver->id))->toBeFalse();
+    });
+
     test('caregiver with previous work history scores higher', function () {
         $client = Client::factory()->create();
 

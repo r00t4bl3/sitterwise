@@ -188,4 +188,14 @@ class CaregiverTest extends TestCase
 
         $this->assertInstanceOf(BelongsToMany::class, $relation);
     }
+
+    public function test_defines_blocked_clients_relationship()
+    {
+        $status = CaregiverStatus::factory()->create();
+        $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+
+        $relation = $caregiver->blockedClients();
+
+        $this->assertInstanceOf(BelongsToMany::class, $relation);
+    }
 }

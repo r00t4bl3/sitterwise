@@ -193,7 +193,7 @@ export function BookingAddressFields({
                     <label className="text-sm font-medium text-foreground">
                         Address
                     </label>
-                    <div className="mt-1 flex items-center gap-2 rounded-[3px] border border-input bg-muted px-3 py-2 text-sm">
+                    <div className="mt-1 h-11 flex items-center gap-2 rounded-[3px] border border-input bg-muted px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">
                             {addressValue}
                         </span>
@@ -238,7 +238,7 @@ export function BookingAddressFields({
                         predictions.length > 0 && setShowPredictions(true)
                     }
                     placeholder="Start typing address..."
-                    className="mt-1 h-10 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
+                    className="mt-1 h-11 w-full rounded-[3px] border border-input bg-background px-3 text-sm"
                     autoComplete="off"
                 />
                 {loading && (

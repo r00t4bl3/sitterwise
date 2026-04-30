@@ -1,10 +1,16 @@
 <?php
 
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\User;
+use Database\Seeders\AttributeDefinitionSeeder;
+use Database\Seeders\CaregiverStatusSeeder;
+use Database\Seeders\CertificationTypeSeeder;
+use Database\Seeders\LocationSeeder;
+use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -121,5 +127,64 @@ class ClientTest extends TestCase
         ]);
 
         $this->assertEquals('Client requires special accommodations', $client->special_needs_notes);
+    }
+
+    public function test_defines_favorite_caregivers_relationship()
+    {
+        $client = Client::factory()->create();
+        $relation = $client->favoriteCaregivers();
+
+        $this->assertInstanceOf(BelongsToMany::class, $relation);
+    }
+
+    public function test_defines_blocked_caregivers_relationship()
+    {
+        $client = Client::factory()->create();
+        $relation = $client->blockedCaregivers();
+
+        $this->assertInstanceOf(BelongsToMany::class, $relation);
+    }
+
+    public function test_defines_previous_caregivers_relationship()
+    {
+        $client = Client::factory()->create();
+        $relation = $client->previousCaregivers();
+
+        $this->assertInstanceOf(BelongsToMany::class, $relation);
+    }
+
+    public function test_favorite_caregivers_syncs_correctly()
+    {
+        $this->seed([
+            CaregiverStatusSeeder::class,
+            CertificationTypeSeeder::class,
+            SpecialtyTypeSeeder::class,
+            LocationSeeder::class,
+            AttributeDefinitionSeeder::class,
+        ]);
+        $client = Client::factory()->create();
+        $caregivers = Caregiver::factory()->count(3)->create();
+
+        $client->favoriteCaregivers()->sync([$caregivers[0]->id, $caregivers[1]->id]);
+
+        $this->assertCount(2, $client->favoriteCaregivers);
+        $this->assertTrue($client->favoriteCaregivers->contains($caregivers[0]));
+    }
+
+    public function test_blocked_caregivers_syncs_correctly()
+    {
+        $this->seed([
+            CaregiverStatusSeeder::class,
+            CertificationTypeSeeder::class,
+            SpecialtyTypeSeeder::class,
+            LocationSeeder::class,
+            AttributeDefinitionSeeder::class,
+        ]);
+        $client = Client::factory()->create();
+        $caregiver = Caregiver::factory()->create();
+
+        $client->blockedCaregivers()->attach($caregiver->id);
+
+        $this->assertCount(1, $client->blockedCaregivers);
     }
 }

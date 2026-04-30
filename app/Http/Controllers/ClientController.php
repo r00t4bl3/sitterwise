@@ -10,6 +10,7 @@ use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientProfilePhotoRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\AttributeDefinition;
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -121,7 +122,9 @@ class ClientController extends Controller
 
     public function getClientData(Client $client)
     {
-        $client->load(['addresses', 'children', 'pets']);
+        $client->load(['addresses', 'children', 'pets', 'favoriteCaregivers.user', 'blockedCaregivers.user']);
+
+        $previousCaregivers = $client->previousCaregivers()->with('user')->get();
 
         return response()->json([
             'client' => [
@@ -157,13 +160,51 @@ class ClientController extends Controller
                 'sitter_preferences' => $client->sitter_preferences,
                 'other_adults_present' => $client->other_adults_present,
                 'emergency_instructions' => $client->emergency_instructions,
+                'favorite_caregivers' => $client->favoriteCaregivers->map(fn ($cg) => [
+                    'id' => $cg->id,
+                    'first_name' => $cg->first_name,
+                    'last_name' => $cg->last_name,
+                    'user' => [
+                        'profile_photo_path' => $cg->user?->profile_photo_path,
+                        'profile_photo_url' => $cg->user?->profile_photo_url,
+                    ],
+                ]),
+                'blocked_caregivers' => $client->blockedCaregivers->map(fn ($cg) => [
+                    'id' => $cg->id,
+                    'first_name' => $cg->first_name,
+                    'last_name' => $cg->last_name,
+                    'user' => [
+                        'profile_photo_path' => $cg->user?->profile_photo_path,
+                        'profile_photo_url' => $cg->user?->profile_photo_url,
+                    ],
+                ]),
+                'previous_caregivers' => $previousCaregivers->map(fn ($cg) => [
+                    'id' => $cg->id,
+                    'first_name' => $cg->first_name,
+                    'last_name' => $cg->last_name,
+                    'user' => [
+                        'profile_photo_path' => $cg->user?->profile_photo_path,
+                        'profile_photo_url' => $cg->user?->profile_photo_url,
+                    ],
+                ]),
             ],
         ]);
     }
 
     public function show(Client $client)
     {
-        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers', 'typeChanges.admin']);
+        $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers.user', 'blockedCaregivers.user', 'typeChanges.admin']);
+
+        $previousCaregivers = $client->bookings()
+            ->whereNotNull('caregiver_id')
+            ->whereIn('status', ['completed', 'confirmed'])
+            ->with('caregiver.user')
+            ->orderBy('start_datetime', 'desc')
+            ->get()
+            ->pluck('caregiver')
+            ->unique('id')
+            ->take(10)
+            ->values();
         $client->load(['attributes' => function ($query) {
             $query->withPivot('value');
         }]);
@@ -228,6 +269,22 @@ class ClientController extends Controller
                         'profile_photo_path' => $c->user->profile_photo_path,
                     ],
                 ]),
+                'blocked_caregivers' => $client->blockedCaregivers->map(fn ($c) => [
+                    'id' => $c->id,
+                    'first_name' => $c->first_name,
+                    'last_name' => $c->last_name,
+                    'user' => [
+                        'profile_photo_path' => $c->user->profile_photo_path,
+                    ],
+                ]),
+                'previous_caregivers' => $previousCaregivers->map(fn ($c) => [
+                    'id' => $c->id,
+                    'first_name' => $c->first_name,
+                    'last_name' => $c->last_name,
+                    'user' => [
+                        'profile_photo_path' => $c->user->profile_photo_path,
+                    ],
+                ]),
                 'type_changes' => $client->typeChanges->map(fn ($tc) => [
                     'id' => $tc->id,
                     'previous_type' => $tc->previous_type,
@@ -244,7 +301,7 @@ class ClientController extends Controller
 
     public function edit(Client $client)
     {
-        $client->load(['user', 'addresses', 'children', 'pets', 'attributes']);
+        $client->load(['user', 'addresses', 'children', 'pets', 'attributes', 'favoriteCaregivers.user', 'blockedCaregivers.user']);
 
         $attributeDefinitions = AttributeDefinition::active()
             ->forClients()
@@ -256,6 +313,8 @@ class ClientController extends Controller
                 'slug' => $a->slug,
                 'type' => $a->type,
             ]);
+
+        $caregivers = Caregiver::with('user')->get(['id', 'first_name', 'last_name', 'user_id']);
 
         return Inertia::render('admin/clients/edit', [
             'client' => [
@@ -307,10 +366,34 @@ class ClientController extends Controller
                     'value' => $a->pivot->value,
                 ]),
             ],
+            'favorite_caregivers' => $client->favoriteCaregivers->map(fn ($c) => [
+                'id' => $c->id,
+                'first_name' => $c->first_name,
+                'last_name' => $c->last_name,
+                'user' => [
+                    'profile_photo_path' => $c->user?->profile_photo_path,
+                ],
+            ]),
+            'blocked_caregivers' => $client->blockedCaregivers->map(fn ($c) => [
+                'id' => $c->id,
+                'first_name' => $c->first_name,
+                'last_name' => $c->last_name,
+                'user' => [
+                    'profile_photo_path' => $c->user?->profile_photo_path,
+                ],
+            ]),
             'attribute_definitions' => $attributeDefinitions,
             'sitter_preferences' => $this->sitterPreference,
             'client_types' => $this->clientType,
             'discovery_sources' => $this->discoverySources,
+            'caregivers' => $caregivers->map(fn ($c) => [
+                'id' => $c->id,
+                'first_name' => $c->first_name,
+                'last_name' => $c->last_name,
+                'user' => [
+                    'profile_photo_path' => $c->user?->profile_photo_path,
+                ],
+            ]),
         ]);
     }
 
@@ -431,6 +514,13 @@ class ClientController extends Controller
             }
 
             $client->addresses()->whereNotIn('id', $submittedAddressIds)->delete();
+        }
+
+        if ($request->filled('favorite_caregiver_ids')) {
+            $client->favoriteCaregivers()->sync($request->input('favorite_caregiver_ids', []));
+        }
+        if ($request->filled('blocked_caregiver_ids')) {
+            $client->blockedCaregivers()->sync($request->input('blocked_caregiver_ids', []));
         }
 
         return redirect()->route('clients.show', $client->id)
