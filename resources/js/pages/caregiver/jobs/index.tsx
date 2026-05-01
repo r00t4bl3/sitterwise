@@ -12,6 +12,10 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, parseAsLocal } from '@/lib/datetime';
+import { Textarea } from '@/components/ui/textarea';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface Booking {
     id: number;
@@ -32,6 +36,12 @@ interface Booking {
         user: {
             name: string;
         };
+        children?: Array<{
+            id: number;
+            name: string;
+            birth_year?: number;
+            birth_month?: number;
+        }>;
     };
     address_line1: string;
     address_line2: string;
@@ -57,6 +67,10 @@ interface Props {
             active: boolean;
         }>;
     };
+    calculateAge: (
+        birthYear: number | null,
+        birthMonth: number | null,
+    ) => string;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -70,7 +84,7 @@ function formatDateTimeLocal(date: Date): string {
 }
 
 export default function CaregiverJobsIndex() {
-    const { jobs } = usePage<Props>().props;
+    const { jobs, calculateAge } = usePage<Props>().props;
 
     const getStatusBadge = (
         status: string,
@@ -158,18 +172,26 @@ export default function CaregiverJobsIndex() {
         bonus: '',
     });
 
+    const calculateTotalHours = (start: string, end: string): number => {
+        if (!start || !end) return 0;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const diffMs = endDate.getTime() - startDate.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        return Math.max(diffHours, 4); // Minimum 4 hours
+    };
+
     const openCheckoutSheet = (job: Booking) => {
         setSelectedJob(job);
 
         const start = parseAsLocal(job.start_datetime) as Date;
         const end = parseAsLocal(job.end_datetime) as Date;
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        const hours = calculateTotalHours(job.start_datetime, job.end_datetime);
 
         checkoutForm.setData({
             start_datetime: formatDateTimeLocal(start),
             end_datetime: formatDateTimeLocal(end),
-            total_working_hour:
-                job.total_working_hour?.toString() || hours.toFixed(2),
+            total_working_hour: hours.toFixed(2),
             reimbursement: '',
             reimbursement_description: '',
             bonus: '',
@@ -189,6 +211,20 @@ export default function CaregiverJobsIndex() {
                 setIsCheckoutSheetOpen(false);
             },
         });
+    };
+
+    const handleStartDateTimeChange = (value: string) => {
+        checkoutForm.setData('start_datetime', value);
+        // Recalculate total hours
+        const hours = calculateTotalHours(value, checkoutForm.data.end_datetime);
+        checkoutForm.setData('total_working_hour', hours.toFixed(2));
+    };
+
+    const handleEndDateTimeChange = (value: string) => {
+        checkoutForm.setData('end_datetime', value);
+        // Recalculate total hours
+        const hours = calculateTotalHours(checkoutForm.data.start_datetime, value);
+        checkoutForm.setData('total_working_hour', hours.toFixed(2));
     };
 
     return (
@@ -317,21 +353,21 @@ export default function CaregiverJobsIndex() {
                                                     </Link>
                                                 </Button>
 
-                                                 {job.status.toLowerCase() ===
-                                                     'confirmed' &&
-                                                     new Date(job.end_datetime) <
-                                                         new Date() && (
-                                                     <Button
-                                                         size="sm"
-                                                         onClick={() =>
-                                                             openCheckoutSheet(
-                                                                 job,
-                                                             )
-                                                         }
-                                                     >
-                                                         Checkout
-                                                     </Button>
-                                                 )}
+                                                  {job.status.toLowerCase() ===
+                                                      'confirmed' &&
+                                                      new Date(job.end_datetime) <
+                                                          new Date() && (
+                                                      <Button
+                                                          size="sm"
+                                                          onClick={() =>
+                                                              openCheckoutSheet(
+                                                                  job,
+                                                              )
+                                                          }
+                                                      >
+                                                          Checkout
+                                                      </Button>
+                                                  )}
                                             </div>
                                         </td>
                                     </tr>
@@ -387,7 +423,7 @@ export default function CaregiverJobsIndex() {
                 onOpenChange={setIsCheckoutSheetOpen}
             >
                 <SheetContent className="sm:max-w-md">
-                    <SheetHeader>
+                    <SheetHeader className="shrink-0">
                         <SheetTitle>Job Checkout</SheetTitle>
                         <SheetDescription>
                             Complete the job by confirming hours and adding any
@@ -395,57 +431,126 @@ export default function CaregiverJobsIndex() {
                         </SheetDescription>
                     </SheetHeader>
 
+                    <div className="flex-1 overflow-y-auto px-4 pb-6">
                     {selectedJob && (
                         <form
                             onSubmit={handleCheckout}
-                            className="mt-6 space-y-4 px-4"
+                            className="space-y-4"
                         >
                             <div className="rounded-lg bg-muted p-4">
                                 <p className="text-sm font-medium">
                                     {selectedJob.client?.user.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {formatDisplayDateTime(
-                                        selectedJob.start_datetime,
-                                    )}{' '}
-                                    -{' '}
-                                    {formatDisplayDateTime(
-                                        selectedJob.end_datetime,
-                                    )}
+                                    {(() => {
+                                        const start = new Date(
+                                            selectedJob.start_datetime,
+                                        );
+                                        const end = new Date(selectedJob.end_datetime);
+                                        const isSameDay =
+                                            start.getFullYear() === end.getFullYear() &&
+                                            start.getMonth() === end.getMonth() &&
+                                            start.getDate() === end.getDate();
+
+                                        const dateOptions: Intl.DateTimeFormatOptions =
+                                            {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                            };
+                                        const timeOptions: Intl.DateTimeFormatOptions =
+                                            {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                hour12: true,
+                                            };
+
+                                        if (isSameDay) {
+                                            return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                                        }
+
+                                        return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                                    })()}
                                 </p>
+                                {selectedJob.client.children &&
+                                selectedJob.client.children.length > 0 ? (
+                                    <p className="text-xs text-muted-foreground">
+                                        {selectedJob.client.children.map(
+                                            (child, index) => (
+                                                <span key={child.id}>
+                                                    {child.name}
+                                                    {child.birth_month &&
+                                                    child.birth_year
+                                                        ? ` (${calculateAge(
+                                                              child.birth_year,
+                                                              child.birth_month,
+                                                          )})`
+                                                        : ''}
+                                                    {index <
+                                                    selectedJob.client.children!
+                                                        .length -
+                                                        1
+                                                        ? ', '
+                                                        : ''}
+                                                </span>
+                                            ),
+                                        )}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                        (No children)
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-4">
                                 <div className="grid gap-2">
-                                    <label className="text-sm font-medium">
-                                        Total Hours
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.25"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                        value={
-                                            checkoutForm.data.total_working_hour
-                                        }
-                                        onChange={(e) =>
-                                            checkoutForm.setData(
-                                                'total_working_hour',
-                                                e.target.value,
-                                            )
-                                        }
-                                        required
+                                    <Label className="text-sm font-medium">
+                                        Start Date & Time
+                                    </Label>
+                                    <DateTimePicker
+                                        value={checkoutForm.data.start_datetime}
+                                        onChange={handleStartDateTimeChange}
+                                        placeholder="Select start date and time"
                                     />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <label className="text-sm font-medium">
+                                    <Label className="text-sm font-medium">
+                                        End Date & Time
+                                    </Label>
+                                    <DateTimePicker
+                                        value={checkoutForm.data.end_datetime}
+                                        onChange={handleEndDateTimeChange}
+                                        placeholder="Select end date and time"
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label className="text-sm font-medium">
+                                        Total Hours
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        step="0.25"
+                                        value={
+                                            checkoutForm.data.total_working_hour
+                                        }
+                                        readOnly
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Minimum 4 hours. Calculated from start and end time.
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label className="text-sm font-medium">
                                         Reimbursement Amount ($)
-                                    </label>
-                                    <input
+                                    </Label>
+                                    <Input
                                         type="number"
                                         step="0.01"
                                         placeholder="0.00"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                         value={checkoutForm.data.reimbursement}
                                         onChange={(e) =>
                                             checkoutForm.setData(
@@ -457,10 +562,10 @@ export default function CaregiverJobsIndex() {
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <label className="text-sm font-medium">
+                                    <Label className="text-sm font-medium">
                                         Reimbursement Description
-                                    </label>
-                                    <textarea
+                                    </Label>
+                                    <Textarea
                                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                         placeholder="e.g., Parking, tolls, etc."
                                         value={
@@ -477,14 +582,13 @@ export default function CaregiverJobsIndex() {
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <label className="text-sm font-medium">
+                                    <Label className="text-sm font-medium">
                                         Bonus ($)
-                                    </label>
-                                    <input
+                                    </Label>
+                                    <Input
                                         type="number"
                                         step="0.01"
                                         placeholder="0.00"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                         value={checkoutForm.data.bonus}
                                         onChange={(e) =>
                                             checkoutForm.setData(
@@ -522,6 +626,7 @@ export default function CaregiverJobsIndex() {
                             </div>
                         </form>
                     )}
+                    </div>
                 </SheetContent>
             </Sheet>
         </AppLayout>

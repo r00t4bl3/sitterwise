@@ -205,6 +205,17 @@ export default function JobDetail({ booking }: PageProps) {
                                             booking.start_datetime,
                                         )}{' '}
                                         to{' '}
+                                        {
+                                            formatDisplayDate(
+                                                booking.start_datetime,
+                                            ) !== formatDisplayDate(
+                                                booking.end_datetime,
+                                            )
+                                                ? `${formatDisplayDate(
+                                                      booking.end_datetime,
+                                                  )} `
+                                                : ''
+                                        }
                                         {formatDisplayTime(
                                             booking.end_datetime,
                                         )}
