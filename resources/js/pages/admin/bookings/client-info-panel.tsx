@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
 
 interface Caregiver {
     id: number;
@@ -8,6 +10,7 @@ interface Caregiver {
 
 interface ClientInfoPanelProps {
     client: {
+        id: number;
         biography: string | null;
         favorite_caregivers?: Caregiver[];
         blocked_caregivers?: Caregiver[];
@@ -36,22 +39,33 @@ function CaregiverNames({ caregivers, variant = 'default' }: { caregivers: Careg
 }
 
 export function ClientInfoPanel({ client }: ClientInfoPanelProps) {
+    const [isHovered, setIsHovered] = useState(false);
+
     if (!client) {
-return null;
-}
+        return null;
+    }
 
     const hasFavorite = client.favorite_caregivers && client.favorite_caregivers.length > 0;
     const hasBlocked = client.blocked_caregivers && client.blocked_caregivers.length > 0;
     const hasPrevious = client.previous_caregivers && client.previous_caregivers.length > 0;
 
     return (
-        <div className="mb-4 space-y-3 rounded-[3px] border border-border bg-card p-4">
+        <div
+            className="mb-4 space-y-3 rounded-[3px] border border-border bg-card p-4 relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {isHovered && (
+                <Button size="sm" variant="outline" asChild className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <Link href={`/clients/${client.id}`}>Edit on client page</Link>
+                </Button>
+            )}
             {client.biography && (
                 <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Biography
                     </p>
-                    <p className="mt-1 text-sm text-foreground">{client.biography}</p>
+                    <p className="text-sm text-foreground">{client.biography}</p>
                 </div>
             )}
 
@@ -59,9 +73,9 @@ return null;
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Previous Caregivers
                 </p>
-                <div className="mt-1">
+                <div>
                     {hasPrevious ? (
-                        <CaregiverNames caregivers={client.previous_caregivers} />
+                        <CaregiverNames caregivers={client.previous_caregivers ?? []} />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}
@@ -72,9 +86,9 @@ return null;
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Favorite Caregivers
                 </p>
-                <div className="mt-1">
+                <div>
                     {hasFavorite ? (
-                        <CaregiverNames caregivers={client.favorite_caregivers} />
+                        <CaregiverNames caregivers={client.favorite_caregivers ?? []} />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}
@@ -85,9 +99,9 @@ return null;
                 <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">
                     Blocked Caregivers
                 </p>
-                <div className="mt-1">
+                <div>
                     {hasBlocked ? (
-                        <CaregiverNames caregivers={client.blocked_caregivers} variant="blocked" />
+                        <CaregiverNames caregivers={client.blocked_caregivers ?? []} variant="blocked" />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}

@@ -207,7 +207,7 @@ export function PersonalInfoSection({
     
     // Update the ref whenever selectedCaregivers changes
     useEffect(() => {
-        console.log('Updating selectedCaregiversRef to:', selectedCaregivers);
+        // console.log('Updating selectedCaregiversRef to:', selectedCaregivers);
         selectedCaregiversRef.current = selectedCaregivers;
     }, [selectedCaregivers]);
 
