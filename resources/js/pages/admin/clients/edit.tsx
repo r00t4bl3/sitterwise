@@ -639,8 +639,8 @@ export default function ClientEdit() {
                                 Children ({form.data.children.length})
                             </h2>
                             <Button
-                                variant="link"
                                 type="button"
+                                size="sm"
                                 onClick={() => {
                                     form.setData('children', [
                                         ...form.data.children,
@@ -662,7 +662,7 @@ export default function ClientEdit() {
                                 {form.data.children.map((child, index) => (
                                     <div
                                         key={child.id || `child-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-7"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 lg:grid-cols-6"
                                     >
                                         <div className="sm:col-span-2">
                                             <Input
@@ -790,8 +790,6 @@ export default function ClientEdit() {
                                         </div>
                                         <div className="flex items-center justify-end">
                                             <Button
-                                                variant="ghost"
-                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -802,7 +800,6 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
-                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>
@@ -823,7 +820,7 @@ export default function ClientEdit() {
                                 Pets ({form.data.pets.length})
                             </h2>
                             <Button
-                                variant="link"
+                                size="sm"
                                 type="button"
                                 onClick={() => {
                                     form.setData('pets', [
@@ -932,8 +929,6 @@ export default function ClientEdit() {
                                         <div className="flex items-center justify-end">
                                             <Button
                                                 type="button"
-                                                variant="ghost"
-                                                size="sm"
                                                 onClick={() => {
                                                     form.setData(
                                                         'pets',
@@ -943,7 +938,6 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
-                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>
@@ -965,6 +959,7 @@ export default function ClientEdit() {
                             </h2>
                             <Button
                                 type="button"
+                                size="sm"
                                 onClick={() => {
                                     form.setData('addresses', [
                                         ...form.data.addresses,
@@ -983,7 +978,6 @@ export default function ClientEdit() {
                                         },
                                     ]);
                                 }}
-                                variant="link"
                             >
                                 + Add Address
                             </Button>
@@ -993,9 +987,9 @@ export default function ClientEdit() {
                                 {form.data.addresses.map((address, index) => (
                                     <div
                                         key={address.id || `address-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-3"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4"
                                     >
-                                        <div>
+                                        <div className="sm:col-span-2 lg:col">
                                             <Input
                                                 type="text"
                                                 value={address.label || ''}
@@ -1054,8 +1048,8 @@ export default function ClientEdit() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="flex items-center">
-                                            <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-start sm:justify-center lg:justify-end">
+                                            <div className="flex items-center gap-2 h-11">
                                                 <Checkbox
                                                     id={`address-primary-${index}`}
                                                     checked={address.is_primary}
@@ -1093,10 +1087,8 @@ export default function ClientEdit() {
                                                 label="Address"
                                             />
                                         </div>
-                                        <div className="flex items-center justify-end sm:col-span-2 lg:col-span-3">
+                                        <div className="flex items-end justify-end sm:col-span-2 lg:col-auto">
                                             <Button
-                                                variant="link"
-                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -1107,7 +1099,6 @@ export default function ClientEdit() {
                                                         ),
                                                     );
                                                 }}
-                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>
@@ -1134,8 +1125,8 @@ export default function ClientEdit() {
                                     const c = (caregivers ?? []).find((cg) => cg.id === id);
 
                                     if (!c) {
-return null;
-}
+                                        return null;
+                                    }
 
                                     return (
                                         <div
@@ -1148,11 +1139,8 @@ return null;
                                                 </span>
                                             </div>
                                             <Button
-                                                variant="ghost"
-                                                size="sm"
                                                 type="button"
                                                 onClick={() => removeFavorite(id)}
-                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>
@@ -1226,11 +1214,8 @@ return null;
                                                 </span>
                                             </div>
                                             <Button
-                                                variant="ghost"
-                                                size="sm"
                                                 type="button"
                                                 onClick={() => removeBlocked(id)}
-                                                className="text-destructive hover:text-destructive"
                                             >
                                                 Remove
                                             </Button>

@@ -11,9 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime, parseAsLocal } from '@/lib/datetime';
-import { Textarea } from '@/components/ui/textarea';
-import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { formatDisplayDateTime, parseAsLocal, autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -215,6 +213,10 @@ export default function CaregiverJobsIndex() {
 
     const handleStartDateTimeChange = (value: string) => {
         checkoutForm.setData('start_datetime', value);
+        // Auto-set end time to 4 hours after start
+        if (value) {
+            checkoutForm.setData('end_datetime', autoSetEndDateTime(value));
+        }
         // Recalculate total hours
         const hours = calculateTotalHours(value, checkoutForm.data.end_datetime);
         checkoutForm.setData('total_working_hour', hours.toFixed(2));
@@ -521,6 +523,7 @@ export default function CaregiverJobsIndex() {
                                     </Label>
                                     <DateTimePicker
                                         value={checkoutForm.data.end_datetime}
+                                        startTime={checkoutForm.data.start_datetime}
                                         onChange={handleEndDateTimeChange}
                                         placeholder="Select end date and time"
                                     />

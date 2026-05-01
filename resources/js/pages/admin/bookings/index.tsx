@@ -898,7 +898,7 @@ export default function Bookings() {
 
         // Fetch latest client data if client exists
         if (booking.client_id) {
-            const data = await fetchClientDataOnly(booking.client_id);
+            const data = await fetchClientDataOnly(booking.client_id, true);
             clientData = data;
 
             if (data && data.client) {
@@ -941,12 +941,12 @@ export default function Bookings() {
             client_id: booking.client_id,
             service_type: 'babysitter', // Reset - user needs to re-select
             location_type: booking.location_type,
-            start_datetime: '',
-            end_datetime: '',
+            start_datetime: booking.start_datetime,
+            end_datetime: booking.end_datetime,
             hotel_id: booking.hotel_id,
             address_id: booking.address_id,
             caregiver_id: null,
-            special_considerations: [], // Reset
+            special_considerations: booking.special_considerations || [],
             caregiver_notes: '',
             notes_to_sitterwise: '',
             admin_notes: '',
@@ -1000,7 +1000,6 @@ export default function Bookings() {
         }
 
         setSelectedCaregiverName('');
-        setCaregiverSuggestions([]);
 
         setAddressMode('select');
         setClientMode('select');
@@ -1016,7 +1015,7 @@ export default function Bookings() {
         setIsSheetOpen(true);
     };
 
-    const fetchClientDataOnly = async (clientId: number) => {
+    const fetchClientDataOnly = async (clientId: number, skipCaregiverFetch = false) => {
         try {
             const response = await fetch(`/clients/${clientId}/data`);
             const data = await response.json();
@@ -1024,7 +1023,9 @@ export default function Bookings() {
             setClientChildren(data.client.children || []);
             setClientPets(data.client.pets || []);
             setSelectedClientType(data.client.client_type || null);
-            fetchRecommendedCaregivers(clientId);
+            if (!skipCaregiverFetch) {
+                fetchRecommendedCaregivers(clientId);
+            }
 
             return data;
         } catch (error) {

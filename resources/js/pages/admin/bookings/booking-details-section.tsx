@@ -4,6 +4,7 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -100,7 +101,7 @@ export function BookingDetailsSection({
     const [isOpen, setIsOpen] = useState(true);
     const startDatetime = form.data.start_datetime;
     const endDatetime = form.data.end_datetime;
-    const datetimeError = validateDatetime(startDatetime, endDatetime);
+    const datetimeError = validateMinimumDuration(startDatetime, endDatetime);
 
     useEffect(() => {
         const serviceType = form.data.service_type;
@@ -163,6 +164,9 @@ export function BookingDetailsSection({
                             value={startDatetime}
                             onChange={(datetime) => {
                                 form.setData('start_datetime', datetime);
+                                if (datetime) {
+                                    form.setData('end_datetime', autoSetEndDateTime(datetime));
+                                }
                             }}
                         />
                     </div>
@@ -172,6 +176,7 @@ export function BookingDetailsSection({
                         </Label>
                         <DateTimePicker
                             value={endDatetime}
+                            startTime={startDatetime}
                             onChange={(datetime) => {
                                 form.setData('end_datetime', datetime);
                             }}

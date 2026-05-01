@@ -7,6 +7,7 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -248,7 +249,7 @@ export default function ClientBookingCreate() {
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
 
-    const datetimeError = validateDatetime(
+    const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
         form.data.end_datetime,
     );
@@ -1276,10 +1277,10 @@ export default function ClientBookingCreate() {
                                     <DateTimePicker
                                         value={form.data.start_datetime}
                                         onChange={(datetime) => {
-                                            form.setData(
-                                                'start_datetime',
-                                                datetime,
-                                            );
+                                            form.setData('start_datetime', datetime);
+                                            if (datetime) {
+                                                form.setData('end_datetime', autoSetEndDateTime(datetime));
+                                            }
                                         }}
                                     />
                                 </div>
@@ -1290,11 +1291,9 @@ export default function ClientBookingCreate() {
                                     </Label>
                                     <DateTimePicker
                                         value={form.data.end_datetime}
+                                        startTime={form.data.start_datetime}
                                         onChange={(datetime) => {
-                                            form.setData(
-                                                'end_datetime',
-                                                datetime,
-                                            );
+                                            form.setData('end_datetime', datetime);
                                         }}
                                     />
                                 </div>

@@ -12,12 +12,14 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DateTimePickerProps {
     value?: string
     onChange?: (datetime: string) => void
     placeholder?: string
     error?: string
+    startTime?: string  // For disabling invalid time options
 }
 
 export function DateTimePicker({
@@ -25,7 +27,7 @@ export function DateTimePicker({
     onChange,
     placeholder = "Pick date and time",
     error,
-}: DateTimePickerProps) {
+    startTime}: DateTimePickerProps) {
     const [date, setDate] = React.useState<Date | undefined>(
         value ? parseAsLocal(value) ?? undefined : undefined
     )
@@ -33,17 +35,36 @@ export function DateTimePicker({
         value ? format(parseAsLocal(value) as Date, "HH:mm") : "09:00"
     )
 
-    const timeOptions = Array.from({ length: 96 }, (_, i) => {
-        const totalMins = i * 15
-        const hours24 = Math.floor(totalMins / 60)
-        const minutes = totalMins % 60
-        const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24
-        const ampm = hours24 < 12 ? 'AM' : 'PM'
-        return {
-            value: `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
-            label: `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`,
-        }
-    })
+    const timeOptions = React.useMemo(() => {
+    const options = []
+    const startDate = startTime ? parseAsLocal(startTime) : null
+    
+    for (let i = 0; i < 96; i++) {
+      const totalMins = i * 15
+      const hours24 = Math.floor(totalMins / 60)
+      const minutes = totalMins % 60
+      const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24
+      const ampm = hours24 < 12 ? 'AM' : 'PM'
+      
+      const timeValue = `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+      const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`
+      
+      let disabled = false
+      if (startDate) {
+        const optionDate = new Date(startDate)
+        optionDate.setHours(hours24, minutes, 0, 0)
+        const diffHours = (optionDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+        disabled = diffHours < 4
+      }
+      
+      options.push({
+        value: timeValue,
+        label: disabled ? `${label} (min 4h)` : label,
+        disabled
+      })
+    }
+    return options
+  }, [startTime])
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -92,18 +113,6 @@ export function DateTimePicker({
         return match ? parseInt(match[2], 10) : 0
     }
 
-    const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newTime = e.target.value
-        setTime(newTime)
-        if (date && onChange) {
-            const hours24 = parseTimeTo24Hour(newTime)
-            const minutes = parseTimeMinutes(newTime)
-            const newDate = new Date(date)
-            newDate.setHours(hours24, minutes, 0, 0)
-            onChange(format(newDate, "yyyy-MM-dd'T'HH:mm"))
-        }
-    }
-
     return (
         <div className="flex gap-2">
             <Popover open={open} onOpenChange={setOpen}>
@@ -129,19 +138,33 @@ export function DateTimePicker({
                     />
                 </PopoverContent>
             </Popover>
-            <select
-                value={time}
-                onChange={(e) => handleTimeChange(e)}
-                className={`h-10 w-28 rounded-[3px] border bg-background px-3 text-sm ${
-                    error ? "border-red-500" : "border-input"
-                }`}
-            >
-                {timeOptions.map((t) => (
-                    <option key={t.value} value={t.value}>
-                        {t.label}
-                    </option>
-                ))}
-            </select>
+            <Select value={time} onValueChange={(newTime) => {
+                setTime(newTime);
+                if (date && onChange) {
+                    const hours24 = parseTimeTo24Hour(newTime);
+                    const minutes = parseTimeMinutes(newTime);
+                    const newDate = new Date(date);
+                    newDate.setHours(hours24, minutes, 0, 0);
+                    onChange(format(newDate, "yyyy-MM-dd'T'HH:mm"));
+                }
+            }}>
+                <SelectTrigger
+                    className={`w-28 ${error ? "border-red-500" : ""}`}
+                >
+                    <SelectValue placeholder="Time" />
+                </SelectTrigger>
+                <SelectContent>
+                    {timeOptions.map((t) => (
+                        <SelectItem
+                            key={t.value}
+                            value={t.value}
+                            disabled={t.disabled}
+                        >
+                            {t.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
         </div>
     )
 }
