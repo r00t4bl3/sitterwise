@@ -207,6 +207,10 @@ export default function Bookings() {
                 client_id: editingBooking.client_id.toString(),
             });
 
+            if (editingBooking.id) {
+                params.append('booking_id', editingBooking.id.toString());
+            }
+
             if (form.data.service_type) {
                 params.append('service_type', form.data.service_type);
             }

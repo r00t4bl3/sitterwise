@@ -148,7 +148,7 @@ export default function CaregiverBookings() {
                 <Head title="Bookings" />
                 <div className="flex h-full flex-1 flex-col gap-4 p-4">
                     <div>
-                        <h1 className="text-2xl font-semibold text-foreground">
+                        <h1 className="text-2xl font-bold text-foreground">
                             Available Bookings
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ export default function CaregiverBookings() {
             <Head title="Bookings" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div>
-                    <h1 className="text-2xl font-semibold text-foreground">
+                    <h1 className="text-2xl font-bold text-foreground">
                         Available Bookings
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">

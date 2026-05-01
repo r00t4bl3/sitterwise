@@ -643,6 +643,7 @@ class AdminBookingService implements BookingServiceInterface
     public function recommendedCaregivers(Request $request)
     {
         $validated = $request->validate([
+            'booking_id' => 'nullable|exists:bookings,id',
             'client_id' => 'required_without:new_client|exists:clients,id',
             'service_type' => 'nullable|string',
             'start_datetime' => 'nullable|date',
@@ -651,18 +652,22 @@ class AdminBookingService implements BookingServiceInterface
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
 
-        // Create a mock booking if dates are provided
-        $mockBooking = null;
-        if (! empty($validated['service_type']) && ! empty($validated['start_datetime'])) {
-            $mockBooking = new Booking;
-            $mockBooking->service_type = $validated['service_type'];
-            $mockBooking->start_datetime = $validated['start_datetime'];
-            $mockBooking->end_datetime = $validated['end_datetime'];
+        if ($bookingId = $validated['booking_id'] ?? null) {
+            $booking = Booking::find($bookingId);
+        } else {
+            // Create a mock booking if dates are provided
+            $booking = null;
+            if (! empty($validated['service_type']) && ! empty($validated['start_datetime'])) {
+                $booking = new Booking;
+                $booking->service_type = $validated['service_type'];
+                $booking->start_datetime = $validated['start_datetime'];
+                $booking->end_datetime = $validated['end_datetime'];
+            }
         }
 
         $recommended = $this->recommendationService->getRecommendedCaregivers(
             $client,
-            $mockBooking,
+            $booking,
             20
         );
 
@@ -672,6 +677,7 @@ class AdminBookingService implements BookingServiceInterface
                 'name' => $item['caregiver']->first_name.' '.$item['caregiver']->last_name,
                 'score' => $item['score'],
                 'matchBadge' => $item['matchBadge'],
+                'hasBeenNotified' => $item['hasBeenNotified'],
             ];
         }));
     }

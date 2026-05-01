@@ -1,12 +1,13 @@
 import { useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import { BadgeCheck, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
     Select,
     SelectContent,
@@ -353,50 +354,56 @@ export function PersonalInfoSection({
                     </SheetHeader>
 
                     <div className="flex-1 space-y-4 overflow-y-auto px-4">
-                        {caregiverSuggestions.map((caregiver) => {
-                            const badge = (caregiver as any).matchBadge;
-                            const colorClasses: Record<string, string> = {
-                                green: 'bg-green-100 text-green-800',
-                                yellow: 'bg-yellow-100 text-yellow-800',
-                                orange: 'bg-orange-100 text-orange-800',
-                                blue: 'bg-blue-100 text-blue-800',
-                            };
+                         {caregiverSuggestions.map((caregiver) => {
+                             const badge = (caregiver as any).matchBadge;
+                             const hasBeenNotified = (caregiver as any).hasBeenNotified;
+                             const colorClasses: Record<string, string> = {
+                                 green: 'bg-green-100 text-green-800',
+                                 yellow: 'bg-yellow-100 text-yellow-800',
+                                 orange: 'bg-orange-100 text-orange-800',
+                                 blue: 'bg-blue-100 text-blue-800',
+                             };
 
-                            return (
-                                <Label
-                                    key={caregiver.id}
-                                    className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox
-                                            id={`cg-${caregiver.id}`}
-                                            checked={selectedCaregivers.includes(
-                                                caregiver.id,
+                             return (
+                                 <Label
+                                     key={caregiver.id}
+                                     className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
+                                 >
+                                     <div className="flex items-center gap-2">
+                                         <Checkbox
+                                             id={`cg-${caregiver.id}`}
+                                             checked={selectedCaregivers.includes(
+                                                 caregiver.id,
+                                             )}
+                                             onCheckedChange={() =>
+                                                 toggleCaregiver(caregiver.id)
+                                             }
+                                         />
+                                         <Label
+                                             htmlFor={`cg-${caregiver.id}`}
+                                             className="text-sm font-medium flex"
+                                         >
+                                             {caregiver.name}
+                                             {hasBeenNotified && (
+                                                <span className="ml-2 text-green-500" title="Already notified">
+                                                    <BadgeCheck className="h-5 w-5" />
+                                                </span>
                                             )}
-                                            onCheckedChange={() =>
-                                                toggleCaregiver(caregiver.id)
-                                            }
-                                        />
-                                        <Label
-                                            htmlFor={`cg-${caregiver.id}`}
-                                            className="text-sm font-medium"
-                                        >
-                                            {caregiver.name}
-                                        </Label>
-                                    </div>
-                                    {badge && (
-                                        <span
-                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                colorClasses[badge.color] ||
-                                                'bg-gray-100 text-gray-800'
-                                            }`}
-                                        >
-                                            {badge.label}
-                                        </span>
-                                    )}
-                                </Label>
-                            );
-                        })}
+                                         </Label>
+                                     </div>
+                                     {badge && (
+                                         <span
+                                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                 colorClasses[badge.color] ||
+                                                 'bg-gray-100 text-gray-800'
+                                             }`}
+                                         >
+                                             {badge.label}
+                                         </span>
+                                     )}
+                                 </Label>
+                             );
+                         })}
                     </div>
 
                     <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">

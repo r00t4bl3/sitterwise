@@ -56,6 +56,7 @@ class CaregiverRecommendationService
                 'caregiver' => $caregiver,
                 'score' => $score,
                 'matchBadge' => $this->getMatchBadge($score),
+                'hasBeenNotified' => $this->hasBeenNotified($caregiver, $booking),
             ];
         });
 
@@ -164,6 +165,20 @@ class CaregiverRecommendationService
         }
 
         return $score;
+    }
+
+    /**
+     * Check if a caregiver has been notified about a booking.
+     */
+    protected function hasBeenNotified(Caregiver $caregiver, ?Booking $booking): bool
+    {
+        if (!$booking || !$booking->exists) {
+            return false;
+        }
+
+        return $caregiver->bookingNotifications()
+            ->where('booking_id', $booking->id)
+            ->exists();
     }
 
     /**

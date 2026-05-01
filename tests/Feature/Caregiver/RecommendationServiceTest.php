@@ -166,6 +166,62 @@ describe('Recommendation Service - Caregiver', function () {
         expect($recommended)->toHaveCount(3);
     });
 
+    test('hasBeenNotified returns true when caregiver was notified for booking', function () {
+        $client = Client::factory()->create();
+        $caregiver = Caregiver::factory()->create([
+            'status_id' => $this->activeStatus->id,
+            'rating' => 4.0,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'caregiver_id' => null,
+        ]);
+
+        // Create notification record
+        \App\Models\BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeTrue();
+    });
+
+    test('hasBeenNotified returns false when caregiver was not notified', function () {
+        $client = Client::factory()->create();
+        $caregiver = Caregiver::factory()->create([
+            'status_id' => $this->activeStatus->id,
+            'rating' => 4.0,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $client->id,
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeFalse();
+    });
+
+    test('hasBeenNotified returns false when no booking provided', function () {
+        $client = Client::factory()->create();
+        $caregiver = Caregiver::factory()->create([
+            'status_id' => $this->activeStatus->id,
+            'rating' => 4.0,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeFalse();
+    });
+
     test('caregiver with full availability scores higher', function () {
         $client = Client::factory()->create();
 

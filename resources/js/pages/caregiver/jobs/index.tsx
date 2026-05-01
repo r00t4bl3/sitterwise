@@ -317,19 +317,21 @@ export default function CaregiverJobsIndex() {
                                                     </Link>
                                                 </Button>
 
-                                                {job.status.toLowerCase() ===
-                                                    'confirmed' && (
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openCheckoutSheet(
-                                                                job,
-                                                            )
-                                                        }
-                                                    >
-                                                        Checkout
-                                                    </Button>
-                                                )}
+                                                 {job.status.toLowerCase() ===
+                                                     'confirmed' &&
+                                                     new Date(job.end_datetime) <
+                                                         new Date() && (
+                                                     <Button
+                                                         size="sm"
+                                                         onClick={() =>
+                                                             openCheckoutSheet(
+                                                                 job,
+                                                             )
+                                                         }
+                                                     >
+                                                         Checkout
+                                                     </Button>
+                                                 )}
                                             </div>
                                         </td>
                                     </tr>
