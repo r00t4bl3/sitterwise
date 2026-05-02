@@ -39,7 +39,7 @@ class DashboardController extends Controller
                     ->limit(5)
                     ->get(),
                 'todays_bookings' => Booking::with(['client.user', 'caregiver.user'])
-                    ->whereDate('start_datetime', today())
+                    ->inToday()
                     ->orderBy('start_datetime', 'asc')
                     ->get(),
                 'recent_bookings' => Booking::with(['client.user'])

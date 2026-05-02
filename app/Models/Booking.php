@@ -249,6 +249,11 @@ class Booking extends Model
         return $query->where('start_datetime', '>', now()->startOfDay());
     }
 
+    public function scopeInToday($query)
+    {
+        return $query->whereBetween('start_datetime', [now()->startOfDay(), now()->endOfDay()]);
+    }
+
     public function getServiceTypeLabelAttribute(): ?string
     {
         if (! $this->service_type) {
@@ -304,15 +309,24 @@ class Booking extends Model
             'notes_for_sitter' => $this->caregiver_notes,
             'notes_to_admin' => $this->notes_to_sitterwise,
             'hourly_rate' => number_format($this->charge_to_client_hourly, 2),
-            'admin_booking_url' => config('app.url').'/admin/bookings?month='.$start->month.'&year='.$start->year,
+            'admin_booking_url' => route('bookings.index', ['month' => $start->month, 'year' => $start->year]),
             'caregiver_first_name' => $this->caregiver?->first_name ?? 'Sitter',
             'caregiver_name' => $this->caregiver ? $this->caregiver->first_name.' '.$this->caregiver->last_name : 'Sitter',
             'sitter_first_name' => $this->caregiver?->first_name ?? 'Sitter',
             'sitter_name' => $this->caregiver ? $this->caregiver->first_name.' '.$this->caregiver->last_name : 'Sitter',
             'sitter_phone' => $this->caregiver?->phone ?? 'N/A',
-            'sitter_profile_url' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
-            'cg_url' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
-            'bio_link' => $this->caregiver ? config('app.url').'/caregivers/'.$this->caregiver->id : '#',
-        ];
+            'sitter_profile_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
+            'cg_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
+            'bio_link' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
+            'service_date' => $start->format('m/d/Y'),
+            'review_url' => route('bookings.reviewForm', $this->ulid),
+            'hotel_fee' => $this->hotel_fee ?? 0.00,
+            'reimbursement_amount' => $this->reimbursement ?? 0.00,
+            'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',
+            'platform_fee' => $this->sitterwise_cut ?? 0.00,
+            'total_amount' => $this->total_service_amount ?? 0.00,
+            'total_hours' => $this->total_working_hour ?? 0
+
+            ];
     }
 }

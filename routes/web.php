@@ -27,7 +27,11 @@ Route::redirect('/', '/login')->name('home');
 // Caregiver public profile
 Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
 
-// Stripe webhook endpoint
+// Client booking review routes
+Route::get('bookings/{booking}/review', [BookingController::class, 'reviewForm'])->name('bookings.reviewForm');
+Route::post('bookings/{booking}/review', [BookingController::class, 'submitReview'])->name('bookings.submitReview');
+
+    // Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
 // Guest booking routes (public, no auth required)
