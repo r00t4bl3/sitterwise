@@ -27,6 +27,7 @@ interface Booking {
     id: number;
     ulid: string;
     service_type: string;
+    service_type_label: string;
     start_datetime: string;
     end_datetime: string;
     status: string;
@@ -83,6 +84,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         recent_bookings: [],
         recent_caregivers: [],
     };
+
     const renderStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
         const displayStatus = status.toUpperCase();
@@ -236,7 +238,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                         'Unknown Client'}{' '}
                                                                     •{' '}
                                                                     {
-                                                                        booking.service_type
+                                                                        booking.service_type_label
                                                                     }
                                                                 </p>
                                                             </div>
@@ -423,7 +425,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                 </p>
                                                                 <p className="text-xs text-muted-foreground">
                                                                     {
-                                                                        booking.service_type
+                                                                        booking.service_type_label
                                                                     }
                                                                 </p>
                                                                 {booking.caregiver ? (

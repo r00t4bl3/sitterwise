@@ -43,10 +43,16 @@ interface Props {
         upcoming_bookings: any[];
         recent_bookings: any[];
     };
+    admin?: {
+        bookings_needing_attention: any[];
+        todays_bookings: any[];
+        recent_bookings: any[];
+        recent_caregivers: any[];
+    };
 }
 
 export default function Dashboard() {
-    const { user, stats, caregiver, client } = usePage<Props>().props;
+    const { user, stats, caregiver, client, admin } = usePage<Props>().props;
 
     switch (user.role) {
         case 'caregiver':
@@ -73,6 +79,12 @@ export default function Dashboard() {
         case 'admin':
             return (
                 <AdminDashboard
+                    admin={{
+                        bookings_needing_attention: admin?.bookings_needing_attention || [],
+                        todays_bookings: admin?.todays_bookings || [],
+                        recent_bookings: admin?.recent_bookings || [],
+                        recent_caregivers: admin?.recent_caregivers || [],
+                    }}
                     stats={{
                         total_caregivers: stats?.total_caregivers || 0,
                         active_caregivers: stats?.active_caregivers || 0,

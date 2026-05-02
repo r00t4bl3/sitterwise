@@ -348,24 +348,36 @@ class AdminBookingService implements BookingServiceInterface
 
     public function show(Request $request, Booking $booking)
     {
-        $booking->load([
-            'client.user',
-            'client.children',
-            'client.pets',
-            'client.favoriteCaregivers.user',
-            'client.blockedCaregivers.user',
-            'hotel',
-            'address',
-            'caregiver.user',
-            'caregiverNotifications',
+        return Inertia::render('admin/bookings/show', [
+            'booking' => [
+                'id' => $booking->id,
+                'ulid' => $booking->ulid,
+                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
+                'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
+                'client_email' => $booking->client_email ?? $booking->client->user?->email,
+                'address_line1' => $booking->address_line1,
+                'address_line2' => $booking->address_line2,
+                'address_city' => $booking->address_city,
+                'address_state' => $booking->address_state,
+                'address_zip' => $booking->address_zip,
+                'start_datetime' => $booking->start_datetime,
+                'end_datetime' => $booking->end_datetime,
+                'status' => $booking->status,
+                'special_considerations' => collect($booking->special_considerations)
+                    ->map(fn ($sc) => SpecialConsideration::tryFrom($sc)?->label() ?? $sc)
+                    ->toArray(),
+                'caregiver_notes' => $booking->caregiver_notes,
+                'reserved_by' => $booking->reserved_by,
+                'reservation_expires_at' => $booking->reservation_expires_at,
+                'hotel_id' => $booking->hotel_id,
+                'hotel_name' => $booking->hotel?->name,
+                'location_type' => $booking->location_type,
+
+                'children' => $booking->children,
+                'pets' => $booking->pets,
+            ],
         ]);
-
-        $booking->client->setRelation(
-            'previousCaregivers',
-            $booking->client->previousCaregivers()->with('user')->get()
-        );
-
-        return response()->json($booking);
     }
 
     public function update(Request $request, Booking $booking)

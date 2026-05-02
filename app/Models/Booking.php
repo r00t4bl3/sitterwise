@@ -244,6 +244,11 @@ class Booking extends Model
         return $this->belongsTo(Caregiver::class, 'confirmed_by');
     }
 
+    public function scopeInFuture($query)
+    {
+        return $query->where('start_datetime', '>', now()->startOfDay());
+    }
+
     public function getServiceTypeLabelAttribute(): ?string
     {
         if (! $this->service_type) {

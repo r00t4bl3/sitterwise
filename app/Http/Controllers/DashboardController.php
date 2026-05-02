@@ -34,7 +34,7 @@ class DashboardController extends Controller
                 'bookings_needing_attention' => Booking::with(['client.user'])
                     ->whereNull('caregiver_id')
                     ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
-                    ->where('start_datetime', '>', now())
+                    ->inFuture()
                     ->orderBy('start_datetime', 'asc')
                     ->limit(5)
                     ->get(),
