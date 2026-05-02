@@ -236,8 +236,8 @@ export default function TransactionsIndex() {
 
     const recalculatePayment = (hoursStr: string) => {
         if (!selectedBooking) {
-return;
-}
+            return;
+        }
 
         const hours = parseFloat(hoursStr) || 0;
         const hourlyRate = selectedBooking.charge_to_client_hourly ?? 0;

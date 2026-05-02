@@ -29,7 +29,7 @@ class ClientReceiptMail extends Mailable
             'personalizations' => [
                 [
                     'dynamic_template_data' => $this->booking->toEmailData(),
-                    
+
                 ],
             ],
             'template_id' => 'd-ade9c101da2d40d78a2742577e6d3efe',

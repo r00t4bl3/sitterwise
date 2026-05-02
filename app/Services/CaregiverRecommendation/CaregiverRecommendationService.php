@@ -172,7 +172,7 @@ class CaregiverRecommendationService
      */
     protected function hasBeenNotified(Caregiver $caregiver, ?Booking $booking): bool
     {
-        if (!$booking || !$booking->exists) {
+        if (! $booking || ! $booking->exists) {
             return false;
         }
 

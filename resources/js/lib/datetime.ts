@@ -97,54 +97,56 @@ export const formatPointInTime = (
  * Disables times that would result in booking < 4 hours from start time
  */
 export const getTimeOptionsWithDisabled = (
-  startTime: string | undefined,
-  selectedTime?: string
-): Array<{value: string; label: string; disabled: boolean}> => {
-  const options = [];
-  const startDate = startTime ? new Date(startTime) : null;
-  
-  for (let i = 0; i < 96; i++) {
-    const totalMins = i * 15;
-    const hours24 = Math.floor(totalMins / 60);
-    const minutes = totalMins % 60;
-    const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24;
-    const ampm = hours24 < 12 ? 'AM' : 'PM';
-    
-    const timeValue = `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
-    
-    let disabled = false;
-    if (startDate) {
-      const optionDate = new Date(startDate);
-      optionDate.setHours(hours24, minutes, 0, 0);
-      const diffHours = (optionDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-      disabled = diffHours < 4;
+    startTime: string | undefined,
+    selectedTime?: string,
+): Array<{ value: string; label: string; disabled: boolean }> => {
+    const options = [];
+    const startDate = startTime ? new Date(startTime) : null;
+
+    for (let i = 0; i < 96; i++) {
+        const totalMins = i * 15;
+        const hours24 = Math.floor(totalMins / 60);
+        const minutes = totalMins % 60;
+        const hours12 =
+            hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24;
+        const ampm = hours24 < 12 ? 'AM' : 'PM';
+
+        const timeValue = `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
+
+        let disabled = false;
+        if (startDate) {
+            const optionDate = new Date(startDate);
+            optionDate.setHours(hours24, minutes, 0, 0);
+            const diffHours =
+                (optionDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+            disabled = diffHours < 4;
+        }
+
+        options.push({
+            value: timeValue,
+            label: disabled ? `${label} (min 4h)` : label,
+            disabled,
+        });
     }
-    
-    options.push({
-      value: timeValue,
-      label: disabled ? `${label} (min 4h)` : label,
-      disabled
-    });
-  }
-  
-  return options;
+
+    return options;
 };
 
 /**
  * Auto-set end datetime to minimum 4 hours after start
  */
 export const autoSetEndDateTime = (startDatetime: string): string => {
-  const startDate = new Date(startDatetime);
-  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+    const startDate = new Date(startDatetime);
+    const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
 
-  const year = endDate.getFullYear();
-  const month = String(endDate.getMonth() + 1).padStart(2, '0');
-  const day = String(endDate.getDate()).padStart(2, '0');
-  const hours = String(endDate.getHours()).padStart(2, '0');
-  const minutes = String(endDate.getMinutes()).padStart(2, '0');
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, '0');
+    const day = String(endDate.getDate()).padStart(2, '0');
+    const hours = String(endDate.getHours()).padStart(2, '0');
+    const minutes = String(endDate.getMinutes()).padStart(2, '0');
 
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 /**
@@ -152,26 +154,26 @@ export const autoSetEndDateTime = (startDatetime: string): string => {
  * Mirrors the backend MinimumBookingDuration rule
  */
 export const validateMinimumDuration = (
-  startDatetime: string,
-  endDatetime: string,
+    startDatetime: string,
+    endDatetime: string,
 ): string | null => {
-  if (!startDatetime || !endDatetime) {
+    if (!startDatetime || !endDatetime) {
+        return null;
+    }
+
+    const startDate = new Date(startDatetime);
+    const endDate = new Date(endDatetime);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return 'Invalid date/time.';
+    }
+
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 4) {
+        return 'The booking must be at least 4 hours long.';
+    }
+
     return null;
-  }
-
-  const startDate = new Date(startDatetime);
-  const endDate = new Date(endDatetime);
-
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return 'Invalid date/time.';
-  }
-
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-
-  if (diffHours < 4) {
-    return 'The booking must be at least 4 hours long.';
-  }
-
-  return null;
 };

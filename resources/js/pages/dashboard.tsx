@@ -80,7 +80,8 @@ export default function Dashboard() {
             return (
                 <AdminDashboard
                     admin={{
-                        bookings_needing_attention: admin?.bookings_needing_attention || [],
+                        bookings_needing_attention:
+                            admin?.bookings_needing_attention || [],
                         todays_bookings: admin?.todays_bookings || [],
                         recent_bookings: admin?.recent_bookings || [],
                         recent_caregivers: admin?.recent_caregivers || [],

@@ -1,30 +1,24 @@
 <?php
 
-use App\Models\Booking;
-use App\Models\User;
-use App\Models\Client;
-use App\Models\Caregiver;
-use App\Models\PricingRule;
-use App\Models\CaregiverStatus;
-use App\Models\SpecialtyType;
-use App\Models\Location;
-use App\Models\CertificationType;
-use App\Models\AttributeDefinition;
-use App\Models\BookingRating;
-use App\Enums\ServiceType;
-use App\Enums\LocationType;
 use App\Enums\BookingStatus;
+use App\Enums\LocationType;
+use App\Enums\ServiceType;
+use App\Models\Booking;
+use App\Models\BookingRating;
+use App\Models\Caregiver;
+use App\Models\Client;
+use App\Models\User;
 use App\Services\Billing\JobBillingService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use function Pest\Laravel\actingAs;
-use function Pest\Laravel\mock;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CaregiverStatusSeeder;
-use Database\Seeders\SpecialtyTypeSeeder;
-use Database\Seeders\LocationSeeder;
 use Database\Seeders\CertificationTypeSeeder;
+use Database\Seeders\LocationSeeder;
 use Database\Seeders\PricingRulesTableSeeder;
+use Database\Seeders\SpecialtyTypeSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\mock;
 
 uses(RefreshDatabase::class);
 
@@ -42,7 +36,7 @@ beforeEach(function () {
 
 describe('Booking Workflow', function () {
     test('complete lifecycle from creation to rating', function () {
-        
+
         $admin = $this->admin;
         $client = $this->client;
         $clientUser = $this->client->user;
@@ -57,11 +51,12 @@ describe('Booking Workflow', function () {
                     'status' => BookingStatus::Paid->value,
                     'payment_status' => 'charged',
                 ]);
+
                 return [
-                    'success' => true, 
-                    'message' => 'Payment successful', 
-                    'payment_intent_id' => 'pi_test', 
-                    'amount' => 130.00
+                    'success' => true,
+                    'message' => 'Payment successful',
+                    'payment_intent_id' => 'pi_test',
+                    'amount' => 130.00,
                 ];
             });
 
@@ -166,7 +161,7 @@ describe('Booking Workflow', function () {
     });
 
     test('admin can create a booking for a new client and assign a caregiver immediately', function () {
-        
+
         $admin = $this->admin;
         $caregiverUser = $this->caregiver->user;
         $caregiver = $this->caregiver;
@@ -195,8 +190,8 @@ describe('Booking Workflow', function () {
                 'client_type' => 'vacationer',
             ],
             'new_children' => [
-                ['name' => 'Admin Kid', 'gender' => 'female', 'birth_year' => '2022']
-            ]
+                ['name' => 'Admin Kid', 'gender' => 'female', 'birth_year' => '2022'],
+            ],
         ];
 
         actingAs($admin)
@@ -216,7 +211,7 @@ describe('Booking Workflow', function () {
         expect($booking->status)->toBe(BookingStatus::Confirmed->value);
         expect($booking->caregiver_id)->toBe($caregiver->id);
         expect($booking->address_line1)->toBe('789 Admin St');
-        
+
         // 4. Verify children snapshot
         expect($booking->children)->toHaveCount(1);
         expect($booking->children[0]['name'])->toBe('Admin Kid');

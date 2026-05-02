@@ -201,10 +201,10 @@ export function PersonalInfoSection({
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
     const [selectedCaregivers, setSelectedCaregivers] = useState<number[]>([]);
     const [processing, setProcessing] = useState(false);
-    
+
     // Create a ref to keep track of the current selected caregivers
     const selectedCaregiversRef = useRef(selectedCaregivers);
-    
+
     // Update the ref whenever selectedCaregivers changes
     useEffect(() => {
         // console.log('Updating selectedCaregiversRef to:', selectedCaregivers);
@@ -214,12 +214,17 @@ export function PersonalInfoSection({
     const notifyForm = useForm({
         caregiver_ids: [] as number[],
     });
-    
+
     const toggleCaregiver = (id: number) => {
         console.log('Toggling caregiver ID:', id);
-        console.log('Current selected caregivers before toggle:', selectedCaregivers);
+        console.log(
+            'Current selected caregivers before toggle:',
+            selectedCaregivers,
+        );
         setSelectedCaregivers((prev) => {
-            const newState = prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id];
+            const newState = prev.includes(id)
+                ? prev.filter((c) => c !== id)
+                : [...prev, id];
             console.log('New state after toggle:', newState);
 
             return newState;
@@ -248,7 +253,7 @@ export function PersonalInfoSection({
 
     return (
         <>
-            {editingBooking && form.data.status === 'received' && (
+            {editingBooking && (
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
                         <p className="font-semibold">
@@ -325,21 +330,27 @@ export function PersonalInfoSection({
                             </p>
                         )}
                     </div>
-                    <Button
-                        size="sm"
-                        onClick={() => {
-                            const currentId = form.data.caregiver_id;
-                            setSelectedCaregivers(currentId ? [currentId] : []);
-                            onOpenNotifySheet?.();
-                            setNotifySheetOpen(true);
-                        }}
-                    >
-                        Notify Caregivers
-                    </Button>
+                    {form.data.status === 'received' && (
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                const currentId = form.data.caregiver_id;
+                                setSelectedCaregivers(
+                                    currentId ? [currentId] : [],
+                                );
+                                onOpenNotifySheet?.();
+                                setNotifySheetOpen(true);
+                            }}
+                        >
+                            Notify Caregivers
+                        </Button>
+                    )}
                 </div>
             )}
 
-            {editingBooking && <ClientInfoPanel client={editingBooking.client} />}
+            {editingBooking && (
+                <ClientInfoPanel client={editingBooking.client} />
+            )}
 
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
                 <SheetContent
@@ -354,56 +365,60 @@ export function PersonalInfoSection({
                     </SheetHeader>
 
                     <div className="flex-1 space-y-4 overflow-y-auto px-4">
-                         {caregiverSuggestions.map((caregiver) => {
-                             const badge = (caregiver as any).matchBadge;
-                             const hasBeenNotified = (caregiver as any).hasBeenNotified;
-                             const colorClasses: Record<string, string> = {
-                                 green: 'bg-green-100 text-green-800',
-                                 yellow: 'bg-yellow-100 text-yellow-800',
-                                 orange: 'bg-orange-100 text-orange-800',
-                                 blue: 'bg-blue-100 text-blue-800',
-                             };
+                        {caregiverSuggestions.map((caregiver) => {
+                            const badge = (caregiver as any).matchBadge;
+                            const hasBeenNotified = (caregiver as any)
+                                .hasBeenNotified;
+                            const colorClasses: Record<string, string> = {
+                                green: 'bg-green-100 text-green-800',
+                                yellow: 'bg-yellow-100 text-yellow-800',
+                                orange: 'bg-orange-100 text-orange-800',
+                                blue: 'bg-blue-100 text-blue-800',
+                            };
 
-                             return (
-                                 <Label
-                                     key={caregiver.id}
-                                     className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
-                                 >
-                                     <div className="flex items-center gap-2">
-                                         <Checkbox
-                                             id={`cg-${caregiver.id}`}
-                                             checked={selectedCaregivers.includes(
-                                                 caregiver.id,
-                                             )}
-                                             onCheckedChange={() =>
-                                                 toggleCaregiver(caregiver.id)
-                                             }
-                                         />
-                                         <Label
-                                             htmlFor={`cg-${caregiver.id}`}
-                                             className="text-sm font-medium flex"
-                                         >
-                                             {caregiver.name}
-                                             {hasBeenNotified && (
-                                                <span className="ml-2 text-green-500" title="Already notified">
+                            return (
+                                <Label
+                                    key={caregiver.id}
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id={`cg-${caregiver.id}`}
+                                            checked={selectedCaregivers.includes(
+                                                caregiver.id,
+                                            )}
+                                            onCheckedChange={() =>
+                                                toggleCaregiver(caregiver.id)
+                                            }
+                                        />
+                                        <Label
+                                            htmlFor={`cg-${caregiver.id}`}
+                                            className="flex text-sm font-medium"
+                                        >
+                                            {caregiver.name}
+                                            {hasBeenNotified && (
+                                                <span
+                                                    className="ml-2 text-green-500"
+                                                    title="Already notified"
+                                                >
                                                     <BadgeCheck className="h-5 w-5" />
                                                 </span>
                                             )}
-                                         </Label>
-                                     </div>
-                                     {badge && (
-                                         <span
-                                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                 colorClasses[badge.color] ||
-                                                 'bg-gray-100 text-gray-800'
-                                             }`}
-                                         >
-                                             {badge.label}
-                                         </span>
-                                     )}
-                                 </Label>
-                             );
-                         })}
+                                        </Label>
+                                    </div>
+                                    {badge && (
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                colorClasses[badge.color] ||
+                                                'bg-gray-100 text-gray-800'
+                                            }`}
+                                        >
+                                            {badge.label}
+                                        </span>
+                                    )}
+                                </Label>
+                            );
+                        })}
                     </div>
 
                     <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
@@ -412,9 +427,7 @@ export function PersonalInfoSection({
                             disabled={processing}
                             className="flex-1"
                         >
-                            {processing && (
-                                <Spinner className="size-4" />
-                            )}
+                            {processing && <Spinner className="size-4" />}
                             Send Notification
                         </Button>
                         <Button
@@ -537,7 +550,9 @@ export function PersonalInfoSection({
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
-                                    value={form.data.new_client.client_type || ''}
+                                    value={
+                                        form.data.new_client.client_type || ''
+                                    }
                                     onValueChange={(value) => {
                                         form.setData('new_client', {
                                             ...form.data.new_client,
@@ -605,37 +620,39 @@ export function PersonalInfoSection({
                             <SelectTrigger>
                                 <SelectValue placeholder="Select location type" />
                             </SelectTrigger>
-                                <SelectContent>
+                            <SelectContent>
+                                {location_types
+                                    .filter((type) => {
+                                        const clientType =
+                                            form.data.client_id &&
+                                            clientMode === 'select'
+                                                ? selectedClientType
+                                                : form.data.new_client
+                                                      ?.client_type;
 
-                            {location_types
-                                .filter((type) => {
-                                    const clientType =
-                                        form.data.client_id &&
-                                        clientMode === 'select'
-                                            ? selectedClientType
-                                            : form.data.new_client?.client_type;
+                                        if (clientType === 'resident') {
+                                            return (
+                                                type.value === 'private_home'
+                                            );
+                                        }
 
-                                    if (clientType === 'resident') {
-                                        return type.value === 'private_home';
-                                    }
+                                        if (clientType === 'vacationer') {
+                                            return (
+                                                type.value === 'hotel' ||
+                                                type.value === 'vacation_rental'
+                                            );
+                                        }
 
-                                    if (clientType === 'vacationer') {
-                                        return (
-                                            type.value === 'hotel' ||
-                                            type.value === 'vacation_rental'
-                                        );
-                                    }
-
-                                    return true;
-                                })
-                                .map((type) => (
-                                    <SelectItem
-                                        key={type.value}
-                                        value={type.value}
-                                    >
-                                        {type.label}
-                                    </SelectItem>
-                                ))}
+                                        return true;
+                                    })
+                                    .map((type) => (
+                                        <SelectItem
+                                            key={type.value}
+                                            value={type.value}
+                                        >
+                                            {type.label}
+                                        </SelectItem>
+                                    ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -648,7 +665,9 @@ export function PersonalInfoSection({
                                     Address
                                 </Label>
                                 <Select
-                                    value={form.data.address_id?.toString() || ''}
+                                    value={
+                                        form.data.address_id?.toString() || ''
+                                    }
                                     onValueChange={(value) => {
                                         if (value === 'add_new') {
                                             setShowManualAddressInput(true);
@@ -661,9 +680,7 @@ export function PersonalInfoSection({
                                             setAddressValue('');
                                             setIsAddressLocked(false);
                                         } else if (value) {
-                                            const addrId = Number(
-                                                value,
-                                            );
+                                            const addrId = Number(value);
                                             form.setData('address_id', addrId);
                                             const addr = clientAddresses.find(
                                                 (a) => a.id === addrId,
@@ -709,30 +726,28 @@ export function PersonalInfoSection({
                                             setIsAddressLocked(false);
                                             setAddressValue('');
                                         }
-                                        
-                                        form.setData('address_id', value)
-                                        }
-                                    }
+
+                                        form.setData('address_id', value);
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select address" />
                                     </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="add_new">
-                                                + Enter manually
+                                    <SelectContent>
+                                        <SelectItem value="add_new">
+                                            + Enter manually
+                                        </SelectItem>
+                                        {clientAddresses.map((addr) => (
+                                            <SelectItem
+                                                key={addr.id}
+                                                value={addr.id.toString()}
+                                            >
+                                                {addr.line1}, {addr.city},{' '}
+                                                {addr.state} {addr.zip}
                                             </SelectItem>
-                                            {clientAddresses.map((addr) => (
-                                                <SelectItem
-                                                    key={addr.id}
-                                                    value={addr.id.toString()}
-                                                >
-                                                    {addr.line1}, {addr.city}, {addr.state} {addr.zip}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                
-                                
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         )}
 
@@ -759,19 +774,24 @@ export function PersonalInfoSection({
                                     <SelectValue placeholder="Select platform" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                {booking_attributes
-                                    .filter(
-                                        (attr) =>
-                                            attr.slug ===
-                                            'vacation_rental_platform',
-                                    )
-                                    .flatMap((attr) => attr.options || [])
-                                    .map((option) => (
-                                        <SelectItem key={option} value={option}>
-                                            {option.charAt(0).toUpperCase() +
-                                                option.slice(1)}
-                                        </SelectItem>
-                                    ))}
+                                    {booking_attributes
+                                        .filter(
+                                            (attr) =>
+                                                attr.slug ===
+                                                'vacation_rental_platform',
+                                        )
+                                        .flatMap((attr) => attr.options || [])
+                                        .map((option) => (
+                                            <SelectItem
+                                                key={option}
+                                                value={option}
+                                            >
+                                                {option
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    option.slice(1)}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -867,7 +887,7 @@ export function PersonalInfoSection({
                             <Button
                                 type="button"
                                 onClick={onAddChild}
-                                size='xs'
+                                size="xs"
                             >
                                 <Plus className="h-3 w-3" />
                                 Add Child
@@ -951,7 +971,7 @@ export function PersonalInfoSection({
                                                         onUpdateChild(
                                                             child.tempId,
                                                             'gender',
-                                                            value
+                                                            value,
                                                         )
                                                     }
                                                 >
@@ -959,20 +979,29 @@ export function PersonalInfoSection({
                                                         <SelectValue placeholder="Select gender" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="male">Male</SelectItem>
-                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="male">
+                                                            Male
+                                                        </SelectItem>
+                                                        <SelectItem value="female">
+                                                            Female
+                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </td>
                                             <td className="px-3 py-2">
                                                 <div className="flex gap-1">
                                                     <Select
-                                                        value={child.birth_month || ''}
-                                                        onValueChange={(value) =>
+                                                        value={
+                                                            child.birth_month ||
+                                                            ''
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
                                                             onUpdateChild(
                                                                 child.tempId,
                                                                 'birth_month',
-                                                                value
+                                                                value,
                                                             )
                                                         }
                                                     >
@@ -994,7 +1023,10 @@ export function PersonalInfoSection({
                                                                 'Nov',
                                                                 'Dec',
                                                             ].map((m) => (
-                                                                <SelectItem key={m} value={m}>
+                                                                <SelectItem
+                                                                    key={m}
+                                                                    value={m}
+                                                                >
                                                                     {m}
                                                                 </SelectItem>
                                                             ))}
@@ -1091,11 +1123,7 @@ export function PersonalInfoSection({
                             <Label className="text-sm font-medium text-foreground">
                                 Pets
                             </Label>
-                            <Button
-                                type="button"
-                                onClick={onAddPet}
-                                size='xs'
-                            >
+                            <Button type="button" onClick={onAddPet} size="xs">
                                 <Plus className="h-3 w-3" />
                                 Add Pet
                             </Button>

@@ -1,21 +1,16 @@
 <?php
 
+use App\Enums\LocationType;
+use App\Enums\ServiceType;
 use App\Models\Booking;
-use App\Models\User;
 use App\Models\Client;
 use App\Models\PricingRule;
-use App\Models\CaregiverStatus;
-use App\Models\SpecialtyType;
-use App\Models\Location;
-use App\Models\CertificationType;
-use App\Models\AttributeDefinition;
-use App\Enums\ServiceType;
-use App\Enums\LocationType;
-use App\Enums\BookingStatus;
+use App\Models\User;
 use App\Services\Booking\GuestBookingService;
+use Database\Seeders\PricingRulesTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Session;
-use Database\Seeders\PricingRulesTableSeeder;
+
 use function Pest\Laravel\mock;
 
 uses(RefreshDatabase::class);
@@ -43,8 +38,8 @@ describe('Guest Booking Workflow', function () {
             'address_state' => 'CA',
             'address_zip' => '92101',
             'new_children' => [
-                ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020']
-            ]
+                ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
+            ],
         ];
 
         $response = $this->post(route('guest.bookings.store'), $guestData);
@@ -72,8 +67,8 @@ describe('Guest Booking Workflow', function () {
             'address_state' => 'CA',
             'address_zip' => '92101',
             'new_children' => [
-                ['name' => 'Kid 1', 'gender' => 'female', 'birth_month' => '5', 'birth_year' => '2021']
-            ]
+                ['name' => 'Kid 1', 'gender' => 'female', 'birth_month' => '5', 'birth_year' => '2021'],
+            ],
         ];
 
         // Setup PricingRule
@@ -91,24 +86,24 @@ describe('Guest Booking Workflow', function () {
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();
         $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
-        
+
         $booking = $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
 
         expect($booking)->toBeInstanceOf(Booking::class);
         expect($booking->status)->toBe('received');
         expect($booking->client_email)->toBe('jane.guest@example.com');
-        
+
         $user = User::where('email', 'jane.guest@example.com')->first();
         expect($user)->not->toBeNull();
         expect($user->role)->toBe('client');
-        
+
         $client = Client::where('user_id', $user->id)->first();
         expect($client)->not->toBeNull();
         expect($client->first_name)->toBe('Jane');
-        
+
         $this->assertDatabaseHas('client_children', [
             'client_id' => $client->id,
-            'name' => 'Kid 1'
+            'name' => 'Kid 1',
         ]);
     });
 });

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingReviewController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\CaregiverPayoutController;
 use App\Http\Controllers\CertificationTypeController;
@@ -27,11 +28,15 @@ Route::redirect('/', '/login')->name('home');
 // Caregiver public profile
 Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
 
-// Client booking review routes
-Route::get('bookings/{booking}/review', [BookingController::class, 'reviewForm'])->name('bookings.reviewForm');
-Route::post('bookings/{booking}/review', [BookingController::class, 'submitReview'])->name('bookings.submitReview');
+// Client booking review routes (signed for security)
+Route::get('bookings/{booking}/review', [BookingController::class, 'reviewForm'])
+    ->name('bookings.reviewForm')
+    ->middleware('signed');
+Route::post('bookings/{booking}/review', [BookingController::class, 'submitReview'])
+    ->name('bookings.submitReview')
+    ->middleware('signed');
 
-    // Stripe webhook endpoint
+// Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
 // Guest booking routes (public, no auth required)
@@ -74,6 +79,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('jobs/{booking}', [JobController::class, 'show'])->name('jobs.show');
     Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
     Route::post('jobs/{booking}/rate', [JobController::class, 'rate'])->name('jobs.rate');
+
+    Route::middleware('client')->group(function () {
+        Route::get('reviews/{booking}', [BookingReviewController::class, 'create'])->name('reviews.create');
+        Route::post('reviews/{booking}', [BookingReviewController::class, 'store'])->name('reviews.store');
+    });
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {

@@ -634,9 +634,15 @@ export default function GuestBookingCreate() {
                                     <DateTimePicker
                                         value={form.data.start_datetime}
                                         onChange={(value) => {
-                                            form.setData('start_datetime', value)
+                                            form.setData(
+                                                'start_datetime',
+                                                value,
+                                            );
                                             if (value) {
-                                                form.setData('end_datetime', autoSetEndDateTime(value))
+                                                form.setData(
+                                                    'end_datetime',
+                                                    autoSetEndDateTime(value),
+                                                );
                                             }
                                         }}
                                     />
@@ -849,7 +855,7 @@ export default function GuestBookingCreate() {
                                     </p>
                                 )}
                             </div>
-                            
+
                             {/* Special Needs */}
                             <div>
                                 <Label className="text-sm font-medium text-foreground">
@@ -1027,7 +1033,7 @@ export default function GuestBookingCreate() {
                             <div className="grid gap-2">
                                 <Label>Sitter Preferences</Label>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    <div className="flex-1 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                                    <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                                         {sitter_preferences.map((option) => (
                                             <div
                                                 key={option.value}
@@ -1076,7 +1082,7 @@ export default function GuestBookingCreate() {
                             <div className="grid gap-2">
                                 <Label>Special Considerations</Label>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    <div className="flex-1 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                                    <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                                         {special_consideration_options.map(
                                             (option) => (
                                                 <div

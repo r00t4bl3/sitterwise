@@ -18,8 +18,15 @@ interface ClientInfoPanelProps {
     };
 }
 
-function CaregiverNames({ caregivers, variant = 'default' }: { caregivers: Caregiver[]; variant?: 'default' | 'blocked' }) {
-    const textClass = variant === 'blocked' ? 'text-red-700' : 'text-foreground';
+function CaregiverNames({
+    caregivers,
+    variant = 'default',
+}: {
+    caregivers: Caregiver[];
+    variant?: 'default' | 'blocked';
+}) {
+    const textClass =
+        variant === 'blocked' ? 'text-red-700' : 'text-foreground';
 
     return (
         <span className="text-sm">
@@ -45,37 +52,51 @@ export function ClientInfoPanel({ client }: ClientInfoPanelProps) {
         return null;
     }
 
-    const hasFavorite = client.favorite_caregivers && client.favorite_caregivers.length > 0;
-    const hasBlocked = client.blocked_caregivers && client.blocked_caregivers.length > 0;
-    const hasPrevious = client.previous_caregivers && client.previous_caregivers.length > 0;
+    const hasFavorite =
+        client.favorite_caregivers && client.favorite_caregivers.length > 0;
+    const hasBlocked =
+        client.blocked_caregivers && client.blocked_caregivers.length > 0;
+    const hasPrevious =
+        client.previous_caregivers && client.previous_caregivers.length > 0;
 
     return (
         <div
-            className="mb-4 space-y-3 rounded-[3px] border border-border bg-card p-4 relative"
+            className="relative mb-4 space-y-3 rounded-[3px] border border-border bg-card p-4"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             {isHovered && (
-                <Button size="sm" variant="outline" asChild className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <Link href={`/clients/${client.id}`}>Edit on client page</Link>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    asChild
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform"
+                >
+                    <Link href={`/clients/${client.id}`}>
+                        Edit on client page
+                    </Link>
                 </Button>
             )}
             {client.biography && (
                 <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                         Biography
                     </p>
-                    <p className="text-sm text-foreground">{client.biography}</p>
+                    <p className="text-sm text-foreground">
+                        {client.biography}
+                    </p>
                 </div>
             )}
 
             <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                     Previous Caregivers
                 </p>
                 <div>
                     {hasPrevious ? (
-                        <CaregiverNames caregivers={client.previous_caregivers ?? []} />
+                        <CaregiverNames
+                            caregivers={client.previous_caregivers ?? []}
+                        />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}
@@ -83,12 +104,14 @@ export function ClientInfoPanel({ client }: ClientInfoPanelProps) {
             </div>
 
             <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                     Favorite Caregivers
                 </p>
                 <div>
                     {hasFavorite ? (
-                        <CaregiverNames caregivers={client.favorite_caregivers ?? []} />
+                        <CaregiverNames
+                            caregivers={client.favorite_caregivers ?? []}
+                        />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}
@@ -96,12 +119,15 @@ export function ClientInfoPanel({ client }: ClientInfoPanelProps) {
             </div>
 
             <div>
-                <p className="text-xs font-semibold text-red-600 uppercase tracking-wider">
+                <p className="text-xs font-semibold tracking-wider text-red-600 uppercase">
                     Blocked Caregivers
                 </p>
                 <div>
                     {hasBlocked ? (
-                        <CaregiverNames caregivers={client.blocked_caregivers ?? []} variant="blocked" />
+                        <CaregiverNames
+                            caregivers={client.blocked_caregivers ?? []}
+                            variant="blocked"
+                        />
                     ) : (
                         <p className="text-sm text-muted-foreground">None</p>
                     )}

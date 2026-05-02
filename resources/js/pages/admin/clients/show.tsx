@@ -728,76 +728,76 @@ export default function ClientShow() {
 
                         {client.previous_caregivers &&
                             client.previous_caregivers.length > 0 && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Previous Caregivers
-                                </h2>
-                                <div className="space-y-3">
-                                    {client.previous_caregivers.map(
-                                        (caregiver) => (
-                                            <Link
-                                                key={caregiver.id}
-                                                href={`/caregivers/${caregiver.id}`}
-                                                className="flex items-center gap-3 rounded-[3px] border border-border bg-background p-3 hover:bg-accent"
-                                            >
-                                                <UserAvatar
-                                                    profile_photo_url={
-                                                        caregiver.user
-                                                            .profile_photo_url
-                                                    }
-                                                    profile_photo_path={
-                                                        caregiver.user
-                                                            .profile_photo_path
-                                                    }
-                                                    name={`${caregiver.first_name} ${caregiver.last_name}`}
-                                                    size="md"
-                                                />
-                                                <span className="font-medium text-foreground">
-                                                    {caregiver.first_name}{' '}
-                                                    {caregiver.last_name}
-                                                </span>
-                                            </Link>
-                                        ),
-                                    )}
+                                <div className="border border-border bg-card p-6">
+                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                        Previous Caregivers
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {client.previous_caregivers.map(
+                                            (caregiver) => (
+                                                <Link
+                                                    key={caregiver.id}
+                                                    href={`/caregivers/${caregiver.id}`}
+                                                    className="flex items-center gap-3 rounded-[3px] border border-border bg-background p-3 hover:bg-accent"
+                                                >
+                                                    <UserAvatar
+                                                        profile_photo_url={
+                                                            caregiver.user
+                                                                .profile_photo_url
+                                                        }
+                                                        profile_photo_path={
+                                                            caregiver.user
+                                                                .profile_photo_path
+                                                        }
+                                                        name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                                        size="md"
+                                                    />
+                                                    <span className="font-medium text-foreground">
+                                                        {caregiver.first_name}{' '}
+                                                        {caregiver.last_name}
+                                                    </span>
+                                                </Link>
+                                            ),
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                         {client.blocked_caregivers &&
                             client.blocked_caregivers.length > 0 && (
-                            <div className="border border-red-200 bg-red-50 p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-red-800">
-                                    Blocked Caregivers
-                                </h2>
-                                <div className="space-y-3">
-                                    {client.blocked_caregivers.map(
-                                        (caregiver) => (
-                                            <div
-                                                key={caregiver.id}
-                                                className="flex items-center gap-3 rounded-[3px] border border-red-200 bg-white p-3"
-                                            >
-                                                <UserAvatar
-                                                    profile_photo_url={
-                                                        caregiver.user
-                                                            .profile_photo_url
-                                                    }
-                                                    profile_photo_path={
-                                                        caregiver.user
-                                                            .profile_photo_path
-                                                    }
-                                                    name={`${caregiver.first_name} ${caregiver.last_name}`}
-                                                    size="md"
-                                                />
-                                                <span className="font-medium text-foreground">
-                                                    {caregiver.first_name}{' '}
-                                                    {caregiver.last_name}
-                                                </span>
-                                            </div>
-                                        ),
-                                    )}
+                                <div className="border border-red-200 bg-red-50 p-6">
+                                    <h2 className="mb-4 font-serif text-lg font-semibold text-red-800">
+                                        Blocked Caregivers
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {client.blocked_caregivers.map(
+                                            (caregiver) => (
+                                                <div
+                                                    key={caregiver.id}
+                                                    className="flex items-center gap-3 rounded-[3px] border border-red-200 bg-white p-3"
+                                                >
+                                                    <UserAvatar
+                                                        profile_photo_url={
+                                                            caregiver.user
+                                                                .profile_photo_url
+                                                        }
+                                                        profile_photo_path={
+                                                            caregiver.user
+                                                                .profile_photo_path
+                                                        }
+                                                        name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                                        size="md"
+                                                    />
+                                                    <span className="font-medium text-foreground">
+                                                        {caregiver.first_name}{' '}
+                                                        {caregiver.last_name}
+                                                    </span>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                         {client.type_changes &&
                             client.type_changes.length > 0 && (

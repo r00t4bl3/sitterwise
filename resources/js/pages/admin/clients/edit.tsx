@@ -549,21 +549,21 @@ export default function ClientEdit() {
                                     rows={3}
                                 />
                             </div>
-<div className="space-y-2 flex items-center gap-2">
-                                 <Checkbox
-                                     id="other_adults_present"
-                                     checked={!!form.data.other_adults_present}
-                                     onCheckedChange={(checked) =>
-                                         form.setData(
-                                             'other_adults_present',
-                                             checked ? '1' : ''
-                                         )
-                                     }
-                                 />
-                                 <Label htmlFor="other_adults_present">
-                                     Other Adults in Home
-                                 </Label>
-                             </div>
+                            <div className="flex items-center gap-2 space-y-2">
+                                <Checkbox
+                                    id="other_adults_present"
+                                    checked={!!form.data.other_adults_present}
+                                    onCheckedChange={(checked) =>
+                                        form.setData(
+                                            'other_adults_present',
+                                            checked ? '1' : '',
+                                        )
+                                    }
+                                />
+                                <Label htmlFor="other_adults_present">
+                                    Other Adults in Home
+                                </Label>
+                            </div>
                         </div>
                     </div>
 
@@ -989,7 +989,7 @@ export default function ClientEdit() {
                                         key={address.id || `address-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4"
                                     >
-                                        <div className="sm:col-span-2 lg:col">
+                                        <div className="lg:col sm:col-span-2">
                                             <Input
                                                 type="text"
                                                 value={address.label || ''}
@@ -1049,7 +1049,7 @@ export default function ClientEdit() {
                                             </Select>
                                         </div>
                                         <div className="flex items-center justify-start sm:justify-center lg:justify-end">
-                                            <div className="flex items-center gap-2 h-11">
+                                            <div className="flex h-11 items-center gap-2">
                                                 <Checkbox
                                                     id={`address-primary-${index}`}
                                                     checked={address.is_primary}
@@ -1122,7 +1122,9 @@ export default function ClientEdit() {
                         {favoriteIds.length > 0 ? (
                             <div className="mb-4 space-y-3">
                                 {favoriteIds.map((id) => {
-                                    const c = (caregivers ?? []).find((cg) => cg.id === id);
+                                    const c = (caregivers ?? []).find(
+                                        (cg) => cg.id === id,
+                                    );
 
                                     if (!c) {
                                         return null;
@@ -1140,7 +1142,9 @@ export default function ClientEdit() {
                                             </div>
                                             <Button
                                                 type="button"
-                                                onClick={() => removeFavorite(id)}
+                                                onClick={() =>
+                                                    removeFavorite(id)
+                                                }
                                             >
                                                 Remove
                                             </Button>
@@ -1163,28 +1167,31 @@ export default function ClientEdit() {
                             />
                             {searchFav && filteredFavCaregivers.length > 0 && (
                                 <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-green-200 bg-white">
-                                    {filteredFavCaregivers.slice(0, 5).map((c) => (
-                                        <button
-                                            key={c.id}
-                                            type="button"
-                                            onClick={() => {
-                                                addFavorite(c.id);
-                                                setSearchFav('');
-                                            }}
-                                            className="flex w-full items-center gap-2 p-2 text-left hover:bg-green-50"
-                                        >
-                                            <span className="font-medium text-foreground">
-                                                {c.first_name} {c.last_name}
-                                            </span>
-                                        </button>
-                                    ))}
+                                    {filteredFavCaregivers
+                                        .slice(0, 5)
+                                        .map((c) => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    addFavorite(c.id);
+                                                    setSearchFav('');
+                                                }}
+                                                className="flex w-full items-center gap-2 p-2 text-left hover:bg-green-50"
+                                            >
+                                                <span className="font-medium text-foreground">
+                                                    {c.first_name} {c.last_name}
+                                                </span>
+                                            </button>
+                                        ))}
                                 </div>
                             )}
-                            {searchFav && filteredFavCaregivers.length === 0 && (
-                                <p className="text-sm text-muted-foreground">
-                                    No caregivers found
-                                </p>
-                            )}
+                            {searchFav &&
+                                filteredFavCaregivers.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No caregivers found
+                                    </p>
+                                )}
                         </div>
                     </div>
 
@@ -1197,11 +1204,13 @@ export default function ClientEdit() {
                         {blockedIds.length > 0 ? (
                             <div className="mb-4 space-y-3">
                                 {blockedIds.map((id) => {
-                                    const c = (caregivers ?? []).find((cg) => cg.id === id);
+                                    const c = (caregivers ?? []).find(
+                                        (cg) => cg.id === id,
+                                    );
 
                                     if (!c) {
-return null;
-}
+                                        return null;
+                                    }
 
                                     return (
                                         <div
@@ -1215,7 +1224,9 @@ return null;
                                             </div>
                                             <Button
                                                 type="button"
-                                                onClick={() => removeBlocked(id)}
+                                                onClick={() =>
+                                                    removeBlocked(id)
+                                                }
                                             >
                                                 Remove
                                             </Button>
@@ -1236,30 +1247,35 @@ return null;
                                 onChange={(e) => setSearchBlock(e.target.value)}
                                 className="mb-2"
                             />
-                            {searchBlock && filteredBlockCaregivers.length > 0 && (
-                                <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-200 bg-white">
-                                    {filteredBlockCaregivers.slice(0, 5).map((c) => (
-                                        <button
-                                            key={c.id}
-                                            type="button"
-                                            onClick={() => {
-                                                addBlocked(c.id);
-                                                setSearchBlock('');
-                                            }}
-                                            className="flex w-full items-center gap-2 p-2 text-left hover:bg-red-50"
-                                        >
-                                            <span className="font-medium text-foreground">
-                                                {c.first_name} {c.last_name}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            {searchBlock && filteredBlockCaregivers.length === 0 && (
-                                <p className="text-sm text-muted-foreground">
-                                    No caregivers found
-                                </p>
-                            )}
+                            {searchBlock &&
+                                filteredBlockCaregivers.length > 0 && (
+                                    <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-200 bg-white">
+                                        {filteredBlockCaregivers
+                                            .slice(0, 5)
+                                            .map((c) => (
+                                                <button
+                                                    key={c.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        addBlocked(c.id);
+                                                        setSearchBlock('');
+                                                    }}
+                                                    className="flex w-full items-center gap-2 p-2 text-left hover:bg-red-50"
+                                                >
+                                                    <span className="font-medium text-foreground">
+                                                        {c.first_name}{' '}
+                                                        {c.last_name}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                    </div>
+                                )}
+                            {searchBlock &&
+                                filteredBlockCaregivers.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No caregivers found
+                                    </p>
+                                )}
                         </div>
                     </div>
 
@@ -1269,25 +1285,25 @@ return null;
                                 Additional Information
                             </h2>
                             <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="emergency_instructions">
-                                    Emergency Instructions
-                                </Label>
-                                <Textarea
-                                    id="emergency_instructions"
-                                    value={form.data.emergency_instructions}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'emergency_instructions',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={3}
-                                    placeholder="Emergency instructions for caregivers..."
-                                />
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_instructions">
+                                        Emergency Instructions
+                                    </Label>
+                                    <Textarea
+                                        id="emergency_instructions"
+                                        value={form.data.emergency_instructions}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'emergency_instructions',
+                                                e.target.value,
+                                            )
+                                        }
+                                        rows={3}
+                                        placeholder="Emergency instructions for caregivers..."
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
                     )}
 
                     <div className="flex justify-end gap-2">

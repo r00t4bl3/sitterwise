@@ -11,6 +11,7 @@ import {
     Home,
     Building2,
     PartyPopper,
+    Star,
 } from 'lucide-react';
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -346,8 +347,16 @@ export default function BookingDetail({ booking }: PageProps) {
                     </div>
                 </div>
 
-                <div className="flex justify-end">
-                    <Button asChild>
+                <div className="flex justify-end gap-2">
+                    {booking.status === 'completed' && (
+                        <Button asChild>
+                            <Link href={`/reviews/${booking.ulid}`}>
+                                <Star className="mr-2 h-4 w-4" />
+                                Write Review
+                            </Link>
+                        </Button>
+                    )}
+                    <Button variant="secondary" asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
                 </div>

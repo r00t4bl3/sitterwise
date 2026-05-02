@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Events\BookingAccepted;
 use App\Events\BookingCreated;
 use App\Events\BookingInvitationSent;
+use App\Events\BookingReceipt;
 use App\Events\BookingReminderTriggered;
 use App\Listeners\SendBookingAcceptedNotifications;
 use App\Listeners\SendBookingCreatedNotifications;
 use App\Listeners\SendBookingInvitationNotifications;
+use App\Listeners\SendBookingReceiptNotification;
 use App\Listeners\SendBookingReminderNotifications;
 use App\Listeners\UpdateLastLogin;
 use Carbon\CarbonImmutable;
@@ -59,6 +61,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             BookingReminderTriggered::class,
             SendBookingReminderNotifications::class,
+        );
+
+        Event::listen(
+            BookingReceipt::class,
+            SendBookingReceiptNotification::class,
         );
     }
 

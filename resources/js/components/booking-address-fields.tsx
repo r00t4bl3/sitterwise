@@ -193,7 +193,7 @@ export function BookingAddressFields({
                     <label className="text-sm font-medium text-foreground">
                         Address
                     </label>
-                    <div className="mt-1 h-11 flex items-center gap-2 rounded-[3px] border border-input px-3 py-2 text-sm">
+                    <div className="mt-1 flex h-11 items-center gap-2 rounded-[3px] border border-input px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">
                             {addressValue}
                         </span>

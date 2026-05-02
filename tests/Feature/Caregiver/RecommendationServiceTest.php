@@ -2,6 +2,7 @@
 
 use App\Models\Availability;
 use App\Models\Booking;
+use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
 use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
@@ -179,7 +180,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
 
         // Create notification record
-        \App\Models\BookingCaregiverNotification::create([
+        BookingCaregiverNotification::create([
             'booking_id' => $booking->id,
             'caregiver_id' => $caregiver->id,
             'notified_at' => now(),

@@ -235,7 +235,7 @@ export default function Bookings() {
                 caregivers.map((c) => ({
                     id: c.id,
                     name: c.name,
-                }))
+                })),
             );
         }
     };
@@ -405,7 +405,7 @@ export default function Bookings() {
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
-            ...(statusFilter && { status: statusFilter })
+            ...(statusFilter && { status: statusFilter }),
         });
     };
 
@@ -421,7 +421,7 @@ export default function Bookings() {
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
-            ...(statusFilter && { status: statusFilter })
+            ...(statusFilter && { status: statusFilter }),
         });
     };
 
@@ -1015,7 +1015,10 @@ export default function Bookings() {
         setIsSheetOpen(true);
     };
 
-    const fetchClientDataOnly = async (clientId: number, skipCaregiverFetch = false) => {
+    const fetchClientDataOnly = async (
+        clientId: number,
+        skipCaregiverFetch = false,
+    ) => {
         try {
             const response = await fetch(`/clients/${clientId}/data`);
             const data = await response.json();
@@ -1584,15 +1587,20 @@ export default function Bookings() {
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
-                                                            <Link href={`/clients/${booking.client.id}`} className='hover:underline'>
-                                                            {
-                                                                booking.client
-                                                                    .first_name
-                                                            }{' '}
-                                                            {
-                                                                booking.client
-                                                                    .last_name
-                                                            }
+                                                            <Link
+                                                                href={`/clients/${booking.client.id}`}
+                                                                className="hover:underline"
+                                                            >
+                                                                {
+                                                                    booking
+                                                                        .client
+                                                                        .first_name
+                                                                }{' '}
+                                                                {
+                                                                    booking
+                                                                        .client
+                                                                        .last_name
+                                                                }
                                                             </Link>
                                                         </td>
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
@@ -1635,8 +1643,20 @@ export default function Bookings() {
                                                         </td>
                                                         <td className="px-4 py-3 text-sm">
                                                             {booking.caregiver ? (
-                                                                <Link href={`/caregivers/${booking.caregiver.id}`} className="font-medium text-ring hover:underline">
-                                                                    {booking.caregiver.first_name} {booking.caregiver.last_name}
+                                                                <Link
+                                                                    href={`/caregivers/${booking.caregiver.id}`}
+                                                                    className="font-medium text-ring hover:underline"
+                                                                >
+                                                                    {
+                                                                        booking
+                                                                            .caregiver
+                                                                            .first_name
+                                                                    }{' '}
+                                                                    {
+                                                                        booking
+                                                                            .caregiver
+                                                                            .last_name
+                                                                    }
                                                                 </Link>
                                                             ) : (
                                                                 <span className="text-muted-foreground italic">
@@ -1778,7 +1798,7 @@ export default function Bookings() {
                                 setAddressValue={setAddressValue}
                                 caregiverSuggestions={caregiverSuggestions}
                                 onOpenNotifySheet={populateCaregiverSuggestions}
-                             />
+                            />
 
                             <BookingDetailsSection
                                 form={form}

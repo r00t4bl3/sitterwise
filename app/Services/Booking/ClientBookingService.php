@@ -11,6 +11,7 @@ use App\Events\BookingCreated;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
+use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\ClientPet;

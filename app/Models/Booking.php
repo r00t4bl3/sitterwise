@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class Booking extends Model
@@ -151,7 +152,7 @@ class Booking extends Model
             return null;
         }
 
-        $rating = $this->clientRating;
+        $rating = $this->getRelation('clientRating');
 
         return $rating ? [
             'id' => $rating->id,
@@ -166,7 +167,7 @@ class Booking extends Model
             return null;
         }
 
-        $rating = $this->caregiverRating;
+        $rating = $this->getRelation('caregiverRating');
 
         return $rating ? [
             'id' => $rating->id,
@@ -319,14 +320,14 @@ class Booking extends Model
             'cg_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'bio_link' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'service_date' => $start->format('m/d/Y'),
-            'review_url' => route('bookings.reviewForm', $this->ulid),
+            'review_url' => URL::signedRoute('bookings.reviewForm', ['booking' => $this->ulid]),
             'hotel_fee' => $this->hotel_fee ?? 0.00,
             'reimbursement_amount' => $this->reimbursement ?? 0.00,
             'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',
             'platform_fee' => $this->sitterwise_cut ?? 0.00,
             'total_amount' => $this->total_service_amount ?? 0.00,
-            'total_hours' => $this->total_working_hour ?? 0
+            'total_hours' => $this->total_working_hour ?? 0,
 
-            ];
+        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\BookingStatus;
+use App\Events\BookingReceipt;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
@@ -119,6 +120,9 @@ class JobBillingService
                 'provider_payment_id' => $paymentIntent->id,
                 'paid_at' => now(),
             ]);
+
+            // 4. Dispatch BookingReceipt event for receipt email with review link
+            event(new BookingReceipt($booking));
 
             return [
                 'success' => true,

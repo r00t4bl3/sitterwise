@@ -165,7 +165,10 @@ export function BookingDetailsSection({
                             onChange={(datetime) => {
                                 form.setData('start_datetime', datetime);
                                 if (datetime) {
-                                    form.setData('end_datetime', autoSetEndDateTime(datetime));
+                                    form.setData(
+                                        'end_datetime',
+                                        autoSetEndDateTime(datetime),
+                                    );
                                 }
                             }}
                         />

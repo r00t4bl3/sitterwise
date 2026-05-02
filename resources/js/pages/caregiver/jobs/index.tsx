@@ -11,7 +11,12 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime, parseAsLocal, autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
+import {
+    formatDisplayDateTime,
+    parseAsLocal,
+    autoSetEndDateTime,
+    validateMinimumDuration,
+} from '@/lib/datetime';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -218,14 +223,20 @@ export default function CaregiverJobsIndex() {
             checkoutForm.setData('end_datetime', autoSetEndDateTime(value));
         }
         // Recalculate total hours
-        const hours = calculateTotalHours(value, checkoutForm.data.end_datetime);
+        const hours = calculateTotalHours(
+            value,
+            checkoutForm.data.end_datetime,
+        );
         checkoutForm.setData('total_working_hour', hours.toFixed(2));
     };
 
     const handleEndDateTimeChange = (value: string) => {
         checkoutForm.setData('end_datetime', value);
         // Recalculate total hours
-        const hours = calculateTotalHours(checkoutForm.data.start_datetime, value);
+        const hours = calculateTotalHours(
+            checkoutForm.data.start_datetime,
+            value,
+        );
         checkoutForm.setData('total_working_hour', hours.toFixed(2));
     };
 
@@ -355,21 +366,21 @@ export default function CaregiverJobsIndex() {
                                                     </Link>
                                                 </Button>
 
-                                                  {job.status.toLowerCase() ===
-                                                      'confirmed' &&
-                                                      new Date(job.end_datetime) <
-                                                          new Date() && (
-                                                      <Button
-                                                          size="sm"
-                                                          onClick={() =>
-                                                              openCheckoutSheet(
-                                                                  job,
-                                                              )
-                                                          }
-                                                      >
-                                                          Checkout
-                                                      </Button>
-                                                  )}
+                                                {job.status.toLowerCase() ===
+                                                    'confirmed' &&
+                                                    new Date(job.end_datetime) <
+                                                        new Date() && (
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                openCheckoutSheet(
+                                                                    job,
+                                                                )
+                                                            }
+                                                        >
+                                                            Checkout
+                                                        </Button>
+                                                    )}
                                             </div>
                                         </td>
                                     </tr>
@@ -434,201 +445,216 @@ export default function CaregiverJobsIndex() {
                     </SheetHeader>
 
                     <div className="flex-1 overflow-y-auto px-4 pb-6">
-                    {selectedJob && (
-                        <form
-                            onSubmit={handleCheckout}
-                            className="space-y-4"
-                        >
-                            <div className="rounded-lg bg-muted p-4">
-                                <p className="text-sm font-medium">
-                                    {selectedJob.client?.user.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {(() => {
-                                        const start = new Date(
-                                            selectedJob.start_datetime,
-                                        );
-                                        const end = new Date(selectedJob.end_datetime);
-                                        const isSameDay =
-                                            start.getFullYear() === end.getFullYear() &&
-                                            start.getMonth() === end.getMonth() &&
-                                            start.getDate() === end.getDate();
-
-                                        const dateOptions: Intl.DateTimeFormatOptions =
-                                            {
-                                                month: 'short',
-                                                day: 'numeric',
-                                                year: 'numeric',
-                                            };
-                                        const timeOptions: Intl.DateTimeFormatOptions =
-                                            {
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                hour12: true,
-                                            };
-
-                                        if (isSameDay) {
-                                            return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                                        }
-
-                                        return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                                    })()}
-                                </p>
-                                {selectedJob.client.children &&
-                                selectedJob.client.children.length > 0 ? (
-                                    <p className="text-xs text-muted-foreground">
-                                        {selectedJob.client.children.map(
-                                            (child, index) => (
-                                                <span key={child.id}>
-                                                    {child.name}
-                                                    {child.birth_month &&
-                                                    child.birth_year
-                                                        ? ` (${calculateAge(
-                                                              child.birth_year,
-                                                              child.birth_month,
-                                                          )})`
-                                                        : ''}
-                                                    {index <
-                                                    selectedJob.client.children!
-                                                        .length -
-                                                        1
-                                                        ? ', '
-                                                        : ''}
-                                                </span>
-                                            ),
-                                        )}
+                        {selectedJob && (
+                            <form
+                                onSubmit={handleCheckout}
+                                className="space-y-4"
+                            >
+                                <div className="rounded-lg bg-muted p-4">
+                                    <p className="text-sm font-medium">
+                                        {selectedJob.client?.user.name}
                                     </p>
-                                ) : (
                                     <p className="text-xs text-muted-foreground">
-                                        (No children)
+                                        {(() => {
+                                            const start = new Date(
+                                                selectedJob.start_datetime,
+                                            );
+                                            const end = new Date(
+                                                selectedJob.end_datetime,
+                                            );
+                                            const isSameDay =
+                                                start.getFullYear() ===
+                                                    end.getFullYear() &&
+                                                start.getMonth() ===
+                                                    end.getMonth() &&
+                                                start.getDate() ===
+                                                    end.getDate();
+
+                                            const dateOptions: Intl.DateTimeFormatOptions =
+                                                {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    year: 'numeric',
+                                                };
+                                            const timeOptions: Intl.DateTimeFormatOptions =
+                                                {
+                                                    hour: 'numeric',
+                                                    minute: '2-digit',
+                                                    hour12: true,
+                                                };
+
+                                            if (isSameDay) {
+                                                return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                                            }
+
+                                            return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
+                                        })()}
                                     </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        Start Date & Time
-                                    </Label>
-                                    <DateTimePicker
-                                        value={checkoutForm.data.start_datetime}
-                                        onChange={handleStartDateTimeChange}
-                                        placeholder="Select start date and time"
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        End Date & Time
-                                    </Label>
-                                    <DateTimePicker
-                                        value={checkoutForm.data.end_datetime}
-                                        startTime={checkoutForm.data.start_datetime}
-                                        onChange={handleEndDateTimeChange}
-                                        placeholder="Select end date and time"
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        Total Hours
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.25"
-                                        value={
-                                            checkoutForm.data.total_working_hour
-                                        }
-                                        readOnly
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Minimum 4 hours. Calculated from start and end time.
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        Reimbursement Amount ($)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={checkoutForm.data.reimbursement}
-                                        onChange={(e) =>
-                                            checkoutForm.setData(
-                                                'reimbursement',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        Reimbursement Description
-                                    </Label>
-                                    <Textarea
-                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                        placeholder="e.g., Parking, tolls, etc."
-                                        value={
-                                            checkoutForm.data
-                                                .reimbursement_description
-                                        }
-                                        onChange={(e) =>
-                                            checkoutForm.setData(
-                                                'reimbursement_description',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-sm font-medium">
-                                        Bonus ($)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={checkoutForm.data.bonus}
-                                        onChange={(e) =>
-                                            checkoutForm.setData(
-                                                'bonus',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    type="button"
-                                    onClick={() =>
-                                        setIsCheckoutSheetOpen(false)
-                                    }
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    className="flex-1"
-                                    type="submit"
-                                    disabled={checkoutForm.processing}
-                                >
-                                    {checkoutForm.processing && (
-                                        <Spinner className="mr-2 h-4 w-4" />
+                                    {selectedJob.client.children &&
+                                    selectedJob.client.children.length > 0 ? (
+                                        <p className="text-xs text-muted-foreground">
+                                            {selectedJob.client.children.map(
+                                                (child, index) => (
+                                                    <span key={child.id}>
+                                                        {child.name}
+                                                        {child.birth_month &&
+                                                        child.birth_year
+                                                            ? ` (${calculateAge(
+                                                                  child.birth_year,
+                                                                  child.birth_month,
+                                                              )})`
+                                                            : ''}
+                                                        {index <
+                                                        selectedJob.client
+                                                            .children!.length -
+                                                            1
+                                                            ? ', '
+                                                            : ''}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">
+                                            (No children)
+                                        </p>
                                     )}
-                                    {checkoutForm.processing
-                                        ? 'Processing...'
-                                        : 'Confirm Checkout'}
-                                </Button>
-                            </div>
-                        </form>
-                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            Start Date & Time
+                                        </Label>
+                                        <DateTimePicker
+                                            value={
+                                                checkoutForm.data.start_datetime
+                                            }
+                                            onChange={handleStartDateTimeChange}
+                                            placeholder="Select start date and time"
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            End Date & Time
+                                        </Label>
+                                        <DateTimePicker
+                                            value={
+                                                checkoutForm.data.end_datetime
+                                            }
+                                            startTime={
+                                                checkoutForm.data.start_datetime
+                                            }
+                                            onChange={handleEndDateTimeChange}
+                                            placeholder="Select end date and time"
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            Total Hours
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            step="0.25"
+                                            value={
+                                                checkoutForm.data
+                                                    .total_working_hour
+                                            }
+                                            readOnly
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Minimum 4 hours. Calculated from
+                                            start and end time.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            Reimbursement Amount ($)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={
+                                                checkoutForm.data.reimbursement
+                                            }
+                                            onChange={(e) =>
+                                                checkoutForm.setData(
+                                                    'reimbursement',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            Reimbursement Description
+                                        </Label>
+                                        <Textarea
+                                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                            placeholder="e.g., Parking, tolls, etc."
+                                            value={
+                                                checkoutForm.data
+                                                    .reimbursement_description
+                                            }
+                                            onChange={(e) =>
+                                                checkoutForm.setData(
+                                                    'reimbursement_description',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-sm font-medium">
+                                            Bonus ($)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={checkoutForm.data.bonus}
+                                            onChange={(e) =>
+                                                checkoutForm.setData(
+                                                    'bonus',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        type="button"
+                                        onClick={() =>
+                                            setIsCheckoutSheetOpen(false)
+                                        }
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        className="flex-1"
+                                        type="submit"
+                                        disabled={checkoutForm.processing}
+                                    >
+                                        {checkoutForm.processing && (
+                                            <Spinner className="mr-2 h-4 w-4" />
+                                        )}
+                                        {checkoutForm.processing
+                                            ? 'Processing...'
+                                            : 'Confirm Checkout'}
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </SheetContent>
             </Sheet>

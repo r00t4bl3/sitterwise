@@ -1277,9 +1277,17 @@ export default function ClientBookingCreate() {
                                     <DateTimePicker
                                         value={form.data.start_datetime}
                                         onChange={(datetime) => {
-                                            form.setData('start_datetime', datetime);
+                                            form.setData(
+                                                'start_datetime',
+                                                datetime,
+                                            );
                                             if (datetime) {
-                                                form.setData('end_datetime', autoSetEndDateTime(datetime));
+                                                form.setData(
+                                                    'end_datetime',
+                                                    autoSetEndDateTime(
+                                                        datetime,
+                                                    ),
+                                                );
                                             }
                                         }}
                                     />
@@ -1293,7 +1301,10 @@ export default function ClientBookingCreate() {
                                         value={form.data.end_datetime}
                                         startTime={form.data.start_datetime}
                                         onChange={(datetime) => {
-                                            form.setData('end_datetime', datetime);
+                                            form.setData(
+                                                'end_datetime',
+                                                datetime,
+                                            );
                                         }}
                                     />
                                 </div>

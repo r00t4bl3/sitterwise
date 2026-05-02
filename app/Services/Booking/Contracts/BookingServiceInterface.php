@@ -20,10 +20,4 @@ interface BookingServiceInterface
     public function destroy(Booking $booking);
 
     public function processPayment(Request $request, Booking $booking);
-
-    // public function searchHotels(Request $request);
-
-    // public function notify(Request $request, Booking $booking);
-
-    // public function recommendedCaregivers(Request $request);
 }
