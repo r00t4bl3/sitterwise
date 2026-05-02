@@ -132,8 +132,8 @@ class JobController extends Controller
             $ratableId = $booking->client_id;
         }
 
-        // Only allow rating if job is completed
-        if ($booking->status !== BookingStatus::Completed->value) {
+        // Only allow rating if job is completed or paid
+        if (! in_array($booking->status, [BookingStatus::Completed->value, BookingStatus::Paid->value])) {
             abort(400, 'Only completed jobs can be rated.');
         }
 

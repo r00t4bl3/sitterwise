@@ -63,11 +63,11 @@ return new class extends Migration
             $table->decimal('tip', 10, 2)->nullable()->default(null);
             $table->decimal('hotel_fee', 10, 2)->nullable()->default(null);
             $table->decimal('paid_to_caregiver_total', 10, 2)->nullable()->comment('Total amount paid to caregiver for the booking: paid_to_caregiver + reimbursement + bonus + tip');
-            $table->decimal('total_service_amount', 10, 2)->after('paid_to_caregiver_total')->nullable()->comment('Total amount for the booking: charge_to_client + reimbursement + bonus');
+            $table->decimal('total_service_amount', 10, 2)->nullable()->comment('Total amount for the booking: charge_to_client + reimbursement + bonus');
             $table->decimal('total_amount', 10, 2)->comment('Total amount for the booking: total_service_amount + tip');
             $table->string('payment_status');
             $table->string('stripe_payment_intent_id')->nullable();
-            $table->decimal('actual_amount', 10, 2)->nullable();
+            $table->decimal('actual_amount', 10, 2)->nullable()->comment('Actual amount charged to client: total_service_amount * 100');
             $table->integer('charge_attempt_count')->default(0);
             $table->timestamp('last_charge_attempt_at')->nullable();
             $table->boolean('requires_payment')->default(true);

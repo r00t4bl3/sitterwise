@@ -408,7 +408,7 @@ class GuestBookingService
         return null;
     }
 
-    private function createClient(array $data, string $paymentMethodId): Client
+    protected function createClient(array $data, string $paymentMethodId): Client
     {
         $user = User::where('email', $data['client_email'])->first();
 
@@ -458,7 +458,7 @@ class GuestBookingService
         return $client;
     }
 
-    private function attachPaymentMethod(Client $client, string $paymentMethodId): void
+    protected function attachPaymentMethod(Client $client, string $paymentMethodId): void
     {
         $stripe = new StripeClient(config('services.stripe.secret'));
 

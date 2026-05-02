@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
@@ -105,6 +106,7 @@ class JobBillingService
 
             // 2. Update Booking on Success
             $booking->update([
+                'status' => BookingStatus::Paid->value,
                 'payment_status' => 'charged',
                 'stripe_payment_intent_id' => $paymentIntent->id,
                 'actual_amount' => $totalToCharge,
