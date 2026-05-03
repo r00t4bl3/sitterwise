@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\StripeClient;
@@ -18,7 +19,7 @@ class TipChargeService
         $this->stripe = new StripeClient(config('services.stripe.secret'));
     }
 
-    public function charge(Booking $booking, float $tipAmount): array
+    public function charge(Booking $booking, float $tipAmount, ?string $paymentMethodId = null): array
     {
         $existingPending = ClientPayment::where('booking_id', $booking->id)
             ->where('status', 'pending')
@@ -39,15 +40,53 @@ class TipChargeService
         $client = $booking->client;
 
         if (! $client->stripe_customer_id) {
-            return ['success' => false, 'message' => 'Client does not have a Stripe customer ID'];
+            $stripeCustomer = $this->stripe->customers->create([
+                'email' => $client->email,
+                'metadata' => [
+                    'client_id' => $client->id,
+                ],
+            ]);
+            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
         }
 
-        $paymentMethod = ClientPaymentMethod::where('client_id', $client->id)
-            ->where('is_default', true)
-            ->where('status', 'active')
-            ->first();
+        $paymentMethod = null;
+
+        Log::info('TipChargeService', [
+            'paymentMethodId' => $paymentMethodId,
+            'client_id' => $client->id,
+        ]);
+
+        if ($paymentMethodId) {
+            $paymentMethod = ClientPaymentMethod::where('client_id', $client->id)
+                ->where('provider_method_id', $paymentMethodId)
+                ->where('status', 'active')
+                ->first();
+
+            Log::info('TipChargeService: Existing payment method lookup', [
+                'found' => (bool) $paymentMethod,
+            ]);
+
+            if (! $paymentMethod) {
+                $paymentMethod = $this->createPaymentMethodFromStripe($client, $paymentMethodId);
+                Log::info('TipChargeService: Created from Stripe', [
+                    'result' => $paymentMethod ? 'success' : 'failed',
+                ]);
+            }
+        }
 
         if (! $paymentMethod) {
+            $paymentMethod = ClientPaymentMethod::where('client_id', $client->id)
+                ->where('is_default', true)
+                ->where('status', 'active')
+                ->first();
+        }
+
+        if (! $paymentMethod) {
+            Log::warning('TipChargeService: No payment method found', [
+                'client_id' => $client->id,
+                'paymentMethodId_provided' => ! empty($paymentMethodId),
+            ]);
+
             return ['success' => false, 'message' => 'No default payment method found'];
         }
 
@@ -99,6 +138,50 @@ class TipChargeService
             return $this->handleFailure($booking, $clientPayment, $e);
         } catch (ApiErrorException $e) {
             return $this->handleFailure($booking, $clientPayment, $e);
+        }
+    }
+
+    protected function createPaymentMethodFromStripe($client, string $paymentMethodId): ?ClientPaymentMethod
+    {
+        try {
+            Log::info('createPaymentMethodFromStripe: Starting', [
+                'client_id' => $client->id,
+                'stripe_customer_id' => $client->stripe_customer_id,
+                'paymentMethodId' => $paymentMethodId,
+            ]);
+
+            $stripePaymentMethod = $this->stripe->paymentMethods->retrieve($paymentMethodId);
+
+            $this->stripe->paymentMethods->attach($paymentMethodId, [
+                'customer' => $client->stripe_customer_id,
+            ]);
+
+            Log::info('createPaymentMethodFromStripe: Attached to customer');
+
+            Log::info('createPaymentMethodFromStripe: About to create ClientPaymentMethod');
+
+            $paymentMethod = ClientPaymentMethod::create([
+                'client_id' => $client->id,
+                'provider_method_id' => $paymentMethodId,
+                'provider' => 'stripe',
+                'brand' => $stripePaymentMethod->card?->brand ?? 'unknown',
+                'last4' => $stripePaymentMethod->card?->last4 ?? '****',
+                'exp_month' => $stripePaymentMethod->card?->exp_month ?? 1,
+                'exp_year' => $stripePaymentMethod->card?->exp_year ?? 2025,
+                'is_default' => false,
+                'status' => 'active',
+            ]);
+
+            Log::info('createPaymentMethodFromStripe: Created ClientPaymentMethod', ['id' => $paymentMethod->id]);
+
+            return $paymentMethod;
+        } catch (\Exception $e) {
+            Log::error('createPaymentMethodFromStripe: Exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
         }
     }
 

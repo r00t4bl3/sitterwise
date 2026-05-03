@@ -2,6 +2,8 @@ import { Head, Link, usePage, useForm } from '@inertiajs/react';
 import { Calendar, Clock, MapPin, Building } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -17,8 +19,6 @@ import {
     autoSetEndDateTime,
     validateMinimumDuration,
 } from '@/lib/datetime';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 
 interface Booking {
     id: number;
@@ -176,11 +176,15 @@ export default function CaregiverJobsIndex() {
     });
 
     const calculateTotalHours = (start: string, end: string): number => {
-        if (!start || !end) return 0;
+        if (!start || !end) {
+return 0;
+}
+
         const startDate = new Date(start);
         const endDate = new Date(end);
         const diffMs = endDate.getTime() - startDate.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
+
         return Math.max(diffHours, 4); // Minimum 4 hours
     };
 
@@ -218,10 +222,12 @@ export default function CaregiverJobsIndex() {
 
     const handleStartDateTimeChange = (value: string) => {
         checkoutForm.setData('start_datetime', value);
+
         // Auto-set end time to 4 hours after start
         if (value) {
             checkoutForm.setData('end_datetime', autoSetEndDateTime(value));
         }
+
         // Recalculate total hours
         const hours = calculateTotalHours(
             value,

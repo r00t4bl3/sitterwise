@@ -12,6 +12,7 @@ class StoreReviewRequest extends FormRequest
             'rating' => ['required', 'numeric', 'between:1,5'],
             'comment' => ['nullable', 'string', 'max:1000'],
             'tip' => ['nullable', 'numeric', 'min:0'],
+            'payment_method_id' => ['nullable', 'string'],
         ];
     }
 }

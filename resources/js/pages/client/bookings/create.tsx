@@ -7,7 +7,6 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,6 +19,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -1281,6 +1281,7 @@ export default function ClientBookingCreate() {
                                                 'start_datetime',
                                                 datetime,
                                             );
+
                                             if (datetime) {
                                                 form.setData(
                                                     'end_datetime',

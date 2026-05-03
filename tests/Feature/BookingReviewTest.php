@@ -15,6 +15,7 @@ use App\Models\SpecialtyType;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class BookingReviewTest extends TestCase
@@ -214,5 +215,89 @@ class BookingReviewTest extends TestCase
             ->where('booking.existing_comment', 'Original comment')
             ->where('booking.existing_tip', '10.00')
         );
+    }
+
+    // ========== GUEST/NON-LOGGED-IN CLIENT TESTS ==========
+
+    public function test_guest_can_access_review_via_signed_url()
+    {
+        $signedUrl = URL::signedRoute('review.create', [
+            'booking' => $this->completedBooking->ulid,
+        ]);
+
+        $response = $this->get($signedUrl);
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->has('booking')
+            ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
+        );
+    }
+
+    public function test_guest_can_submit_review_via_signed_url()
+    {
+        $signedUrl = URL::signedRoute('review.store', [
+            'booking' => $this->completedBooking->ulid,
+        ]);
+
+        $response = $this->post($signedUrl, [
+            'rating' => 5,
+            'comment' => 'Guest review test',
+            'tip' => '',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->has('caregiver_name')
+        );
+
+        $this->assertDatabaseHas('booking_ratings', [
+            'booking_id' => $this->completedBooking->id,
+            'rater_id' => $this->client->user_id,
+            'rating' => 5,
+            'comment' => 'Guest review test',
+        ]);
+    }
+
+    public function test_guest_review_uses_booking_client_user_id_as_rater()
+    {
+        $signedUrl = URL::signedRoute('review.store', [
+            'booking' => $this->completedBooking->ulid,
+        ]);
+
+        $this->post($signedUrl, [
+            'rating' => 4,
+            'comment' => 'Test rating from guest',
+            'tip' => '',
+        ]);
+
+        $rating = BookingRating::where('booking_id', $this->completedBooking->id)->first();
+        $this->assertEquals($this->client->user_id, $rating->rater_id);
+    }
+
+    public function test_invalid_signed_url_rejected()
+    {
+        $invalidUrl = route('review.create', $this->completedBooking->ulid).'?signature=invalid';
+
+        $response = $this->get($invalidUrl);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_guest_cannot_review_non_completed_booking()
+    {
+        $pendingBooking = Booking::factory()->create([
+            'client_id' => $this->client->id,
+            'caregiver_id' => $this->caregiver->id,
+            'status' => BookingStatus::Pending->value,
+        ]);
+
+        $signedUrl = URL::signedRoute('review.create', [
+            'booking' => $pendingBooking->ulid,
+        ]);
+
+        $response = $this->get($signedUrl);
+
+        $response->assertStatus(403);
     }
 }

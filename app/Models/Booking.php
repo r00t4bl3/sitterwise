@@ -320,7 +320,7 @@ class Booking extends Model
             'cg_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'bio_link' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'service_date' => $start->format('m/d/Y'),
-            'review_url' => URL::signedRoute('bookings.reviewForm', ['booking' => $this->ulid]),
+            'review_url' => URL::signedRoute('review.create', ['booking' => $this->ulid]),
             'hotel_fee' => $this->hotel_fee ?? 0.00,
             'reimbursement_amount' => $this->reimbursement ?? 0.00,
             'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/layouts/app-layout';
+import GuestLayout from '@/layouts/guest-layout';
 import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface BookingData {
@@ -24,16 +24,9 @@ interface BookingData {
 
 interface PageProps {
     booking: BookingData;
-    has_default_payment_method?: boolean;
 }
 
-const breadcrumbs = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Bookings', href: '/bookings' },
-    { title: 'Write Review', href: '#' },
-];
-
-export default function ReviewBooking({ booking, has_default_payment_method }: PageProps) {
+export default function GuestReviewBooking({ booking }: PageProps) {
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
     const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -50,23 +43,22 @@ export default function ReviewBooking({ booking, has_default_payment_method }: P
     };
 
     const hasTip = form.data.tip && parseFloat(String(form.data.tip)) > 0;
-    const showCardInput = hasTip && !has_default_payment_method;
 
 function submit(e: React.FormEvent) {
         e.preventDefault();
 
-        if (showCardInput && !paymentMethodId) {
+        if (hasTip && !paymentMethodId) {
             setPaymentError('Please enter your card details to add a tip');
 
             return;
         }
 
         const queryString = window.location.search;
-        form.post(`/reviews/${booking.ulid}${queryString}`);
+form.post(`/review/${booking.ulid}${queryString}`);
     }
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <GuestLayout>
             <Head title="Review Booking" />
             <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
@@ -151,7 +143,7 @@ function submit(e: React.FormEvent) {
                         )}
                     </div>
 
-                    {showCardInput && (
+                    {hasTip && (
                         <div>
                             <Label className="text-sm font-medium text-foreground">
                                 Payment Details
@@ -174,7 +166,7 @@ function submit(e: React.FormEvent) {
                         disabled={!!(
                             form.processing ||
                             !form.data.rating ||
-                            (showCardInput && !paymentMethodId)
+                            (hasTip && !paymentMethodId)
                         )}
                         className="w-full"
                     >
@@ -187,6 +179,6 @@ function submit(e: React.FormEvent) {
                     </Button>
                 </form>
             </div>
-        </AppLayout>
+        </GuestLayout>
     );
 }

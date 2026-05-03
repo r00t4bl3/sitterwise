@@ -1026,6 +1026,7 @@ export default function Bookings() {
             setClientChildren(data.client.children || []);
             setClientPets(data.client.pets || []);
             setSelectedClientType(data.client.client_type || null);
+
             if (!skipCaregiverFetch) {
                 fetchRecommendedCaregivers(clientId);
             }

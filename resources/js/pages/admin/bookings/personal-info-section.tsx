@@ -3,11 +3,11 @@ import { BadgeCheck, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
     Select,
     SelectContent,

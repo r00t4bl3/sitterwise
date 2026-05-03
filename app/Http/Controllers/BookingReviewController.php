@@ -8,9 +8,12 @@ use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Services\Billing\TipChargeService;
 use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class BookingReviewController extends Controller
 {
+    // ========== FOR LOGGED-IN CLIENTS (from dashboard) ==========
+
     public function create(Booking $booking)
     {
         $client = request()->user()->client;
@@ -19,6 +22,45 @@ class BookingReviewController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        return $this->getReviewData($booking, true, $client);
+    }
+
+    public function store(StoreReviewRequest $request, Booking $booking)
+    {
+        $client = request()->user()->client;
+
+        if ($booking->client_id !== $client->id || $booking->status !== 'completed') {
+            return Redirect::back()->with('error', 'Unauthorized or booking not completed');
+        }
+
+        $paymentMethodId = $request->input('payment_method_id');
+
+        return $this->processReviewSubmission($request, $booking, $request->user()->id, true, $paymentMethodId);
+    }
+
+    // ========== FOR GUEST/NON-LOGGED-IN CLIENTS (from signed email link) ==========
+
+    public function createFromLink(Booking $booking)
+    {
+        return $this->getReviewData($booking, false, null);
+    }
+
+    public function storeFromLink(StoreReviewRequest $request, Booking $booking)
+    {
+        if ($booking->status !== 'completed') {
+            return Redirect::back()->with('error', 'Booking not completed');
+        }
+
+        $raterId = $booking->client?->user_id;
+        $paymentMethodId = $request->input('payment_method_id');
+
+        return $this->processReviewSubmission($request, $booking, $raterId, false, $paymentMethodId);
+    }
+
+    // ========== SHARED PRIVATE METHODS ==========
+
+    private function getReviewData(Booking $booking, $isLoggedInClient = true, $client = null)
+    {
         if ($booking->status !== 'completed') {
             abort(403, 'Reviews are only available for completed bookings');
         }
@@ -26,7 +68,17 @@ class BookingReviewController extends Controller
         $booking->load('caregiver', 'caregiverRating');
         $existingRating = $booking->getRelation('caregiverRating');
 
-        return inertia('client/reviews/create', [
+        if ($isLoggedInClient) {
+            $viewPage = 'client/reviews/create';
+            $hasDefaultPaymentMethod = $this->clientHasDefaultPaymentMethod($client);
+            $hasStripeCustomerId = ! empty($client->stripe_customer_id);
+        } else {
+            $viewPage = 'guest/bookings/review';
+            $hasDefaultPaymentMethod = false;
+            $hasStripeCustomerId = false;
+        }
+
+        return Inertia::render($viewPage, [
             'booking' => [
                 'ulid' => $booking->ulid,
                 'start_datetime' => $booking->start_datetime,
@@ -38,21 +90,26 @@ class BookingReviewController extends Controller
                 'existing_comment' => $existingRating?->comment,
                 'existing_tip' => $booking->tip,
             ],
+            'has_default_payment_method' => $hasDefaultPaymentMethod,
+            'has_stripe_customer_id' => $hasStripeCustomerId,
         ]);
     }
 
-    public function store(StoreReviewRequest $request, Booking $booking)
+    private function clientHasDefaultPaymentMethod($client): bool
     {
-        $client = $request->user()->client;
+        return $client
+            ->paymentMethods()
+            ->where('is_default', true)
+            ->where('status', 'active')
+            ->exists();
+    }
 
-        if ($booking->client_id !== $client->id || $booking->status !== 'completed') {
-            return Redirect::back()->with('error', 'Unauthorized or booking not completed');
-        }
-
+    private function processReviewSubmission(StoreReviewRequest $request, Booking $booking, $raterId, $isLoggedInClient = true, ?string $paymentMethodId = null)
+    {
         BookingRating::updateOrCreate(
             [
                 'booking_id' => $booking->id,
-                'rater_id' => $request->user()->id,
+                'rater_id' => $raterId,
                 'ratable_type' => Caregiver::class,
                 'ratable_id' => $booking->caregiver_id,
             ],
@@ -64,13 +121,22 @@ class BookingReviewController extends Controller
 
         if ($request->filled('tip') && $request->tip > 0) {
             $tipService = new TipChargeService;
-            $tipResult = $tipService->charge($booking, (float) $request->tip);
+            $tipResult = $tipService->charge($booking, (float) $request->tip, $paymentMethodId);
 
             if (! $tipResult['success']) {
                 return Redirect::back()->with('error', 'Review saved, but tip failed: '.$tipResult['message']);
             }
         }
 
-        return Redirect::back()->with('success', 'Review submitted successfully!');
+        if (! $isLoggedInClient) {
+            return Inertia::render('guest/bookings/review-success', [
+                'caregiver_name' => $booking->caregiver
+                    ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
+                    : 'Unknown',
+                'tip_amount' => (float) $request->tip,
+            ]);
+        }
+
+        return to_route('dashboard')->with('success', 'Review submitted successfully!');
     }
 }

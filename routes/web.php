@@ -28,14 +28,6 @@ Route::redirect('/', '/login')->name('home');
 // Caregiver public profile
 Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('caregivers.bio');
 
-// Client booking review routes (signed for security)
-Route::get('bookings/{booking}/review', [BookingController::class, 'reviewForm'])
-    ->name('bookings.reviewForm')
-    ->middleware('signed');
-Route::post('bookings/{booking}/review', [BookingController::class, 'submitReview'])
-    ->name('bookings.submitReview')
-    ->middleware('signed');
-
 // Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
@@ -47,6 +39,12 @@ Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class,
 Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status');
 Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify');
 Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
+
+// Guest review routes (signed URL from email for non-logged-in clients) - outside auth group
+Route::middleware('signed')->group(function () {
+    Route::get('review/{booking}', [BookingReviewController::class, 'createFromLink'])->name('review.create');
+    Route::post('review/{booking}', [BookingReviewController::class, 'storeFromLink'])->name('review.store');
+});
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {

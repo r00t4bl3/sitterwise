@@ -115,6 +115,7 @@ export const getTimeOptionsWithDisabled = (
         const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
 
         let disabled = false;
+
         if (startDate) {
             const optionDate = new Date(startDate);
             optionDate.setHours(hours24, minutes, 0, 0);

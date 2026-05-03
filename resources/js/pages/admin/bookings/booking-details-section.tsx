@@ -4,7 +4,6 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 
 interface BookingDetailsSectionProps {
     form: any;
@@ -164,6 +164,7 @@ export function BookingDetailsSection({
                             value={startDatetime}
                             onChange={(datetime) => {
                                 form.setData('start_datetime', datetime);
+
                                 if (datetime) {
                                     form.setData(
                                         'end_datetime',
