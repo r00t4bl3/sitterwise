@@ -1,7 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
+import { StripeCardInput } from '@/components/stripe/stripe-card-element';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,6 +114,16 @@ interface TypeChange {
     } | null;
 }
 
+interface PaymentMethod {
+    id: number;
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+    is_default: boolean;
+    status: string;
+}
+
 interface Client {
     id: number;
     first_name: string;
@@ -137,6 +148,8 @@ interface Client {
     blocked_caregivers: BlockedCaregiver[];
     previous_caregivers: PreviousCaregiver[];
     type_changes: TypeChange[];
+    has_payment_method: boolean;
+    payment_methods: PaymentMethod[];
 }
 
 interface Props {
@@ -265,7 +278,9 @@ function AttributeBadge({
 export default function ClientShow() {
     const { client } = usePage<Props>().props;
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
+    const [isPaymentSheetOpen, setIsPaymentSheetOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
 
     const passwordForm = useForm<{
         new_password: string;
@@ -273,6 +288,10 @@ export default function ClientShow() {
     }>({
         new_password: '',
         new_password_confirmation: '',
+    });
+
+    const paymentForm = useForm({
+        payment_method_id: '',
     });
 
     const handlePasswordReset: SubmitEventHandler = (e) => {
@@ -283,6 +302,22 @@ export default function ClientShow() {
                 passwordForm.reset();
             },
         });
+    };
+
+    const handlePaymentSubmit: SubmitEventHandler = (e) => {
+        e.preventDefault();
+        paymentForm.post(`/clients/${client.id}/payment-method`, {
+            onSuccess: () => {
+                setIsPaymentSheetOpen(false);
+                setPaymentMethodId(null);
+                paymentForm.reset();
+            },
+        });
+    };
+
+    const handlePaymentMethodReady = (pmId: string | null) => {
+        setPaymentMethodId(pmId);
+        paymentForm.setData('payment_method_id', pmId || '');
     };
 
     return (
@@ -320,6 +355,16 @@ export default function ClientShow() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsPaymentSheetOpen(true)}
+                            className="flex items-center gap-2"
+                        >
+                            <CreditCard className="h-4 w-4" />
+                            {client.has_payment_method
+                                ? 'Manage Payment Method'
+                                : 'Add Payment Method'}
+                        </Button>
                         <Button
                             variant="secondary"
                             onClick={() => setIsPasswordSheetOpen(true)}
@@ -445,6 +490,107 @@ export default function ClientShow() {
                     </SheetContent>
                 </Sheet>
 
+                <Sheet
+                    open={isPaymentSheetOpen}
+                    onOpenChange={setIsPaymentSheetOpen}
+                >
+                    <SheetContent side="right">
+                        <SheetHeader>
+                            <SheetTitle>
+                                {client.has_payment_method
+                                    ? 'Manage Payment Method'
+                                    : 'Add Payment Method'}
+                            </SheetTitle>
+                            <SheetDescription>
+                                {client.has_payment_method
+                                    ? 'View existing or add a new payment method for this client.'
+                                    : 'Securely add a new payment method for this client.'}
+                            </SheetDescription>
+                        </SheetHeader>
+
+                        {client.payment_methods.length > 0 && (
+                            <div className="space-y-3 px-4">
+                                <p className="text-sm font-medium text-foreground">
+                                    Current Payment Methods
+                                </p>
+                                {client.payment_methods.map((method) => (
+                                    <div
+                                        key={method.id}
+                                        className="flex items-center justify-between rounded-md border border-border bg-background p-3"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <p className="text-sm font-medium capitalize">
+                                                    {method.brand} ••••{' '}
+                                                    {method.last4}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Expires {method.exp_month}/
+                                                    {method.exp_year}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {method.is_default && (
+                                            <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
+                                                Default
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <form
+                            onSubmit={handlePaymentSubmit}
+                            className="mt-8 space-y-6 px-4"
+                        >
+                            <div className="space-y-4">
+                                <p className="text-sm font-medium text-foreground">
+                                    Add New Card
+                                </p>
+                                <div className="rounded-md border border-border p-4">
+                                    <StripeCardInput
+                                        onPaymentMethodReady={
+                                            handlePaymentMethodReady
+                                        }
+                                        error={
+                                            paymentForm.errors.payment_method_id
+                                        }
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Card details are securely processed and
+                                    stored by Stripe.
+                                </p>
+                            </div>
+
+                            <div className="mt-10 w-full space-y-2">
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        paymentForm.processing ||
+                                        !paymentMethodId
+                                    }
+                                    className="w-full"
+                                >
+                                    {paymentForm.processing
+                                        ? 'Adding...'
+                                        : 'Add Payment Method'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => setIsPaymentSheetOpen(false)}
+                                    className="w-full"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </form>
+                    </SheetContent>
+                </Sheet>
+
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="border border-border bg-card p-6 lg:col-span-2">
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
@@ -515,7 +661,7 @@ export default function ClientShow() {
                         </div>
 
                         {client.children.length > 0 && (
-                            <div className="mt-6 border-t border-border pt-6">
+                            <div className="border-t border-border pt-6">
                                 <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                     Children ({client.children.length})
                                 </h3>
@@ -546,7 +692,7 @@ export default function ClientShow() {
                         )}
 
                         {client.pets.length > 0 && (
-                            <div className="mt-6 border-t border-border pt-6">
+                            <div className="border-t border-border pt-6">
                                 <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                     Pets ({client.pets.length})
                                 </h3>

@@ -70,7 +70,7 @@ class BookingReviewController extends Controller
 
         if ($isLoggedInClient) {
             $viewPage = 'client/reviews/create';
-            $hasDefaultPaymentMethod = $this->clientHasDefaultPaymentMethod($client);
+            $hasDefaultPaymentMethod = $client->hasPaymentMethod();
             $hasStripeCustomerId = ! empty($client->stripe_customer_id);
         } else {
             $viewPage = 'guest/bookings/review';
@@ -93,15 +93,6 @@ class BookingReviewController extends Controller
             'has_default_payment_method' => $hasDefaultPaymentMethod,
             'has_stripe_customer_id' => $hasStripeCustomerId,
         ]);
-    }
-
-    private function clientHasDefaultPaymentMethod($client): bool
-    {
-        return $client
-            ->paymentMethods()
-            ->where('is_default', true)
-            ->where('status', 'active')
-            ->exists();
     }
 
     private function processReviewSubmission(StoreReviewRequest $request, Booking $booking, $raterId, $isLoggedInClient = true, ?string $paymentMethodId = null)

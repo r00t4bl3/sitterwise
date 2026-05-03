@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('clients/{client}/data', [ClientController::class, 'getClientData'])->name('clients.getClientData');
         Route::post('clients/{client}/profile-photo', [ClientController::class, 'updateProfilePhoto'])->name('clients.updateProfilePhoto');
         Route::post('clients/{client}/password', [ClientController::class, 'resetPassword'])->name('clients.resetPassword');
+        Route::post('clients/{client}/payment-method', [ClientController::class, 'storePaymentMethod'])->name('clients.paymentMethod.store');
         Route::resource('clients', ClientController::class)->except(['destroy']);
 
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');

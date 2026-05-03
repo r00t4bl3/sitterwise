@@ -168,4 +168,9 @@ class Client extends Model
     {
         return 'client-notifications-'.$this->id;
     }
+
+    public function hasPaymentMethod(): bool
+    {
+        return $this->paymentMethods()->where('status', 'active')->exists();
+    }
 }

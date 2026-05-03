@@ -13,14 +13,18 @@ use App\Models\AttributeDefinition;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
+use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 class ClientController extends Controller
 {
-    public function __construct()
+    protected $paymentService;
+
+    public function __construct(ClientPaymentServiceFactory $paymentServiceFactory)
     {
+        $this->paymentService = $paymentServiceFactory->make();
         $this->clientType = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             ClientType::cases(),
@@ -295,8 +299,35 @@ class ClientController extends Controller
                         'name' => $tc->admin->name,
                     ] : null,
                 ]),
+                'has_payment_method' => $client->hasPaymentMethod(),
+                'payment_methods' => $this->paymentService->setClient($client)->showPaymentMethods(),
             ],
         ]);
+    }
+
+    public function storePaymentMethod(Request $request, Client $client)
+    {
+        $validated = $request->validate([
+            'payment_method_id' => ['required', 'string'],
+        ]);
+
+        try {
+            $stripePaymentMethod = $this->paymentService->retrievePaymentMethod($validated['payment_method_id']);
+
+            $data = [
+                'payment_method_id' => $validated['payment_method_id'],
+                'brand' => $stripePaymentMethod->card?->brand ?? 'unknown',
+                'last4' => $stripePaymentMethod->card?->last4 ?? '****',
+                'exp_month' => $stripePaymentMethod->card?->exp_month ?? 1,
+                'exp_year' => $stripePaymentMethod->card?->exp_year ?? 2025,
+            ];
+
+            $this->paymentService->setClient($client)->storePaymentMethod($data);
+
+            return redirect()->back()->with('success', 'Payment method added successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to add payment method: '.$e->getMessage());
+        }
     }
 
     public function edit(Client $client)

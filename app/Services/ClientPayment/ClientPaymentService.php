@@ -8,15 +8,36 @@ use App\Models\ClientPaymentMethod;
 use App\Services\ClientPayment\Contracts\ClientPaymentServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Response as InertiaResponse;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class ClientPaymentService implements ClientPaymentServiceInterface
 {
     protected StripeClient $stripe;
 
+    protected ?Client $client = null;
+
     public function __construct()
     {
         $this->stripe = new StripeClient(config('services.stripe.secret'));
+    }
+
+    public function setClient(Client $client): self
+    {
+        $this->client = $client;
+
+        return $this;
+    }
+
+    protected function getClient(): Client
+    {
+        if ($this->client) {
+            return $this->client;
+        }
+
+        $user = Auth::user();
+
+        return $user->client;
     }
 
     public function index(): InertiaResponse
@@ -121,9 +142,23 @@ class ClientPaymentService implements ClientPaymentServiceInterface
         return null;
     }
 
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    {
+        return $this->stripe->paymentMethods->retrieve($paymentMethodId);
+    }
+
     public function storePaymentMethod(array $data): array
     {
         $client = $this->getClient();
+
+        if (! $client->stripe_customer_id) {
+            $stripeCustomer = $this->stripe->customers->create([
+                'email' => $client->user->email,
+                'name' => $client->full_name,
+            ]);
+
+            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
+        }
 
         $existingCount = ClientPaymentMethod::where('client_id', $client->id)->count();
 
@@ -209,12 +244,5 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'success' => true,
             'message' => 'Payment method removed',
         ];
-    }
-
-    protected function getClient(): Client
-    {
-        $user = Auth::user();
-
-        return $user->client;
     }
 }
