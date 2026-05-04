@@ -25,6 +25,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
     Sheet,
     SheetContent,
@@ -167,6 +168,17 @@ export default function Bookings() {
     const [statusFilter, setStatusFilter] = useState<string | null>(
         filters.status,
     );
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'duplicate'>(
@@ -406,7 +418,6 @@ export default function Bookings() {
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
-            ...(statusFilter && { status: statusFilter }),
         });
     };
 
@@ -422,22 +433,37 @@ export default function Bookings() {
         router.get('/bookings', {
             month: newMonth,
             year: newYear,
-            ...(statusFilter && { status: statusFilter }),
         });
     };
 
-    const applyFilters = () => {
-        const params = {
-            month: currentMonth,
-            year: currentYear,
-            ...(statusFilter && { status: statusFilter }),
-        };
-        router.get('/bookings', params);
-    };
+const filteredBookings = useMemo(() => {
+        let result = bookings;
+
+        if (statusFilter) {
+            result = result.filter(booking =>
+                booking.status.toLowerCase() === statusFilter.toLowerCase()
+            );
+        }
+
+        if (debouncedSearch.trim()) {
+            const query = debouncedSearch.toLowerCase().trim();
+            result = result.filter(booking => {
+                const clientName = booking.client?.user?.name?.toLowerCase() || '';
+                const caregiverName = booking.caregiver?.user?.name?.toLowerCase() || '';
+                const hotelName = booking.hotel?.name?.toLowerCase() || '';
+
+                return clientName.includes(query) ||
+                       caregiverName.includes(query) ||
+                       hotelName.includes(query);
+            });
+        }
+
+        return result;
+    }, [bookings, statusFilter, debouncedSearch]);
 
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, Booking[]> = {};
-        bookings.forEach((booking) => {
+        filteredBookings.forEach((booking) => {
             const date = parseAsLocal(booking.start_datetime);
 
             if (!date) {
@@ -454,10 +480,10 @@ export default function Bookings() {
         });
 
         return grouped;
-    }, [bookings]);
+    }, [filteredBookings]);
 
     const currentMonthBookings = useMemo(() => {
-        return bookings.filter((booking) => {
+        return filteredBookings.filter((booking) => {
             const startDate = parseAsLocal(booking.start_datetime);
 
             if (!startDate) {
@@ -469,7 +495,7 @@ export default function Bookings() {
                 startDate.getFullYear() === currentYear
             );
         });
-    }, [bookings, currentMonth, currentYear]);
+    }, [filteredBookings, currentMonth, currentYear]);
 
     const handleClientSearch = async (query: string) => {
         if (!query.trim()) {
@@ -1111,7 +1137,6 @@ export default function Bookings() {
                 onSuccess: () => {
                     setIsSheetOpen(false);
                     setShowDeleteDialog(false);
-                    applyFilters();
                 },
                 onError: (errors) => {
                     const errorMessage = Object.values(errors).join(', ');
@@ -1226,6 +1251,16 @@ export default function Bookings() {
                         </h1>
                         <p className="text-sm text-muted-foreground">
                             {currentMonthBookings.length} bookings this month
+                            {statusFilter && (
+                                <span className="ml-1">
+                                    ({booking_statuses.find(s => s.value === statusFilter)?.label || statusFilter})
+                                </span>
+                            )}
+                            {debouncedSearch && (
+                                <span className="ml-1">
+                                    (search: "{debouncedSearch}")
+                                </span>
+                            )}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1251,23 +1286,60 @@ export default function Bookings() {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <select
-                            value={statusFilter || ''}
-                            onChange={(e) =>
-                                setStatusFilter(e.target.value || null)
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Search by client, caregiver, or hotel..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className='h-8'
+                        />
+                        {searchQuery && (
+                            <Button
+                                size='sm'
+                                variant="ghost"
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                ×
+                            </Button>
+                        )}
+                    </div>
+
+                    <Button
+                        variant={!statusFilter ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setStatusFilter(null)}
+                    >
+                        All
+                    </Button>
+                    {booking_statuses.map((status) => (
+                        <Button
+                            key={status.value}
+                            variant={
+                                statusFilter === status.value
+                                    ? 'default'
+                                    : 'outline'
                             }
-                            className="h-10 rounded-[3px] border border-input bg-background px-3 text-sm"
+                            size="sm"
+                            onClick={() =>
+                                setStatusFilter(
+                                    statusFilter === status.value
+                                        ? null
+                                        : status.value,
+                                )
+                            }
+                            className={
+                                statusFilter === status.value
+                                    ? `${status.colors.bg} ${status.colors.text} ${status.colors.border}`
+                                    : ''
+                            }
                         >
-                            <option value="">All Statuses</option>
-                            {booking_statuses.map((status) => (
-                                <option key={status.value} value={status.value}>
-                                    {status.label}
-                                </option>
-                            ))}
-                        </select>
-                        <Button onClick={applyFilters}>Filter</Button>
+                            {status.label}
+                        </Button>
+                        ))}
                     </div>
 
                     {!isTableView && (
@@ -1289,13 +1361,12 @@ export default function Bookings() {
                             ))}
                         </div>
                     )}
-                </div>
 
                 <div className="border border-border bg-card p-4">
                     <div className="mb-4 flex items-center justify-between">
                         <button
                             onClick={prevMonth}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                            className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -1304,7 +1375,7 @@ export default function Bookings() {
                         </h2>
                         <button
                             onClick={nextMonth}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                            className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>

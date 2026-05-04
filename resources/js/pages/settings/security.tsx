@@ -2,7 +2,6 @@ import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useRef, useState } from 'react';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -16,6 +15,7 @@ import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/security';
 import { disable, enable } from '@/routes/two-factor';
 import type { BreadcrumbItem } from '@/types';
+import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 
 type Props = {
     canManageTwoFactor?: boolean;

@@ -102,6 +102,7 @@ export interface Booking {
         phone: string | null;
         biography: string | null;
         user: {
+            name: string;
             profile_photo_path: string | null;
         };
         children_count?: number;
@@ -156,6 +157,9 @@ export interface Booking {
         id: number;
         first_name: string;
         last_name: string;
+        user: {
+            name: string;
+        };
     } | null;
 }
 
