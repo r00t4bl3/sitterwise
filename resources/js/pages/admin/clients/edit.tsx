@@ -352,8 +352,8 @@ export default function ClientEdit() {
                                             <Spinner className="h-5 w-5" />
                                         </div>
                                     )}
-                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <input
+                                    <Label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Input
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
@@ -363,7 +363,7 @@ export default function ClientEdit() {
                                         <span className="text-xs font-medium text-white">
                                             Change
                                         </span>
-                                    </label>
+                                    </Label>
                                 </div>
                             ) : (
                                 <div className="group relative">
@@ -378,8 +378,8 @@ export default function ClientEdit() {
                                             <Spinner className="h-5 w-5" />
                                         </div>
                                     )}
-                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <input
+                                    <Label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Input
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
@@ -389,7 +389,7 @@ export default function ClientEdit() {
                                         <span className="text-xs font-medium text-white">
                                             Change
                                         </span>
-                                    </label>
+                                    </Label>
                                 </div>
                             )}
                         </div>

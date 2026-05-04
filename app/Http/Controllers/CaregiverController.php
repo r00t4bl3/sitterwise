@@ -194,10 +194,23 @@ class CaregiverController extends Controller
 
             if (isset($validated['certifications'])) {
                 $certSync = [];
+                $certFiles = $request->file('cert_files') ?? [];
+
                 foreach ($validated['certifications'] as $cert) {
-                    $certSync[$cert['certification_type_id']] = [
+                    $certTypeId = $cert['certification_type_id'];
+                    $filePath = $cert['file_path'] ?? null;
+
+                    if (isset($certFiles[$certTypeId])) {
+                        $file = $certFiles[$certTypeId];
+                        $filename = time().'_'.$file->getClientOriginalName();
+                        $filePath = $file->storeAs('certifications', $filename, 'public');
+                    }
+
+                    $certSync[$certTypeId] = [
                         'expiration_date' => $cert['expiration_date'] ?? null,
                         'verified_at' => $cert['verified_at'] ?? null,
+                        'file_path' => $filePath,
+                        'notes' => $cert['notes'] ?? null,
                     ];
                 }
                 $caregiver->certifications()->sync($certSync);

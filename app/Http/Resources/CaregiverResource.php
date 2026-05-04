@@ -63,6 +63,8 @@ class CaregiverResource extends JsonResource
                 ],
                 'expiration_date' => $c->pivot->expiration_date,
                 'verified_at' => $c->pivot->verified_at,
+                'file_path' => $c->pivot->file_path,
+                'notes' => $c->pivot->notes,
             ]),
             'attributes' => $this->attributes->map(fn ($a) => [
                 'id' => $a->id,

@@ -294,7 +294,6 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
                     <div className="mt-1 flex items-center gap-2 rounded-[3px] border border-input px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">{addressValue}</span>
                         <Button
-                            variant="link"
                             type="button"
                             onClick={handleUnlock}
                             size="xs"

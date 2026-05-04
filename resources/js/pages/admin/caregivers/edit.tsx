@@ -86,6 +86,8 @@ interface Certification {
     };
     expiration_date: string | null;
     verified_at: string | null;
+    file_path: string | null;
+    notes: string | null;
 }
 
 interface Education {
@@ -168,6 +170,7 @@ export default function CaregiverEdit() {
     const [certifications, setCertifications] = useState<Certification[]>(
         caregiver.certifications,
     );
+    const [certFiles, setCertFiles] = useState<Record<number, File | null>>({});
     const [educations, setEducations] = useState<Education[]>(
         caregiver.educations,
     );
@@ -310,6 +313,8 @@ export default function CaregiverEdit() {
                     },
                     expiration_date: null,
                     verified_at: null,
+                    file_path: null,
+                    notes: null,
                 },
             ]);
         }
@@ -322,18 +327,27 @@ export default function CaregiverEdit() {
     const updateCertification = (
         id: number,
         field: string,
-        value: string | number | null,
+        value: string | number | File | null,
     ) => {
-        setCertifications(
-            certifications.map((c) =>
-                c.id === id ? { ...c, [field]: value } : c,
-            ),
-        );
+        if (field === 'cert_file') {
+            if (value instanceof File) {
+                setCertFiles({ ...certFiles, [id]: value });
+            } else if (value === null) {
+                const newCertFiles = { ...certFiles };
+                delete newCertFiles[id];
+                setCertFiles(newCertFiles);
+            }
+        } else {
+            setCertifications(
+                certifications.map((c) =>
+                    c.id === id ? { ...c, [field]: value } : c,
+                ),
+            );
+        }
     };
 
     const submit: SubmitEventHandler = (e) => {
         e.preventDefault();
-
         form.transform((data) => ({
             ...data,
             specialty_type_ids: selectedSpecialtyIds,
@@ -342,9 +356,11 @@ export default function CaregiverEdit() {
             attribute_values: attributeValues,
             certifications: certifications,
             educations: educations,
+            cert_files: certFiles,
+            _method: 'patch',
         }));
 
-        form.patch(`/caregivers/${caregiver.id}`, {
+        form.post(`/caregivers/${caregiver.id}`, {
             onSuccess: () => {
                 // Inertia automatically handles redirect on success
             },
@@ -383,8 +399,8 @@ export default function CaregiverEdit() {
                                             <Spinner className="h-5 w-5" />
                                         </div>
                                     )}
-                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <input
+                                    <Label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Input
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
@@ -394,7 +410,7 @@ export default function CaregiverEdit() {
                                         <span className="text-xs font-medium text-white">
                                             Change
                                         </span>
-                                    </label>
+                                    </Label>
                                 </div>
                             ) : (
                                 <div className="group relative">
@@ -594,7 +610,7 @@ export default function CaregiverEdit() {
                             open={specialtiesOpen}
                             onOpenChange={setSpecialtiesOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Specialties
                                 </h2>
@@ -604,7 +620,7 @@ export default function CaregiverEdit() {
                                     }`}
                                 />
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="mt-4 space-y-2">
+                            <CollapsibleContent className="mt-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                 {specialty_types.map((specialty) => (
                                     <div
                                         key={specialty.id}
@@ -649,7 +665,7 @@ export default function CaregiverEdit() {
                             open={locationsOpen}
                             onOpenChange={setLocationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Locations
                                 </h2>
@@ -740,7 +756,7 @@ export default function CaregiverEdit() {
                             open={attributesOpen}
                             onOpenChange={setAttributesOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Attributes
                                 </h2>
@@ -750,7 +766,7 @@ export default function CaregiverEdit() {
                                     }`}
                                 />
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="mt-4 space-y-2">
+                            <CollapsibleContent className="mt-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                 {attribute_definitions.map((def) => (
                                     <div
                                         key={def.id}
@@ -788,7 +804,7 @@ export default function CaregiverEdit() {
                             open={certificationsOpen}
                             onOpenChange={setCertificationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Certifications
                                 </h2>
@@ -836,18 +852,29 @@ export default function CaregiverEdit() {
                                                 </Select>
                                             </div>
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() =>
                                                     removeCertification(cert.id)
                                                 }
-                                                variant="link"
-                                                className="text-destructive"
                                             >
                                                 Remove
                                             </Button>
                                         </div>
-                                        <div className="flex gap-4">
-                                            <div className="flex-1 space-y-2">
+                                        <div>
+                                            {cert.file_path && (
+                                                <a
+                                                    href={`/storage/${cert.file_path}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-blue-600 hover:underline"
+                                                >
+                                                    <img src={`/storage/${cert.file_path}`} alt="Certification File" className="outline outline-offset-4 outline-primary m-1 h-48 w-96 object-cover" />
+                                                </a>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-4 sm:grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
+                                            <div className="flex flex-col space-y-2">
                                                 <Label className="text-xs">
                                                     Expiration Date
                                                 </Label>
@@ -864,6 +891,50 @@ export default function CaregiverEdit() {
                                                         )
                                                     }
                                                     placeholder="Select date"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col space-y-2">
+                                                <Label
+                                                    htmlFor={`cert-file-${cert.id}`}
+                                                    className="text-xs"
+                                                >
+                                                    Certification File
+                                                </Label>
+                                                <Input
+                                                    id={`cert-file-${cert.id}`}
+                                                    type="file"
+                                                    accept="image/*,.pdf"
+                                                    onChange={(e) => {
+                                                        const file =
+                                                            e.target.files?.[0] ||
+                                                            null;
+                                                        updateCertification(
+                                                            cert.certification_type_id,
+                                                            'cert_file',
+                                                            file,
+                                                        );
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col space-y-2 lg:col-span-2">
+                                                <Label
+                                                    htmlFor={`cert-notes-${cert.id}`}
+                                                    className="text-xs"
+                                                >
+                                                    Notes
+                                                </Label>
+                                                <Input
+                                                    id={`cert-notes-${cert.id}`}
+                                                    type="text"
+                                                    value={cert.notes || ''}
+                                                    onChange={(e) =>
+                                                        updateCertification(
+                                                            cert.id,
+                                                            'notes',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Certification notes"
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 pt-6">
@@ -897,7 +968,6 @@ export default function CaregiverEdit() {
                                     </div>
                                 ))}
                                 <Button
-                                    variant="link"
                                     type="button"
                                     onClick={addCertification}
                                 >
@@ -912,7 +982,7 @@ export default function CaregiverEdit() {
                             open={educationsOpen}
                             onOpenChange={setEducationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between">
+                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Education
                                 </h2>
@@ -1019,7 +1089,6 @@ export default function CaregiverEdit() {
                                     </div>
                                 ))}
                                 <Button
-                                    variant="link"
                                     type="button"
                                     onClick={addEducation}
                                 >
