@@ -1,7 +1,9 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
 import { Calendar, Clock, MapPin, Building } from 'lucide-react';
 import { useState } from 'react';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,12 +14,12 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import {
     formatDisplayDateTime,
     parseAsLocal,
     autoSetEndDateTime,
-    validateMinimumDuration,
 } from '@/lib/datetime';
 
 interface Booking {
@@ -74,6 +76,11 @@ interface Props {
         birthYear: number | null,
         birthMonth: number | null,
     ) => string;
+    booking_statuses: Array<{
+        value: string;
+        label: string;
+        colors: { bg: string; text: string; border: string };
+    }>;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -87,67 +94,23 @@ function formatDateTimeLocal(date: Date): string {
 }
 
 export default function CaregiverJobsIndex() {
-    const { jobs, calculateAge } = usePage<Props>().props;
+    const { jobs, calculateAge, booking_statuses } = usePage<Props>().props;
 
     const getStatusBadge = (
         status: string,
         start_datetime?: string,
         end_datetime?: string,
     ) => {
-        const colors: Record<
-            string,
-            { bg: string; text: string; border: string }
-        > = {
-            received: {
-                bg: 'bg-blue-100',
-                text: 'text-blue-800',
-                border: 'border-blue-300',
-            },
-            reserved: {
-                bg: 'bg-yellow-100',
-                text: 'text-yellow-800',
-                border: 'border-yellow-300',
-            },
-            confirmed: {
-                bg: 'bg-green-100',
-                text: 'text-green-800',
-                border: 'border-green-300',
-            },
-            completed: {
-                bg: 'bg-purple-100',
-                text: 'text-purple-800',
-                border: 'border-purple-300',
-            },
-            paid: {
-                bg: 'bg-indigo-100',
-                text: 'text-indigo-800',
-                border: 'border-indigo-300',
-            },
-            cancelled: {
-                bg: 'bg-red-100',
-                text: 'text-red-800',
-                border: 'border-red-300',
-            },
-        };
-
-        const config = colors[status.toLowerCase()] || colors.received;
+        const statusKey = status.toLowerCase();
 
         // Special handling for confirmed jobs - check if they can be checked out
-        if (
-            status.toLowerCase() === 'confirmed' &&
-            start_datetime &&
-            end_datetime
-        ) {
+        if (statusKey === 'confirmed' && start_datetime && end_datetime) {
             const now = new Date();
             const start = parseAsLocal(start_datetime) as Date;
-            // const end = parseAsLocal(end_datetime) as Date;
 
-            // Can checkout if it's currently during or after the job time
             if (now >= start) {
                 return (
-                    <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${config.bg} ${config.text} ${config.border}`}
-                    >
+                    <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
                         Active / Ready for Checkout
                     </span>
                 );
@@ -155,11 +118,7 @@ export default function CaregiverJobsIndex() {
         }
 
         return (
-            <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${config.bg} ${config.text} ${config.border}`}
-            >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
+            <StatusBadge status={status} bookingStatuses={booking_statuses} />
         );
     };
 
@@ -177,8 +136,8 @@ export default function CaregiverJobsIndex() {
 
     const calculateTotalHours = (start: string, end: string): number => {
         if (!start || !end) {
-return 0;
-}
+            return 0;
+        }
 
         const startDate = new Date(start);
         const endDate = new Date(end);

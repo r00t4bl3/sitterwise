@@ -21,7 +21,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import GuestLayout from '@/layouts/guest-layout';
 import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
-import type { BreadcrumbItem } from '@/types';
 
 interface NewChild {
     tempId: string;
@@ -47,49 +46,6 @@ function formatDateTimeLocal(date: Date): string {
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
     return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function validateDatetime(start: string, end: string): string | null {
-    if (!start && !end) {
-        return null;
-    }
-
-    if (!start) {
-        return 'Start date/time is required.';
-    }
-
-    if (!end) {
-        return 'End date/time is required.';
-    }
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const now = new Date();
-
-    if (isNaN(startDate.getTime())) {
-        return 'Invalid start date/time.';
-    }
-
-    if (isNaN(endDate.getTime())) {
-        return 'Invalid end date/time.';
-    }
-
-    if (startDate < now) {
-        return 'Start date/time must be in the future.';
-    }
-
-    if (endDate <= startDate) {
-        return 'End date/time must be after start date/time.';
-    }
-
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
-    if (diffHours < 4) {
-        return 'Booking must be at least 4 hours long.';
-    }
-
-    return null;
 }
 
 function validateClientDetails(data: ClientDetailsFormData): string | null {
@@ -124,13 +80,6 @@ interface ClientDetailsFormData {
     email: string;
     phone: string;
 }
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Book a Caregiver',
-        href: '/book',
-    },
-];
 
 export default function GuestBookingCreate() {
     const {

@@ -48,6 +48,11 @@ interface Props {
         todays_bookings: any[];
         recent_bookings: any[];
         recent_caregivers: any[];
+        booking_statuses: Array<{
+            value: string;
+            label: string;
+            colors: { bg: string; text: string; border: string };
+        }>;
     };
 }
 
@@ -85,6 +90,7 @@ export default function Dashboard() {
                         todays_bookings: admin?.todays_bookings || [],
                         recent_bookings: admin?.recent_bookings || [],
                         recent_caregivers: admin?.recent_caregivers || [],
+                        booking_statuses: admin?.booking_statuses || [],
                     }}
                     stats={{
                         total_caregivers: stats?.total_caregivers || 0,

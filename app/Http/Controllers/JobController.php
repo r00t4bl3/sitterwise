@@ -29,8 +29,18 @@ class JobController extends Controller
             ->orderBy('start_datetime', 'desc')
             ->paginate(10);
 
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
         return Inertia::render('caregiver/jobs/index', [
             'jobs' => $bookings,
+            'booking_statuses' => $bookingStatuses,
         ]);
     }
 

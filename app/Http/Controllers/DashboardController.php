@@ -30,6 +30,15 @@ class DashboardController extends Controller
                 'total_bookings' => Booking::count(),
             ];
 
+            $bookingStatuses = array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                    'colors' => $case->colors(),
+                ],
+                BookingStatus::cases()
+            );
+
             $adminData = [
                 'bookings_needing_attention' => Booking::with(['client.user'])
                     ->whereNull('caregiver_id')
@@ -50,6 +59,7 @@ class DashboardController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get(),
+                'booking_statuses' => $bookingStatuses,
             ];
         }
 

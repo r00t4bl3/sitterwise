@@ -33,7 +33,10 @@ const breadcrumbs = [
     { title: 'Write Review', href: '#' },
 ];
 
-export default function ReviewBooking({ booking, has_default_payment_method }: PageProps) {
+export default function ReviewBooking({
+    booking,
+    has_default_payment_method,
+}: PageProps) {
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
     const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -52,7 +55,7 @@ export default function ReviewBooking({ booking, has_default_payment_method }: P
     const hasTip = form.data.tip && parseFloat(String(form.data.tip)) > 0;
     const showCardInput = hasTip && !has_default_payment_method;
 
-function submit(e: React.FormEvent) {
+    function submit(e: React.FormEvent) {
         e.preventDefault();
 
         if (showCardInput && !paymentMethodId) {
@@ -85,7 +88,11 @@ function submit(e: React.FormEvent) {
                     onSubmit={submit}
                     className="space-y-6 rounded-lg border border-border bg-card p-6"
                 >
-                    <input type="hidden" name="payment_method_id" value={form.data.payment_method_id} />
+                    <input
+                        type="hidden"
+                        name="payment_method_id"
+                        value={form.data.payment_method_id}
+                    />
                     <div>
                         <Label>Rating</Label>
                         <div className="mt-2">
@@ -158,7 +165,9 @@ function submit(e: React.FormEvent) {
                             </Label>
                             <div className="mt-2 rounded-md border border-border p-4">
                                 <StripeCardInput
-                                    onPaymentMethodReady={handlePaymentMethodReady}
+                                    onPaymentMethodReady={
+                                        handlePaymentMethodReady
+                                    }
                                     error={paymentError || undefined}
                                 />
                             </div>
@@ -171,11 +180,13 @@ function submit(e: React.FormEvent) {
 
                     <Button
                         type="submit"
-                        disabled={!!(
-                            form.processing ||
-                            !form.data.rating ||
-                            (showCardInput && !paymentMethodId)
-                        )}
+                        disabled={
+                            !!(
+                                form.processing ||
+                                !form.data.rating ||
+                                (showCardInput && !paymentMethodId)
+                            )
+                        }
                         className="w-full"
                     >
                         {form.processing && <Spinner className="size-4" />}

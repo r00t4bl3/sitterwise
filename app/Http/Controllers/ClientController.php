@@ -71,7 +71,6 @@ class ClientController extends Controller
     {
         return Inertia::render('admin/clients/create', [
             'client_types' => $this->clientType,
-            'sitter_preferences' => $this->sitterPreference,
             'discovery_sources' => $this->discoverySources,
         ]);
     }

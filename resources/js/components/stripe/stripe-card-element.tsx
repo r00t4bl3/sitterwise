@@ -22,7 +22,10 @@ function CardInput({ onPaymentMethodReady, error }: StripeCardInputProps) {
     const [cardReady, setCardReady] = useState(false);
     const [processing, setProcessing] = useState(false);
 
-    const handleChange = async (event: { complete: boolean; error?: { message?: string } }) => {
+    const handleChange = async (event: {
+        complete: boolean;
+        error?: { message?: string };
+    }) => {
         const cardElement = elements?.getElement(CardElement);
 
         if (!cardElement || !stripe) {
@@ -83,7 +86,9 @@ function CardInput({ onPaymentMethodReady, error }: StripeCardInputProps) {
                 <p className="text-xs text-green-600">Card ready for payment</p>
             )}
             {processing && (
-                <p className="text-xs text-muted-foreground">Processing card...</p>
+                <p className="text-xs text-muted-foreground">
+                    Processing card...
+                </p>
             )}
         </div>
     );

@@ -7,7 +7,10 @@ interface PageProps {
     tip_amount?: number;
 }
 
-export default function GuestReviewSuccess({ caregiver_name, tip_amount }: PageProps) {
+export default function GuestReviewSuccess({
+    caregiver_name,
+    tip_amount,
+}: PageProps) {
     return (
         <GuestLayout>
             <Head title="Review Submitted" />
@@ -21,10 +24,12 @@ export default function GuestReviewSuccess({ caregiver_name, tip_amount }: PageP
                 </h1>
 
                 <p className="text-center text-muted-foreground">
-                    Your review for {caregiver_name} has been submitted successfully.
+                    Your review for {caregiver_name} has been submitted
+                    successfully.
                     {tip_amount && tip_amount > 0 && (
-                        <span className="block mt-2">
-                            A tip of ${tip_amount.toFixed(2)} has also been processed.
+                        <span className="mt-2 block">
+                            A tip of ${tip_amount.toFixed(2)} has also been
+                            processed.
                         </span>
                     )}
                 </p>

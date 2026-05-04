@@ -1,5 +1,13 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, CreditCard, Eye, EyeOff, MoreVertical, Trash2 } from 'lucide-react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import {
+    ArrowLeft,
+    Check,
+    CreditCard,
+    Eye,
+    EyeOff,
+    MoreVertical,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { StripeCardInput } from '@/components/stripe/stripe-card-element';
@@ -294,7 +302,9 @@ export default function ClientShow() {
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
     const [isPaymentSheetOpen, setIsPaymentSheetOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [paymentMethodToDelete, setPaymentMethodToDelete] = useState<number | null>(null);
+    const [paymentMethodToDelete, setPaymentMethodToDelete] = useState<
+        number | null
+    >(null);
     const [showPassword, setShowPassword] = useState(false);
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
 
@@ -586,7 +596,9 @@ export default function ClientShow() {
                                                 </span>
                                             ) : (
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"

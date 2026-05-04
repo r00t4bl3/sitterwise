@@ -610,7 +610,7 @@ export default function CaregiverEdit() {
                             open={specialtiesOpen}
                             onOpenChange={setSpecialtiesOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Specialties
                                 </h2>
@@ -620,7 +620,7 @@ export default function CaregiverEdit() {
                                     }`}
                                 />
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="mt-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <CollapsibleContent className="mt-4 gap-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
                                 {specialty_types.map((specialty) => (
                                     <div
                                         key={specialty.id}
@@ -665,7 +665,7 @@ export default function CaregiverEdit() {
                             open={locationsOpen}
                             onOpenChange={setLocationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Locations
                                 </h2>
@@ -756,7 +756,7 @@ export default function CaregiverEdit() {
                             open={attributesOpen}
                             onOpenChange={setAttributesOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Attributes
                                 </h2>
@@ -766,7 +766,7 @@ export default function CaregiverEdit() {
                                     }`}
                                 />
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="mt-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <CollapsibleContent className="mt-4 gap-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
                                 {attribute_definitions.map((def) => (
                                     <div
                                         key={def.id}
@@ -804,7 +804,7 @@ export default function CaregiverEdit() {
                             open={certificationsOpen}
                             onOpenChange={setCertificationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Certifications
                                 </h2>
@@ -869,7 +869,11 @@ export default function CaregiverEdit() {
                                                     rel="noopener noreferrer"
                                                     className="text-xs text-blue-600 hover:underline"
                                                 >
-                                                    <img src={`/storage/${cert.file_path}`} alt="Certification File" className="outline outline-offset-4 outline-primary m-1 h-48 w-96 object-cover" />
+                                                    <img
+                                                        src={`/storage/${cert.file_path}`}
+                                                        alt="Certification File"
+                                                        className="m-1 h-48 w-96 object-cover outline outline-offset-4 outline-primary"
+                                                    />
                                                 </a>
                                             )}
                                         </div>
@@ -906,7 +910,8 @@ export default function CaregiverEdit() {
                                                     accept="image/*,.pdf"
                                                     onChange={(e) => {
                                                         const file =
-                                                            e.target.files?.[0] ||
+                                                            e.target
+                                                                .files?.[0] ||
                                                             null;
                                                         updateCertification(
                                                             cert.certification_type_id,
@@ -982,7 +987,7 @@ export default function CaregiverEdit() {
                             open={educationsOpen}
                             onOpenChange={setEducationsOpen}
                         >
-                            <CollapsibleTrigger className="flex w-full items-center justify-between cursor-pointer">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
                                 <h2 className="font-serif text-lg font-semibold text-foreground">
                                     Education
                                 </h2>
@@ -1088,10 +1093,7 @@ export default function CaregiverEdit() {
                                         </div>
                                     </div>
                                 ))}
-                                <Button
-                                    type="button"
-                                    onClick={addEducation}
-                                >
+                                <Button type="button" onClick={addEducation}>
                                     + Add Education
                                 </Button>
                             </CollapsibleContent>

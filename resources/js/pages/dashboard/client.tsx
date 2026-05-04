@@ -6,7 +6,6 @@ import {
     Plus,
     ChevronRight,
     CheckCircle2,
-    CalendarCheck,
     Activity,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

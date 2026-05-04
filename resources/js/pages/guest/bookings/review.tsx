@@ -44,7 +44,7 @@ export default function GuestReviewBooking({ booking }: PageProps) {
 
     const hasTip = form.data.tip && parseFloat(String(form.data.tip)) > 0;
 
-function submit(e: React.FormEvent) {
+    function submit(e: React.FormEvent) {
         e.preventDefault();
 
         if (hasTip && !paymentMethodId) {
@@ -54,7 +54,7 @@ function submit(e: React.FormEvent) {
         }
 
         const queryString = window.location.search;
-form.post(`/review/${booking.ulid}${queryString}`);
+        form.post(`/review/${booking.ulid}${queryString}`);
     }
 
     return (
@@ -77,7 +77,11 @@ form.post(`/review/${booking.ulid}${queryString}`);
                     onSubmit={submit}
                     className="space-y-6 rounded-lg border border-border bg-card p-6"
                 >
-                    <input type="hidden" name="payment_method_id" value={form.data.payment_method_id} />
+                    <input
+                        type="hidden"
+                        name="payment_method_id"
+                        value={form.data.payment_method_id}
+                    />
                     <div>
                         <Label>Rating</Label>
                         <div className="mt-2">
@@ -150,7 +154,9 @@ form.post(`/review/${booking.ulid}${queryString}`);
                             </Label>
                             <div className="mt-2 rounded-md border border-border p-4">
                                 <StripeCardInput
-                                    onPaymentMethodReady={handlePaymentMethodReady}
+                                    onPaymentMethodReady={
+                                        handlePaymentMethodReady
+                                    }
                                     error={paymentError || undefined}
                                 />
                             </div>
@@ -163,11 +169,13 @@ form.post(`/review/${booking.ulid}${queryString}`);
 
                     <Button
                         type="submit"
-                        disabled={!!(
-                            form.processing ||
-                            !form.data.rating ||
-                            (hasTip && !paymentMethodId)
-                        )}
+                        disabled={
+                            !!(
+                                form.processing ||
+                                !form.data.rating ||
+                                (hasTip && !paymentMethodId)
+                            )
+                        }
                         className="w-full"
                     >
                         {form.processing && <Spinner className="size-4" />}

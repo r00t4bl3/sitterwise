@@ -13,6 +13,7 @@ import {
     List,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
+import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -161,8 +162,8 @@ export default function Bookings() {
     // TODO: Pull special_consideration_options from booking_attributes
     // in the database once the 'special_considerations' attribute definition exists.
 
-    const [currentMonth, setCurrentMonth] = useState(filters.month);
-    const [currentYear, setCurrentYear] = useState(filters.year);
+    const [currentMonth] = useState(filters.month);
+    const [currentYear] = useState(filters.year);
     const [statusFilter, setStatusFilter] = useState<string | null>(
         filters.status,
     );
@@ -1532,23 +1533,6 @@ export default function Bookings() {
                                                 const statusKey =
                                                     booking.status?.toLowerCase() ||
                                                     'received';
-                                                const statusObj =
-                                                    booking_statuses.find(
-                                                        (s) =>
-                                                            s.value ===
-                                                            statusKey,
-                                                    ) ||
-                                                    booking_statuses.find(
-                                                        (s) =>
-                                                            s.value ===
-                                                            'received',
-                                                    );
-                                                const colors =
-                                                    statusObj?.colors || {
-                                                        bg: 'bg-blue-100',
-                                                        text: 'text-blue-800',
-                                                        border: 'border-blue-300',
-                                                    };
                                                 const isHotel =
                                                     booking.location_type ===
                                                     'hotel';
@@ -1666,12 +1650,14 @@ export default function Bookings() {
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3">
-                                                            <span
-                                                                className={`inline-flex items-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${colors.bg} ${colors.text} ${colors.border}`}
-                                                            >
-                                                                {statusObj?.label ||
-                                                                    statusKey}
-                                                            </span>
+                                                            <StatusBadge
+                                                                status={
+                                                                    statusKey
+                                                                }
+                                                                bookingStatuses={
+                                                                    booking_statuses
+                                                                }
+                                                            />
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex justify-end gap-2">

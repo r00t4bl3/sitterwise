@@ -38,8 +38,7 @@ interface Props {
 }
 
 export default function ClientCreate() {
-    const { client_types, sitter_preferences, discovery_sources } =
-        usePage<Props>().props;
+    const { client_types, discovery_sources } = usePage<Props>().props;
 
     const form = useForm({
         first_name: '',

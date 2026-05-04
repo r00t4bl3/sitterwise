@@ -7,7 +7,8 @@ import {
     Receipt,
     DollarSign,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -156,39 +157,6 @@ export default function TransactionsIndex() {
             minute: '2-digit',
             hour12: true,
         });
-    };
-
-    const statusColorsMap = useMemo(() => {
-        const map: Record<
-            string,
-            { bg: string; text: string; border: string }
-        > = {};
-        booking_statuses.forEach(
-            (status: {
-                value: string;
-                colors: { bg: string; text: string; border: string };
-            }) => {
-                map[status.value] = status.colors;
-            },
-        );
-
-        return map;
-    }, [booking_statuses]);
-
-    const getStatusBadge = (status: string) => {
-        const style = statusColorsMap[status.toLowerCase()] || {
-            bg: 'bg-gray-100',
-            text: 'text-gray-800',
-            border: 'border-gray-300',
-        };
-
-        return (
-            <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.bg} ${style.text} ${style.border}`}
-            >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-        );
     };
 
     const openPaymentSheet = (booking: Booking) => {
@@ -396,7 +364,12 @@ export default function TransactionsIndex() {
                                                 ).toFixed(2)}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {getStatusBadge(booking.status)}
+                                                <StatusBadge
+                                                    status={booking.status}
+                                                    bookingStatuses={
+                                                        booking_statuses
+                                                    }
+                                                />
                                             </td>
                                             <td className="flex flex-col items-end gap-y-1 px-4 py-3">
                                                 {booking.status ===

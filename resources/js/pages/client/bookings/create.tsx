@@ -106,49 +106,6 @@ function calculateAge(
     return `${years}y ${months}m`;
 }
 
-function validateDatetime(start: string, end: string): string | null {
-    if (!start && !end) {
-        return null;
-    }
-
-    if (!start) {
-        return 'Start date/time is required.';
-    }
-
-    if (!end) {
-        return 'End date/time is required.';
-    }
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const now = new Date();
-
-    if (isNaN(startDate.getTime())) {
-        return 'Invalid start date/time.';
-    }
-
-    if (isNaN(endDate.getTime())) {
-        return 'Invalid end date/time.';
-    }
-
-    if (startDate < now) {
-        return 'Start date/time must be in the future.';
-    }
-
-    if (endDate <= startDate) {
-        return 'End date/time must be after start date/time.';
-    }
-
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
-    if (diffHours < 4) {
-        return 'Booking must be at least 4 hours long.';
-    }
-
-    return null;
-}
-
 export default function ClientBookingCreate() {
     const {
         service_types,

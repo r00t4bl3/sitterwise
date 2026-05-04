@@ -32,9 +32,9 @@ enum BookingStatus: string
     {
         return match ($this) {
             self::Received => [
-                'bg' => 'bg-violet-100',
-                'text' => 'text-violet-800',
-                'border' => 'border-violet-300',
+                'bg' => 'bg-red-300/50',
+                'text' => 'text-red-800/80',
+                'border' => 'border-red-500/50',
             ],
             self::Pending => [
                 'bg' => 'bg-yellow-100',
@@ -47,9 +47,9 @@ enum BookingStatus: string
                 'border' => 'border-blue-300',
             ],
             self::Completed => [
-                'bg' => 'bg-gray-100',
-                'text' => 'text-gray-800',
-                'border' => 'border-gray-300',
+                'bg' => 'bg-violet-100',
+                'text' => 'text-violet-800',
+                'border' => 'border-violet-300',
             ],
             self::Paid => [
                 'bg' => 'bg-emerald-100',
@@ -57,9 +57,12 @@ enum BookingStatus: string
                 'border' => 'border-emerald-300',
             ],
             self::Cancelled => [
-                'bg' => 'bg-red-100',
-                'text' => 'text-red-800',
-                'border' => 'border-red-300',
+                // 'bg' => 'bg-red-100',
+                // 'text' => 'text-red-800',
+                // 'border' => 'border-red-300',
+                'bg' => 'bg-gray-100',
+                'text' => 'text-gray-800',
+                'border' => 'border-gray-300',
             ],
         };
     }

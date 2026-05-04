@@ -9,6 +9,7 @@ import {
     Briefcase,
     Plus,
 } from 'lucide-react';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -65,6 +66,11 @@ interface AdminDashboardProps {
         todays_bookings: Booking[];
         recent_bookings: Booking[];
         recent_caregivers: Caregiver[];
+        booking_statuses: Array<{
+            value: string;
+            label: string;
+            colors: { bg: string; text: string; border: string };
+        }>;
     };
 }
 
@@ -83,51 +89,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         todays_bookings: [],
         recent_bookings: [],
         recent_caregivers: [],
+        booking_statuses: [],
     };
 
-    const renderStatusBadge = (status: string) => {
-        const statusLower = status.toLowerCase();
-        const displayStatus = status.toUpperCase();
-
-        if (statusLower === 'confirmed') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-green-600 text-[10px] hover:bg-green-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        if (statusLower === 'pending') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-yellow-600 text-[10px] hover:bg-yellow-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        if (statusLower === 'received') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-blue-600 text-[10px] hover:bg-blue-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        return (
-            <Badge variant="secondary" className="text-[10px]">
-                {displayStatus}
-            </Badge>
-        );
-    };
+    const bookingStatuses = safeAdmin.booking_statuses || [];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -322,9 +287,14 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
-                                                                    {renderStatusBadge(
-                                                                        booking.status,
-                                                                    )}
+                                                                    <StatusBadge
+                                                                        status={
+                                                                            booking.status
+                                                                        }
+                                                                        bookingStatuses={
+                                                                            bookingStatuses
+                                                                        }
+                                                                    />
                                                                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                                                 </div>
                                                             </Link>
@@ -444,9 +414,14 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        {renderStatusBadge(
-                                                            booking.status,
-                                                        )}
+                                                        <StatusBadge
+                                                            status={
+                                                                booking.status
+                                                            }
+                                                            bookingStatuses={
+                                                                bookingStatuses
+                                                            }
+                                                        />
                                                     </div>
                                                 ),
                                             )}
