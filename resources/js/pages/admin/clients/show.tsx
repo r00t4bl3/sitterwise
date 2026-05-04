@@ -1,10 +1,24 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, CreditCard, Eye, EyeOff } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Check, CreditCard, Eye, EyeOff, MoreVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { StripeCardInput } from '@/components/stripe/stripe-card-element';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -279,6 +293,8 @@ export default function ClientShow() {
     const { client } = usePage<Props>().props;
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
     const [isPaymentSheetOpen, setIsPaymentSheetOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [paymentMethodToDelete, setPaymentMethodToDelete] = useState<number | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
 
@@ -293,6 +309,9 @@ export default function ClientShow() {
     const paymentForm = useForm({
         payment_method_id: '',
     });
+
+    const setDefaultForm = useForm({});
+    const deletePaymentForm = useForm({});
 
     const handlePasswordReset: SubmitEventHandler = (e) => {
         e.preventDefault();
@@ -318,6 +337,35 @@ export default function ClientShow() {
     const handlePaymentMethodReady = (pmId: string | null) => {
         setPaymentMethodId(pmId);
         paymentForm.setData('payment_method_id', pmId || '');
+    };
+
+    const handleSetDefault = (pmId: number) => {
+        setDefaultForm.patch(
+            `/clients/${client.id}/payment-method/${pmId}/default`,
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleDeletePaymentMethod = (pmId: number) => {
+        setPaymentMethodToDelete(pmId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (paymentMethodToDelete) {
+            deletePaymentForm.delete(
+                `/clients/${client.id}/payment-method/${paymentMethodToDelete}`,
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setIsDeleteDialogOpen(false);
+                        setPaymentMethodToDelete(null);
+                    },
+                },
+            );
+        }
     };
 
     return (
@@ -531,11 +579,54 @@ export default function ClientShow() {
                                                 </p>
                                             </div>
                                         </div>
-                                        {method.is_default && (
-                                            <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
-                                                Default
-                                            </span>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            {method.is_default ? (
+                                                <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
+                                                    Default
+                                                </span>
+                                            ) : (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                setDefaultForm.processing
+                                                            }
+                                                            onClick={() =>
+                                                                handleSetDefault(
+                                                                    method.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Check className="mr-2 h-4 w-4" />
+                                                            Set as Default
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                deletePaymentForm.processing
+                                                            }
+                                                            onClick={() =>
+                                                                handleDeletePaymentMethod(
+                                                                    method.id,
+                                                                )
+                                                            }
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Remove
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -590,6 +681,38 @@ export default function ClientShow() {
                         </form>
                     </SheetContent>
                 </Sheet>
+
+                <Dialog
+                    open={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Remove Payment Method</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to remove this payment
+                                method? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="secondary"
+                                onClick={() => setIsDeleteDialogOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={confirmDelete}
+                                disabled={deletePaymentForm.processing}
+                            >
+                                {deletePaymentForm.processing
+                                    ? 'Removing...'
+                                    : 'Remove'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="border border-border bg-card p-6 lg:col-span-2">

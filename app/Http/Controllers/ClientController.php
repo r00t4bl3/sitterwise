@@ -330,6 +330,28 @@ class ClientController extends Controller
         }
     }
 
+    public function setDefaultPaymentMethod(Client $client, int $paymentMethodId)
+    {
+        try {
+            $this->paymentService->setClient($client)->setDefaultPaymentMethod($paymentMethodId);
+
+            return redirect()->back()->with('success', 'Default payment method updated');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update default payment method: '.$e->getMessage());
+        }
+    }
+
+    public function deletePaymentMethod(Client $client, int $paymentMethodId)
+    {
+        try {
+            $this->paymentService->setClient($client)->deletePaymentMethod($paymentMethodId);
+
+            return redirect()->back()->with('success', 'Payment method removed');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to remove payment method: '.$e->getMessage());
+        }
+    }
+
     public function edit(Client $client)
     {
         $client->load(['user', 'addresses', 'children', 'pets', 'attributes', 'favoriteCaregivers.user', 'blockedCaregivers.user']);
