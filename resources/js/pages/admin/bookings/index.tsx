@@ -436,25 +436,30 @@ export default function Bookings() {
         });
     };
 
-const filteredBookings = useMemo(() => {
+    const filteredBookings = useMemo(() => {
         let result = bookings;
 
         if (statusFilter) {
-            result = result.filter(booking =>
-                booking.status.toLowerCase() === statusFilter.toLowerCase()
+            result = result.filter(
+                (booking) =>
+                    booking.status.toLowerCase() === statusFilter.toLowerCase(),
             );
         }
 
         if (debouncedSearch.trim()) {
             const query = debouncedSearch.toLowerCase().trim();
-            result = result.filter(booking => {
-                const clientName = booking.client?.user?.name?.toLowerCase() || '';
-                const caregiverName = booking.caregiver?.user?.name?.toLowerCase() || '';
+            result = result.filter((booking) => {
+                const clientName =
+                    booking.client?.user?.name?.toLowerCase() || '';
+                const caregiverName =
+                    booking.caregiver?.user?.name?.toLowerCase() || '';
                 const hotelName = booking.hotel?.name?.toLowerCase() || '';
 
-                return clientName.includes(query) ||
-                       caregiverName.includes(query) ||
-                       hotelName.includes(query);
+                return (
+                    clientName.includes(query) ||
+                    caregiverName.includes(query) ||
+                    hotelName.includes(query)
+                );
             });
         }
 
@@ -778,7 +783,10 @@ const filteredBookings = useMemo(() => {
             booking.children.forEach((snapChild) => {
                 unmatchedChildren.push({
                     tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
-                    ...snapChild,
+                    name: snapChild.name || '',
+                    gender: snapChild.gender || '',
+                    birth_month: String(snapChild.birth_month || ''),
+                    birth_year: String(snapChild.birth_year || ''),
                 });
             });
         }
@@ -1253,7 +1261,11 @@ const filteredBookings = useMemo(() => {
                             {currentMonthBookings.length} bookings this month
                             {statusFilter && (
                                 <span className="ml-1">
-                                    ({booking_statuses.find(s => s.value === statusFilter)?.label || statusFilter})
+                                    (
+                                    {booking_statuses.find(
+                                        (s) => s.value === statusFilter,
+                                    )?.label || statusFilter}
+                                    )
                                 </span>
                             )}
                             {debouncedSearch && (
@@ -1293,14 +1305,14 @@ const filteredBookings = useMemo(() => {
                             placeholder="Search by client, caregiver, or hotel..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='h-8'
+                            className="h-8"
                         />
                         {searchQuery && (
                             <Button
-                                size='sm'
+                                size="sm"
                                 variant="ghost"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 type="button"
                             >
                                 ×
@@ -1339,34 +1351,34 @@ const filteredBookings = useMemo(() => {
                         >
                             {status.label}
                         </Button>
+                    ))}
+                </div>
+
+                {!isTableView && (
+                    <div className="flex flex-wrap gap-3 text-xs">
+                        {booking_statuses.map((status) => (
+                            <div
+                                key={status.value}
+                                className="flex items-center gap-1.5"
+                            >
+                                <span
+                                    className={`inline-block h-3 w-3 rounded-[2px] border ${
+                                        status.colors?.bg || ''
+                                    } ${status.colors?.border || ''}`}
+                                />
+                                <span className="text-muted-foreground">
+                                    {status.label}
+                                </span>
+                            </div>
                         ))}
                     </div>
-
-                    {!isTableView && (
-                        <div className="flex flex-wrap gap-3 text-xs">
-                            {booking_statuses.map((status) => (
-                                <div
-                                    key={status.value}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <span
-                                        className={`inline-block h-3 w-3 rounded-[2px] border ${
-                                            status.colors?.bg || ''
-                                        } ${status.colors?.border || ''}`}
-                                    />
-                                    <span className="text-muted-foreground">
-                                        {status.label}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                )}
 
                 <div className="border border-border bg-card p-4">
                     <div className="mb-4 flex items-center justify-between">
                         <button
                             onClick={prevMonth}
-                            className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -1375,7 +1387,7 @@ const filteredBookings = useMemo(() => {
                         </h2>
                         <button
                             onClick={nextMonth}
-                            className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-[3px] border border-input hover:bg-accent"
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[3px] border border-input hover:bg-accent"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>

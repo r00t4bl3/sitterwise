@@ -892,35 +892,48 @@ export function PersonalInfoSection({
                                 Add Child
                             </Button>
                         </div>
-                        <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Gender
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Birth (Age)
-                                        </th>
-                                        <th className="w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {clientChildren.map((child) => (
-                                        <tr
-                                            key={child.id}
-                                            className="border-t border-border"
+                        <div className="mt-1 grid gap-4">
+                            {clientChildren.map((child) => (
+                                <div
+                                    key={child.id}
+                                    className="rounded-lg border bg-card p-4"
+                                >
+                                    <div className="mb-3 flex items-start justify-between">
+                                        <p className="text-sm font-medium text-foreground">
+                                            {child.name}
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                onRemoveChild('', child.id)
+                                            }
+                                            size="sm"
                                         >
-                                            <td className="px-3 py-2">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Name
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {child.name}
-                                            </td>
-                                            <td className="px-3 py-2">
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Gender
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {child.gender || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Birth (Age)
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {child.birth_month &&
                                                 child.birth_year
                                                     ? `${MONTH_ABBR[child.birth_month]} ${child.birth_year} (${calculateAge(
@@ -928,152 +941,143 @@ export function PersonalInfoSection({
                                                           child.birth_month,
                                                       )})`
                                                     : '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onRemoveChild(
-                                                            '',
-                                                            child.id,
-                                                        )
-                                                    }
-                                                    className="hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {newChildren.map((child) => (
-                                        <tr
-                                            key={child.tempId}
-                                            className="border-t border-border bg-muted/50"
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {newChildren.map((child) => (
+                                <div
+                                    key={child.tempId}
+                                    className="rounded-lg border bg-card p-4"
+                                >
+                                    <div className="mb-3 flex items-start justify-between">
+                                        <p className="text-sm font-medium text-foreground">
+                                            {child.name || 'Add New Child'}
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                onRemoveChild(child.tempId)
+                                            }
+                                            size="sm"
                                         >
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    value={child.name}
-                                                    onChange={(e) =>
-                                                        onUpdateChild(
-                                                            child.tempId,
-                                                            'name',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Name"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Select
-                                                    value={child.gender || ''}
-                                                    onValueChange={(value) =>
-                                                        onUpdateChild(
-                                                            child.tempId,
-                                                            'gender',
-                                                            value,
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select gender" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="male">
-                                                            Male
-                                                        </SelectItem>
-                                                        <SelectItem value="female">
-                                                            Female
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex gap-1">
-                                                    <Select
-                                                        value={
-                                                            child.birth_month ||
-                                                            ''
-                                                        }
-                                                        onValueChange={(
-                                                            value,
-                                                        ) =>
-                                                            onUpdateChild(
-                                                                child.tempId,
-                                                                'birth_month',
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Month" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {[
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ].map((m) => (
-                                                                <SelectItem
-                                                                    key={m}
-                                                                    value={m}
-                                                                >
-                                                                    {m}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div className="sm:col-span-1">
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Name
+                                            </Label>
+                                            <Input
+                                                value={child.name}
+                                                onChange={(e) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'name',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Name"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Gender
+                                            </Label>
+                                            <Select
+                                                value={child.gender || ''}
+                                                onValueChange={(value) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'gender',
+                                                        value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="male">
+                                                        Male
+                                                    </SelectItem>
+                                                    <SelectItem value="female">
+                                                        Female
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Month
+                                            </Label>
+                                            <Select
+                                                value={child.birth_month || ''}
+                                                onValueChange={(value) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'birth_month',
+                                                        value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Month" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {MONTH_ABBR.map(
+                                                        (monthAbbr, index) => {
+                                                            if (index === 0) {
+                                                                return null;
+                                                            }
 
-                                                    <Input
-                                                        value={child.birth_year}
-                                                        onChange={(e) =>
-                                                            onUpdateChild(
-                                                                child.tempId,
-                                                                'birth_year',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Year"
-                                                        className="w-24"
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onRemoveChild(
-                                                            child.tempId,
-                                                        )
-                                                    }
-                                                    className="hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {clientChildren.length === 0 &&
-                                        newChildren.length === 0 && (
-                                            <tr className="border-t border-border">
-                                                <td
-                                                    colSpan={4}
-                                                    className="px-3 py-4 text-center text-muted-foreground"
-                                                >
-                                                    No children added
-                                                </td>
-                                            </tr>
-                                        )}
-                                </tbody>
-                            </table>
+                                                            return (
+                                                                <SelectItem
+                                                                    key={
+                                                                        monthAbbr
+                                                                    }
+                                                                    value={String(
+                                                                        index,
+                                                                    )}
+                                                                >
+                                                                    {monthAbbr}
+                                                                </SelectItem>
+                                                            );
+                                                        },
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Year
+                                            </Label>
+                                            <Input
+                                                value={child.birth_year}
+                                                onChange={(e) =>
+                                                    onUpdateChild(
+                                                        child.tempId,
+                                                        'birth_year',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Year"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {clientChildren.length === 0 &&
+                                newChildren.length === 0 && (
+                                    <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                        <p className="text-sm text-muted-foreground">
+                                            No children added
+                                        </p>
+                                    </div>
+                                )}
                         </div>
                         {clientChildren.length === 0 &&
                             newChildren.length === 0 && (
@@ -1127,139 +1131,157 @@ export function PersonalInfoSection({
                                 Add Pet
                             </Button>
                         </div>
-                        <div className="mt-1 overflow-x-auto rounded-[3px] border border-border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Type
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Breed
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium">
-                                            Notes
-                                        </th>
-                                        <th className="w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {clientPets.map((pet) => (
-                                        <tr
-                                            key={pet.id}
-                                            className="border-t border-border"
+                        <div className="mt-1 grid gap-4">
+                            {clientPets.map((pet) => (
+                                <div
+                                    key={pet.id}
+                                    className="rounded-lg border bg-card p-4"
+                                >
+                                    <div className="mb-3 flex items-start justify-between">
+                                        <p className="text-sm font-medium text-foreground">
+                                            {pet.name}
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                onRemovePet('', pet.id)
+                                            }
+                                            size="sm"
                                         >
-                                            <td className="px-3 py-2">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Name
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {pet.name}
-                                            </td>
-                                            <td className="px-3 py-2">
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Type
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {pet.type || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Breed
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {pet.breed || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Notes
+                                            </Label>
+                                            <p className="text-sm text-foreground">
                                                 {pet.notes || '-'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onRemovePet('', pet.id)
-                                                    }
-                                                    className="hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {newPets.map((pet) => (
-                                        <tr
-                                            key={pet.tempId}
-                                            className="border-t border-border bg-muted/50"
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {newPets.map((pet) => (
+                                <div
+                                    key={pet.tempId}
+                                    className="rounded-lg border bg-card p-4"
+                                >
+                                    <div className="mb-3 flex items-start justify-between">
+                                        <p className="text-sm font-medium text-foreground">
+                                            {pet.name || 'Add New Pet'}
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                onRemovePet(pet.tempId)
+                                            }
+                                            size="sm"
                                         >
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    value={pet.name}
-                                                    onChange={(e) =>
-                                                        onUpdatePet(
-                                                            pet.tempId,
-                                                            'name',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Name"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    value={pet.type || ''}
-                                                    onChange={(e) =>
-                                                        onUpdatePet(
-                                                            pet.tempId,
-                                                            'type',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Type"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    value={pet.breed || ''}
-                                                    onChange={(e) =>
-                                                        onUpdatePet(
-                                                            pet.tempId,
-                                                            'breed',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Breed"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    value={pet.notes || ''}
-                                                    onChange={(e) =>
-                                                        onUpdatePet(
-                                                            pet.tempId,
-                                                            'notes',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Notes"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onRemovePet(pet.tempId)
-                                                    }
-                                                    className="hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {clientPets.length === 0 &&
-                                        newPets.length === 0 && (
-                                            <tr className="border-t border-border">
-                                                <td
-                                                    colSpan={4}
-                                                    className="px-3 py-4 text-center text-muted-foreground"
-                                                >
-                                                    No pets added
-                                                </td>
-                                            </tr>
-                                        )}
-                                </tbody>
-                            </table>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div className="sm:col-span-1">
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Name
+                                            </Label>
+                                            <Input
+                                                value={pet.name}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'name',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Name"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Type
+                                            </Label>
+                                            <Input
+                                                value={pet.type || ''}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'type',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Type"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Breed
+                                            </Label>
+                                            <Input
+                                                value={pet.breed || ''}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'breed',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Breed"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                Notes
+                                            </Label>
+                                            <Input
+                                                value={pet.notes || ''}
+                                                onChange={(e) =>
+                                                    onUpdatePet(
+                                                        pet.tempId,
+                                                        'notes',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Notes"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {clientPets.length === 0 &&
+                                newPets.length === 0 && (
+                                    <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                        <p className="text-sm text-muted-foreground">
+                                            No pets added
+                                        </p>
+                                    </div>
+                                )}
                         </div>
                     </div>
 

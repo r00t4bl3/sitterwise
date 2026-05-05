@@ -54,6 +54,7 @@ describe('Booking - Client', function () {
         $startDate = now()->addDays(2);
         $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
         $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+        $sitterPreference = fake()->randomElement(array_column(SitterPreference::cases(), 'value'));
 
         $response = $this->post(route('bookings.store'), [
             'service_type' => 'babysitter',
@@ -71,7 +72,7 @@ describe('Booking - Client', function () {
             'special_considerations' => ['infant_care', 'special_needs_care'],
             'caregiver_notes' => 'Please bring toys.',
             'notes_to_sitterwise' => 'Client is VIP.',
-            'sitter_preferences' => [SitterPreference::CollegeAged->value],
+            'sitter_preferences' => [$sitterPreference],
             'other_adults_present' => 'Grandparents',
             'emergency_instructions' => 'Call 911 first.',
             'special_needs_notes' => 'Allergic to peanuts.',
@@ -103,8 +104,10 @@ describe('Booking - Client', function () {
         $this->assertDatabaseHas('client_children', [
             'client_id' => $this->client->id,
             'name' => 'New Child',
-            'birth_year' => 2023,
         ]);
+        $this->assertNotNull(ClientChild::where('name', 'New Child')->first()?->birth_date);
+        $this->assertEquals(6, ClientChild::where('name', 'New Child')->first()?->birth_month);
+        $this->assertEquals(2023, ClientChild::where('name', 'New Child')->first()?->birth_year);
         $this->assertDatabaseHas('client_pets', [
             'client_id' => $this->client->id,
             'name' => 'New Pet',
@@ -117,7 +120,7 @@ describe('Booking - Client', function () {
         expect($booking->children)->toHaveCount(3); // 2 existing + 1 new
         expect($booking->pets)->toHaveCount(2); // 1 existing + 1 new
         expect($booking->special_considerations)->toEqual(['infant_care', 'special_needs_care']);
-        expect($booking->sitter_preferences)->toEqual([SitterPreference::CollegeAged->value]);
+        expect($booking->sitter_preferences)->toEqual([$sitterPreference]);
     });
 
     test('client can create a booking with manual address input', function () {

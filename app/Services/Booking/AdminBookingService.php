@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -68,7 +69,6 @@ class AdminBookingService implements BookingServiceInterface
             ->map(function (Booking $booking) {
                 if ($booking->client) {
                     $booking->client->setAttribute('children', $booking->client->children->map(fn ($c) => [
-                        // 'id' => $c->id,
                         'name' => $c['name'],
                         'gender' => $c['gender'],
                         'birth_month' => $c['birth_month'],
@@ -594,8 +594,9 @@ class AdminBookingService implements BookingServiceInterface
                 ],
                 [
                     'gender' => $childData['gender'] ?? null,
-                    'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                    'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    'birth_date' => isset($childData['birth_month']) && isset($childData['birth_year'])
+                        ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                        : null,
                 ]
             );
         }

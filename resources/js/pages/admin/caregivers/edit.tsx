@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -385,14 +386,16 @@ export default function CaregiverEdit() {
                             </Link>
                             {currentProfilePhoto ? (
                                 <div className="group relative">
-                                    <img
-                                        src={
-                                            currentProfilePhoto === 'avatar.jpg'
-                                                ? '/avatar.jpg'
-                                                : `/storage/${currentProfilePhoto}`
+                                    <UserAvatar
+                                        profile_photo_url={
+                                            caregiver.user.profile_photo_url
                                         }
-                                        alt={`${caregiver.first_name} ${caregiver.last_name}`}
-                                        className="h-16 w-16 rounded-full object-cover"
+                                        profile_photo_path={
+                                            caregiver.user.profile_photo_path
+                                        }
+                                        name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                        size="md"
+                                        className="size-10 md:size-16"
                                     />
                                     {photoForm.processing && (
                                         <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
@@ -443,10 +446,10 @@ export default function CaregiverEdit() {
                     </form>
                     <div>
                         <div>
-                            <h1 className="text-2xl font-bold text-foreground">
+                            <h1 className="text-xl font-bold text-foreground md:text-2xl">
                                 {caregiver.first_name} {caregiver.last_name}
                             </h1>
-                            <p className="text-muted-foreground">
+                                <p className="hidden text-muted-foreground md:block">
                                 Edit Caregiver Profile
                             </p>
                             {photoForm.errors.profile_photo && (
@@ -818,7 +821,7 @@ export default function CaregiverEdit() {
                                 {certifications.map((cert) => (
                                     <div
                                         key={cert.id}
-                                        className="flex flex-col gap-4 rounded border border-border p-3"
+                                        className="flex flex-col gap-4 rounded border border-border px-4 py-2"
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="max-w-xs flex-1">
@@ -858,7 +861,7 @@ export default function CaregiverEdit() {
                                                     removeCertification(cert.id)
                                                 }
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                         <div>
@@ -1001,7 +1004,7 @@ export default function CaregiverEdit() {
                                 {educations.map((edu) => (
                                     <div
                                         key={edu.id}
-                                        className="flex flex-col gap-4 rounded border border-border p-3"
+                                        className="flex flex-col gap-4 rounded border border-border px-4 py-2"
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="max-w-xs flex-1">
@@ -1029,14 +1032,13 @@ export default function CaregiverEdit() {
                                                 </Select>
                                             </div>
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() =>
                                                     removeEducation(edu.id)
                                                 }
-                                                variant="link"
-                                                className="text-destructive"
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                         <div className="grid gap-4 sm:grid-cols-2">

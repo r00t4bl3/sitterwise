@@ -400,19 +400,20 @@ export default function ClientShow() {
                                     client.user.profile_photo_path
                                 }
                                 name={`${client.first_name} ${client.last_name}`}
-                                size="lg"
+                                size="md"
+                                className="size-10 md:size-16"
                             />
                             <div>
-                                <h1 className="text-2xl font-bold text-foreground">
+                                <h1 className="text-xl font-bold text-foreground md:text-2xl">
                                     {client.first_name} {client.last_name}
                                 </h1>
-                                <p className="text-muted-foreground">
+                                <p className="hidden text-muted-foreground md:block">
                                     Client Profile
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="hidden gap-2 md:flex">
                         <Button
                             variant="secondary"
                             onClick={() => setIsPaymentSheetOpen(true)}
@@ -435,6 +436,34 @@ export default function ClientShow() {
                         >
                             Edit
                         </Link>
+                    </div>
+                    <div className="md:hidden">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <MoreVertical className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                    onClick={() => setIsPaymentSheetOpen(true)}
+                                >
+                                    {client.has_payment_method
+                                        ? 'Manage Payment Method'
+                                        : 'Add Payment Method'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setIsPasswordSheetOpen(true)}
+                                >
+                                    Reset Password
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/clients/${client.id}/edit`}>
+                                        Edit
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 

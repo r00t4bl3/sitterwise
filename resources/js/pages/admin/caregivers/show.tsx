@@ -4,6 +4,7 @@ import {
     Check,
     CheckCircle,
     MinusCircle,
+    MoreVertical,
     Shield,
     Eye,
     EyeOff,
@@ -30,6 +31,12 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
@@ -296,18 +303,19 @@ export default function CaregiverShow() {
                                 caregiver.user.profile_photo_path
                             }
                             name={`${caregiver.first_name} ${caregiver.last_name}`}
-                            size="lg"
+                            size="md"
+                            className="size-10 md:size-16"
                         />
                         <div>
-                            <h1 className="text-2xl font-bold text-foreground">
+                            <h1 className="text-xl font-bold text-foreground md:text-2xl">
                                 {caregiver.first_name} {caregiver.last_name}
                             </h1>
-                            <p className="text-muted-foreground">
+                            <p className="hidden text-muted-foreground md:block">
                                 Caregiver Profile
                             </p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="hidden gap-2 md:flex">
                         <Link
                             href={`/availabilities/${caregiver.id}`}
                             className="btn-secondary"
@@ -334,6 +342,45 @@ export default function CaregiverShow() {
                         >
                             Edit
                         </Link>
+                    </div>
+                    <div className="md:hidden">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <MoreVertical className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/availabilities/${caregiver.id}`}
+                                    >
+                                        View Availability
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/bio/${caregiver.slug}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        View Public Profile
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setIsPasswordSheetOpen(true)}
+                                >
+                                    Reset Password
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/caregivers/${caregiver.id}/edit`}
+                                    >
+                                        Edit
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 

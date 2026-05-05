@@ -21,11 +21,12 @@ class ClientChild extends Model
         'client_id',
         'name',
         'gender',
-        'birth_month',
-        'birth_year',
+        'birth_date',
     ];
 
-    protected $casts = [];
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
 
     public function client(): BelongsTo
     {
@@ -34,16 +35,20 @@ class ClientChild extends Model
 
     public function getAgeAttribute(): ?int
     {
-        if (! $this->birth_month || ! $this->birth_year) {
+        if (! $this->birth_date) {
             return null;
         }
 
-        $now = now();
-        $age = $now->year - $this->birth_year;
-        if ($now->month < $this->birth_month || ($now->month == $this->birth_month && $now->day < 1)) {
-            $age--;
-        }
+        return $this->birth_date->diffInYears(now());
+    }
 
-        return $age;
+    public function getBirthMonthAttribute(): ?int
+    {
+        return $this->birth_date?->month;
+    }
+
+    public function getBirthYearAttribute(): ?int
+    {
+        return $this->birth_date?->year;
     }
 }

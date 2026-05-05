@@ -22,8 +22,7 @@ class ClientChildFactory extends Factory
             'client_id' => Client::factory(),
             'name' => fake()->firstName(),
             'gender' => fake()->randomElement(['male', 'female']),
-            'birth_month' => fake()->numberBetween(1, 12),
-            'birth_year' => fake()->numberBetween(2010, 2024),
+            'birth_date' => fake()->dateTimeBetween('-15 years', '-1 year')->format('Y-m-d'),
         ];
     }
 }

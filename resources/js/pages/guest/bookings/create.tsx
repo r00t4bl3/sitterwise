@@ -646,16 +646,16 @@ export default function GuestBookingCreate() {
                                     <Label className="text-sm font-medium text-foreground">
                                         Children
                                     </Label>
-                                    <button
+                                    <Button
+                                        size="xs"
                                         type="button"
                                         onClick={handleAddChild}
-                                        className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
                                     >
                                         <Plus className="h-3 w-3" />
                                         Add Child
-                                    </button>
+                                    </Button>
                                 </div>
-                                <div className="grid gap-4">
+                                <div className="mt-1 grid gap-4">
                                     {form.data.new_children.map((child) => (
                                         <div
                                             key={child.tempId}
@@ -665,17 +665,17 @@ export default function GuestBookingCreate() {
                                                 <p className="text-sm font-medium text-foreground">
                                                     Add New Child
                                                 </p>
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         handleRemoveChild(
                                                             child.tempId,
                                                         )
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    size="sm"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                                 <div className="sm:col-span-1">
@@ -850,16 +850,16 @@ export default function GuestBookingCreate() {
                                     <Label className="text-sm font-medium text-foreground">
                                         Pets
                                     </Label>
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={handleAddPet}
-                                        className="flex items-center gap-1 text-xs text-ring hover:text-foreground"
+                                        size="xs"
                                     >
                                         <Plus className="h-3 w-3" />
                                         Add Pet
-                                    </button>
+                                    </Button>
                                 </div>
-                                <div className="grid gap-4">
+                                <div className="mt-1 grid gap-4">
                                     {form.data.new_pets.map((pet) => (
                                         <div
                                             key={pet.tempId}
@@ -869,17 +869,17 @@ export default function GuestBookingCreate() {
                                                 <p className="text-sm font-medium text-foreground">
                                                     Add New Pet
                                                 </p>
-                                                <button
+                                                <Button
                                                     type="button"
                                                     onClick={() =>
                                                         handleRemovePet(
                                                             pet.tempId,
                                                         )
                                                     }
-                                                    className="text-red-500 hover:text-red-700"
+                                                    size="sm"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                                 <div className="sm:col-span-1">

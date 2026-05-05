@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -338,14 +339,16 @@ export default function ClientEdit() {
                             </Link>
                             {currentProfilePhoto ? (
                                 <div className="group relative">
-                                    <img
-                                        src={
-                                            currentProfilePhoto === 'avatar.jpg'
-                                                ? '/avatar.jpg'
-                                                : `/storage/${currentProfilePhoto}`
+                                    <UserAvatar
+                                        profile_photo_url={
+                                            client.user.profile_photo_url
                                         }
-                                        alt={`${client.first_name} ${client.last_name}`}
-                                        className="h-16 w-16 rounded-full object-cover"
+                                        profile_photo_path={
+                                            client.user.profile_photo_path
+                                        }
+                                        name={`${client.first_name} ${client.last_name}`}
+                                        size="md"
+                                        className="size-10 md:size-16"
                                     />
                                     {photoForm.processing && (
                                         <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
@@ -396,10 +399,10 @@ export default function ClientEdit() {
                     </form>
                     <div>
                         <div>
-                            <h1 className="text-2xl font-bold text-foreground">
+                            <h1 className="text-xl font-bold text-foreground md:text-2xl">
                                 {client.first_name} {client.last_name}
                             </h1>
-                            <p className="text-muted-foreground">
+                            <p className="hidden text-muted-foreground md:block">
                                 Edit Client Profile
                             </p>
                             {photoForm.errors.profile_photo && (
@@ -662,7 +665,7 @@ export default function ClientEdit() {
                                 {form.data.children.map((child, index) => (
                                     <div
                                         key={child.id || `child-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 lg:grid-cols-6"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 lg:grid-cols-6"
                                     >
                                         <div className="sm:col-span-2">
                                             <Input
@@ -790,6 +793,7 @@ export default function ClientEdit() {
                                         </div>
                                         <div className="flex items-center justify-end">
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -801,7 +805,7 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -843,7 +847,7 @@ export default function ClientEdit() {
                                 {form.data.pets.map((pet, index) => (
                                     <div
                                         key={pet.id || `pet-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-5"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 sm:grid-cols-5"
                                     >
                                         <div className="sm:col-span-2">
                                             <Input
@@ -928,6 +932,7 @@ export default function ClientEdit() {
                                         </div>
                                         <div className="flex items-center justify-end">
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -939,7 +944,7 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -987,7 +992,7 @@ export default function ClientEdit() {
                                 {form.data.addresses.map((address, index) => (
                                     <div
                                         key={address.id || `address-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 sm:grid-cols-2 lg:grid-cols-4"
                                     >
                                         <div className="lg:col sm:col-span-2">
                                             <Input
@@ -1089,6 +1094,7 @@ export default function ClientEdit() {
                                         </div>
                                         <div className="flex items-end justify-end sm:col-span-2 lg:col-auto">
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() => {
                                                     form.setData(
@@ -1100,7 +1106,7 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -1120,7 +1126,7 @@ export default function ClientEdit() {
                             </h2>
                         </div>
                         {favoriteIds.length > 0 ? (
-                            <div className="mb-4 space-y-3">
+                            <div className="mb-4 space-y-2">
                                 {favoriteIds.map((id) => {
                                     const c = (caregivers ?? []).find(
                                         (cg) => cg.id === id,
@@ -1133,20 +1139,21 @@ export default function ClientEdit() {
                                     return (
                                         <div
                                             key={id}
-                                            className="flex items-center justify-between rounded-[3px] border border-green-200 bg-white p-3"
+                                            className="flex items-center justify-between rounded-[3px] border border-green-200 bg-white px-4 py-2"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="font-medium text-foreground">
+                                                <span className="font-medium text-foreground text-sm">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </div>
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() =>
                                                     removeFavorite(id)
                                                 }
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     );
@@ -1179,7 +1186,7 @@ export default function ClientEdit() {
                                                 }}
                                                 className="flex w-full items-center gap-2 p-2 text-left hover:bg-green-50"
                                             >
-                                                <span className="font-medium text-foreground">
+                                                <span className="font-medium text-foreground text-sm">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </button>
@@ -1202,7 +1209,7 @@ export default function ClientEdit() {
                             </h2>
                         </div>
                         {blockedIds.length > 0 ? (
-                            <div className="mb-4 space-y-3">
+                            <div className="mb-4 space-y-2">
                                 {blockedIds.map((id) => {
                                     const c = (caregivers ?? []).find(
                                         (cg) => cg.id === id,
@@ -1215,20 +1222,21 @@ export default function ClientEdit() {
                                     return (
                                         <div
                                             key={id}
-                                            className="flex items-center justify-between rounded-[3px] border border-red-200 bg-white p-3"
+                                            className="flex items-center justify-between rounded-[3px] border border-red-200 bg-white px-4 py-2"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="font-medium text-foreground">
+                                                <span className="font-medium text-foreground text-sm">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </div>
                                             <Button
+                                                size="sm"
                                                 type="button"
                                                 onClick={() =>
                                                     removeBlocked(id)
                                                 }
                                             >
-                                                Remove
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     );

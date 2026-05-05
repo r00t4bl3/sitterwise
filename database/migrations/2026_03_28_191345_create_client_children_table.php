@@ -16,8 +16,7 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('gender')->nullable();
-            $table->integer('birth_month')->nullable();
-            $table->integer('birth_year')->nullable();
+            $table->date('birth_date')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

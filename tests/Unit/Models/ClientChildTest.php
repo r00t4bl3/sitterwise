@@ -23,8 +23,7 @@ class ClientChildTest extends TestCase
             'client_id' => $client->id,
             'name' => 'Emma',
             'gender' => 'female',
-            'birth_month' => 5,
-            'birth_year' => 2018,
+            'birth_date' => '2018-05-01',
         ]);
 
         $this->assertEquals('Emma', $child->name);
@@ -44,9 +43,8 @@ class ClientChildTest extends TestCase
 
     public function test_returns_age_when_birth_data_available()
     {
-        $child = ClientChild::factory()->make([
-            'birth_month' => 1,
-            'birth_year' => now()->subYears(5)->year,
+        $child = ClientChild::factory()->create([
+            'birth_date' => '2019-05-01',
         ]);
 
         $this->assertIsInt($child->age);
@@ -56,8 +54,7 @@ class ClientChildTest extends TestCase
     public function test_returns_null_age_when_birth_data_missing()
     {
         $child = ClientChild::factory()->make([
-            'birth_month' => null,
-            'birth_year' => null,
+            'birth_date' => null,
         ]);
 
         $this->assertNull($child->age);

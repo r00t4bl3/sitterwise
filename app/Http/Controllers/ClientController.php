@@ -14,6 +14,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
 use App\Services\ClientPayment\ClientPaymentServiceFactory;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -481,8 +482,9 @@ class ClientController extends Controller
                         $child->update([
                             'name' => $childData['name'] ?? null,
                             'gender' => $childData['gender'] ?? null,
-                            'birth_month' => $childData['birth_month'] ?? null,
-                            'birth_year' => $childData['birth_year'] ?? null,
+                            'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
+                                ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                                : null,
                         ]);
                         $submittedChildIds[] = $childData['id'];
                     }
@@ -490,8 +492,9 @@ class ClientController extends Controller
                     $newChild = $client->children()->create([
                         'name' => $childData['name'] ?? null,
                         'gender' => $childData['gender'] ?? null,
-                        'birth_month' => $childData['birth_month'] ?? null,
-                        'birth_year' => $childData['birth_year'] ?? null,
+                        'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
+                            ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                            : null,
                     ]);
                     $submittedChildIds[] = $newChild->id;
                 }

@@ -17,6 +17,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -145,8 +146,9 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'client_id' => $client->id,
                     'name' => $childData['name'] ?? null,
                     'gender' => $childData['gender'] ?? null,
-                    'birth_month' => $childData['birth_month'] ? (int) $childData['birth_month'] : null,
-                    'birth_year' => $childData['birth_year'] ? (int) $childData['birth_year'] : null,
+                    'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
+                        ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                        : null,
                 ]);
             }
         }
