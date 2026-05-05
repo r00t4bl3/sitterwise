@@ -348,6 +348,27 @@ class AdminBookingService implements BookingServiceInterface
 
     public function show(Request $request, Booking $booking)
     {
+        if ($request->wantsJson()) {
+            $booking->load([
+                'client.user',
+                'client.children',
+                'client.pets',
+                'client.favoriteCaregivers.user',
+                'client.blockedCaregivers.user',
+                'hotel',
+                'address',
+                'caregiver.user',
+                'caregiverNotifications',
+            ]);
+
+            $booking->client->setRelation(
+                'previousCaregivers',
+                $booking->client->previousCaregivers()->with('user')->get()
+            );
+
+            return response()->json($booking); 
+        }
+
         return Inertia::render('admin/bookings/show', [
             'booking' => [
                 'id' => $booking->id,

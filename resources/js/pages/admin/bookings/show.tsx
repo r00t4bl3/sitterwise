@@ -145,7 +145,7 @@ export default function BookingDetail({ booking }: PageProps) {
                             Booking Details
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            View your booking details
+                            View booking details
                         </p>
                     </div>
                 </div>

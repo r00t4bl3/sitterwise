@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
+use App\Enums\LocationType;
+use App\Enums\ServiceType;
+use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
+use App\Models\Client;
+use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -39,6 +45,65 @@ class DashboardController extends Controller
                 BookingStatus::cases()
             );
 
+            $serviceTypes = array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                ],
+                ServiceType::cases()
+            );
+
+            $locationTypes = array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                ],
+                LocationType::cases()
+            );
+
+            $paymentStatuses = array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
+                ],
+                BookingPaymentStatus::cases()
+            );
+
+            $specialConsiderationOptions = AttributeDefinition::where('slug', 'special_considerations')
+                ->first()
+                ?->options ?? [];
+
+            $specialConsiderationOptions = array_map(
+                fn ($option) => [
+                    'value' => $option,
+                    'label' => $option,
+                ],
+                $specialConsiderationOptions
+            );
+
+            $sitterPreferenceOptions = AttributeDefinition::where('slug', 'sitter_preferences')
+                ->first()
+                ?->options ?? [];
+
+            $sitterPreferenceOptions = array_map(
+                fn ($option) => [
+                    'value' => $option,
+                    'label' => $option,
+                ],
+                $sitterPreferenceOptions
+            );
+
+            $bookingAttributes = AttributeDefinition::where('type', 'booking')
+                ->get()
+                ->map(fn ($attr) => [
+                    'id' => $attr->id,
+                    'name' => $attr->name,
+                    'slug' => $attr->slug,
+                    'type' => $attr->type,
+                    'options' => $attr->options ?? [],
+                ])
+                ->toArray();
+
             $adminData = [
                 'bookings_needing_attention' => Booking::with(['client.user'])
                     ->whereNull('caregiver_id')
@@ -60,6 +125,33 @@ class DashboardController extends Controller
                     ->limit(5)
                     ->get(),
                 'booking_statuses' => $bookingStatuses,
+                // Data for BookingSheet
+                'clients' => Client::with('user')
+                    ->get()
+                    ->map(fn ($client) => [
+                        'id' => $client->id,
+                        'name' => $client->user->name,
+                    ])
+                    ->toArray(),
+                'hotels' => Hotel::all()
+                    ->map(fn ($hotel) => [
+                        'id' => $hotel->id,
+                        'name' => $hotel->name,
+                    ])
+                    ->toArray(),
+                'caregivers' => Caregiver::with('user')
+                    ->get()
+                    ->map(fn ($caregiver) => [
+                        'id' => $caregiver->id,
+                        'name' => $caregiver->user->name,
+                    ])
+                    ->toArray(),
+                'service_types' => $serviceTypes,
+                'location_types' => $locationTypes,
+                'payment_statuses' => $paymentStatuses,
+                'special_consideration_options' => $specialConsiderationOptions,
+                'booking_attributes' => $bookingAttributes,
+                'sitter_preference_options' => $sitterPreferenceOptions,
             ];
         }
 

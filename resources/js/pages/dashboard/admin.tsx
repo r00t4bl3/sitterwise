@@ -16,6 +16,9 @@ import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
+import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
+import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
+import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -71,11 +74,33 @@ interface AdminDashboardProps {
             label: string;
             colors: { bg: string; text: string; border: string };
         }>;
+        clients?: Array<{ id: number; name: string; [key: string]: unknown }>;
+        hotels?: Array<{
+            id: number;
+            name: string;
+            line1: string | null;
+            line2: string | null;
+            city: string | null;
+            state: string | null;
+            zip: string | null;
+        }>;
+        caregivers?: Array<{ id: number; name: string; [key: string]: unknown }>;
+        service_types?: Array<{ value: string; label: string }>;
+        location_types?: Array<{ value: string; label: string }>;
+        payment_statuses?: Array<{ value: string; label: string }>;
+        special_consideration_options?: Array<{ value: string; label: string }>;
+        booking_attributes?: Array<{
+            id: number;
+            name: string;
+            slug: string;
+            type: string;
+            options: string[];
+        }>;
+        sitter_preference_options?: Array<{ value: string; label: string }>;
     };
 }
 
 export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
-    // Provide defaults for safety
     const safeStats = {
         total_caregivers: 0,
         active_caregivers: 0,
@@ -93,6 +118,21 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
     };
 
     const bookingStatuses = safeAdmin.booking_statuses || [];
+
+    const sheet = useBookingSheet({
+        clients: safeAdmin.clients ?? [],
+        hotels: safeAdmin.hotels ?? [],
+        caregivers: safeAdmin.caregivers ?? [],
+        service_types: safeAdmin.service_types ?? [],
+        location_types: safeAdmin.location_types ?? [],
+        booking_statuses: safeAdmin.booking_statuses ?? [],
+        payment_statuses: safeAdmin.payment_statuses ?? [],
+        special_consideration_options:
+            safeAdmin.special_consideration_options ?? [],
+        booking_attributes: safeAdmin.booking_attributes ?? [],
+        sitter_preference_options:
+            safeAdmin.sitter_preference_options ?? [],
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -180,10 +220,15 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                         <div className="space-y-3">
                                             {safeAdmin.bookings_needing_attention.map(
                                                 (booking) => (
-                                                    <Link
+                                                    <button
                                                         key={booking.id}
-                                                        href={`/bookings/${booking.ulid}`}
-                                                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                        type="button"
+                                                        onClick={() =>
+                                                                    sheet.openEditSheet(
+                                                                        booking as unknown as FullBooking,
+                                                                    )
+                                                                }
+                                                        className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-8 w-8 items-center justify-center rounded bg-red-100">
@@ -199,7 +244,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     {booking
                                                                         .client
                                                                         ?.user
-                                                                        .name ||
+                                                                        ?.name ||
                                                                         'Unknown Client'}{' '}
                                                                     •{' '}
                                                                     {
@@ -217,7 +262,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                             </Badge>
                                                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                                         </div>
-                                                    </Link>
+                                                    </button>
                                                 ),
                                             )}
                                         </div>
@@ -262,10 +307,15 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                     {safeAdmin.recent_bookings
                                                         .slice(0, 3)
                                                         .map((booking) => (
-                                                            <Link
+                                                            <button
                                                                 key={booking.id}
-                                                                href={`/bookings/${booking.ulid}`}
-                                                                className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    sheet.openEditSheet(
+                                                                        booking as unknown as FullBooking,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
@@ -276,7 +326,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                             {booking
                                                                                 .client
                                                                                 ?.user
-                                                                                .name ||
+                                                                                ?.name ||
                                                                                 'Unknown'}
                                                                         </p>
                                                                         <p className="text-xs text-muted-foreground">
@@ -297,7 +347,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     />
                                                                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                                                 </div>
-                                                            </Link>
+                                                            </button>
                                                         ))}
                                                 </div>
                                             </div>
@@ -372,9 +422,15 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                         <div className="space-y-3">
                                             {safeAdmin.todays_bookings.map(
                                                 (booking) => (
-                                                    <div
+                                                    <button
                                                         key={booking.id}
-                                                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
+                                                        type="button"
+                                                        onClick={() =>
+                                                                    sheet.openEditSheet(
+                                                                        booking as unknown as FullBooking,
+                                                                    )
+                                                                }
+                                                        className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-10 w-10 flex-col items-center justify-center rounded bg-primary/10 text-primary">
@@ -422,7 +478,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                 bookingStatuses
                                                             }
                                                         />
-                                                    </div>
+                                                    </button>
                                                 ),
                                             )}
                                         </div>
@@ -447,13 +503,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 <div className="p-6">
                                     <div className="space-y-2">
                                         <Button
-                                            asChild
                                             className="w-full justify-start"
+                                            onClick={() => sheet.openCreateSheet()}
                                         >
-                                            <Link href="/bookings">
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Create Booking
-                                            </Link>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Create Booking
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -469,9 +523,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </div>
                             </div>
                         </div>
+</div>
                     </div>
+
+                    <BookingSheet {...sheet} />
                 </div>
-            </div>
-        </AppLayout>
-    );
+            </AppLayout>
+        );
 }

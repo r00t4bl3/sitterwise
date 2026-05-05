@@ -766,7 +766,12 @@ export default function Bookings() {
         setSheetMode('edit');
 
         try {
-            const response = await fetch(`/bookings/${booking.id}`);
+            const response = await fetch(`/bookings/${booking.id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+            });
             const fullBooking = await response.json();
             setEditingBooking(fullBooking);
         } catch (error) {

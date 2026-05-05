@@ -21,10 +21,16 @@ class ClientFactory extends Factory
      */
     public function definition(): array
     {
+        $firstName = fake()->firstName();
+        $lastName = fake()->lastName();
+
         return [
-            'user_id' => User::factory(),
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
+            'user_id' => User::factory([
+                'name' => "$firstName $lastName",
+                'role' => 'client',
+            ]),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'biography' => $this->faker->optional()->paragraph(),
             'phone' => fake()->phoneNumber(),
             'client_type' => fake()->randomElement(ClientType::cases())->value,
