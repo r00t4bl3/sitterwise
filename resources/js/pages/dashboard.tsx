@@ -84,18 +84,12 @@ export default function Dashboard() {
         case 'admin':
             return (
                 <AdminDashboard
-                    admin={{
-                        bookings_needing_attention:
-                            admin?.bookings_needing_attention || [],
-                        todays_bookings: admin?.todays_bookings || [],
-                        recent_bookings: admin?.recent_bookings || [],
-                        recent_caregivers: admin?.recent_caregivers || [],
-                        booking_statuses: admin?.booking_statuses || [],
-                    }}
+                    admin={admin as any}
                     stats={{
                         total_caregivers: stats?.total_caregivers || 0,
                         active_caregivers: stats?.active_caregivers || 0,
                         total_clients: stats?.total_clients || 0,
+                        total_bookings: stats?.active_bookings || 0,
                     }}
                 />
             );

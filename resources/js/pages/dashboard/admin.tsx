@@ -234,7 +234,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                             <div className="flex h-8 w-8 items-center justify-center rounded bg-red-100">
                                                                 <AlertCircle className="h-4 w-4 text-red-600" />
                                                             </div>
-                                                            <div>
+                                                            <div className="flex flex-col text-left">
                                                                 <p className="text-sm font-medium">
                                                                     {formatDisplayDateTime(
                                                                         booking.start_datetime,
@@ -321,7 +321,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
                                                                         <Calendar className="h-4 w-4 text-muted-foreground" />
                                                                     </div>
-                                                                    <div>
+                                                                    <div className="flex flex-col text-left">
                                                                         <p className="text-sm font-medium">
                                                                             {booking
                                                                                 .client
@@ -441,7 +441,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                     )}
                                                                 </span>
                                                             </div>
-                                                            <div>
+                                                            <div className="flex flex-col text-left">
                                                                 <p className="text-sm font-medium">
                                                                     {booking
                                                                         .client

@@ -146,6 +146,7 @@ export function useBookingSheet({
     ],
 }: UseBookingSheetProps) {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     const [sheetMode, setSheetMode] = useState<SheetMode>('create');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -566,9 +567,11 @@ export function useBookingSheet({
         setIsSheetOpen(true);
     };
 
-    const openEditSheet = async (booking: Booking) => {
+const openEditSheet = async (booking: Booking) => {
         setEditingBooking(booking);
         setSheetMode('edit');
+        setIsLoading(true);
+        setIsSheetOpen(true);
 
         try {
             const response = await fetch(`/bookings/${booking.id}`, {
@@ -578,139 +581,49 @@ export function useBookingSheet({
                 },
             });
             const fullBooking = await response.json();
-            setEditingBooking(fullBooking);
-        } catch (error) {
-            console.error('Error fetching booking details:', error);
-        }
 
-        const unmatchedChildren: any[] = [];
-        const unmatchedPets: any[] = [];
+            const unmatchedChildren: any[] = [];
+            const unmatchedPets: any[] = [];
 
-        if (booking.children) {
-            booking.children.forEach((snapChild) => {
-                unmatchedChildren.push({
-                    tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
-                    name: snapChild.name || '',
-                    gender: snapChild.gender || '',
-                    birth_month: String(snapChild.birth_month || ''),
-                    birth_year: String(snapChild.birth_year || ''),
+            if (booking.children) {
+                booking.children.forEach((snapChild) => {
+                    unmatchedChildren.push({
+                        tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
+                        name: snapChild.name || '',
+                        gender: snapChild.gender || '',
+                        birth_month: String(snapChild.birth_month || ''),
+                        birth_year: String(snapChild.birth_year || ''),
+                    });
                 });
-            });
-        }
+            }
 
-        if (booking.pets) {
-            booking.pets.forEach((snapPet) => {
-                unmatchedPets.push({
-                    tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
-                    ...snapPet,
+            if (booking.pets) {
+                booking.pets.forEach((snapPet) => {
+                    unmatchedPets.push({
+                        tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
+                        ...snapPet,
+                    });
                 });
-            });
-        }
+            }
 
-        const client = clients.find((c) => c.id === booking.client_id);
+            const client = clients.find((c) => c.id === booking.client_id);
 
-        if (client) {
-            setSelectedClientName(client.name);
-            setClientSuggestions([client] as unknown as Array<{
-                id: number;
-                name: string;
-                [key: string]: unknown;
-            }>);
-        }
-
-        const formData = {
-            client_id: booking.client_id,
-            service_type: booking.service_type,
-            location_type: booking.location_type,
-            start_datetime: formatDateTimeLocal(
-                parseAsLocal(booking.start_datetime) as Date,
-            ),
-            end_datetime: formatDateTimeLocal(
-                parseAsLocal(booking.end_datetime) as Date,
-            ),
-            hotel_id: booking.hotel_id,
-            address_id: booking.address_id,
-            caregiver_id: booking.caregiver_id,
-            special_considerations: booking.special_considerations || [],
-            caregiver_notes: booking.caregiver_notes || '',
-            notes_to_sitterwise: booking.notes_to_sitterwise || '',
-            admin_notes: booking.admin_notes || '',
-            corporate_id: booking.corporate_id || '',
-            sitter_preferences: booking.sitter_preferences || [],
-            other_adults_present: booking.other_adults_present || '',
-            emergency_instructions: booking.emergency_instructions || '',
-            special_needs_notes: booking.special_needs_notes || '',
-            how_did_you_hear: booking.how_did_you_hear || '',
-            requires_payment: booking.requires_payment,
-            status: booking.status,
-            payment_status: booking.payment_status,
-            rental_platform: booking.rental_platform || null,
-            address_line1: booking.address_line1 || '',
-            address_line2: booking.address_line2 || '',
-            address_city: booking.address_city || '',
-            address_state: booking.address_state || '',
-            address_zip: booking.address_zip || '',
-            new_client: {
-                first_name: '',
-                last_name: '',
-                email: '',
-                phone: '',
-                client_type: 'individual',
-            },
-            new_children: unmatchedChildren,
-            new_pets: unmatchedPets,
-            child_ids: [],
-            pet_ids: [],
-            deleted_child_ids: [],
-            deleted_pet_ids: [],
-            save_children_pets_to_profile: true,
-        };
-
-        form.setData(formData);
-        setNewChildren(unmatchedChildren);
-        setNewPets(unmatchedPets);
-
-        const isPrivateHome = booking.location_type === 'private_home';
-        const hasAddressId = !!booking.address_id;
-        const hasDirectAddress = !!booking.address_line1;
-
-        if (isPrivateHome && hasAddressId) {
-            setShowManualAddressInput(false);
-            setAddressMode('select');
-        } else if (hasDirectAddress) {
-            setShowManualAddressInput(true);
-            setAddressMode('input');
-        }
-
-        if (hasDirectAddress) {
-            setAddressValue(
-                `${booking.address_line1}${
-                    booking.address_line2 ? `, ${booking.address_line2}` : ''
-                }, ${booking.address_city || ''}, ${booking.address_state || ''} ${booking.address_zip || ''}`.trim(),
-            );
-            setIsAddressLocked(true);
-        } else {
-            setAddressValue('');
-            setIsAddressLocked(false);
-        }
-
-        if (booking.hotel_id) {
-            const hotel = hotels.find((h) => h.id === booking.hotel_id);
-
-            if (hotel) {
-                setSelectedHotelName(hotel.name);
-                setHotelSuggestions([hotel] as unknown as Array<{
+            if (client) {
+                setSelectedClientName(client.name);
+                setClientSuggestions([client] as unknown as Array<{
                     id: number;
                     name: string;
                     [key: string]: unknown;
                 }>);
             }
-        }
 
-        if (booking.caregiver_id) {
-            const caregiver = caregivers.find(
-                (c) => c.id === booking.caregiver_id,
-            );
+            const hotel = hotels.find((h) => h.id === fullBooking.hotel_id);
+
+            if (hotel) {
+                setSelectedHotelName(hotel.name);
+            }
+
+            const caregiver = caregivers.find((cg) => cg.id === fullBooking.caregiver_id);
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
@@ -720,13 +633,36 @@ export function useBookingSheet({
                     [key: string]: unknown;
                 }>);
             }
+
+            const childIds: number[] = [];
+
+            if (fullBooking.children) {
+                fullBooking.children.forEach((child: any) => {
+                    if (child.id) {
+                        childIds.push(child.id);
+                    }
+                });
+            }
+
+            const petIds: number[] = [];
+
+            if (fullBooking.pets) {
+                fullBooking.pets.forEach((pet: any) => {
+                    if (pet.id) {
+                        petIds.push(pet.id);
+                    }
+                });
+            }
+
+            setEditingBooking(fullBooking);
+            setClientChildren(unmatchedChildren);
+            setClientPets(unmatchedPets);
+            setIsLoading(false);
+} catch (error) {
+            console.error('Error fetching booking details:', error);
+            setIsSheetOpen(false);
+            setIsLoading(false);
         }
-
-        setClientSuggestions([]);
-        setHotelSuggestions([]);
-        setCaregiverSuggestions([]);
-
-        setIsSheetOpen(true);
     };
 
     const openDuplicateSheet = async (booking: Booking) => {
@@ -1024,6 +960,7 @@ export function useBookingSheet({
     return {
         isSheetOpen,
         setIsSheetOpen,
+        isLoading,
         editingBooking,
         sheetMode,
         showDeleteDialog,

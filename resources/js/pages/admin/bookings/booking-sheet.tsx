@@ -23,6 +23,7 @@ type BookingSheetProps = UseBookingSheetReturn;
 export function BookingSheet({
     isSheetOpen,
     setIsSheetOpen,
+    isLoading,
     editingBooking,
     sheetMode,
     showDeleteDialog,
@@ -100,7 +101,15 @@ export function BookingSheet({
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="space-y-4 px-4">
+                    {isLoading ? (
+                        <div className="flex h-96 items-center justify-center">
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <p className="text-sm">Loading booking details...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 px-4">
                         <PersonalInfoSection
                             form={form}
                             editingBooking={editingBooking}
@@ -187,6 +196,7 @@ export function BookingSheet({
                             setIsSheetOpen={setIsSheetOpen}
                         />
                     </div>
+                    )}
                 </SheetContent>
             </Sheet>
 
