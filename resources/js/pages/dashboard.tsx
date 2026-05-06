@@ -18,37 +18,39 @@ interface Props {
         name: string;
     };
     stats?: {
-        total_caregivers?: number;
-        active_caregivers?: number;
-        total_clients?: number;
-        active_bookings?: number;
-        past_bookings?: number;
-        favorite_caregivers?: number;
-        total_earned?: number;
-        completed_jobs?: number;
+        totalCaregivers?: number;
+        activeCaregivers?: number;
+        totalClients?: number;
+        activeBookings?: number;
+        totalBookings?: number;
+        pastBookings?: number;
+        favoriteCaregivers?: number;
+        totalEarned?: number;
+        completedJobs?: number;
     };
     caregiver?: {
         id: number;
-        first_name: string;
-        last_name: string;
+        firstName: string;
+        lastName: string;
         rating: number | null;
         status: { name: string };
         availabilities: Availability[];
-        next_job?: any;
-        upcoming_jobs?: any[];
-        new_invites?: any[];
+        nextJob?: any;
+        upcomingJobs?: any[];
+        newInvites?: any[];
+        timeSlots: any[];
     };
     client?: {
-        next_booking: any;
-        upcoming_bookings: any[];
-        recent_bookings: any[];
+        nextBooking: any;
+        upcomingBookings: any[];
+        recentBookings: any[];
     };
     admin?: {
-        bookings_needing_attention: any[];
-        todays_bookings: any[];
-        recent_bookings: any[];
-        recent_caregivers: any[];
-        booking_statuses: Array<{
+        bookingsNeedingAttention: any[];
+        todaysBookings: any[];
+        recentBookings: any[];
+        recentCaregivers: any[];
+        bookingStatuses: Array<{
             value: string;
             label: string;
             colors: { bg: string; text: string; border: string };
@@ -65,18 +67,19 @@ export default function Dashboard() {
                 <CaregiverDashboard
                     caregiver={{
                         id: caregiver?.id || 0,
-                        first_name: caregiver?.first_name || user.name,
-                        last_name: caregiver?.last_name || '',
+                        firstName: caregiver?.firstName || user.name,
+                        lastName: caregiver?.lastName || '',
                         rating: caregiver?.rating || null,
                         status: caregiver?.status?.name || 'Unknown',
                         availabilities: caregiver?.availabilities || [],
-                        next_job: caregiver?.next_job,
-                        upcoming_jobs: caregiver?.upcoming_jobs || [],
-                        new_invites: caregiver?.new_invites || [],
+                        nextJob: caregiver?.nextJob,
+                        upcomingJobs: caregiver?.upcomingJobs || [],
+                        newInvites: caregiver?.newInvites || [],
+                        timeSlots: caregiver?.timeSlots || [],
                     }}
                     stats={{
-                        total_earned: stats?.total_earned || 0,
-                        completed_jobs: stats?.completed_jobs || 0,
+                        totalEarned: stats?.totalEarned || 0,
+                        completedJobs: stats?.completedJobs || 0,
                     }}
                 />
             );
@@ -86,10 +89,10 @@ export default function Dashboard() {
                 <AdminDashboard
                     admin={admin as any}
                     stats={{
-                        total_caregivers: stats?.total_caregivers || 0,
-                        active_caregivers: stats?.active_caregivers || 0,
-                        total_clients: stats?.total_clients || 0,
-                        total_bookings: stats?.active_bookings || 0,
+                        totalCaregivers: stats?.totalCaregivers || 0,
+                        activeCaregivers: stats?.activeCaregivers || 0,
+                        totalClients: stats?.totalClients || 0,
+                        totalBookings: stats?.totalBookings || 0,
                     }}
                 />
             );
@@ -97,10 +100,12 @@ export default function Dashboard() {
         case 'super_admin':
             return (
                 <SuperAdminDashboard
+                    admin={admin as any}
                     stats={{
-                        total_caregivers: stats?.total_caregivers || 0,
-                        active_caregivers: stats?.active_caregivers || 0,
-                        total_clients: stats?.total_clients || 0,
+                        totalCaregivers: stats?.totalCaregivers || 0,
+                        activeCaregivers: stats?.activeCaregivers || 0,
+                        totalClients: stats?.totalClients || 0,
+                        totalBookings: stats?.totalBookings || 0,
                     }}
                 />
             );
@@ -111,10 +116,10 @@ export default function Dashboard() {
                 <ClientDashboard
                     user={{ name: user.name }}
                     stats={{
-                        total_bookings: stats?.active_bookings || 0,
-                        completed_bookings: stats?.past_bookings || 0,
-                        upcoming_bookings: client?.upcoming_bookings || [],
-                        recent_bookings: client?.recent_bookings || [],
+                        totalBookings: stats?.activeBookings || 0,
+                        completedBookings: stats?.pastBookings || 0,
+                        upcomingBookings: client?.upcomingBookings || [],
+                        recentBookings: client?.recentBookings || [],
                     }}
                     client={client as any}
                 />

@@ -43,10 +43,10 @@ interface ClientDashboardProps {
         };
     };
     stats: {
-        total_bookings: number;
-        completed_bookings: number;
-        upcoming_bookings: Booking[];
-        recent_bookings: Booking[];
+        totalBookings: number;
+        completedBookings: number;
+        upcomingBookings: Booking[];
+        recentBookings: Booking[];
     };
 }
 
@@ -62,8 +62,8 @@ export default function ClientDashboard({
     stats,
     client,
 }: ClientDashboardProps) {
-    const upcoming_bookings = stats?.upcoming_bookings || [];
-    const recent_bookings = stats?.recent_bookings || [];
+    const upcomingBookings = stats?.upcomingBookings || [];
+    const recentBookings = stats?.recentBookings || [];
 
     const renderStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
@@ -128,7 +128,7 @@ export default function ClientDashboard({
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.total_bookings}
+                            {stats.totalBookings}
                         </p>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
@@ -139,7 +139,7 @@ export default function ClientDashboard({
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.completed_bookings}
+                            {stats.completedBookings}
                         </p>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
@@ -150,7 +150,7 @@ export default function ClientDashboard({
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {upcoming_bookings.length}
+                            {upcomingBookings.length}
                         </p>
                     </div>
                 </div>
@@ -243,8 +243,8 @@ export default function ClientDashboard({
                         </h3>
                         <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
                             <div className="flex h-[200px] flex-col items-center justify-center text-center">
-                                {recent_bookings.length > 0 ? (
-                                    recent_bookings.map((booking) => (
+                                {recentBookings.length > 0 ? (
+                                    recentBookings.map((booking) => (
                                         <Link
                                             key={booking.id}
                                             href={`/bookings/${booking.ulid}`}
@@ -298,8 +298,8 @@ export default function ClientDashboard({
                     </h3>
                     <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {upcoming_bookings.length > 0 ? (
-                                upcoming_bookings.map((booking) => (
+                            {upcomingBookings.length > 0 ? (
+                                upcomingBookings.map((booking) => (
                                     <div
                                         key={booking.id}
                                         className="flex items-center justify-between rounded-lg border border-border bg-card p-3 opacity-80"

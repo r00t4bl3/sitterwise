@@ -54,34 +54,34 @@ interface Caregiver {
 
 interface AdminDashboardProps {
     stats: {
-        total_caregivers?: number;
-        active_caregivers?: number;
-        total_clients?: number;
-        total_bookings?: number;
+        totalCaregivers?: number;
+        activeCaregivers?: number;
+        totalClients?: number;
+        totalBookings?: number;
     };
     admin?: {
-        bookings_needing_attention: Booking[];
-        todays_bookings: Booking[];
-        recent_bookings: Booking[];
-        recent_caregivers: Caregiver[];
+        bookingsNeedingAttention: Booking[];
+        todaysBookings: Booking[];
+        recentBookings: Booking[];
+        recentCaregivers: Caregiver[];
     };
 }
 
 export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
     // Provide defaults for safety
     const safeStats = {
-        total_caregivers: 0,
-        active_caregivers: 0,
-        total_clients: 0,
-        total_bookings: 0,
+        totalCaregivers: 0,
+        activeCaregivers: 0,
+        totalClients: 0,
+        totalBookings: 0,
         ...stats,
     };
 
     const safeAdmin = admin ?? {
-        bookings_needing_attention: [],
-        todays_bookings: [],
-        recent_bookings: [],
-        recent_caregivers: [],
+        bookingsNeedingAttention: [],
+        todaysBookings: [],
+        recentBookings: [],
+        recentCaregivers: [],
     };
     const renderStatusBadge = (status: string) => {
         const statusLower = status.toLowerCase();
@@ -153,10 +153,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="text-2xl font-bold">
-                            {safeStats.active_caregivers}
+                            {safeStats.activeCaregivers}
                             <span className="text-lg font-normal text-muted-foreground">
                                 {' '}
-                                / {safeStats.total_caregivers}
+                                / {safeStats.totalCaregivers}
                             </span>
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -175,7 +175,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             <UserCircle className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="text-2xl font-bold">
-                            {safeStats.total_clients}
+                            {safeStats.totalClients}
                         </div>
                         <p className="text-xs text-muted-foreground">Total</p>
                     </Link>
@@ -191,7 +191,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="text-2xl font-bold">
-                            {safeStats.total_bookings}
+                            {safeStats.totalBookings}
                         </div>
                         <p className="text-xs text-muted-foreground">Total</p>
                     </Link>
@@ -209,10 +209,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </h3>
                             </div>
                             <div className="p-6 pt-0">
-                                {safeAdmin.bookings_needing_attention.length >
+                                {safeAdmin.bookingsNeedingAttention.length >
                                 0 ? (
                                     <div className="space-y-3">
-                                        {safeAdmin.bookings_needing_attention.map(
+                                        {safeAdmin.bookingsNeedingAttention.map(
                                             (booking) => (
                                                 <Link
                                                     key={booking.id}
@@ -285,13 +285,13 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             <div className="p-6 pt-0">
                                 <div className="space-y-4">
                                     {/* Recent Bookings */}
-                                    {safeAdmin.recent_bookings.length > 0 && (
+                                    {safeAdmin.recentBookings.length > 0 && (
                                         <div>
                                             <h4 className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                                 New Bookings
                                             </h4>
                                             <div className="space-y-2">
-                                                {safeAdmin.recent_bookings
+                                                {safeAdmin.recentBookings
                                                     .slice(0, 3)
                                                     .map((booking) => (
                                                         <Link
@@ -331,13 +331,13 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                     )}
 
                                     {/* Recent Caregivers */}
-                                    {safeAdmin.recent_caregivers.length > 0 && (
+                                    {safeAdmin.recentCaregivers.length > 0 && (
                                         <div>
                                             <h4 className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                                 New Caregivers
                                             </h4>
                                             <div className="space-y-2">
-                                                {safeAdmin.recent_caregivers
+                                                {safeAdmin.recentCaregivers
                                                     .slice(0, 2)
                                                     .map((caregiver) => (
                                                         <Link
@@ -370,8 +370,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                         </div>
                                     )}
 
-                                    {safeAdmin.recent_bookings.length === 0 &&
-                                        safeAdmin.recent_caregivers.length ===
+                                    {safeAdmin.recentBookings.length === 0 &&
+                                        safeAdmin.recentBookings.length ===
                                             0 && (
                                             <p className="py-4 text-center text-sm text-muted-foreground">
                                                 No recent activity
@@ -391,9 +391,9 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </h3>
                             </div>
                             <div className="p-6 pt-0">
-                                {safeAdmin.todays_bookings.length > 0 ? (
+                                {safeAdmin.todaysBookings.length > 0 ? (
                                     <div className="space-y-3">
-                                        {safeAdmin.todays_bookings.map(
+                                        {safeAdmin.todaysBookings.map(
                                             (booking) => (
                                                 <div
                                                     key={booking.id}

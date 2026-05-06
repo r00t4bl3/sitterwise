@@ -29,12 +29,12 @@ class DashboardController extends Controller
 
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             $stats = [
-                'total_caregivers' => Caregiver::count(),
-                'active_caregivers' => Caregiver::whereHas('status', function ($query) {
+                'totalCaregivers' => Caregiver::count(),
+                'activeCaregivers' => Caregiver::whereHas('status', function ($query) {
                     $query->where('name', 'Active');
                 })->count(),
-                'total_clients' => User::where('role', 'client')->count(),
-                'total_bookings' => Booking::count(),
+                'totalClients' => User::where('role', 'client')->count(),
+                'totalBookings' => Booking::count(),
             ];
 
             $bookingStatuses = array_map(
@@ -106,26 +106,26 @@ class DashboardController extends Controller
                 ->toArray();
 
             $adminData = [
-                'bookings_needing_attention' => Booking::with(['client.user'])
+                'bookingsNeedingAttention' => Booking::with(['client.user'])
                     ->whereNull('caregiver_id')
                     ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
                     ->inFuture()
                     ->orderBy('start_datetime', 'asc')
                     ->limit(5)
                     ->get(),
-                'todays_bookings' => Booking::with(['client.user', 'caregiver.user'])
+                'todaysBookings' => Booking::with(['client.user', 'caregiver.user'])
                     ->inToday()
                     ->orderBy('start_datetime', 'asc')
                     ->get(),
-                'recent_bookings' => Booking::with(['client.user'])
+                'recentBookings' => Booking::with(['client.user'])
                     ->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get(),
-                'recent_caregivers' => Caregiver::with('user')
+                'recentCaregivers' => Caregiver::with('user')
                     ->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get(),
-                'booking_statuses' => $bookingStatuses,
+                'bookingStatuses' => $bookingStatuses,
                 // Data for BookingSheet
                 'clients' => Client::with('user')
                     ->get()
@@ -147,12 +147,12 @@ class DashboardController extends Controller
                         'name' => $caregiver->user->name,
                     ])
                     ->toArray(),
-                'service_types' => $serviceTypes,
-                'location_types' => $locationTypes,
-                'payment_statuses' => $paymentStatuses,
-                'special_consideration_options' => $specialConsiderationOptions,
-                'booking_attributes' => $bookingAttributes,
-                'sitter_preference_options' => $sitterPreferenceOptions,
+                'serviceTypes' => $serviceTypes,
+                'locationTypes' => $locationTypes,
+                'paymentStatuses' => $paymentStatuses,
+                'specialConsiderationOptions' => $specialConsiderationOptions,
+                'bookingAttributes' => $bookingAttributes,
+                'sitterPreferenceOptions' => $sitterPreferenceOptions,
             ];
         }
 
@@ -209,16 +209,16 @@ class DashboardController extends Controller
 
                 $caregiverData = [
                     'id' => $caregiver->id,
-                    'first_name' => $caregiver->first_name,
-                    'last_name' => $caregiver->last_name,
+                    'firstName' => $caregiver->first_name,
+                    'lastName' => $caregiver->last_name,
                     'rating' => $caregiver->rating,
                     'status' => $caregiver->status ? [
                         'name' => $caregiver->status->name,
                     ] : null,
                     'availabilities' => $availabilities,
-                    'next_job' => $nextJob,
-                    'upcoming_jobs' => $upcomingJobs,
-                    'new_invites' => $newInvites,
+                    'nextJob' => $nextJob,
+                    'upcomingJobs' => $upcomingJobs,
+                    'newInvites' => $newInvites,
                     'timeSlots' => array_map(
                         fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                         TimeSlot::cases()

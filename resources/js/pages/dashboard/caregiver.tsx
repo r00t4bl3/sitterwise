@@ -79,19 +79,19 @@ interface Booking {
 interface CaregiverDashboardProps {
     caregiver: {
         id: number;
-        first_name: string;
-        last_name: string;
+        firstName: string;
+        lastName: string;
         rating: number | null;
         status: string;
         availabilities: Availability[];
-        next_job?: Booking | null;
-        upcoming_jobs?: Booking[];
-        new_invites?: Booking[];
+        nextJob?: Booking | null;
+        upcomingJobs?: Booking[];
+        newInvites?: Booking[];
         timeSlots: Array<{ value: string; label: string }>;
     };
     stats: {
-        total_earned: number;
-        completed_jobs: number;
+        totalEarned: number;
+        completedJobs: number;
     };
 }
 
@@ -100,6 +100,7 @@ export default function CaregiverDashboard({
     stats,
 }: CaregiverDashboardProps) {
     const initialAvailabilities = caregiver.availabilities;
+    const timeSlots = caregiver.timeSlots;
     const [availabilities, setAvailabilities] = useState(initialAvailabilities);
 
     useEffect(() => {
@@ -209,7 +210,7 @@ export default function CaregiverDashboard({
                 {/* Header */}
                 <div className="flex flex-col gap-2">
                     <h1 className="text-2xl font-bold text-foreground">
-                        Welcome back, {caregiver.first_name}!
+                        Welcome back, {caregiver.firstName}!
                     </h1>
                     <div className="flex items-center gap-2">
                         <Badge variant="outline" className="px-2 py-0.5">
@@ -217,8 +218,8 @@ export default function CaregiverDashboard({
                             {caregiver.status}
                         </Badge>
                         <p className="text-sm text-muted-foreground">
-                            You have {caregiver.new_invites?.length || 0} new
-                            job invites
+                            You have {caregiver.newInvites?.length || 0} new job
+                            invites
                         </p>
                     </div>
                 </div>
@@ -246,7 +247,7 @@ export default function CaregiverDashboard({
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            ${stats.total_earned.toFixed(2)}
+                            ${stats.totalEarned.toFixed(2)}
                         </p>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
@@ -257,7 +258,7 @@ export default function CaregiverDashboard({
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.completed_jobs}
+                            {stats.completedJobs}
                         </p>
                     </div>
                 </div>
@@ -269,7 +270,7 @@ export default function CaregiverDashboard({
                             Your Next Appointment
                         </h2>
 
-                        {caregiver.next_job ? (
+                        {caregiver.nextJob ? (
                             <div className="relative overflow-hidden rounded-xl border-2 border-primary/20 bg-card p-6 shadow-md transition-all hover:border-primary/40">
                                 <div className="absolute top-0 right-0 p-4">
                                     <Badge className="bg-green-600">
@@ -283,12 +284,11 @@ export default function CaregiverDashboard({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-medium tracking-tight text-muted-foreground uppercase">
-                                            {caregiver.next_job.service_type}{' '}
-                                            Job
+                                            {caregiver.nextJob.service_type} Job
                                         </h3>
                                         <p className="text-lg font-bold">
                                             {formatDisplayDateTime(
-                                                caregiver.next_job
+                                                caregiver.nextJob
                                                     .start_datetime,
                                             )}
                                         </p>
@@ -300,22 +300,22 @@ export default function CaregiverDashboard({
                                         <UserIcon className="h-4 w-4 text-muted-foreground" />
                                         <span className="font-medium">
                                             Client:{' '}
-                                            {caregiver.next_job.client?.user
+                                            {caregiver.nextJob.client?.user
                                                 .name || 'N/A'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-foreground">
                                         <MapPin className="h-4 w-4 text-muted-foreground" />
                                         <span>
-                                            {caregiver.next_job.hotel?.name ||
-                                                `${caregiver.next_job.address_city}, ${caregiver.next_job.address_state}`}
+                                            {caregiver.nextJob.hotel?.name ||
+                                                `${caregiver.nextJob.address_city}, ${caregiver.nextJob.address_state}`}
                                         </span>
                                     </div>
-                                    {caregiver.next_job.children && (
+                                    {caregiver.nextJob.children && (
                                         <div className="flex items-center gap-2 text-sm text-foreground">
                                             <Users className="h-4 w-4 text-muted-foreground" />
                                             <span>
-                                                {caregiver.next_job.children
+                                                {caregiver.nextJob.children
                                                     .length || 0}{' '}
                                                 Children
                                             </span>
@@ -325,7 +325,7 @@ export default function CaregiverDashboard({
 
                                 <Button asChild className="w-full">
                                     <Link
-                                        href={`/bookings/${caregiver.next_job.ulid}`}
+                                        href={`/bookings/${caregiver.nextJob.ulid}`}
                                     >
                                         View Job Details
                                         <ChevronRight className="ml-2 h-4 w-4" />
@@ -354,9 +354,9 @@ export default function CaregiverDashboard({
                                 Job Opportunities
                             </h2>
                             <div className="space-y-3">
-                                {caregiver.new_invites &&
-                                caregiver.new_invites.length > 0 ? (
-                                    caregiver.new_invites.map((invite) => (
+                                {caregiver.newInvites &&
+                                caregiver.newInvites.length > 0 ? (
+                                    caregiver.newInvites.map((invite) => (
                                         <Link
                                             key={invite.id}
                                             href={`/bookings/${invite.ulid}`}
@@ -401,8 +401,8 @@ export default function CaregiverDashboard({
                     {/* Secondary Side: Schedule & Availability */}
                     <div className="flex flex-col gap-6">
                         {/* More Upcoming Jobs */}
-                        {caregiver.upcoming_jobs &&
-                            caregiver.upcoming_jobs.length > 0 && (
+                        {caregiver.upcomingJobs &&
+                            caregiver.upcomingJobs.length > 0 && (
                                 <div>
                                     <div className="mb-3 flex items-center justify-between">
                                         <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
@@ -416,7 +416,7 @@ export default function CaregiverDashboard({
                                         </Link>
                                     </div>
                                     <div className="space-y-3">
-                                        {caregiver.upcoming_jobs.map((job) => (
+                                        {caregiver.upcomingJobs.map((job) => (
                                             <Link
                                                 key={job.id}
                                                 href={`/bookings/${job.ulid}`}
@@ -454,7 +454,7 @@ export default function CaregiverDashboard({
                                 <AvailabilityCalendar
                                     availabilities={availabilities}
                                     onDateClick={openSheet}
-                                    timeSlots={caregiver.timeSlots}
+                                    timeSlots={timeSlots}
                                 />
                                 <p className="mt-4 text-center text-xs text-muted-foreground">
                                     Click on a date to set or update your
@@ -485,7 +485,7 @@ export default function CaregiverDashboard({
                                 Time Slots
                             </label>
                             <div className="mt-2 space-y-2">
-                                {caregiver.timeSlots.map((slot) => (
+                                {timeSlots.map((slot) => (
                                     <div
                                         key={slot.value}
                                         className="flex items-center gap-2"
