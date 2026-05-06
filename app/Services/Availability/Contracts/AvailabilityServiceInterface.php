@@ -2,6 +2,7 @@
 
 namespace App\Services\Availability\Contracts;
 
+use App\Models\Availability;
 use Illuminate\Http\Request;
 
 interface AvailabilityServiceInterface
@@ -12,5 +13,5 @@ interface AvailabilityServiceInterface
 
     public function update(Request $request, $id);
 
-    public function destroy($id);
+    public function destroy(Availability $availability);
 }

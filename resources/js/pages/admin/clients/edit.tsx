@@ -1142,7 +1142,7 @@ export default function ClientEdit() {
                                             className="flex items-center justify-between rounded-[3px] border border-green-200 bg-white px-4 py-2"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="font-medium text-foreground text-sm">
+                                                <span className="text-sm font-medium text-foreground">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </div>
@@ -1186,7 +1186,7 @@ export default function ClientEdit() {
                                                 }}
                                                 className="flex w-full items-center gap-2 p-2 text-left hover:bg-green-50"
                                             >
-                                                <span className="font-medium text-foreground text-sm">
+                                                <span className="text-sm font-medium text-foreground">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </button>
@@ -1225,7 +1225,7 @@ export default function ClientEdit() {
                                             className="flex items-center justify-between rounded-[3px] border border-red-200 bg-white px-4 py-2"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <span className="font-medium text-foreground text-sm">
+                                                <span className="text-sm font-medium text-foreground">
                                                     {c.first_name} {c.last_name}
                                                 </span>
                                             </div>

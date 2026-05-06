@@ -449,7 +449,7 @@ export default function CaregiverEdit() {
                             <h1 className="text-xl font-bold text-foreground md:text-2xl">
                                 {caregiver.first_name} {caregiver.last_name}
                             </h1>
-                                <p className="hidden text-muted-foreground md:block">
+                            <p className="hidden text-muted-foreground md:block">
                                 Edit Caregiver Profile
                             </p>
                             {photoForm.errors.profile_photo && (

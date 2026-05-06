@@ -6,6 +6,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
+use App\Enums\TimeSlot;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
@@ -163,6 +164,7 @@ class DashboardController extends Controller
                 $availabilities = $caregiver->availabilities()
                     ->inTheFuture()
                     ->orderBy('date')
+                    ->limit(32)
                     ->get()
                     ->map(function ($availability) {
                         return [
@@ -217,6 +219,10 @@ class DashboardController extends Controller
                     'next_job' => $nextJob,
                     'upcoming_jobs' => $upcomingJobs,
                     'new_invites' => $newInvites,
+                    'timeSlots' => array_map(
+                        fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                        TimeSlot::cases()
+                    ),
                 ];
             }
         }

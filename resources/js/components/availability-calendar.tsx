@@ -11,6 +11,7 @@ interface Availability {
 interface AvailabilityCalendarProps {
     availabilities: Availability[];
     onDateClick: (date: string) => void;
+    timeSlots: Array<{ value: string; label: string }>;
 }
 
 function getDaysInMonth(
@@ -63,6 +64,7 @@ function getIcon(slot: string) {
 export function AvailabilityCalendar({
     availabilities,
     onDateClick,
+    timeSlots,
 }: AvailabilityCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -71,6 +73,14 @@ export function AvailabilityCalendar({
     const days = getDaysInMonth(year, month);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const getSortedTimeSlots = (slots: string[]) => {
+        const canonicalOrder = timeSlots.map((slot) => slot.value);
+
+        return [...slots].sort(
+            (a, b) => canonicalOrder.indexOf(a) - canonicalOrder.indexOf(b),
+        );
+    };
 
     const availabilityMap = useMemo(() => {
         return availabilities.reduce(
@@ -175,16 +185,16 @@ export function AvailabilityCalendar({
                                 (hasAvailability ? (
                                     <div className="flex flex-1 flex-col items-center justify-center gap-1">
                                         <div className="flex items-center gap-0.5">
-                                            {availability.time_slots.map(
-                                                (slot) => (
-                                                    <span
-                                                        key={slot}
-                                                        className="flex items-center"
-                                                    >
-                                                        {getIcon(slot)}
-                                                    </span>
-                                                ),
-                                            )}
+                                            {getSortedTimeSlots(
+                                                availability.time_slots,
+                                            ).map((slot) => (
+                                                <span
+                                                    key={slot}
+                                                    className="flex items-center"
+                                                >
+                                                    {getIcon(slot)}
+                                                </span>
+                                            ))}
                                         </div>
                                         {availability.specific_time && (
                                             <span className="truncate text-xs text-muted-foreground">

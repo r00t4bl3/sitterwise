@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Availability;
 use App\Services\Availability\AvailabilityServiceFactory;
 use Illuminate\Http\Request;
 
@@ -29,8 +30,8 @@ class AvailabilityController extends Controller
         return $this->service->update($request, $id);
     }
 
-    public function destroy($id)
+    public function destroy(Availability $availability)
     {
-        return $this->service->destroy($id);
+        return $this->service->destroy($availability);
     }
 }

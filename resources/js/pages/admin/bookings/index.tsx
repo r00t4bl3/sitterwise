@@ -769,7 +769,7 @@ export default function Bookings() {
             const response = await fetch(`/bookings/${booking.id}`, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    Accept: 'application/json',
                 },
             });
             const fullBooking = await response.json();

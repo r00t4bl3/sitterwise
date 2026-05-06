@@ -366,7 +366,7 @@ class AdminBookingService implements BookingServiceInterface
                 $booking->client->previousCaregivers()->with('user')->get()
             );
 
-            return response()->json($booking); 
+            return response()->json($booking);
         }
 
         return Inertia::render('admin/bookings/show', [

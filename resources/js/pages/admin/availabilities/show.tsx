@@ -1,10 +1,20 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -72,7 +82,12 @@ export default function ManageAvailability() {
     const [availabilities, setAvailabilities] = useState(initialAvailabilities);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        setAvailabilities(initialAvailabilities);
+    }, [initialAvailabilities]);
 
     const {
         data,
@@ -111,28 +126,6 @@ export default function ManageAvailability() {
         setProcessing(true);
         patch(`/availabilities/${caregiver.id}`, {
             onSuccess: () => {
-                const updated = [...availabilities];
-                const existingIndex = updated.findIndex(
-                    (a) => a.date === data.date,
-                );
-
-                const newAvailability = {
-                    id:
-                        existingIndex >= 0
-                            ? updated[existingIndex].id
-                            : Date.now(),
-                    date: data.date,
-                    time_slots: data.time_slots,
-                    specific_time: data.specific_time || null,
-                };
-
-                if (existingIndex >= 0) {
-                    updated[existingIndex] = newAvailability;
-                } else {
-                    updated.push(newAvailability);
-                }
-
-                setAvailabilities(updated);
                 setIsSheetOpen(false);
                 setProcessing(false);
             },
@@ -156,12 +149,9 @@ export default function ManageAvailability() {
             return;
         }
 
-        deleteForm(`/caregivers/${caregiver.id}/availability/${existing.id}`, {
+        deleteForm(`/availabilities/${existing.id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                setAvailabilities((prev) =>
-                    prev.filter((a) => a.date !== selectedDate),
-                );
                 setIsSheetOpen(false);
                 setProcessing(false);
             },
@@ -228,6 +218,7 @@ export default function ManageAvailability() {
                 <AvailabilityCalendar
                     availabilities={availabilities}
                     onDateClick={openSheet}
+                    timeSlots={timeSlots}
                 />
 
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -309,14 +300,63 @@ export default function ManageAvailability() {
                                         {processing ? 'Saving...' : 'Save'}
                                     </Button>
                                     {availabilityMap[selectedDate || ''] && (
-                                        <Button
-                                            onClick={handleDelete}
-                                            disabled={processing}
-                                            variant="secondary"
-                                            className="w-1/4"
+                                        <Dialog
+                                            open={isDeleteDialogOpen}
+                                            onOpenChange={setIsDeleteDialogOpen}
                                         >
-                                            Delete
-                                        </Button>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    disabled={processing}
+                                                    variant="secondary"
+                                                    className="w-1/4"
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>
+                                                        Confirm Delete
+                                                    </DialogTitle>
+                                                    <DialogDescription>
+                                                        Are you sure you want to
+                                                        delete the availability
+                                                        for{' '}
+                                                        {selectedDate
+                                                            ? formatDisplayDate(
+                                                                  selectedDate,
+                                                              )
+                                                            : 'this date'}
+                                                        ? This action cannot be
+                                                        undone.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <DialogFooter>
+                                                    <DialogClose asChild>
+                                                        <Button variant="outline">
+                                                            Cancel
+                                                        </Button>
+                                                    </DialogClose>
+                                                    <Button
+                                                        variant="destructive"
+                                                        onClick={() => {
+                                                            handleDelete();
+                                                            setIsDeleteDialogOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                        disabled={processing}
+                                                    >
+                                                        {processing && (
+                                                            <Spinner className="size-4" />
+                                                        )}
+                                                        {processing
+                                                            ? 'Deleting...'
+                                                            : 'Delete'}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
                                     )}
                                 </div>
 

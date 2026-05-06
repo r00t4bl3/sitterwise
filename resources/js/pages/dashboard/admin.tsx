@@ -14,11 +14,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
-import { dashboard } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
+import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
+import { dashboard } from '@/routes';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -84,7 +84,11 @@ interface AdminDashboardProps {
             state: string | null;
             zip: string | null;
         }>;
-        caregivers?: Array<{ id: number; name: string; [key: string]: unknown }>;
+        caregivers?: Array<{
+            id: number;
+            name: string;
+            [key: string]: unknown;
+        }>;
         service_types?: Array<{ value: string; label: string }>;
         location_types?: Array<{ value: string; label: string }>;
         payment_statuses?: Array<{ value: string; label: string }>;
@@ -130,8 +134,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         special_consideration_options:
             safeAdmin.special_consideration_options ?? [],
         booking_attributes: safeAdmin.booking_attributes ?? [],
-        sitter_preference_options:
-            safeAdmin.sitter_preference_options ?? [],
+        sitter_preference_options: safeAdmin.sitter_preference_options ?? [],
     });
 
     return (
@@ -224,11 +227,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                         key={booking.id}
                                                         type="button"
                                                         onClick={() =>
-                                                                    sheet.openEditSheet(
-                                                                        booking as unknown as FullBooking,
-                                                                    )
-                                                                }
-                                                        className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                            sheet.openEditSheet(
+                                                                booking as unknown as FullBooking,
+                                                            )
+                                                        }
+                                                        className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-8 w-8 items-center justify-center rounded bg-red-100">
@@ -315,7 +318,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                         booking as unknown as FullBooking,
                                                                     )
                                                                 }
-                                                                className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                                className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
@@ -426,11 +429,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                         key={booking.id}
                                                         type="button"
                                                         onClick={() =>
-                                                                    sheet.openEditSheet(
-                                                                        booking as unknown as FullBooking,
-                                                                    )
-                                                                }
-                                                        className="cursor-pointer flex w-full items-center justify-between rounded-lg border border-border bg-card p-3"
+                                                            sheet.openEditSheet(
+                                                                booking as unknown as FullBooking,
+                                                            )
+                                                        }
+                                                        className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-card p-3"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-10 w-10 flex-col items-center justify-center rounded bg-primary/10 text-primary">
@@ -504,7 +507,9 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                     <div className="space-y-2">
                                         <Button
                                             className="w-full justify-start"
-                                            onClick={() => sheet.openCreateSheet()}
+                                            onClick={() =>
+                                                sheet.openCreateSheet()
+                                            }
                                         >
                                             <Plus className="mr-2 h-4 w-4" />
                                             Create Booking
@@ -523,11 +528,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </div>
                             </div>
                         </div>
-</div>
                     </div>
-
-                    <BookingSheet {...sheet} />
                 </div>
-            </AppLayout>
-        );
+
+                <BookingSheet {...sheet} />
+            </div>
+        </AppLayout>
+    );
 }

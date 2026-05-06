@@ -65,9 +65,8 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
         return back()->with('success', 'Availability saved successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Availability $availability)
     {
-        $availability = Availability::findOrFail($id);
         $availability->delete();
 
         return back()->with('success', 'Availability deleted successfully.');
@@ -79,6 +78,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
         $availabilities = $caregiver->availabilities()
             ->inTheFuture()
             ->orderBy('date')
+            ->limit(32)
             ->get()
             ->map(function ($availability) {
                 return [

@@ -11,12 +11,22 @@ import {
     Star,
     Bell,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -77,6 +87,7 @@ interface CaregiverDashboardProps {
         next_job?: Booking | null;
         upcoming_jobs?: Booking[];
         new_invites?: Booking[];
+        timeSlots: Array<{ value: string; label: string }>;
     };
     stats: {
         total_earned: number;
@@ -84,21 +95,19 @@ interface CaregiverDashboardProps {
     };
 }
 
-const timeSlots = [
-    { value: 'morning', label: 'Morning (6am - 12pm)' },
-    { value: 'afternoon', label: 'Afternoon (12pm - 5pm)' },
-    { value: 'evening', label: 'Evening (5pm - 10pm)' },
-];
-
 export default function CaregiverDashboard({
     caregiver,
     stats,
 }: CaregiverDashboardProps) {
-    const [availabilities, setAvailabilities] = useState(
-        caregiver.availabilities,
-    );
+    const initialAvailabilities = caregiver.availabilities;
+    const [availabilities, setAvailabilities] = useState(initialAvailabilities);
+
+    useEffect(() => {
+        setAvailabilities(initialAvailabilities);
+    }, [initialAvailabilities]);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
 
     const {
@@ -135,28 +144,6 @@ export default function CaregiverDashboard({
         setProcessing(true);
         patch(`/availabilities/${caregiver.id}`, {
             onSuccess: () => {
-                const updated = [...availabilities];
-                const existingIndex = updated.findIndex(
-                    (a) => a.date === data.date,
-                );
-
-                const newAvailability = {
-                    id:
-                        existingIndex >= 0
-                            ? updated[existingIndex].id
-                            : Date.now(),
-                    date: data.date,
-                    time_slots: data.time_slots,
-                    specific_time: data.specific_time || null,
-                };
-
-                if (existingIndex >= 0) {
-                    updated[existingIndex] = newAvailability;
-                } else {
-                    updated.push(newAvailability);
-                }
-
-                setAvailabilities(updated);
                 setIsSheetOpen(false);
                 setProcessing(false);
             },
@@ -183,9 +170,6 @@ export default function CaregiverDashboard({
         const existing = map[selectedDate];
 
         if (!existing || existing.id === undefined) {
-            setAvailabilities((prev) =>
-                prev.filter((a) => a.date !== selectedDate),
-            );
             setIsSheetOpen(false);
             setProcessing(false);
 
@@ -195,9 +179,6 @@ export default function CaregiverDashboard({
         deleteForm(`/availabilities/${existing.id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                setAvailabilities((prev) =>
-                    prev.filter((a) => a.date !== selectedDate),
-                );
                 setIsSheetOpen(false);
                 setProcessing(false);
             },
@@ -473,6 +454,7 @@ export default function CaregiverDashboard({
                                 <AvailabilityCalendar
                                     availabilities={availabilities}
                                     onDateClick={openSheet}
+                                    timeSlots={caregiver.timeSlots}
                                 />
                                 <p className="mt-4 text-center text-xs text-muted-foreground">
                                     Click on a date to set or update your
@@ -503,7 +485,7 @@ export default function CaregiverDashboard({
                                 Time Slots
                             </label>
                             <div className="mt-2 space-y-2">
-                                {timeSlots.map((slot) => (
+                                {caregiver.timeSlots.map((slot) => (
                                     <div
                                         key={slot.value}
                                         className="flex items-center gap-2"
@@ -569,14 +551,63 @@ export default function CaregiverDashboard({
 
                                 return (
                                     map[selectedDate || ''] && (
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleDelete}
-                                            disabled={processing}
-                                            className="w-1/4"
+                                        <Dialog
+                                            open={isDeleteDialogOpen}
+                                            onOpenChange={setIsDeleteDialogOpen}
                                         >
-                                            Delete
-                                        </Button>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="secondary"
+                                                    disabled={processing}
+                                                    className="w-1/4"
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>
+                                                        Confirm Delete
+                                                    </DialogTitle>
+                                                    <DialogDescription>
+                                                        Are you sure you want to
+                                                        delete your availability
+                                                        for{' '}
+                                                        {selectedDate
+                                                            ? formatDisplayDate(
+                                                                  selectedDate,
+                                                              )
+                                                            : 'this date'}
+                                                        ? This action cannot be
+                                                        undone.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <DialogFooter>
+                                                    <DialogClose asChild>
+                                                        <Button variant="outline">
+                                                            Cancel
+                                                        </Button>
+                                                    </DialogClose>
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => {
+                                                            handleDelete();
+                                                            setIsDeleteDialogOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                        disabled={processing}
+                                                    >
+                                                        {processing && (
+                                                            <Spinner className="size-4" />
+                                                        )}
+                                                        {processing
+                                                            ? 'Deleting...'
+                                                            : 'Delete'}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
                                     )
                                 );
                             })()}

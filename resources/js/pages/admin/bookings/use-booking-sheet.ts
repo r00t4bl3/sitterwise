@@ -1,6 +1,5 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { parseAsLocal } from '@/lib/datetime';
 import type { Booking } from './types';
 
 export interface UseBookingSheetProps {
@@ -199,7 +198,8 @@ export function useBookingSheet({
             notes: string;
         }>
     >([]);
-    const [saveChildrenPetsToProfile, setSaveChildrenPetsToProfile] = useState(true);
+    const [saveChildrenPetsToProfile, setSaveChildrenPetsToProfile] =
+        useState(true);
 
     const form = useForm<FormData>({
         client_id: null,
@@ -567,7 +567,7 @@ export function useBookingSheet({
         setIsSheetOpen(true);
     };
 
-const openEditSheet = async (booking: Booking) => {
+    const openEditSheet = async (booking: Booking) => {
         setEditingBooking(booking);
         setSheetMode('edit');
         setIsLoading(true);
@@ -577,7 +577,7 @@ const openEditSheet = async (booking: Booking) => {
             const response = await fetch(`/bookings/${booking.id}`, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    Accept: 'application/json',
                 },
             });
             const fullBooking = await response.json();
@@ -623,7 +623,9 @@ const openEditSheet = async (booking: Booking) => {
                 setSelectedHotelName(hotel.name);
             }
 
-            const caregiver = caregivers.find((cg) => cg.id === fullBooking.caregiver_id);
+            const caregiver = caregivers.find(
+                (cg) => cg.id === fullBooking.caregiver_id,
+            );
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
@@ -658,7 +660,7 @@ const openEditSheet = async (booking: Booking) => {
             setClientChildren(unmatchedChildren);
             setClientPets(unmatchedPets);
             setIsLoading(false);
-} catch (error) {
+        } catch (error) {
             console.error('Error fetching booking details:', error);
             setIsSheetOpen(false);
             setIsLoading(false);
@@ -725,7 +727,8 @@ const openEditSheet = async (booking: Booking) => {
             admin_notes: '',
             corporate_id: booking.corporate_id || '',
             sitter_preferences: clientData?.client?.sitter_preferences || [],
-            other_adults_present: clientData?.client?.other_adults_present || '',
+            other_adults_present:
+                clientData?.client?.other_adults_present || '',
             emergency_instructions: '',
             special_needs_notes: '',
             how_did_you_hear: clientData?.client?.how_did_you_hear || '',

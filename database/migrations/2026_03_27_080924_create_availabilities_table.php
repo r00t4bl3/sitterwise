@@ -14,7 +14,6 @@ return new class extends Migration
             $table->date('date');
             $table->json('time_slots');
             $table->string('specific_time')->nullable();
-            $table->softDeletes();
             $table->timestamps();
 
             $table->unique(['caregiver_id', 'date']);

@@ -50,17 +50,14 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
         return back()->with('success', 'Availability updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Availability $availability)
     {
         $user = auth()->user();
         $caregiver = $user->caregiver;
 
-        if (! $user->caregiver) {
-            return back()->with('error', 'You are not a caregiver.');
+        if ((! $user->caregiver) || $availability->caregiver_id !== $user->caregiver->id) {
+            return back()->with('error', 'You are not allowed to delete this availability.');
         }
-
-        $availability = Availability::where('caregiver_id', $caregiver->id)
-            ->findOrFail($id);
 
         $availability->delete();
 
