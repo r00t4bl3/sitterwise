@@ -28,9 +28,9 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
         ) => {
             const finalFingerprint = fingerprint || content;
 
-            if (lastToastRef.current === finalFingerprint) {
-                return;
-            }
+            // if (lastToastRef.current === finalFingerprint) {
+            //     return;
+            // }
 
             lastToastRef.current = finalFingerprint;
 

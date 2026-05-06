@@ -9,6 +9,7 @@ import {
     Briefcase,
     Plus,
 } from 'lucide-react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -140,6 +141,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Dashboard" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">

@@ -353,6 +353,7 @@ class AdminBookingService implements BookingServiceInterface
                 'client.user',
                 'client.children',
                 'client.pets',
+                'client.addresses',
                 'client.favoriteCaregivers.user',
                 'client.blockedCaregivers.user',
                 'hotel',

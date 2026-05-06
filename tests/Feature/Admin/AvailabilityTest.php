@@ -118,7 +118,7 @@ describe('Availability - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertSoftDeleted('availabilities', [
+        $this->assertDatabaseMissing('availabilities', [
             'id' => $availability->id,
         ]);
     });

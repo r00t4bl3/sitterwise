@@ -76,24 +76,10 @@ interface PersonalInfoSectionProps {
         state: string;
         zip: string;
     }>;
-    clientChildren: Array<{
-        id: number;
-        name: string;
-        gender: string | null;
-        birth_year: number | null;
-        birth_month: number | null;
-    }>;
-    clientPets: Array<{
-        id: number;
-        name: string;
-        type: string | null;
-        breed: string | null;
-        notes: string | null;
-    }>;
-    newChildren: NewChild[];
-    newPets: NewPet[];
+    bookingChildren: NewChild[];
+    bookingPets: NewPet[];
     onAddChild: () => void;
-    onRemoveChild: (tempId: string, id?: number) => void;
+    onRemoveChild: (tempId: string) => void;
     onUpdateChild: (
         tempId: string,
         field: string,
@@ -160,10 +146,8 @@ export function PersonalInfoSection({
     setClientMode,
     clientSuggestions,
     clientAddresses,
-    clientChildren,
-    clientPets,
-    newChildren,
-    newPets,
+    bookingChildren,
+    bookingPets,
     onAddChild,
     onRemoveChild,
     onUpdateChild,
@@ -299,35 +283,29 @@ export function PersonalInfoSection({
                                 return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
                             })()}
                         </p>
-                        {editingBooking.client.children &&
-                        editingBooking.client.children.length > 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {editingBooking.client.children.map(
-                                    (child, index) => (
-                                        <span key={child.id}>
-                                            {child.name}
-                                            {child.birth_month &&
-                                            child.birth_year
-                                                ? ` (${calculateAge(
-                                                      child.birth_year,
-                                                      child.birth_month,
-                                                  )})`
-                                                : ''}
-                                            {index <
-                                            editingBooking.client.children!
-                                                .length -
-                                                1
-                                                ? ', '
-                                                : ''}
-                                        </span>
-                                    ),
-                                )}
-                            </p>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">
-                                (No children)
-                            </p>
-                        )}
+                        <p className="text-sm text-muted-foreground">
+                            {editingBooking.children && editingBooking.children.length > 0
+                                ? editingBooking.children.map((child, index) => (
+                                      <span key={`child-${index}`}>
+                                          {child.name}
+                                          {child.birth_month &&
+                                          child.birth_year
+                                              ? ` (${calculateAge(
+                                                    child.birth_year,
+                                                    child.birth_month,
+                                                )})`
+                                              : ''}
+                                          {index <
+                                          editingBooking.children!.length - 1
+                                              ? ', '
+                                              : ''}
+                                      </span>
+                                  ))
+                                : '(No children)'}
+                            {editingBooking.pets &&
+                                editingBooking.pets.length > 0 &&
+                                ` • ${editingBooking.pets.length} pet${editingBooking.pets.length > 1 ? 's' : ''}`}
+                        </p>
                     </div>
                     {form.data.status === 'received' && (
                         <Button
@@ -657,6 +635,7 @@ export function PersonalInfoSection({
                     </div>
 
                     {form.data.location_type === 'private_home' &&
+                        !editingBooking &&
                         clientAddresses.length > 0 &&
                         !showManualAddressInput && (
                             <div>
@@ -751,6 +730,7 @@ export function PersonalInfoSection({
                         )}
 
                     {form.data.location_type === 'private_home' &&
+                        !editingBooking &&
                         clientAddresses.length === 0 &&
                         !isAddressLocked && (
                             <div className="text-sm text-muted-foreground">
@@ -858,7 +838,8 @@ export function PersonalInfoSection({
 
                     {(form.data.location_type !== 'private_home' ||
                         clientAddresses.length === 0 ||
-                        showManualAddressInput) && (
+                        showManualAddressInput ||
+                        editingBooking) && (
                         <BookingAddressFields
                             form={form}
                             isAddressLocked={isAddressLocked}
@@ -893,60 +874,7 @@ export function PersonalInfoSection({
                             </Button>
                         </div>
                         <div className="mt-1 grid gap-4">
-                            {clientChildren.map((child) => (
-                                <div
-                                    key={child.id}
-                                    className="rounded-lg border bg-card p-4"
-                                >
-                                    <div className="mb-3 flex items-start justify-between">
-                                        <p className="text-sm font-medium text-foreground">
-                                            {child.name}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            onClick={() =>
-                                                onRemoveChild('', child.id)
-                                            }
-                                            size="sm"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Name
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {child.name}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Gender
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {child.gender || '-'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Birth (Age)
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {child.birth_month &&
-                                                child.birth_year
-                                                    ? `${MONTH_ABBR[child.birth_month]} ${child.birth_year} (${calculateAge(
-                                                          child.birth_year,
-                                                          child.birth_month,
-                                                      )})`
-                                                    : '-'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {newChildren.map((child) => (
+                            {bookingChildren.map((child) => (
                                 <div
                                     key={child.tempId}
                                     className="rounded-lg border bg-card p-4"
@@ -966,7 +894,7 @@ export function PersonalInfoSection({
                                         </Button>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="sm:col-span-1">
+                                        <div className="sm:col-span-1 md:col-auto">
                                             <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                 Name
                                             </Label>
@@ -1009,69 +937,109 @@ export function PersonalInfoSection({
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Month
-                                            </Label>
-                                            <Select
-                                                value={child.birth_month || ''}
-                                                onValueChange={(value) =>
-                                                    onUpdateChild(
-                                                        child.tempId,
-                                                        'birth_month',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Month" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {MONTH_ABBR.map(
-                                                        (monthAbbr, index) => {
-                                                            if (index === 0) {
-                                                                return null;
-                                                            }
 
-                                                            return (
+                                        <div className="flex flex-row gap-4 sm:col-span-2">
+                                            <div className="grow">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                    Month
+                                                </Label>
+                                                <Select
+                                                    value={child.birth_month || ''}
+                                                    onValueChange={(value) =>
+                                                        onUpdateChild(
+                                                            child.tempId,
+                                                            'birth_month',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Month" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {MONTH_ABBR.map(
+                                                            (monthAbbr, index) => {
+                                                                if (index === 0) {
+                                                                    return null;
+                                                                }
+
+                                                                return (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            monthAbbr
+                                                                        }
+                                                                        value={String(
+                                                                            index,
+                                                                        )}
+                                                                    >
+                                                                        {monthAbbr}
+                                                                    </SelectItem>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grow">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                    Year
+                                                </Label>
+                                                <Select
+                                                    value={child.birth_year || ''}
+                                                    onValueChange={(value) =>
+                                                        onUpdateChild(
+                                                            child.tempId,
+                                                            'birth_year',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Year" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {Array.from(
+                                                            {
+                                                                length:
+                                                                    new Date().getFullYear() -
+                                                                    (new Date().getFullYear() - 17) +
+                                                                    1,
+                                                            },
+                                                            (_, i) =>
+                                                                new Date().getFullYear() - 17 + i,
+                                                        )
+                                                            .reverse()
+                                                            .map((year) => (
                                                                 <SelectItem
-                                                                    key={
-                                                                        monthAbbr
-                                                                    }
+                                                                    key={year}
                                                                     value={String(
-                                                                        index,
+                                                                        year,
                                                                     )}
                                                                 >
-                                                                    {monthAbbr}
+                                                                    {year}
                                                                 </SelectItem>
-                                                            );
-                                                        },
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Year
-                                            </Label>
-                                            <Input
-                                                value={child.birth_year}
-                                                onChange={(e) =>
-                                                    onUpdateChild(
-                                                        child.tempId,
-                                                        'birth_year',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Year"
-                                                className="w-full"
-                                            />
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grow">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                    Age
+                                                </Label>
+                                                <p className="text-sm text-foreground h-11 flex items-center">
+                                                    {child.birth_year
+                                                        ? calculateAge(
+                                                            parseInt(child.birth_year) || null,
+                                                            parseInt(child.birth_month) || null,
+                                                        )
+                                                        : '-'}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                            {clientChildren.length === 0 &&
-                                newChildren.length === 0 && (
+                            {bookingChildren.length === 0 && (
                                     <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
                                         <p className="text-sm text-muted-foreground">
                                             No children added
@@ -1079,8 +1047,7 @@ export function PersonalInfoSection({
                                     </div>
                                 )}
                         </div>
-                        {clientChildren.length === 0 &&
-                            newChildren.length === 0 && (
+                        {bookingChildren.length === 0 && (
                                 <p className="text-sm text-destructive">
                                     At least one child is required.
                                 </p>
@@ -1132,62 +1099,7 @@ export function PersonalInfoSection({
                             </Button>
                         </div>
                         <div className="mt-1 grid gap-4">
-                            {clientPets.map((pet) => (
-                                <div
-                                    key={pet.id}
-                                    className="rounded-lg border bg-card p-4"
-                                >
-                                    <div className="mb-3 flex items-start justify-between">
-                                        <p className="text-sm font-medium text-foreground">
-                                            {pet.name}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            onClick={() =>
-                                                onRemovePet('', pet.id)
-                                            }
-                                            size="sm"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Name
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {pet.name}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Type
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {pet.type || '-'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Breed
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {pet.breed || '-'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Notes
-                                            </Label>
-                                            <p className="text-sm text-foreground">
-                                                {pet.notes || '-'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {newPets.map((pet) => (
+                            {bookingPets.map((pet) => (
                                 <div
                                     key={pet.tempId}
                                     className="rounded-lg border bg-card p-4"
@@ -1274,8 +1186,7 @@ export function PersonalInfoSection({
                                     </div>
                                 </div>
                             ))}
-                            {clientPets.length === 0 &&
-                                newPets.length === 0 && (
+                            {bookingPets.length === 0 && (
                                     <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
                                         <p className="text-sm text-muted-foreground">
                                             No pets added

@@ -20,6 +20,34 @@ import type { UseBookingSheetReturn } from './use-booking-sheet';
 
 type BookingSheetProps = UseBookingSheetReturn;
 
+function calculateAge(birthYear: number | null, birthMonth: number | null): string {
+    if (!birthYear) {
+        return '-';
+    }
+
+    const today = new Date();
+    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    if (age < 1) {
+        const months =
+            (today.getFullYear() - birthDate.getFullYear()) * 12 +
+            today.getMonth() -
+            birthDate.getMonth();
+        return `${months} months`;
+    }
+
+    return `${age} years`;
+}
+
 export function BookingSheet({
     isSheetOpen,
     setIsSheetOpen,
@@ -31,8 +59,8 @@ export function BookingSheet({
     form,
     clientSuggestions,
     clientAddresses,
-    clientChildren,
-    clientPets,
+    bookingChildren,
+    bookingPets,
     clientMode,
     setClientMode,
     selectedClientType,
@@ -46,8 +74,6 @@ export function BookingSheet({
     setShowManualAddressInput,
     addressValue,
     setAddressValue,
-    newChildren,
-    newPets,
     saveChildrenPetsToProfile,
     setSaveChildrenPetsToProfile,
     client_type_options,
@@ -119,10 +145,8 @@ export function BookingSheet({
                                 setClientMode={setClientMode}
                                 clientSuggestions={clientSuggestions}
                                 clientAddresses={clientAddresses}
-                                clientChildren={clientChildren}
-                                clientPets={clientPets}
-                                newChildren={newChildren}
-                                newPets={newPets}
+                                bookingChildren={bookingChildren}
+                                bookingPets={bookingPets}
                                 onAddChild={handleAddChild}
                                 onRemoveChild={handleRemoveChild}
                                 onUpdateChild={handleUpdateChild}
@@ -165,7 +189,7 @@ export function BookingSheet({
                                 hotelSuggestions={hotelSuggestions}
                                 selectedHotelName={selectedHotelName}
                                 handleHotelSearch={handleHotelSearch}
-                                calculateAge={() => '-'}
+                                calculateAge={calculateAge}
                                 isAddressLocked={isAddressLocked}
                                 setIsAddressLocked={setIsAddressLocked}
                                 showManualAddressInput={showManualAddressInput}

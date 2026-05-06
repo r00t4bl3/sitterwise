@@ -43,22 +43,6 @@ interface ClientAddress {
     zip: string;
 }
 
-interface ClientChild {
-    id: number;
-    name: string;
-    gender: string | null;
-    birth_year: number | null;
-    birth_month: number | null;
-}
-
-interface ClientPet {
-    id: number;
-    name: string;
-    type: string | null;
-    breed: string | null;
-    notes: string | null;
-}
-
 type SheetMode = 'create' | 'edit' | 'duplicate';
 
 interface FormData {
@@ -161,8 +145,24 @@ export function useBookingSheet({
     >([]);
 
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
-    const [clientChildren, setClientChildren] = useState<ClientChild[]>([]);
-    const [clientPets, setClientPets] = useState<ClientPet[]>([]);
+    const [bookingChildren, setBookingChildren] = useState<
+        Array<{
+            tempId: string;
+            name: string;
+            gender: string;
+            birth_month: string;
+            birth_year: string;
+        }>
+    >([]);
+    const [bookingPets, setBookingPets] = useState<
+        Array<{
+            tempId: string;
+            name: string;
+            type: string;
+            breed: string;
+            notes: string;
+        }>
+    >([]);
     const [, setAddressMode] = useState<'select' | 'input'>('select');
     const [clientMode, setClientMode] = useState<'select' | 'input'>('select');
     const [selectedClientType, setSelectedClientType] = useState<string | null>(
@@ -177,27 +177,6 @@ export function useBookingSheet({
     const [showManualAddressInput, setShowManualAddressInput] = useState(false);
     const [addressValue, setAddressValue] = useState('');
 
-    const [deletedChildIds, setDeletedChildIds] = useState<number[]>([]);
-    const [deletedPetIds, setDeletedPetIds] = useState<number[]>([]);
-
-    const [newChildren, setNewChildren] = useState<
-        Array<{
-            tempId: string;
-            name: string;
-            gender: string;
-            birth_month: string;
-            birth_year: string;
-        }>
-    >([]);
-    const [newPets, setNewPets] = useState<
-        Array<{
-            tempId: string;
-            name: string;
-            type: string;
-            breed: string;
-            notes: string;
-        }>
-    >([]);
     const [saveChildrenPetsToProfile, setSaveChildrenPetsToProfile] =
         useState(true);
 
@@ -367,8 +346,6 @@ export function useBookingSheet({
             const response = await fetch(`/clients/${clientId}/data`);
             const data = await response.json();
             setClientAddresses(data.client.addresses || []);
-            setClientChildren(data.client.children || []);
-            setClientPets(data.client.pets || []);
             setSelectedClientType(data.client.client_type || null);
 
             if (!skipCaregiverFetch) {
@@ -471,8 +448,6 @@ export function useBookingSheet({
             }
         } else {
             setClientAddresses([]);
-            setClientChildren([]);
-            setClientPets([]);
             setSelectedClientType(null);
             setCaregiverSuggestions(
                 caregivers as unknown as Array<{
@@ -540,19 +515,11 @@ export function useBookingSheet({
             },
             new_children: [],
             new_pets: [],
-            child_ids: [],
-            pet_ids: [],
-            deleted_child_ids: [],
-            deleted_pet_ids: [],
             save_children_pets_to_profile: true,
         });
         setClientAddresses([]);
-        setClientChildren([]);
-        setClientPets([]);
-        setNewChildren([]);
-        setNewPets([]);
-        setDeletedChildIds([]);
-        setDeletedPetIds([]);
+        setBookingChildren([]);
+        setBookingPets([]);
         setAddressMode('select');
         setClientMode('select');
         setIsAddressLocked(false);
@@ -582,30 +549,6 @@ export function useBookingSheet({
             });
             const fullBooking = await response.json();
 
-            const unmatchedChildren: any[] = [];
-            const unmatchedPets: any[] = [];
-
-            if (booking.children) {
-                booking.children.forEach((snapChild) => {
-                    unmatchedChildren.push({
-                        tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
-                        name: snapChild.name || '',
-                        gender: snapChild.gender || '',
-                        birth_month: String(snapChild.birth_month || ''),
-                        birth_year: String(snapChild.birth_year || ''),
-                    });
-                });
-            }
-
-            if (booking.pets) {
-                booking.pets.forEach((snapPet) => {
-                    unmatchedPets.push({
-                        tempId: `snap-${Math.random().toString(36).substr(2, 9)}`,
-                        ...snapPet,
-                    });
-                });
-            }
-
             const client = clients.find((c) => c.id === booking.client_id);
 
             if (client) {
@@ -615,6 +558,19 @@ export function useBookingSheet({
                     name: string;
                     [key: string]: unknown;
                 }>);
+            }
+
+            if (fullBooking.client?.addresses) {
+                setClientAddresses(
+                    fullBooking.client.addresses.map((addr: any) => ({
+                        id: addr.id,
+                        line1: addr.line1 || '',
+                        line2: addr.line2 || null,
+                        city: addr.city || '',
+                        state: addr.state || '',
+                        zip: addr.zip || '',
+                    }))
+                );
             }
 
             const hotel = hotels.find((h) => h.id === fullBooking.hotel_id);
@@ -636,29 +592,79 @@ export function useBookingSheet({
                 }>);
             }
 
-            const childIds: number[] = [];
-
-            if (fullBooking.children) {
-                fullBooking.children.forEach((child: any) => {
-                    if (child.id) {
-                        childIds.push(child.id);
-                    }
-                });
-            }
-
-            const petIds: number[] = [];
-
-            if (fullBooking.pets) {
-                fullBooking.pets.forEach((pet: any) => {
-                    if (pet.id) {
-                        petIds.push(pet.id);
-                    }
-                });
-            }
+            form.setData({
+                client_id: fullBooking.client_id,
+                service_type: fullBooking.service_type,
+                location_type: fullBooking.location_type,
+                start_datetime: fullBooking.start_datetime,
+                end_datetime: fullBooking.end_datetime,
+                hotel_id: fullBooking.hotel_id,
+                address_id: fullBooking.address_id,
+                caregiver_id: fullBooking.caregiver_id,
+                special_considerations: fullBooking.special_considerations || [],
+                caregiver_notes: fullBooking.caregiver_notes || '',
+                notes_to_sitterwise: fullBooking.notes_to_sitterwise || '',
+                admin_notes: fullBooking.admin_notes || '',
+                corporate_id: fullBooking.corporate_id || '',
+                how_did_you_hear: fullBooking.how_did_you_hear || '',
+                sitter_preferences: fullBooking.sitter_preferences || [],
+                other_adults_present: fullBooking.other_adults_present || '',
+                emergency_instructions: fullBooking.emergency_instructions || '',
+                special_needs_notes: fullBooking.special_needs_notes || '',
+                requires_payment: fullBooking.requires_payment,
+                status: fullBooking.status,
+                payment_status: fullBooking.payment_status,
+                rental_platform: fullBooking.rental_platform || null,
+                address_line1: fullBooking.address_line1 || '',
+                address_line2: fullBooking.address_line2 || '',
+                address_city: fullBooking.address_city || '',
+                address_state: fullBooking.address_state || '',
+                address_zip: fullBooking.address_zip || '',
+                new_client: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    client_type: 'individual',
+                },
+                new_children: [],
+                new_pets: [],
+                save_children_pets_to_profile: true,
+            });
 
             setEditingBooking(fullBooking);
-            setClientChildren(unmatchedChildren);
-            setClientPets(unmatchedPets);
+            setBookingChildren(
+                fullBooking.children?.map((child: any, index: number) => ({
+                    tempId: `existing-${index}`,
+                    name: child.name || '',
+                    gender: child.gender || '',
+                    birth_month: child.birth_month ? String(child.birth_month) : '',
+                    birth_year: child.birth_year ? String(child.birth_year) : '',
+                })) || []
+            );
+            setBookingPets(
+                fullBooking.pets?.map((pet: any, index: number) => ({
+                    tempId: `existing-${index}`,
+                    name: pet.name || '',
+                    type: pet.type || '',
+                    breed: pet.breed || '',
+                    notes: pet.notes || '',
+                })) || []
+            );
+
+            const addressParts = [
+                fullBooking.address_line1,
+                fullBooking.address_line2,
+                fullBooking.address_city,
+                fullBooking.address_state,
+                fullBooking.address_zip,
+            ].filter(Boolean);
+            setAddressValue(addressParts.join(', '));
+
+            if (fullBooking.address_line1) {
+                setIsAddressLocked(true);
+            }
+
             setIsLoading(false);
         } catch (error) {
             console.error('Error fetching booking details:', error);
@@ -758,8 +764,8 @@ export function useBookingSheet({
         };
 
         form.setData(formData);
-        setNewChildren(clientChildren);
-        setNewPets(clientPets);
+        setBookingChildren(clientChildren);
+        setBookingPets(clientPets);
 
         if (booking.hotel_id) {
             const hotel = hotels.find((h) => h.id === booking.hotel_id);
@@ -818,8 +824,18 @@ export function useBookingSheet({
 
         form.transform((data) => ({
             ...data,
-            new_children: newChildren,
-            new_pets: newPets,
+            new_children: bookingChildren.map((c) => ({
+                name: c.name,
+                gender: c.gender || '',
+                birth_month: c.birth_month || '',
+                birth_year: c.birth_year || '',
+            })),
+            new_pets: bookingPets.map((p) => ({
+                name: p.name,
+                type: p.type || '',
+                breed: p.breed || '',
+                notes: p.notes || '',
+            })),
             save_children_pets_to_profile: saveChildrenPetsToProfile,
         }));
 
@@ -889,8 +905,8 @@ export function useBookingSheet({
     };
 
     const handleAddChild = () => {
-        setNewChildren([
-            ...newChildren,
+        setBookingChildren([
+            ...bookingChildren,
             {
                 tempId: `new-${Date.now()}`,
                 name: '',
@@ -901,17 +917,8 @@ export function useBookingSheet({
         ]);
     };
 
-    const handleRemoveChild = (tempId: string, id?: number) => {
-        if (id) {
-            setDeletedChildIds([...deletedChildIds, id]);
-            setClientChildren(clientChildren.filter((c) => c.id !== id));
-            form.setData(
-                'child_ids',
-                form.data.child_ids.filter((childId: number) => childId !== id),
-            );
-        } else {
-            setNewChildren(newChildren.filter((c) => c.tempId !== tempId));
-        }
+    const handleRemoveChild = (tempId: string) => {
+        setBookingChildren(bookingChildren.filter((c) => c.tempId !== tempId));
     };
 
     const handleUpdateChild = (
@@ -919,16 +926,16 @@ export function useBookingSheet({
         field: string,
         value: string | boolean,
     ) => {
-        setNewChildren(
-            newChildren.map((c) =>
+        setBookingChildren(
+            bookingChildren.map((c) =>
                 c.tempId === tempId ? { ...c, [field]: value } : c,
             ),
         );
     };
 
     const handleAddPet = () => {
-        setNewPets([
-            ...newPets,
+        setBookingPets([
+            ...bookingPets,
             {
                 tempId: `new-${Date.now()}`,
                 name: '',
@@ -939,22 +946,13 @@ export function useBookingSheet({
         ]);
     };
 
-    const handleRemovePet = (tempId: string, id?: number) => {
-        if (id) {
-            setDeletedPetIds([...deletedPetIds, id]);
-            setClientPets(clientPets.filter((p) => p.id !== id));
-            form.setData(
-                'pet_ids',
-                form.data.pet_ids.filter((petId: number) => petId !== id),
-            );
-        } else {
-            setNewPets(newPets.filter((p) => p.tempId !== tempId));
-        }
+    const handleRemovePet = (tempId: string) => {
+        setBookingPets(bookingPets.filter((p) => p.tempId !== tempId));
     };
 
     const handleUpdatePet = (tempId: string, field: string, value: string) => {
-        setNewPets(
-            newPets.map((p) =>
+        setBookingPets(
+            bookingPets.map((p) =>
                 p.tempId === tempId ? { ...p, [field]: value } : p,
             ),
         );
@@ -976,8 +974,8 @@ export function useBookingSheet({
         caregiverSuggestions,
         setCaregiverSuggestions,
         clientAddresses,
-        clientChildren,
-        clientPets,
+        bookingChildren,
+        bookingPets,
         clientMode,
         setClientMode,
         selectedClientType,
@@ -991,10 +989,6 @@ export function useBookingSheet({
         setShowManualAddressInput,
         addressValue,
         setAddressValue,
-        deletedChildIds,
-        deletedPetIds,
-        newChildren,
-        newPets,
         saveChildrenPetsToProfile,
         setSaveChildrenPetsToProfile,
         client_type_options,

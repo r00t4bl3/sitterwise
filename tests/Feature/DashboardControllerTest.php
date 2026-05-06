@@ -71,13 +71,13 @@ class DashboardControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('dashboard')
-            ->where('caregiver.first_name', 'Jane')
-            ->where('caregiver.last_name', 'Smith')
+            ->where('caregiver.firstName', 'Jane')
+            ->where('caregiver.lastName', 'Smith')
             ->where('caregiver.status.name', 'Active')
             ->where('stats.total_earned', 100)
             ->where('stats.completed_jobs', 1)
-            ->has('caregiver.next_job')
-            ->has('caregiver.new_invites')
+            ->has('caregiver.nextJob')
+            ->has('caregiver.newInvites')
         );
     }
 
