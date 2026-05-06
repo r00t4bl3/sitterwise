@@ -13,6 +13,7 @@ use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\Hotel;
+use App\Models\QuickLink;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -153,6 +154,9 @@ class DashboardController extends Controller
                 'specialConsiderationOptions' => $specialConsiderationOptions,
                 'bookingAttributes' => $bookingAttributes,
                 'sitterPreferenceOptions' => $sitterPreferenceOptions,
+                'quickLinks' => QuickLink::where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(),
             ];
         }
 

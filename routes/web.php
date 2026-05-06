@@ -17,6 +17,7 @@ use App\Http\Controllers\HotelController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PricingRuleController;
+use App\Http\Controllers\QuickLinkController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
@@ -123,6 +124,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('hotels/search', [HotelController::class, 'search'])->name('hotels.search');
     Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
     Route::resource('pricing-rules', PricingRuleController::class)->except(['show', 'create', 'edit'])->name('index', 'pricing-rules.index');
+    Route::get('quick-links/search', [QuickLinkController::class, 'search'])->name('quick-links.search');
+    Route::resource('quick-links', QuickLinkController::class)->except(['show', 'create', 'edit']);
 
 });
 

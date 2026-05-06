@@ -569,7 +569,7 @@ export function useBookingSheet({
                         city: addr.city || '',
                         state: addr.state || '',
                         zip: addr.zip || '',
-                    }))
+                    })),
                 );
             }
 
@@ -601,7 +601,8 @@ export function useBookingSheet({
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
-                special_considerations: fullBooking.special_considerations || [],
+                special_considerations:
+                    fullBooking.special_considerations || [],
                 caregiver_notes: fullBooking.caregiver_notes || '',
                 notes_to_sitterwise: fullBooking.notes_to_sitterwise || '',
                 admin_notes: fullBooking.admin_notes || '',
@@ -609,7 +610,8 @@ export function useBookingSheet({
                 how_did_you_hear: fullBooking.how_did_you_hear || '',
                 sitter_preferences: fullBooking.sitter_preferences || [],
                 other_adults_present: fullBooking.other_adults_present || '',
-                emergency_instructions: fullBooking.emergency_instructions || '',
+                emergency_instructions:
+                    fullBooking.emergency_instructions || '',
                 special_needs_notes: fullBooking.special_needs_notes || '',
                 requires_payment: fullBooking.requires_payment,
                 status: fullBooking.status,
@@ -638,9 +640,13 @@ export function useBookingSheet({
                     tempId: `existing-${index}`,
                     name: child.name || '',
                     gender: child.gender || '',
-                    birth_month: child.birth_month ? String(child.birth_month) : '',
-                    birth_year: child.birth_year ? String(child.birth_year) : '',
-                })) || []
+                    birth_month: child.birth_month
+                        ? String(child.birth_month)
+                        : '',
+                    birth_year: child.birth_year
+                        ? String(child.birth_year)
+                        : '',
+                })) || [],
             );
             setBookingPets(
                 fullBooking.pets?.map((pet: any, index: number) => ({
@@ -649,7 +655,7 @@ export function useBookingSheet({
                     type: pet.type || '',
                     breed: pet.breed || '',
                     notes: pet.notes || '',
-                })) || []
+                })) || [],
             );
 
             const addressParts = [
@@ -676,123 +682,160 @@ export function useBookingSheet({
     const openDuplicateSheet = async (booking: Booking) => {
         setEditingBooking(null);
         setSheetMode('duplicate');
+        setIsLoading(true);
+        setIsSheetOpen(true);
 
-        let clientChildren: any[] = [];
-        let clientPets: any[] = [];
-        let clientData: any = null;
+        try {
+            const response = await fetch(`/bookings/${booking.id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+            });
+            const fullBooking = await response.json();
 
-        if (booking.client_id) {
-            const data = await fetchClientDataOnly(booking.client_id, true);
-            clientData = data;
+            fullBooking.status = 'received';
+            fullBooking.payment_status = 'pending';
+            fullBooking.caregiver_id = null;
+            fullBooking.caregiver_notes = '';
+            fullBooking.notes_to_sitterwise = '';
+            fullBooking.admin_notes = '';
 
-            if (data && data.client) {
-                const profileChildren = data.client.children || [];
-                const profilePets = data.client.pets || [];
+            setEditingBooking(fullBooking);
 
-                clientChildren = profileChildren.map((c: any) => ({
-                    tempId: `new-${Date.now()}-${Math.random()}`,
-                    name: c.name || '',
-                    gender: c.gender || '',
-                    birth_month: String(c.birth_month || ''),
-                    birth_year: String(c.birth_year || ''),
-                }));
+            const clientChildren =
+                fullBooking.children?.map((child: any, index: number) => ({
+                    tempId: `new-${Date.now()}-${index}`,
+                    name: child.name || '',
+                    gender: child.gender || '',
+                    birth_month: child.birth_month
+                        ? String(child.birth_month)
+                        : '',
+                    birth_year: child.birth_year
+                        ? String(child.birth_year)
+                        : '',
+                })) || [];
 
-                clientPets = profilePets.map((p: any) => ({
-                    tempId: `new-${Date.now()}-${Math.random()}`,
-                    name: p.name || '',
-                    type: p.type || '',
-                    breed: p.breed || '',
-                    notes: p.notes || '',
-                }));
+            const clientPets =
+                fullBooking.pets?.map((pet: any, index: number) => ({
+                    tempId: `new-${Date.now()}-${index}`,
+                    name: pet.name || '',
+                    type: pet.type || '',
+                    breed: pet.breed || '',
+                    notes: pet.notes || '',
+                })) || [];
 
-                const client = clients.find((c) => c.id === booking.client_id);
+            const client = booking.client_id
+                ? clients.find((c) => c.id === booking.client_id)
+                : null;
 
-                if (client) {
-                    setSelectedClientName(client.name);
-                    setClientSuggestions([client] as unknown as Array<{
+            if (client) {
+                setSelectedClientName(client.name);
+                setClientSuggestions([client] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
+            }
+
+            const formData = {
+                client_id: fullBooking.client_id,
+                service_type: 'babysitter',
+                location_type: fullBooking.location_type,
+                start_datetime: fullBooking.start_datetime,
+                end_datetime: fullBooking.end_datetime,
+                hotel_id: fullBooking.hotel_id,
+                address_id: fullBooking.address_id,
+                caregiver_id: null,
+                special_considerations:
+                    fullBooking.special_considerations || [],
+                caregiver_notes: '',
+                notes_to_sitterwise: '',
+                admin_notes: '',
+                corporate_id: fullBooking.corporate_id || '',
+                sitter_preferences: fullBooking.sitter_preferences || [],
+                other_adults_present: fullBooking.other_adults_present || '',
+                emergency_instructions: '',
+                special_needs_notes: '',
+                how_did_you_hear: fullBooking.how_did_you_hear || '',
+                requires_payment: fullBooking.requires_payment,
+                status: 'received',
+                payment_status: 'pending',
+                rental_platform: fullBooking.rental_platform || null,
+                address_line1: fullBooking.address_line1 || '',
+                address_line2: fullBooking.address_line2 || '',
+                address_city: fullBooking.address_city || '',
+                address_state: fullBooking.address_state || '',
+                address_zip: fullBooking.address_zip || '',
+                new_client: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    client_type: 'individual',
+                },
+                new_children: clientChildren,
+                new_pets: clientPets,
+                child_ids: [],
+                pet_ids: [],
+                deleted_child_ids: [],
+                deleted_pet_ids: [],
+                save_children_pets_to_profile: true,
+            };
+
+            form.setData(formData);
+            setBookingChildren(clientChildren);
+            setBookingPets(clientPets);
+
+            if (booking.hotel_id) {
+                const hotel = hotels.find((h) => h.id === booking.hotel_id);
+
+                if (hotel) {
+                    setSelectedHotelName(hotel.name);
+                    setHotelSuggestions([hotel] as unknown as Array<{
                         id: number;
                         name: string;
                         [key: string]: unknown;
                     }>);
                 }
             }
-        }
 
-        const formData = {
-            client_id: booking.client_id,
-            service_type: 'babysitter',
-            location_type: booking.location_type,
-            start_datetime: booking.start_datetime,
-            end_datetime: booking.end_datetime,
-            hotel_id: booking.hotel_id,
-            address_id: booking.address_id,
-            caregiver_id: null,
-            special_considerations: booking.special_considerations || [],
-            caregiver_notes: '',
-            notes_to_sitterwise: '',
-            admin_notes: '',
-            corporate_id: booking.corporate_id || '',
-            sitter_preferences: clientData?.client?.sitter_preferences || [],
-            other_adults_present:
-                clientData?.client?.other_adults_present || '',
-            emergency_instructions: '',
-            special_needs_notes: '',
-            how_did_you_hear: clientData?.client?.how_did_you_hear || '',
-            requires_payment: booking.requires_payment,
-            status: 'received',
-            payment_status: 'pending',
-            rental_platform: booking.rental_platform || null,
-            address_line1: booking.address_line1 || '',
-            address_line2: booking.address_line2 || '',
-            address_city: booking.address_city || '',
-            address_state: booking.address_state || '',
-            address_zip: booking.address_zip || '',
-            new_client: {
-                first_name: '',
-                last_name: '',
-                email: '',
-                phone: '',
-                client_type: 'individual',
-            },
-            new_children: clientChildren,
-            new_pets: clientPets,
-            child_ids: [],
-            pet_ids: [],
-            deleted_child_ids: [],
-            deleted_pet_ids: [],
-            save_children_pets_to_profile: true,
-        };
+            setSelectedCaregiverName('');
 
-        form.setData(formData);
-        setBookingChildren(clientChildren);
-        setBookingPets(clientPets);
+            const hasDirectAddress = !!booking.address_line1;
 
-        if (booking.hotel_id) {
-            const hotel = hotels.find((h) => h.id === booking.hotel_id);
-
-            if (hotel) {
-                setSelectedHotelName(hotel.name);
-                setHotelSuggestions([hotel] as unknown as Array<{
-                    id: number;
-                    name: string;
-                    [key: string]: unknown;
-                }>);
+            if (hasDirectAddress) {
+                const addressParts = [
+                    booking.address_line1,
+                    booking.address_line2,
+                    booking.address_city,
+                    booking.address_state,
+                    booking.address_zip,
+                ].filter(Boolean);
+                setAddressValue(addressParts.join(', '));
+                setShowManualAddressInput(true);
+                setIsAddressLocked(true);
+                setAddressMode('input');
+            } else {
+                setAddressMode('select');
+                setClientMode('select');
+                setIsAddressLocked(false);
+                setShowManualAddressInput(false);
+                setAddressValue('');
             }
+
+            setClientSuggestions([]);
+            setHotelSuggestions([]);
+            setCaregiverSuggestions([]);
+
+            setIsSheetOpen(true);
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error fetching booking details:', error);
+            setIsLoading(false);
+
+            return;
         }
-
-        setSelectedCaregiverName('');
-
-        setAddressMode('select');
-        setClientMode('select');
-        setIsAddressLocked(false);
-        setShowManualAddressInput(false);
-        setAddressValue('');
-
-        setClientSuggestions([]);
-        setHotelSuggestions([]);
-        setCaregiverSuggestions([]);
-
-        setIsSheetOpen(true);
     };
 
     const handleSubmit = () => {

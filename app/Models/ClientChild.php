@@ -28,6 +28,12 @@ class ClientChild extends Model
         'birth_date' => 'date',
     ];
 
+    protected $appends = [
+        'age',
+        'birth_month',
+        'birth_year',
+    ];
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

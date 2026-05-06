@@ -75,7 +75,7 @@ export function Autocomplete({
 
         debounceRef.current = setTimeout(() => {
             onSearch(value);
-        }, 300);
+        }, 100);
     };
 
     const handleItemClick = (item: { id: number; name: string }) => {

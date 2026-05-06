@@ -81,6 +81,38 @@ interface ClientDetailsFormData {
     phone: string;
 }
 
+function calculateAge(
+    birthYear: number | null,
+    birthMonth: number | null,
+): string {
+    if (!birthYear) {
+        return '-';
+    }
+
+    const today = new Date();
+    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    if (age < 1) {
+        const months =
+            (today.getFullYear() - birthDate.getFullYear()) * 12 +
+            today.getMonth() -
+            birthDate.getMonth();
+
+        return `${months} months`;
+    }
+
+    return `${age} years`;
+}
+
 export default function GuestBookingCreate() {
     const {
         service_types,
@@ -677,7 +709,7 @@ export default function GuestBookingCreate() {
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                                                 <div className="sm:col-span-1">
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Name
@@ -775,18 +807,66 @@ export default function GuestBookingCreate() {
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Year
                                                     </Label>
-                                                    <Input
-                                                        value={child.birth_year}
-                                                        onChange={(e) =>
+                                                    <Select
+                                                        value={
+                                                            child.birth_year ||
+                                                            ''
+                                                        }
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
                                                             handleUpdateChild(
                                                                 child.tempId,
                                                                 'birth_year',
-                                                                e.target.value,
+                                                                value,
                                                             )
                                                         }
-                                                        placeholder="Year"
-                                                        className=""
-                                                    />
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Year" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {Array.from(
+                                                                {
+                                                                    length:
+                                                                        new Date().getFullYear() -
+                                                                        new Date().getFullYear() +
+                                                                        18,
+                                                                },
+                                                                (_, i) =>
+                                                                    new Date().getFullYear() -
+                                                                    i,
+                                                            ).map((year) => (
+                                                                <SelectItem
+                                                                    key={year}
+                                                                    value={String(
+                                                                        year,
+                                                                    )}
+                                                                >
+                                                                    {year}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                        Age
+                                                    </Label>
+                                                    <div className="mt-3 text-sm text-foreground">
+                                                        {calculateAge(
+                                                            child.birth_year
+                                                                ? parseInt(
+                                                                      child.birth_year,
+                                                                  )
+                                                                : null,
+                                                            child.birth_month
+                                                                ? parseInt(
+                                                                      child.birth_month,
+                                                                  )
+                                                                : null,
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

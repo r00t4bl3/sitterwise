@@ -20,7 +20,10 @@ import type { UseBookingSheetReturn } from './use-booking-sheet';
 
 type BookingSheetProps = UseBookingSheetReturn;
 
-function calculateAge(birthYear: number | null, birthMonth: number | null): string {
+function calculateAge(
+    birthYear: number | null,
+    birthMonth: number | null,
+): string {
     if (!birthYear) {
         return '-';
     }
@@ -42,6 +45,7 @@ function calculateAge(birthYear: number | null, birthMonth: number | null): stri
             (today.getFullYear() - birthDate.getFullYear()) * 12 +
             today.getMonth() -
             birthDate.getMonth();
+
         return `${months} months`;
     }
 
@@ -200,6 +204,7 @@ export function BookingSheet({
                                 setAddressValue={setAddressValue}
                                 caregiverSuggestions={caregiverSuggestions}
                                 onOpenNotifySheet={populateCaregiverSuggestions}
+                                sheetMode={sheetMode}
                             />
 
                             <BookingDetailsSection

@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { BadgeCheck, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
@@ -98,6 +98,13 @@ interface PersonalInfoSectionProps {
     location_types: Array<{ value: string; label: string }>;
     sitter_preference_options: Array<{ value: string; label: string }>;
     client_type_options: Array<{ value: string; label: string }>;
+    caregiverSuggestions: Array<{
+        id: number;
+        name: string;
+        age?: number | null;
+        matchBadge?: { label: string; color: string };
+        hasBeenNotified?: boolean;
+    }>;
     booking_attributes: Array<{
         id: number;
         name: string;
@@ -131,12 +138,8 @@ interface PersonalInfoSectionProps {
     setShowManualAddressInput: (show: boolean) => void;
     addressValue: string;
     setAddressValue: (value: string) => void;
-    caregiverSuggestions: Array<{
-        id: number;
-        name: string;
-        [key: string]: unknown;
-    }>;
     onOpenNotifySheet?: () => void;
+    sheetMode?: string;
 }
 
 export function PersonalInfoSection({
@@ -178,58 +181,34 @@ export function PersonalInfoSection({
     setAddressValue,
     caregiverSuggestions,
     onOpenNotifySheet,
+    sheetMode,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
-    const [selectedCaregivers, setSelectedCaregivers] = useState<number[]>([]);
-    const [processing, setProcessing] = useState(false);
-
-    // Create a ref to keep track of the current selected caregivers
-    const selectedCaregiversRef = useRef(selectedCaregivers);
-
-    // Update the ref whenever selectedCaregivers changes
-    useEffect(() => {
-        // console.log('Updating selectedCaregiversRef to:', selectedCaregivers);
-        selectedCaregiversRef.current = selectedCaregivers;
-    }, [selectedCaregivers]);
 
     const notifyForm = useForm({
         caregiver_ids: [] as number[],
     });
 
     const toggleCaregiver = (id: number) => {
-        console.log('Toggling caregiver ID:', id);
-        console.log(
-            'Current selected caregivers before toggle:',
-            selectedCaregivers,
-        );
-        setSelectedCaregivers((prev) => {
-            const newState = prev.includes(id)
-                ? prev.filter((c) => c !== id)
-                : [...prev, id];
-            console.log('New state after toggle:', newState);
+        const current = notifyForm.data.caregiver_ids;
+        const next = current.includes(id)
+            ? current.filter((c) => c !== id)
+            : [...current, id];
 
-            return newState;
-        });
+        notifyForm.setData('caregiver_ids', next);
     };
 
     const handleNotify = () => {
-        if (selectedCaregivers.length === 0) {
+        if (notifyForm.data.caregiver_ids.length === 0) {
             return;
         }
 
-        setProcessing(true);
-        notifyForm.setData('caregiver_ids', selectedCaregivers);
         notifyForm.post(`/bookings/${editingBooking!.id}/notify`, {
             onSuccess: () => {
-                setProcessing(false);
                 setNotifySheetOpen(false);
-                setSelectedCaregivers([]);
-                notifyForm.setData('caregiver_ids', []);
-            },
-            onError: () => {
-                setProcessing(false);
+                notifyForm.reset();
             },
         });
     };
@@ -284,44 +263,50 @@ export function PersonalInfoSection({
                             })()}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            {editingBooking.children && editingBooking.children.length > 0
-                                ? editingBooking.children.map((child, index) => (
-                                      <span key={`child-${index}`}>
-                                          {child.name}
-                                          {child.birth_month &&
-                                          child.birth_year
-                                              ? ` (${calculateAge(
-                                                    child.birth_year,
-                                                    child.birth_month,
-                                                )})`
-                                              : ''}
-                                          {index <
-                                          editingBooking.children!.length - 1
-                                              ? ', '
-                                              : ''}
-                                      </span>
-                                  ))
+                            {editingBooking.children &&
+                            editingBooking.children.length > 0
+                                ? editingBooking.children.map(
+                                      (child, index) => (
+                                          <span key={`child-${index}`}>
+                                              {child.name}
+                                              {child.birth_month &&
+                                              child.birth_year
+                                                  ? ` (${calculateAge(
+                                                        child.birth_year,
+                                                        child.birth_month,
+                                                    )})`
+                                                  : ''}
+                                              {index <
+                                              editingBooking.children!.length -
+                                                  1
+                                                  ? ', '
+                                                  : ''}
+                                          </span>
+                                      ),
+                                  )
                                 : '(No children)'}
                             {editingBooking.pets &&
                                 editingBooking.pets.length > 0 &&
                                 ` • ${editingBooking.pets.length} pet${editingBooking.pets.length > 1 ? 's' : ''}`}
                         </p>
                     </div>
-                    {form.data.status === 'received' && (
-                        <Button
-                            size="sm"
-                            onClick={() => {
-                                const currentId = form.data.caregiver_id;
-                                setSelectedCaregivers(
-                                    currentId ? [currentId] : [],
-                                );
-                                onOpenNotifySheet?.();
-                                setNotifySheetOpen(true);
-                            }}
-                        >
-                            Notify Caregivers
-                        </Button>
-                    )}
+                    {form.data.status === 'received' &&
+                        sheetMode !== 'duplicate' && (
+                            <Button
+                                size="sm"
+                                onClick={() => {
+                                    const currentId = form.data.caregiver_id;
+                                    notifyForm.setData(
+                                        'caregiver_ids',
+                                        currentId ? [currentId] : [],
+                                    );
+                                    onOpenNotifySheet?.();
+                                    setNotifySheetOpen(true);
+                                }}
+                            >
+                                Notify Caregivers
+                            </Button>
+                        )}
                 </div>
             )}
 
@@ -332,16 +317,43 @@ export function PersonalInfoSection({
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
                 <SheetContent
                     side="right"
-                    className="flex w-full flex-col sm:max-w-md"
+                    className="flex w-full flex-col sm:max-w-lg"
                 >
-                    <SheetHeader className="shrink-0">
-                        <SheetTitle>Notify Caregivers</SheetTitle>
-                        <SheetDescription>
-                            Select caregivers to notify about this booking.
-                        </SheetDescription>
+                    <SheetHeader className="shrink-0 pb-0">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <SheetTitle>Notify Caregivers</SheetTitle>
+                                <SheetDescription>
+                                    Select caregivers to notify about this
+                                    booking.
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        onClick={() => {
+                                            notifyForm.setData(
+                                                'caregiver_ids',
+                                                notifyForm.data.caregiver_ids
+                                                    .length ===
+                                                    caregiverSuggestions.length
+                                                    ? []
+                                                    : caregiverSuggestions.map(
+                                                          (cg) => cg.id,
+                                                      ),
+                                            );
+                                        }}
+                                    >
+                                        {notifyForm.data.caregiver_ids
+                                            .length ===
+                                        caregiverSuggestions.length
+                                            ? 'Deselect All'
+                                            : 'Select All'}
+                                    </Button>
+                                </SheetDescription>
+                            </div>
+                        </div>
                     </SheetHeader>
 
-                    <div className="flex-1 space-y-4 overflow-y-auto px-4">
+                    <div className="flex-1 space-y-2 overflow-y-auto px-4">
                         {caregiverSuggestions.map((caregiver) => {
                             const badge = (caregiver as any).matchBadge;
                             const hasBeenNotified = (caregiver as any)
@@ -356,42 +368,52 @@ export function PersonalInfoSection({
                             return (
                                 <Label
                                     key={caregiver.id}
-                                    className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
+                                    className={`flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:cursor-pointer hover:bg-blush ${notifyForm.data.caregiver_ids.includes(caregiver.id) && `bg-blush`}`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <Checkbox
                                             id={`cg-${caregiver.id}`}
-                                            checked={selectedCaregivers.includes(
+                                            checked={notifyForm.data.caregiver_ids.includes(
                                                 caregiver.id,
                                             )}
                                             onCheckedChange={() =>
                                                 toggleCaregiver(caregiver.id)
                                             }
                                         />
-                                        <Label
-                                            htmlFor={`cg-${caregiver.id}`}
-                                            className="flex text-sm font-medium"
-                                        >
-                                            {caregiver.name}
-                                            {hasBeenNotified && (
-                                                <span
-                                                    className="ml-2 text-green-500"
-                                                    title="Already notified"
-                                                >
-                                                    <BadgeCheck className="h-5 w-5" />
-                                                </span>
-                                            )}
-                                        </Label>
+                                        <div className="flex flex-row gap-2">
+                                            <Label
+                                                htmlFor={`cg-${caregiver.id}`}
+                                                className="flex text-sm font-medium"
+                                            >
+                                                {caregiver.name}
+                                                {hasBeenNotified && (
+                                                    <span
+                                                        className="ml-2 text-green-500"
+                                                        title="Already notified"
+                                                    >
+                                                        <BadgeCheck className="h-5 w-5" />
+                                                    </span>
+                                                )}
+                                            </Label>
+                                        </div>
                                     </div>
                                     {badge && (
-                                        <span
-                                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                colorClasses[badge.color] ||
-                                                'bg-gray-100 text-gray-800'
-                                            }`}
-                                        >
-                                            {badge.label}
-                                        </span>
+                                        <div>
+                                            {caregiver.age && (
+                                                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
+                                                    {caregiver.age}y
+                                                </span>
+                                            )}
+
+                                            <span
+                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                    colorClasses[badge.color] ||
+                                                    'bg-gray-100 text-gray-800'
+                                                }`}
+                                            >
+                                                {badge.label}
+                                            </span>
+                                        </div>
                                     )}
                                 </Label>
                             );
@@ -401,10 +423,12 @@ export function PersonalInfoSection({
                     <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
                         <Button
                             onClick={handleNotify}
-                            disabled={processing}
+                            disabled={notifyForm.processing}
                             className="flex-1"
                         >
-                            {processing && <Spinner className="size-4" />}
+                            {notifyForm.processing && (
+                                <Spinner className="size-4" />
+                            )}
                             Send Notification
                         </Button>
                         <Button
@@ -944,7 +968,9 @@ export function PersonalInfoSection({
                                                     Month
                                                 </Label>
                                                 <Select
-                                                    value={child.birth_month || ''}
+                                                    value={
+                                                        child.birth_month || ''
+                                                    }
                                                     onValueChange={(value) =>
                                                         onUpdateChild(
                                                             child.tempId,
@@ -958,8 +984,13 @@ export function PersonalInfoSection({
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {MONTH_ABBR.map(
-                                                            (monthAbbr, index) => {
-                                                                if (index === 0) {
+                                                            (
+                                                                monthAbbr,
+                                                                index,
+                                                            ) => {
+                                                                if (
+                                                                    index === 0
+                                                                ) {
                                                                     return null;
                                                                 }
 
@@ -972,7 +1003,9 @@ export function PersonalInfoSection({
                                                                             index,
                                                                         )}
                                                                     >
-                                                                        {monthAbbr}
+                                                                        {
+                                                                            monthAbbr
+                                                                        }
                                                                     </SelectItem>
                                                                 );
                                                             },
@@ -985,7 +1018,9 @@ export function PersonalInfoSection({
                                                     Year
                                                 </Label>
                                                 <Select
-                                                    value={child.birth_year || ''}
+                                                    value={
+                                                        child.birth_year || ''
+                                                    }
                                                     onValueChange={(value) =>
                                                         onUpdateChild(
                                                             child.tempId,
@@ -1002,11 +1037,14 @@ export function PersonalInfoSection({
                                                             {
                                                                 length:
                                                                     new Date().getFullYear() -
-                                                                    (new Date().getFullYear() - 17) +
+                                                                    (new Date().getFullYear() -
+                                                                        17) +
                                                                     1,
                                                             },
                                                             (_, i) =>
-                                                                new Date().getFullYear() - 17 + i,
+                                                                new Date().getFullYear() -
+                                                                17 +
+                                                                i,
                                                         )
                                                             .reverse()
                                                             .map((year) => (
@@ -1026,12 +1064,16 @@ export function PersonalInfoSection({
                                                 <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                     Age
                                                 </Label>
-                                                <p className="text-sm text-foreground h-11 flex items-center">
+                                                <p className="flex h-11 items-center text-sm text-foreground">
                                                     {child.birth_year
                                                         ? calculateAge(
-                                                            parseInt(child.birth_year) || null,
-                                                            parseInt(child.birth_month) || null,
-                                                        )
+                                                              parseInt(
+                                                                  child.birth_year,
+                                                              ) || null,
+                                                              parseInt(
+                                                                  child.birth_month,
+                                                              ) || null,
+                                                          )
                                                         : '-'}
                                                 </p>
                                             </div>
@@ -1040,18 +1082,18 @@ export function PersonalInfoSection({
                                 </div>
                             ))}
                             {bookingChildren.length === 0 && (
-                                    <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                        <p className="text-sm text-muted-foreground">
-                                            No children added
-                                        </p>
-                                    </div>
-                                )}
+                                <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        No children added
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         {bookingChildren.length === 0 && (
-                                <p className="text-sm text-destructive">
-                                    At least one child is required.
-                                </p>
-                            )}
+                            <p className="text-sm text-destructive">
+                                At least one child is required.
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -1187,12 +1229,12 @@ export function PersonalInfoSection({
                                 </div>
                             ))}
                             {bookingPets.length === 0 && (
-                                    <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                        <p className="text-sm text-muted-foreground">
-                                            No pets added
-                                        </p>
-                                    </div>
-                                )}
+                                <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        No pets added
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 

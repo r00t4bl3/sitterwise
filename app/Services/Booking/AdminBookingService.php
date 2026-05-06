@@ -710,6 +710,7 @@ class AdminBookingService implements BookingServiceInterface
             return [
                 'id' => $item['caregiver']->id,
                 'name' => $item['caregiver']->first_name.' '.$item['caregiver']->last_name,
+                'age' => $item['caregiver']->date_of_birth->age,
                 'score' => $item['score'],
                 'matchBadge' => $item['matchBadge'],
                 'hasBeenNotified' => $item['hasBeenNotified'],

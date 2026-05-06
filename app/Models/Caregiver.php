@@ -41,19 +41,29 @@ class Caregiver extends Model
 
     private static function generateSlug(string $name): string
     {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
+        $parts = explode(' ', $name, 2);
+        $firstName = $parts[0] ?? '';
+        $lastName = $parts[1] ?? '';
 
-        $query = self::where('slug', $slug);
+        $lastInitial = $lastName
+            ? Str::slug(mb_substr($lastName, 0, 1))
+            : '';
 
-        while ($query->exists()) {
-            $slug = $originalSlug.'-'.$counter;
-            $query = self::where('slug', $slug);
+        $baseSlug = Str::slug($firstName).'-'.$lastInitial;
+
+        if (empty($baseSlug) || $baseSlug === '-') {
+            $baseSlug = Str::slug($name);
+        }
+
+        $originalSlug = $baseSlug;
+        $counter = 2;
+
+        while (self::where('slug', $baseSlug)->exists()) {
+            $baseSlug = $originalSlug.'-'.$counter;
             $counter++;
         }
 
-        return $slug;
+        return $baseSlug;
     }
 
     protected $fillable = [

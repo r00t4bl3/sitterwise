@@ -11,6 +11,7 @@ import {
     Users,
     User,
     CircleDollarSign,
+    FileSymlink,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -125,6 +126,11 @@ const superAdminNavItems: NavItem[] = [
         title: 'Pricing Rules',
         href: '/pricing-rules',
         icon: CircleDollarSign,
+    },
+    {
+        title: 'Quick Links',
+        href: '/quick-links',
+        icon: FileSymlink,
     },
 ];
 

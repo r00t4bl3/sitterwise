@@ -198,4 +198,101 @@ class CaregiverTest extends TestCase
 
         $this->assertInstanceOf(BelongsToMany::class, $relation);
     }
+
+    public function test_generates_slug_with_last_initial()
+    {
+        $status = CaregiverStatus::factory()->create();
+
+        $caregiver = Caregiver::factory()->make([
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Statham',
+            'slug' => '',
+        ]);
+        $caregiver->save();
+
+        $this->assertEquals('jason-s', $caregiver->refresh()->slug);
+    }
+
+    public function test_generates_unique_slug_for_duplicate_base()
+    {
+        $status = CaregiverStatus::factory()->create();
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $caregiver1 = new Caregiver([
+            'user_id' => $user1->id,
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Momoa',
+            'slug' => '',
+        ]);
+        $caregiver1->save();
+
+        $caregiver2 = new Caregiver([
+            'user_id' => $user2->id,
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Michael',
+            'slug' => '',
+        ]);
+        $caregiver2->save();
+
+        $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
+        $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
+    }
+
+    public function test_generates_sequential_slugs_for_multiple_duplicates()
+    {
+        $status = CaregiverStatus::factory()->create();
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $user3 = User::factory()->create();
+
+        $caregiver1 = new Caregiver([
+            'user_id' => $user1->id,
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Momoa',
+            'slug' => '',
+        ]);
+        $caregiver1->save();
+
+        $caregiver2 = new Caregiver([
+            'user_id' => $user2->id,
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Michael',
+            'slug' => '',
+        ]);
+        $caregiver2->save();
+
+        $caregiver3 = new Caregiver([
+            'user_id' => $user3->id,
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => 'Miller',
+            'slug' => '',
+        ]);
+        $caregiver3->save();
+
+        $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
+        $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
+        $this->assertEquals('jason-m-3', $caregiver3->refresh()->slug);
+    }
+
+    public function test_generates_slug_for_special_last_name()
+    {
+        $status = CaregiverStatus::factory()->create();
+
+        $caregiver = Caregiver::factory()->make([
+            'status_id' => $status->id,
+            'first_name' => 'Jason',
+            'last_name' => "O'Brien",
+            'slug' => '',
+        ]);
+        $caregiver->save();
+
+        $this->assertEquals('jason-o', $caregiver->refresh()->slug);
+    }
 }
