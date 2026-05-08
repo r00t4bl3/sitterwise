@@ -384,64 +384,36 @@ export default function CaregiverEdit() {
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </Link>
-                            {currentProfilePhoto ? (
-                                <div className="group relative">
-                                    <UserAvatar
-                                        profile_photo_url={
-                                            caregiver.user.profile_photo_url
-                                        }
-                                        profile_photo_path={
-                                            caregiver.user.profile_photo_path
-                                        }
-                                        name={`${caregiver.first_name} ${caregiver.last_name}`}
-                                        size="md"
-                                        className="size-10 md:size-16"
-                                    />
-                                    {photoForm.processing && (
-                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                                            <Spinner className="h-5 w-5" />
-                                        </div>
-                                    )}
-                                    <Label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            disabled={photoForm.processing}
-                                            onChange={handlePhotoFormChange}
-                                        />
-                                        <span className="text-xs font-medium text-white">
-                                            Change
-                                        </span>
-                                    </Label>
-                                </div>
-                            ) : (
-                                <div className="group relative">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 group-hover:bg-amber-200">
-                                        <span className="text-2xl font-medium text-amber-600">
-                                            {caregiver.first_name[0]}
-                                            {caregiver.last_name[0]}
-                                        </span>
+                            <div className="group relative">
+                                <UserAvatar
+                                    profile_photo_url={
+                                        caregiver.user.profile_photo_url
+                                    }
+                                    profile_photo_path={
+                                        caregiver.user.profile_photo_path
+                                    }
+                                    name={`${caregiver.first_name} ${caregiver.last_name}`}
+                                    size="md"
+                                    className="size-10 md:size-16"
+                                />
+                                {photoForm.processing && (
+                                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                                        <Spinner className="h-5 w-5" />
                                     </div>
-                                    {photoForm.processing && (
-                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                                            <Spinner className="h-5 w-5" />
-                                        </div>
-                                    )}
-                                    <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            disabled={photoForm.processing}
-                                            onChange={handlePhotoFormChange}
-                                        />
-                                        <span className="text-xs font-medium text-white">
-                                            Change
-                                        </span>
-                                    </label>
-                                </div>
-                            )}
+                                )}
+                                <Label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        disabled={photoForm.processing}
+                                        onChange={handlePhotoFormChange}
+                                    />
+                                    <span className="text-xs font-medium text-white">
+                                        Change
+                                    </span>
+                                </Label>
+                            </div>
                         </div>
                     </form>
                     <div>

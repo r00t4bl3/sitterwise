@@ -68,6 +68,7 @@ class CaregiverController extends Controller
             'name' => $validated['first_name'].' '.$validated['last_name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => 'caregiver',
         ]);
 
         $caregiver = Caregiver::create([

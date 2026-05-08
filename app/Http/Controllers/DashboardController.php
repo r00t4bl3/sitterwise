@@ -270,9 +270,9 @@ class DashboardController extends Controller
                     ->get();
 
                 $clientData = [
-                    'next_booking' => $nextBooking,
-                    'upcoming_bookings' => $upcomingBookings,
-                    'recent_bookings' => $recentBookings,
+                    'nextBooking' => $nextBooking,
+                    'upcomingBookings' => $upcomingBookings,
+                    'recentBookings' => $recentBookings,
                 ];
             }
         }

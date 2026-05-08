@@ -302,19 +302,22 @@ export default function TransactionsIndex() {
                                             <td className="px-4 py-3 text-sm text-foreground">
                                                 {booking.id}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <div className="text-sm font-medium text-foreground">
+                                            <td className="px-4 py-3 text-sm font-medium text-ring">
+                                                <Link
+                                                    href={`/clients/${booking.client.id}`}
+                                                    className="hover:underline"
+                                                >
                                                     {booking.client.first_name}{' '}
                                                     {booking.client.last_name}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {booking.client.user?.email}
-                                                </div>
+                                                </Link>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 text-sm font-medium text-ring ">
                                                 {booking.caregiver ? (
                                                     <>
-                                                        <div className="text-sm font-medium text-foreground">
+                                                        <Link
+                                                            href={`/caregivers/${booking.caregiver.id}`}
+                                                            className="hover:underline"
+                                                        >
                                                             {
                                                                 booking
                                                                     .caregiver
@@ -325,14 +328,7 @@ export default function TransactionsIndex() {
                                                                     .caregiver
                                                                     .last_name
                                                             }
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {
-                                                                booking
-                                                                    .caregiver
-                                                                    .user?.email
-                                                            }
-                                                        </div>
+                                                        </Link>
                                                     </>
                                                 ) : (
                                                     <span className="text-sm text-muted-foreground">
