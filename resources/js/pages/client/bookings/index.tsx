@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime } from '@/lib/datetime';
@@ -49,6 +50,7 @@ export default function ClientBookingsIndex() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Bookings" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
