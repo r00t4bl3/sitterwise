@@ -1,5 +1,5 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { Calendar, Clock, MapPin, Building } from 'lucide-react';
+import { Calendar, Clock, MapPin, Building, Star } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,16 @@ interface Booking {
     address_zip: string;
     hotel: {
         name: string;
+    } | null;
+    client_rating?: {
+        id: number;
+        rating: number;
+        comment: string | null;
+    } | null;
+    caregiver_rating?: {
+        id: number;
+        rating: number;
+        comment: string | null;
     } | null;
 }
 
@@ -241,6 +251,12 @@ export default function CaregiverJobsIndex() {
                                         Status
                                     </th>
                                     <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
+                                        Review from Caregiver
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
+                                        Feedback from Client
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
                                         Actions
                                     </th>
                                 </tr>
@@ -318,6 +334,66 @@ export default function CaregiverJobsIndex() {
                                             )}
                                         </td>
                                         <td className="px-4 py-3">
+                                            {job.client_rating ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`h-4 w-4 ${
+                                                                    star <= job.client_rating!.rating
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ))}
+                                                        <span className="ml-1 text-xs text-muted-foreground">
+                                                            ({job.client_rating!.rating}/5)
+                                                        </span>
+                                                    </div>
+                                                    {job.client_rating.comment && (
+                                                        <p className="text-xs text-muted-foreground italic">
+                                                            "{job.client_rating.comment}"
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    Not rated
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {job.caregiver_rating ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`h-4 w-4 ${
+                                                                    star <= job.caregiver_rating!.rating
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ))}
+                                                        <span className="ml-1 text-xs text-muted-foreground">
+                                                            ({job.caregiver_rating!.rating}/5)
+                                                        </span>
+                                                    </div>
+                                                    {job.caregiver_rating.comment && (
+                                                        <p className="text-xs text-muted-foreground italic">
+                                                            "{job.caregiver_rating.comment}"
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    Not rated
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
                                             <div className="flex flex-wrap gap-2">
                                                 <Button
                                                     variant="outline"
@@ -354,7 +430,7 @@ export default function CaregiverJobsIndex() {
                                 {jobs.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={6}
+                                            colSpan={7}
                                             className="px-4 py-12 text-center text-muted-foreground"
                                         >
                                             No jobs found.

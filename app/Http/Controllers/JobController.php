@@ -56,7 +56,7 @@ class JobController extends Controller
             abort(403, 'You are not authorized to view this job');
         }
 
-        $booking->load('client.user', 'hotel', 'address');
+        $booking->load('client.user', 'hotel', 'address', 'clientRating', 'caregiverRating');
 
         return Inertia::render('caregiver/jobs/show', [
             'booking' => [
@@ -83,6 +83,8 @@ class JobController extends Controller
                 'caregiver_notes' => $booking->caregiver_notes,
                 'children' => $booking->children,
                 'pets' => $booking->pets,
+                'client_rating' => $booking->client_rating,
+                'caregiver_rating' => $booking->caregiver_rating,
             ],
         ]);
     }
