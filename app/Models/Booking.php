@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
+use App\Enums\SpecialConsideration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,7 @@ class Booking extends Model
             $booking->calculateTotalWorkingHours();
             $booking->calculateHourlyRate();
             $booking->calculateTotalAmount();
+            $booking->calculateSpecialConsiderations();
         });
 
         static::updating(function (Booking $booking) {
@@ -37,6 +40,10 @@ class Booking extends Model
             }
 
             $booking->calculateTotalAmount();
+
+            if ($booking->isDirty(['sitter_preferences', 'pets', 'other_adults_present'])) {
+                $booking->calculateSpecialConsiderations();
+            }
         });
     }
 
@@ -86,6 +93,33 @@ class Booking extends Model
 
         $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
+    }
+
+    public function calculateSpecialConsiderations(): void
+    {
+        $considerations = collect();
+
+        foreach ($this->sitter_preferences ?? [] as $value) {
+            $preference = SitterPreference::tryFrom($value);
+            if ($preference) {
+                $considerations->push($preference->toSpecialConsideration()->value);
+            }
+        }
+
+        foreach ($this->pets ?? [] as $pet) {
+            $type = strtolower($pet['type'] ?? '');
+            if ($type === 'dog') {
+                $considerations->push(SpecialConsideration::FamilyHasDogsOnsite->value);
+            } elseif ($type === 'cat') {
+                $considerations->push(SpecialConsideration::FamilyHasCatsOnsite->value);
+            }
+        }
+
+        if (! empty($this->other_adults_present)) {
+            $considerations->push(SpecialConsideration::ParentWillBePresent->value);
+        }
+
+        $this->special_considerations = $considerations->unique()->values()->toArray();
     }
 
     public function resolveRouteBinding($value, $field = null)

@@ -132,6 +132,7 @@ interface PersonalInfoSectionProps {
         birthYear: number | null,
         birthMonth: number | null,
     ) => string;
+    pet_types: Array<{ value: string; label: string }>;
     isAddressLocked: boolean;
     setIsAddressLocked: (locked: boolean) => void;
     showManualAddressInput: boolean;
@@ -173,6 +174,7 @@ export function PersonalInfoSection({
     selectedHotelName,
     handleHotelSearch,
     calculateAge,
+    pet_types,
     isAddressLocked,
     setIsAddressLocked,
     showManualAddressInput,
@@ -1181,17 +1183,30 @@ export function PersonalInfoSection({
                                             <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                 Type
                                             </Label>
-                                            <Input
+                                            <Select
                                                 value={pet.type || ''}
-                                                onChange={(e) =>
+                                                onValueChange={(value) =>
                                                     onUpdatePet(
                                                         pet.tempId,
                                                         'type',
-                                                        e.target.value,
+                                                        value,
                                                     )
                                                 }
-                                                placeholder="Type"
-                                            />
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {pet_types.map((type) => (
+                                                        <SelectItem
+                                                            key={type.value}
+                                                            value={type.value}
+                                                        >
+                                                            {type.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div>
                                             <Label className="text-xs font-medium text-muted-foreground uppercase">

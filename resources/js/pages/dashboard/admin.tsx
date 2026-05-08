@@ -114,6 +114,7 @@ interface AdminDashboardProps {
             options: string[];
         }>;
         sitterPreferenceOptions?: Array<{ value: string; label: string }>;
+        petTypes?: Array<{ value: string; label: string }>;
     };
 }
 
@@ -145,10 +146,9 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         location_types: safeAdmin.locationTypes ?? [],
         booking_statuses: safeAdmin.bookingStatuses ?? [],
         payment_statuses: safeAdmin.paymentStatuses ?? [],
-        special_consideration_options:
-            safeAdmin.specialConsiderationOptions ?? [],
         booking_attributes: safeAdmin.bookingAttributes ?? [],
         sitter_preference_options: safeAdmin.sitterPreferenceOptions ?? [],
+        pet_types: safeAdmin.petTypes ?? [],
     });
 
     return (

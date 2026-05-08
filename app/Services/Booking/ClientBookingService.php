@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
+use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
@@ -99,14 +100,14 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         return Inertia::render('client/bookings/create', [
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
+            'pet_types' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                PetType::cases()
+            ),
             'children' => $client->children ?? collect([]),
             'pets' => $client->pets ?? collect([]),
             'client_addresses' => $client->addresses ?? collect([]),
             'hotels' => $hotels,
-            'special_consideration_options' => array_map(
-                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-                SpecialConsideration::cases(),
-            ),
             'booking_attributes' => AttributeDefinition::active()
                 ->forBookings()
                 ->get()
@@ -224,7 +225,6 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'breed' => $pet->breed,
                 'notes' => $pet->notes,
             ])->toArray(),
-            'special_considerations' => $request->special_considerations,
             'caregiver_notes' => $request->caregiver_notes,
             'notes_to_sitterwise' => $request->notes_to_sitterwise,
             'sitter_preferences' => $request->sitter_preferences,

@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
+use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
@@ -96,11 +97,6 @@ class AdminBookingService implements BookingServiceInterface
             LocationType::cases()
         );
 
-        $specialConsiderations = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            SpecialConsideration::cases()
-        );
-
         $bookingStatuses = array_map(
             fn ($case) => [
                 'value' => $case->value,
@@ -148,7 +144,10 @@ class AdminBookingService implements BookingServiceInterface
             'bookings' => $bookings,
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
-            'special_consideration_options' => $specialConsiderations,
+            'pet_types' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                PetType::cases()
+            ),
             'booking_statuses' => $bookingStatuses,
             'payment_statuses' => $paymentStatuses,
             'sitter_preference_options' => $sitterPreferenceOptions,
@@ -323,7 +322,6 @@ class AdminBookingService implements BookingServiceInterface
             'start_datetime' => $validated['start_datetime'],
             'end_datetime' => $validated['end_datetime'],
             'status' => $validated['status'],
-            'special_considerations' => $validated['special_considerations'] ?? null,
             'caregiver_notes' => $validated['caregiver_notes'] ?? null,
             'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
             'admin_notes' => $validated['admin_notes'] ?? null,
@@ -487,7 +485,7 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         $updateData = [
-            ...$validated,
+            ...collect($validated)->except(['special_considerations'])->toArray(),
             'address_id' => $addressId,
             'client_first_name' => $client?->first_name,
             'client_last_name' => $client?->last_name,

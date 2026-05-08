@@ -22,7 +22,6 @@ export interface UseBookingSheetProps {
         colors: { bg: string; text: string; border: string };
     }>;
     payment_statuses: Array<{ value: string; label: string }>;
-    special_consideration_options: Array<{ value: string; label: string }>;
     booking_attributes: Array<{
         id: number;
         name: string;
@@ -32,6 +31,7 @@ export interface UseBookingSheetProps {
     }>;
     sitter_preference_options: Array<{ value: string; label: string }>;
     client_type_options?: Array<{ value: string; label: string }>;
+    pet_types: Array<{ value: string; label: string }>;
 }
 
 interface ClientAddress {
@@ -54,7 +54,6 @@ interface FormData {
     hotel_id: number | null;
     address_id: number | null;
     caregiver_id: number | null;
-    special_considerations: string[];
     caregiver_notes: string;
     notes_to_sitterwise: string;
     admin_notes: string;
@@ -119,9 +118,9 @@ export function useBookingSheet({
     location_types,
     booking_statuses,
     payment_statuses,
-    special_consideration_options,
     booking_attributes,
     sitter_preference_options,
+    pet_types,
     client_type_options = [
         { value: 'resident', label: 'San Diego Resident' },
         { value: 'vacationer', label: 'Vacationer' },
@@ -189,7 +188,6 @@ export function useBookingSheet({
         hotel_id: null,
         address_id: null,
         caregiver_id: null,
-        special_considerations: [],
         caregiver_notes: '',
         notes_to_sitterwise: '',
         admin_notes: '',
@@ -487,7 +485,6 @@ export function useBookingSheet({
             hotel_id: null,
             address_id: null,
             caregiver_id: null,
-            special_considerations: [],
             caregiver_notes: '',
             notes_to_sitterwise: '',
             admin_notes: '',
@@ -601,8 +598,6 @@ export function useBookingSheet({
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
-                special_considerations:
-                    fullBooking.special_considerations || [],
                 caregiver_notes: fullBooking.caregiver_notes || '',
                 notes_to_sitterwise: fullBooking.notes_to_sitterwise || '',
                 admin_notes: fullBooking.admin_notes || '',
@@ -930,23 +925,6 @@ export function useBookingSheet({
         setShowDeleteDialog(false);
     };
 
-    const handleSpecialConsiderationChange = (
-        option: string,
-        checked: boolean,
-    ) => {
-        if (checked) {
-            form.setData('special_considerations', [
-                ...form.data.special_considerations,
-                option,
-            ]);
-        } else {
-            form.setData(
-                'special_considerations',
-                form.data.special_considerations.filter((s) => s !== option),
-            );
-        }
-    };
-
     const handleAddChild = () => {
         setBookingChildren([
             ...bookingChildren,
@@ -1039,15 +1017,14 @@ export function useBookingSheet({
         sitter_preference_options,
         service_types,
         location_types,
+        pet_types,
         booking_statuses,
         payment_statuses,
-        special_consideration_options,
         hotels,
         handleClientSearch,
         handleHotelSearch,
         handleCaregiverSearch,
         handleClientChange,
-        handleSpecialConsiderationChange,
         handleAddChild,
         handleRemoveChild,
         handleUpdateChild,

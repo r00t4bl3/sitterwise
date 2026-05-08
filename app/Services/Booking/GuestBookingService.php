@@ -3,9 +3,9 @@
 namespace App\Services\Booking;
 
 use App\Enums\LocationType;
+use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
-use App\Enums\SpecialConsideration;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
@@ -66,11 +66,11 @@ class GuestBookingService
         return Inertia::render('guest/bookings/create', [
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
-            'hotels' => $hotels,
-            'special_consideration_options' => array_map(
+            'pet_types' => array_map(
                 fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-                SpecialConsideration::cases(),
+                PetType::cases()
             ),
+            'hotels' => $hotels,
             'booking_attributes' => AttributeDefinition::active()
                 ->forBookings()
                 ->get()
@@ -103,8 +103,6 @@ class GuestBookingService
             'address_zip' => 'required|string|max:20',
             'hotel_id' => 'nullable|exists:hotels,id',
             'rental_platform' => 'nullable|string|max:255',
-            'special_considerations' => 'array',
-            'special_considerations.*' => 'string',
             'caregiver_notes' => 'nullable|string',
             'notes_to_sitterwise' => 'nullable|string',
             'sitter_preferences' => 'array',
@@ -179,7 +177,6 @@ class GuestBookingService
                     'address_zip' => $pendingData['address_zip'],
                     'hotel_id' => $pendingData['hotel_id'] ?? null,
                     'rental_platform' => $pendingData['rental_platform'] ?? null,
-                    'special_considerations' => $pendingData['special_considerations'] ?? [],
                     'caregiver_notes' => $pendingData['caregiver_notes'] ?? null,
                     'notes_to_sitterwise' => $pendingData['notes_to_sitterwise'] ?? null,
                     'sitter_preferences' => $pendingData['sitter_preferences'] ?? [],
@@ -292,7 +289,6 @@ class GuestBookingService
                 'address_zip' => $pendingData['address_zip'],
                 'hotel_id' => $pendingData['hotel_id'] ?? null,
                 'rental_platform' => $pendingData['rental_platform'] ?? null,
-                'special_considerations' => $pendingData['special_considerations'] ?? [],
                 'caregiver_notes' => $pendingData['caregiver_notes'] ?? null,
                 'notes_to_sitterwise' => $pendingData['notes_to_sitterwise'] ?? null,
                 'sitter_preferences' => $pendingData['sitter_preferences'] ?? [],

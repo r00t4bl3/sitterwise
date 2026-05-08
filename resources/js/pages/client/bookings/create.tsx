@@ -150,7 +150,7 @@ export default function ClientBookingCreate() {
         pets,
         client_addresses,
         hotels,
-        special_consideration_options,
+        pet_types,
         booking_attributes,
         sitter_preferences,
         discovery_sources,
@@ -185,11 +185,11 @@ export default function ClientBookingCreate() {
             line1: string | null;
             line2: string | null;
             city: string | null;
-            state: string | null;
+            state: string;
             zip: string | null;
-        }>;
-        special_consideration_options: Array<{ value: string; label: string }>;
-        booking_attributes: Array<{
+            }>;
+            pet_types: Array<{ value: string; label: string }>;
+            booking_attributes: Array<{
             id: number;
             name: string;
             slug: string;
@@ -224,7 +224,6 @@ export default function ClientBookingCreate() {
         address_city: '',
         address_state: '',
         address_zip: '',
-        special_considerations: [] as string[],
         caregiver_notes: '',
         notes_to_sitterwise: '',
         sitter_preferences: [] as string[],
@@ -324,22 +323,6 @@ export default function ClientBookingCreate() {
 
     const handleSubmit = () => {
         form.post('/bookings');
-    };
-
-    const handleSpecialConsiderationChange = (
-        option: string,
-        checked: boolean,
-    ) => {
-        const current = form.data.special_considerations;
-
-        if (checked) {
-            form.setData('special_considerations', [...current, option]);
-        } else {
-            form.setData(
-                'special_considerations',
-                current.filter((c) => c !== option),
-            );
-        }
     };
 
     const hasChildren = form.data.new_children.length > 0;
@@ -979,17 +962,40 @@ export default function ClientBookingCreate() {
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Type
                                                     </Label>
-                                                    <Input
+                                                    <Select
                                                         value={pet.type}
-                                                        onChange={(e) =>
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
                                                             handleUpdatePet(
                                                                 pet.id,
                                                                 'type',
-                                                                e.target.value,
+                                                                value,
                                                             )
                                                         }
-                                                        placeholder="Type"
-                                                    />
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select type" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {pet_types.map(
+                                                                (type) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            type.value
+                                                                        }
+                                                                        value={
+                                                                            type.value
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            type.label
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                                 <div>
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
@@ -1239,41 +1245,6 @@ export default function ClientBookingCreate() {
                                         {datetimeError}
                                     </div>
                                 )}
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label>Special Considerations</Label>
-                                <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    {special_consideration_options.map(
-                                        (option) => (
-                                            <div
-                                                key={option.value}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <Checkbox
-                                                    id={`sc-${option.value}`}
-                                                    checked={form.data.special_considerations.includes(
-                                                        option.value,
-                                                    )}
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) =>
-                                                        handleSpecialConsiderationChange(
-                                                            option.value,
-                                                            checked === true,
-                                                        )
-                                                    }
-                                                />
-                                                <Label
-                                                    htmlFor={`sc-${option.value}`}
-                                                    className="text-sm font-normal"
-                                                >
-                                                    {option.label}
-                                                </Label>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
                             </div>
 
                             <div>

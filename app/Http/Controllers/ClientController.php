@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ClientType;
 use App\Enums\DiscoverySource;
+use App\Enums\PetType;
 use App\Enums\SitterPreference;
 use App\Http\Requests\ResetClientPasswordRequest;
 use App\Http\Requests\StoreClientRequest;
@@ -37,6 +38,10 @@ class ClientController extends Controller
         $this->discoverySources = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             DiscoverySource::cases(),
+        );
+        $this->petTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            PetType::cases(),
         );
     }
 
@@ -73,6 +78,7 @@ class ClientController extends Controller
         return Inertia::render('admin/clients/create', [
             'client_types' => $this->clientType,
             'discovery_sources' => $this->discoverySources,
+            'pet_types' => $this->petTypes,
         ]);
     }
 
@@ -439,6 +445,7 @@ class ClientController extends Controller
             'sitter_preferences' => $this->sitterPreference,
             'client_types' => $this->clientType,
             'discovery_sources' => $this->discoverySources,
+            'pet_types' => $this->petTypes,
             'caregivers' => $caregivers->map(fn ($c) => [
                 'id' => $c->id,
                 'first_name' => $c->first_name,

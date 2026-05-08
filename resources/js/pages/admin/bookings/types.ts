@@ -182,7 +182,6 @@ export interface Props {
         colors: { bg: string; text: string; border: string };
     }>;
     payment_statuses: Array<{ value: string; label: string }>;
-    special_consideration_options: Array<{ value: string; label: string }>;
     booking_attributes: Array<{
         id: number;
         name: string;
@@ -191,6 +190,7 @@ export interface Props {
         options: string[];
     }>;
     sitter_preference_options: Array<{ value: string; label: string }>;
+    pet_types: Array<{ value: string; label: string }>;
 }
 
 export interface BookingFormData {

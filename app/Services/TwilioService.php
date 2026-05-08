@@ -13,6 +13,7 @@ class TwilioService
     public function __construct()
     {
         $this->fromNumber = config('services.twilio.phone_number');
+        $this->messagingServiceSid = config('services.twilio.messaging_service_sid');
     }
 
     public function client(): Client
@@ -32,7 +33,8 @@ class TwilioService
         $result = $this->client()->messages->create(
             $to,
             [
-                'from' => $this->fromNumber,
+                // 'from' => $this->fromNumber,
+                'messagingServiceSid' => $this->messagingServiceSid,
                 'body' => $message,
             ]
         );

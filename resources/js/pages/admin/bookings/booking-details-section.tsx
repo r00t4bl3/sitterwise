@@ -2,7 +2,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +20,6 @@ interface BookingDetailsSectionProps {
     form: any;
     editingBooking: { id: number } | null;
     service_types: Array<{ value: string; label: string }>;
-    special_consideration_options: Array<{ value: string; label: string }>;
     booking_statuses: Array<{ value: string; label: string }>;
     payment_statuses: Array<{ value: string; label: string }>;
     caregiverSuggestions: Array<{
@@ -31,10 +29,6 @@ interface BookingDetailsSectionProps {
     }>;
     selectedCaregiverName: string;
     handleCaregiverSearch: (query: string) => void;
-    handleSpecialConsiderationChange: (
-        option: string,
-        checked: boolean,
-    ) => void;
     handleSubmit: () => void;
     handleDelete: () => void;
     setIsSheetOpen: (open: boolean) => void;
@@ -44,13 +38,11 @@ export function BookingDetailsSection({
     form,
     editingBooking,
     service_types,
-    special_consideration_options,
     booking_statuses,
     payment_statuses,
     caregiverSuggestions,
     selectedCaregiverName,
     handleCaregiverSearch,
-    handleSpecialConsiderationChange,
     handleSubmit,
     handleDelete,
     setIsSheetOpen,
@@ -110,6 +102,19 @@ export function BookingDetailsSection({
                         </SelectContent>
                     </Select>
                 </div>
+
+                {form.data.service_type === 'corporate_invoiced' && (
+                    <div className="grid gap-2">
+                        <Label htmlFor="corporate_id">Corporate ID</Label>
+                        <Input
+                            id="corporate_id"
+                            value={form.data.corporate_id}
+                            onChange={(e) =>
+                                form.setData('corporate_id', e.target.value)
+                            }
+                        />
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
@@ -191,37 +196,6 @@ export function BookingDetailsSection({
                 </div>
 
                 <div className="grid gap-2">
-                    <Label>Special Considerations</Label>
-                    <div className="mt-2 grid grid-cols-2 gap-4">
-                        {special_consideration_options.map((option) => (
-                            <div
-                                key={option.value}
-                                className="flex items-center gap-2"
-                            >
-                                <Checkbox
-                                    id={`sc-${option.value}`}
-                                    checked={form.data.special_considerations.includes(
-                                        option.value,
-                                    )}
-                                    onCheckedChange={(checked) =>
-                                        handleSpecialConsiderationChange(
-                                            option.value,
-                                            checked === true,
-                                        )
-                                    }
-                                />
-                                <Label
-                                    htmlFor={`sc-${option.value}`}
-                                    className="text-sm font-normal"
-                                >
-                                    {option.label}
-                                </Label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="grid gap-2">
                     <Label htmlFor="caregiver_notes">Caregiver Notes</Label>
                     <Textarea
                         id="caregiver_notes"
@@ -258,19 +232,6 @@ export function BookingDetailsSection({
                         rows={2}
                     />
                 </div>
-
-                {form.data.service_type === 'corporate_invoiced' && (
-                    <div className="grid gap-2">
-                        <Label htmlFor="corporate_id">Corporate ID</Label>
-                        <Input
-                            id="corporate_id"
-                            value={form.data.corporate_id}
-                            onChange={(e) =>
-                                form.setData('corporate_id', e.target.value)
-                            }
-                        />
-                    </div>
-                )}
 
                 <input
                     type="hidden"

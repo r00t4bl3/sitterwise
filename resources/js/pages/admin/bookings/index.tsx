@@ -86,9 +86,9 @@ export default function Bookings() {
         location_types,
         booking_statuses,
         payment_statuses,
-        special_consideration_options,
         booking_attributes,
         sitter_preference_options,
+        pet_types,
     } = usePage<Props>().props;
 
     const sheet = useBookingSheet({
@@ -107,9 +107,9 @@ export default function Bookings() {
         location_types,
         booking_statuses,
         payment_statuses,
-        special_consideration_options,
         booking_attributes,
         sitter_preference_options,
+        pet_types,
     });
 
     // TODO: Pull special_consideration_options from booking_attributes

@@ -122,6 +122,7 @@ interface Props {
     caregivers: CaregiverSelect[];
     favorite_caregivers: CaregiverSelect[];
     blocked_caregivers: CaregiverSelect[];
+    pet_types: Array<{ value: string; label: string }>;
 }
 
 export default function ClientEdit() {
@@ -134,6 +135,7 @@ export default function ClientEdit() {
         caregivers,
         favorite_caregivers,
         blocked_caregivers,
+        pet_types,
     } = usePage<Props>().props;
 
     const [favoriteIds, setFavoriteIds] = useState<number[]>(
@@ -890,21 +892,14 @@ export default function ClientEdit() {
                                                     <SelectValue placeholder="Type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="dog">
-                                                        Dog
-                                                    </SelectItem>
-                                                    <SelectItem value="cat">
-                                                        Cat
-                                                    </SelectItem>
-                                                    <SelectItem value="bird">
-                                                        Bird
-                                                    </SelectItem>
-                                                    <SelectItem value="fish">
-                                                        Fish
-                                                    </SelectItem>
-                                                    <SelectItem value="other">
-                                                        Other
-                                                    </SelectItem>
+                                                    {pet_types.map((type) => (
+                                                        <SelectItem
+                                                            key={type.value}
+                                                            value={type.value}
+                                                        >
+                                                            {type.label}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>

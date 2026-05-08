@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SitterPreference;
+use App\Enums\SpecialConsideration;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\ClientAddress;
@@ -69,7 +70,6 @@ describe('Booking - Client', function () {
             'address_city' => $clientAddress->city,
             'address_state' => $clientAddress->state,
             'address_zip' => $clientAddress->zip,
-            'special_considerations' => ['infant_care', 'special_needs_care'],
             'caregiver_notes' => 'Please bring toys.',
             'notes_to_sitterwise' => 'Client is VIP.',
             'sitter_preferences' => [$sitterPreference],
@@ -119,8 +119,20 @@ describe('Booking - Client', function () {
 
         expect($booking->children)->toHaveCount(3); // 2 existing + 1 new
         expect($booking->pets)->toHaveCount(2); // 1 existing + 1 new
-        expect($booking->special_considerations)->toEqual(['infant_care', 'special_needs_care']);
         expect($booking->sitter_preferences)->toEqual([$sitterPreference]);
+
+        // Verify special_considerations is auto-calculated
+        $preference = SitterPreference::tryFrom($sitterPreference);
+        $expectedConsiderations = [
+            $preference->toSpecialConsideration()->value,
+            SpecialConsideration::FamilyHasDogsOnsite->value,
+            SpecialConsideration::ParentWillBePresent->value,
+        ];
+
+        // The existing pet might be a cat, so we check for contains instead of exact match
+        expect($booking->special_considerations)->toContain($preference->toSpecialConsideration()->value);
+        expect($booking->special_considerations)->toContain(SpecialConsideration::FamilyHasDogsOnsite->value);
+        expect($booking->special_considerations)->toContain(SpecialConsideration::ParentWillBePresent->value);
     });
 
     test('client can create a booking with manual address input', function () {
@@ -137,7 +149,6 @@ describe('Booking - Client', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -261,7 +272,6 @@ describe('Booking - Client', function () {
             'address_city' => 'Test City',
             'address_state' => 'TS',
             'address_zip' => '12345',
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -302,7 +312,6 @@ describe('Booking - Client', function () {
             'address_city' => 'Test City',
             'address_state' => 'TS',
             'address_zip' => '12345',
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -357,7 +366,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -396,7 +404,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -435,7 +442,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -474,7 +480,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -513,7 +518,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],
@@ -561,7 +565,6 @@ describe('DateTime Picker Local Time Handling', function () {
             'address_city' => $this->address->city,
             'address_state' => $this->address->state,
             'address_zip' => $this->address->zip,
-            'special_considerations' => [],
             'caregiver_notes' => '',
             'notes_to_sitterwise' => '',
             'sitter_preferences' => [],

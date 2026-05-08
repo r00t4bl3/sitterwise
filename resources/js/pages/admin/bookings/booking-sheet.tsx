@@ -85,9 +85,9 @@ export function BookingSheet({
     sitter_preference_options,
     service_types,
     location_types,
+    pet_types,
     booking_statuses,
     payment_statuses,
-    special_consideration_options,
     hotels,
     hotelSuggestions,
     caregiverSuggestions,
@@ -95,7 +95,6 @@ export function BookingSheet({
     handleHotelSearch,
     handleCaregiverSearch,
     handleClientChange,
-    handleSpecialConsiderationChange,
     handleAddChild,
     handleRemoveChild,
     handleUpdateChild,
@@ -194,6 +193,7 @@ export function BookingSheet({
                                 selectedHotelName={selectedHotelName}
                                 handleHotelSearch={handleHotelSearch}
                                 calculateAge={calculateAge}
+                                pet_types={pet_types}
                                 isAddressLocked={isAddressLocked}
                                 setIsAddressLocked={setIsAddressLocked}
                                 showManualAddressInput={showManualAddressInput}
@@ -211,17 +211,11 @@ export function BookingSheet({
                                 form={form}
                                 editingBooking={editingBooking}
                                 service_types={service_types}
-                                special_consideration_options={
-                                    special_consideration_options
-                                }
                                 booking_statuses={booking_statuses}
                                 payment_statuses={payment_statuses}
                                 caregiverSuggestions={caregiverSuggestions}
                                 selectedCaregiverName={selectedCaregiverName}
                                 handleCaregiverSearch={handleCaregiverSearch}
-                                handleSpecialConsiderationChange={
-                                    handleSpecialConsiderationChange
-                                }
                                 handleSubmit={handleSubmit}
                                 handleDelete={handleDelete}
                                 setIsSheetOpen={setIsSheetOpen}

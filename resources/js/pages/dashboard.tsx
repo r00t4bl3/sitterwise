@@ -55,6 +55,7 @@ interface Props {
             label: string;
             colors: { bg: string; text: string; border: string };
         }>;
+        petTypes: any[];
     };
 }
 

@@ -18,6 +18,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PricingRuleController;
 use App\Http\Controllers\QuickLinkController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
@@ -50,6 +51,8 @@ Route::middleware('signed')->group(function () {
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/search', [SearchController::class, 'index'])->name('search');
 
     Route::get('/payments', [ClientPaymentController::class, 'index'])->name('payments.index');
     Route::get('/payments/setup-intent', [ClientPaymentController::class, 'getSetupIntent'])->name('payments.setupIntent');

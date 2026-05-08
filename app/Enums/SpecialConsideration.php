@@ -11,7 +11,6 @@ enum SpecialConsideration: string
     case ParentWillBePresent = 'parent_will_be_present';
     case SwimmingRequested = 'swimming_requested';
     case ChildIsSick = 'child_is_sick';
-    case CareCom = 'care_com';
 
     public function label(): string
     {
@@ -23,7 +22,6 @@ enum SpecialConsideration: string
             self::ParentWillBePresent => 'Parent will be present',
             self::SwimmingRequested => 'Swimming Requested',
             self::ChildIsSick => 'Child is Sick',
-            self::CareCom => 'Care.com',
         };
     }
 }

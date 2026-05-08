@@ -419,7 +419,7 @@ export default function CaregiverDashboard({
                                         {caregiver.upcomingJobs.map((job) => (
                                             <Link
                                                 key={job.id}
-                                                href={`/bookings/${job.ulid}`}
+                                                href={`/jobs/${job.ulid}`}
                                                 className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                             >
                                                 <div className="flex items-center gap-3">
