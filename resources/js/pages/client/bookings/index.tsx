@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Calendar, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime } from '@/lib/datetime';
@@ -28,6 +28,7 @@ interface Booking {
 }
 
 interface Props {
+    bookingStatuses: Array<{value: string, label: string, colors: { bg:string, text: string, border: string}}>;
     bookings: {
         data: Booking[];
         current_page: number;
@@ -43,48 +44,7 @@ interface Props {
 }
 
 export default function ClientBookingsIndex() {
-    const { bookings } = usePage().props as unknown as Props;
-
-    const getStatusBadge = (status: string) => {
-        const statusLower = status.toLowerCase();
-        const displayStatus = status.toUpperCase();
-
-        if (statusLower === 'confirmed') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-green-600 hover:bg-green-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        if (statusLower === 'pending') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-yellow-600 hover:bg-yellow-600"
-                >
-                    <Clock className="mr-1 h-3 w-3" />
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        if (statusLower === 'received') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-blue-600 hover:bg-blue-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        return <Badge variant="outline">{displayStatus}</Badge>;
-    };
+    const { bookings, bookingStatuses } = usePage().props as unknown as Props;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -144,7 +104,14 @@ export default function ClientBookingsIndex() {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {getStatusBadge(booking.status)}
+                                                <StatusBadge
+                                                    status={
+                                                        booking.status
+                                                    }
+                                                    bookingStatuses={
+                                                        bookingStatuses
+                                                    }
+                                                />
                                             </div>
                                         </div>
 

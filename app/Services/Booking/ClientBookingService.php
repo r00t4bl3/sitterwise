@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\BookingStatus;
 use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
 use App\Enums\PetType;
@@ -52,8 +53,18 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             ];
         });
 
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+        
         return Inertia::render('client/bookings/index', [
             'bookings' => $bookings,
+            'bookingStatuses' => $bookingStatuses,
         ]);
     }
 

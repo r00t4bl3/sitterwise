@@ -14,6 +14,7 @@ import {
 import { useState, useEffect } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
 import { ToasterMessage } from '@/components/toaster-message';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -84,6 +85,11 @@ interface CaregiverDashboardProps {
         rating: number | null;
         status: string;
         availabilities: Availability[];
+        bookingStatuses: Array<{
+            value: string;
+            label: string;
+            colors: { bg: string; text: string; border: string };
+        }>;
         nextJob?: Booking | null;
         upcomingJobs?: Booking[];
         newInvites?: Booking[];
@@ -273,9 +279,14 @@ export default function CaregiverDashboard({
                         {caregiver.nextJob ? (
                             <div className="relative overflow-hidden rounded-xl border-2 border-primary/20 bg-card p-6 shadow-md transition-all hover:border-primary/40">
                                 <div className="absolute top-0 right-0 p-4">
-                                    <Badge className="bg-green-600">
-                                        CONFIRMED
-                                    </Badge>
+                                    <StatusBadge
+                                        status={
+                                            caregiver.nextJob.status
+                                        }
+                                        bookingStatuses={
+                                            caregiver.bookingStatuses
+                                        }
+                                    />
                                 </div>
 
                                 <div className="mb-4 flex items-center gap-3">

@@ -35,6 +35,11 @@ interface Props {
         rating: number | null;
         status: { name: string };
         availabilities: Availability[];
+        bookingStatuses: Array<{
+            value: string;
+            label: string;
+            colors: { bg: string; text: string; border: string };
+        }>;
         nextJob?: any;
         upcomingJobs?: any[];
         newInvites?: any[];
@@ -73,6 +78,7 @@ export default function Dashboard() {
                         rating: caregiver?.rating || null,
                         status: caregiver?.status?.name || 'Unknown',
                         availabilities: caregiver?.availabilities || [],
+                        bookingStatuses: caregiver?.bookingStatuses || [],
                         nextJob: caregiver?.nextJob,
                         upcomingJobs: caregiver?.upcomingJobs || [],
                         newInvites: caregiver?.newInvites || [],

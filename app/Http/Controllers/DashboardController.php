@@ -29,6 +29,16 @@ class DashboardController extends Controller
         $caregiverData = null;
         $clientData = null;
 
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
+
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             $stats = [
                 'totalCaregivers' => Caregiver::count(),
@@ -38,15 +48,6 @@ class DashboardController extends Controller
                 'totalClients' => User::where('role', 'client')->count(),
                 'totalBookings' => Booking::count(),
             ];
-
-            $bookingStatuses = array_map(
-                fn ($case) => [
-                    'value' => $case->value,
-                    'label' => $case->label(),
-                    'colors' => $case->colors(),
-                ],
-                BookingStatus::cases()
-            );
 
             $serviceTypes = array_map(
                 fn ($case) => [
@@ -225,6 +226,7 @@ class DashboardController extends Controller
                         'name' => $caregiver->status->name,
                     ] : null,
                     'availabilities' => $availabilities,
+                    'bookingStatuses' => $bookingStatuses,
                     'nextJob' => $nextJob,
                     'upcomingJobs' => $upcomingJobs,
                     'newInvites' => $newInvites,
