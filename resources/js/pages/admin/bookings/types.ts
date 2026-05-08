@@ -189,7 +189,7 @@ export interface Props {
         type: string;
         options: string[];
     }>;
-    sitter_preference_options: Array<{ value: string; label: string }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
     pet_types: Array<{ value: string; label: string }>;
 }
 

@@ -37,22 +37,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const MONTH_ABBR = [
-    '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-];
-
 interface Child {
     id: number | string;
     name: string;
@@ -109,7 +93,7 @@ function convertPetToEditable(pet: {
     return {
         id: pet.id,
         name: pet.name,
-        type: pet.type || '',
+        type: pet.type?.toLowerCase() || '',
         breed: pet.breed || '',
         notes: pet.notes || '',
     };
@@ -187,9 +171,9 @@ export default function ClientBookingCreate() {
             city: string | null;
             state: string;
             zip: string | null;
-            }>;
-            pet_types: Array<{ value: string; label: string }>;
-            booking_attributes: Array<{
+        }>;
+        pet_types: Array<{ value: string; label: string }>;
+        booking_attributes: Array<{
             id: number;
             name: string;
             slug: string;
@@ -244,12 +228,16 @@ export default function ClientBookingCreate() {
 
     useEffect(() => {
         if (children.length > 0) {
-            form.setData('new_children', initialChildren as Child[]);
+            form.setData(
+                'new_children',
+                children.map(convertChildToEditable) as Child[],
+            );
         }
+
         if (pets.length > 0) {
-            form.setData('new_pets', initialPets as Pet[]);
+            form.setData('new_pets', pets.map(convertPetToEditable) as Pet[]);
         }
-    }, [children, pets]);
+    }, [children, pets, form]);
 
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
@@ -886,6 +874,7 @@ export default function ClientBookingCreate() {
                                 />
                             </div>
 
+                            {/* eslint-disable-next-line no-constant-binary-expression */}
                             {false && form.data.special_needs_notes && (
                                 <div>
                                     <Label className="text-sm font-medium text-foreground">
@@ -997,22 +986,24 @@ export default function ClientBookingCreate() {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Breed
-                                                    </Label>
-                                                    <Input
-                                                        value={pet.breed}
-                                                        onChange={(e) =>
-                                                            handleUpdatePet(
-                                                                pet.id,
-                                                                'breed',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Breed"
-                                                    />
-                                                </div>
+                                                {pet.type === 'dog' && (
+                                                    <div>
+                                                        <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                            Breed
+                                                        </Label>
+                                                        <Input
+                                                            value={pet.breed}
+                                                            onChange={(e) =>
+                                                                handleUpdatePet(
+                                                                    pet.id,
+                                                                    'breed',
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            placeholder="Breed"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Notes

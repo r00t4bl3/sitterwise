@@ -179,6 +179,8 @@ export default function CaregiverCreate() {
                                         )
                                     }
                                     placeholder="Select date of birth"
+                                    fromYear={new Date().getFullYear() - 120}
+                                    toYear={new Date().getFullYear() - 10}
                                 />
                             </div>
                             <div className="space-y-2">

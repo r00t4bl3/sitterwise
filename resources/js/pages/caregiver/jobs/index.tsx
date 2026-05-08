@@ -344,23 +344,41 @@ export default function CaregiverJobsIndex() {
                                             {job.client_rating ? (
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1">
-                                                        {[1, 2, 3, 4, 5].map((star) => (
-                                                            <Star
-                                                                key={star}
-                                                                className={`h-4 w-4 ${
-                                                                    star <= job.client_rating!.rating
-                                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                                        : 'text-gray-300'
-                                                                }`}
-                                                            />
-                                                        ))}
+                                                        {[1, 2, 3, 4, 5].map(
+                                                            (star) => (
+                                                                <Star
+                                                                    key={star}
+                                                                    className={`h-4 w-4 ${
+                                                                        star <=
+                                                                        job
+                                                                            .client_rating!
+                                                                            .rating
+                                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                                            : 'text-gray-300'
+                                                                    }`}
+                                                                />
+                                                            ),
+                                                        )}
                                                         <span className="ml-1 text-xs text-muted-foreground">
-                                                            ({job.client_rating!.rating}/5)
+                                                            (
+                                                            {
+                                                                job
+                                                                    .client_rating!
+                                                                    .rating
+                                                            }
+                                                            /5)
                                                         </span>
                                                     </div>
-                                                    {job.client_rating.comment && (
+                                                    {job.client_rating
+                                                        .comment && (
                                                         <p className="text-xs text-muted-foreground italic">
-                                                            "{job.client_rating.comment}"
+                                                            "
+                                                            {
+                                                                job
+                                                                    .client_rating
+                                                                    .comment
+                                                            }
+                                                            "
                                                         </p>
                                                     )}
                                                 </div>
@@ -374,23 +392,41 @@ export default function CaregiverJobsIndex() {
                                             {job.caregiver_rating ? (
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1">
-                                                        {[1, 2, 3, 4, 5].map((star) => (
-                                                            <Star
-                                                                key={star}
-                                                                className={`h-4 w-4 ${
-                                                                    star <= job.caregiver_rating!.rating
-                                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                                        : 'text-gray-300'
-                                                                }`}
-                                                            />
-                                                        ))}
+                                                        {[1, 2, 3, 4, 5].map(
+                                                            (star) => (
+                                                                <Star
+                                                                    key={star}
+                                                                    className={`h-4 w-4 ${
+                                                                        star <=
+                                                                        job
+                                                                            .caregiver_rating!
+                                                                            .rating
+                                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                                            : 'text-gray-300'
+                                                                    }`}
+                                                                />
+                                                            ),
+                                                        )}
                                                         <span className="ml-1 text-xs text-muted-foreground">
-                                                            ({job.caregiver_rating!.rating}/5)
+                                                            (
+                                                            {
+                                                                job
+                                                                    .caregiver_rating!
+                                                                    .rating
+                                                            }
+                                                            /5)
                                                         </span>
                                                     </div>
-                                                    {job.caregiver_rating.comment && (
+                                                    {job.caregiver_rating
+                                                        .comment && (
                                                         <p className="text-xs text-muted-foreground italic">
-                                                            "{job.caregiver_rating.comment}"
+                                                            "
+                                                            {
+                                                                job
+                                                                    .caregiver_rating
+                                                                    .comment
+                                                            }
+                                                            "
                                                         </p>
                                                     )}
                                                 </div>

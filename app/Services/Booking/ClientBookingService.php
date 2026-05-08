@@ -61,7 +61,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             ],
             BookingStatus::cases()
         );
-        
+
         return Inertia::render('client/bookings/index', [
             'bookings' => $bookings,
             'bookingStatuses' => $bookingStatuses,

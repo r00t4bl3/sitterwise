@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
+use App\Enums\ClientType;
 use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
@@ -111,7 +112,7 @@ class AdminBookingService implements BookingServiceInterface
             BookingPaymentStatus::cases()
         );
 
-        $sitterPreferenceOptions = array_map(
+        $sitterPreferences = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             SitterPreference::cases()
         );
@@ -150,12 +151,12 @@ class AdminBookingService implements BookingServiceInterface
             ),
             'booking_statuses' => $bookingStatuses,
             'payment_statuses' => $paymentStatuses,
-            'sitter_preference_options' => $sitterPreferenceOptions,
+            'sitter_preferences' => $sitterPreferences,
             'booking_attributes' => AttributeDefinition::where('entity_type', 'booking')->get(),
-            'client_type_options' => [
-                ['value' => 'resident', 'label' => 'SD Resident'],
-                ['value' => 'vacationer', 'label' => 'Vacationer'],
-            ],
+            'client_types' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                ClientType::cases()
+            ),
             'filters' => [
                 'month' => (int) $month,
                 'year' => (int) $year,

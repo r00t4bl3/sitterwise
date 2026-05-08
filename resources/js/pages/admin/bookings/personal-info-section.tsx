@@ -96,8 +96,8 @@ interface PersonalInfoSectionProps {
     handleClientSearch: (query: string) => void;
     handleClientChange: (clientId: number | null) => void;
     location_types: Array<{ value: string; label: string }>;
-    sitter_preference_options: Array<{ value: string; label: string }>;
-    client_type_options: Array<{ value: string; label: string }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
+    client_types: Array<{ value: string; label: string }>;
     caregiverSuggestions: Array<{
         id: number;
         name: string;
@@ -166,8 +166,8 @@ export function PersonalInfoSection({
     handleClientSearch,
     handleClientChange,
     location_types,
-    sitter_preference_options,
-    client_type_options,
+    sitter_preferences,
+    client_types,
     booking_attributes,
     hotels,
     hotelSuggestions,
@@ -579,7 +579,7 @@ export function PersonalInfoSection({
                                         <SelectValue placeholder="Select client type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {client_type_options.map((type) => (
+                                        {client_types.map((type) => (
                                             <SelectItem
                                                 key={type.value}
                                                 value={type.value}
@@ -1114,6 +1114,7 @@ export function PersonalInfoSection({
                         />
                     </div>
 
+                    {/* eslint-disable-next-line no-constant-binary-expression */}
                     {false && form.data.special_needs_notes && (
                         <div>
                             <Label className="text-sm font-medium text-foreground">
@@ -1208,22 +1209,24 @@ export function PersonalInfoSection({
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Breed
-                                            </Label>
-                                            <Input
-                                                value={pet.breed || ''}
-                                                onChange={(e) =>
-                                                    onUpdatePet(
-                                                        pet.tempId,
-                                                        'breed',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Breed"
-                                            />
-                                        </div>
+                                        {pet.type === 'dog' && (
+                                            <div>
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                    Breed
+                                                </Label>
+                                                <Input
+                                                    value={pet.breed || ''}
+                                                    onChange={(e) =>
+                                                        onUpdatePet(
+                                                            pet.tempId,
+                                                            'breed',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Breed"
+                                                />
+                                            </div>
+                                        )}
                                         <div>
                                             <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                 Notes
@@ -1276,7 +1279,7 @@ export function PersonalInfoSection({
                         <Label>Sitter Preferences</Label>
                         <div className="mt-2 flex flex-wrap gap-2">
                             <div className="grid grid-cols-3 gap-4">
-                                {sitter_preference_options.map((option) => (
+                                {sitter_preferences.map((option) => (
                                     <div
                                         key={option.value}
                                         className="flex items-center gap-2"

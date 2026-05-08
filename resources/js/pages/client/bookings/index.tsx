@@ -29,7 +29,11 @@ interface Booking {
 }
 
 interface Props {
-    bookingStatuses: Array<{value: string, label: string, colors: { bg:string, text: string, border: string}}>;
+    bookingStatuses: Array<{
+        value: string;
+        label: string;
+        colors: { bg: string; text: string; border: string };
+    }>;
     bookings: {
         data: Booking[];
         current_page: number;
@@ -107,9 +111,7 @@ export default function ClientBookingsIndex() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <StatusBadge
-                                                    status={
-                                                        booking.status
-                                                    }
+                                                    status={booking.status}
                                                     bookingStatuses={
                                                         bookingStatuses
                                                     }

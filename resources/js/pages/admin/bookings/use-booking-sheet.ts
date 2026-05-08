@@ -29,8 +29,8 @@ export interface UseBookingSheetProps {
         type: string;
         options: string[];
     }>;
-    sitter_preference_options: Array<{ value: string; label: string }>;
-    client_type_options?: Array<{ value: string; label: string }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
+    client_types: Array<{ value: string; label: string }>;
     pet_types: Array<{ value: string; label: string }>;
 }
 
@@ -119,13 +119,9 @@ export function useBookingSheet({
     booking_statuses,
     payment_statuses,
     booking_attributes,
-    sitter_preference_options,
+    sitter_preferences,
     pet_types,
-    client_type_options = [
-        { value: 'resident', label: 'San Diego Resident' },
-        { value: 'vacationer', label: 'Vacationer' },
-        { value: 'invoiced', label: 'Invoiced' },
-    ],
+    client_types,
 }: UseBookingSheetProps) {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -647,7 +643,7 @@ export function useBookingSheet({
                 fullBooking.pets?.map((pet: any, index: number) => ({
                     tempId: `existing-${index}`,
                     name: pet.name || '',
-                    type: pet.type || '',
+                    type: pet.type?.toLowerCase() || '',
                     breed: pet.breed || '',
                     notes: pet.notes || '',
                 })) || [],
@@ -715,7 +711,7 @@ export function useBookingSheet({
                 fullBooking.pets?.map((pet: any, index: number) => ({
                     tempId: `new-${Date.now()}-${index}`,
                     name: pet.name || '',
-                    type: pet.type || '',
+                    type: pet.type?.toLowerCase() || '',
                     breed: pet.breed || '',
                     notes: pet.notes || '',
                 })) || [];
@@ -742,8 +738,6 @@ export function useBookingSheet({
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: null,
-                special_considerations:
-                    fullBooking.special_considerations || [],
                 caregiver_notes: '',
                 notes_to_sitterwise: '',
                 admin_notes: '',
@@ -1012,9 +1006,9 @@ export function useBookingSheet({
         setAddressValue,
         saveChildrenPetsToProfile,
         setSaveChildrenPetsToProfile,
-        client_type_options,
+        client_types,
         booking_attributes,
-        sitter_preference_options,
+        sitter_preferences,
         service_types,
         location_types,
         pet_types,

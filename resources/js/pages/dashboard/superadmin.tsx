@@ -93,7 +93,6 @@ interface AdminDashboardProps {
         serviceTypes?: Array<{ value: string; label: string }>;
         locationTypes?: Array<{ value: string; label: string }>;
         paymentStatuses?: Array<{ value: string; label: string }>;
-        specialConsiderationOptions?: Array<{ value: string; label: string }>;
         bookingAttributes?: Array<{
             id: number;
             name: string;
@@ -101,7 +100,9 @@ interface AdminDashboardProps {
             type: string;
             options: string[];
         }>;
-        sitterPreferenceOptions?: Array<{ value: string; label: string }>;
+        sitterPreferences?: Array<{ value: string; label: string }>;
+        petTypes?: Array<{ value: string; label: string }>;
+        clientTypes?: Array<{ value: string; label: string }>;
     };
 }
 
@@ -133,7 +134,9 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         booking_statuses: safeAdmin.bookingStatuses ?? [],
         payment_statuses: safeAdmin.paymentStatuses ?? [],
         booking_attributes: safeAdmin.bookingAttributes ?? [],
-        sitter_preference_options: safeAdmin.sitterPreferenceOptions ?? [],
+        sitter_preferences: safeAdmin.sitterPreferences ?? [],
+        pet_types: safeAdmin.petTypes ?? [],
+        client_types: safeAdmin.clientTypes ?? [],
     });
 
     return (

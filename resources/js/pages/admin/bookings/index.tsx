@@ -87,8 +87,9 @@ export default function Bookings() {
         booking_statuses,
         payment_statuses,
         booking_attributes,
-        sitter_preference_options,
+        sitter_preferences,
         pet_types,
+        client_types,
     } = usePage<Props>().props;
 
     const sheet = useBookingSheet({
@@ -108,12 +109,19 @@ export default function Bookings() {
         booking_statuses,
         payment_statuses,
         booking_attributes,
-        sitter_preference_options,
-        pet_types,
+        sitter_preferences: sitter_preferences as unknown as Array<{
+            value: string;
+            label: string;
+        }>,
+        pet_types: pet_types as unknown as Array<{
+            value: string;
+            label: string;
+        }>,
+        client_types: client_types as unknown as Array<{
+            value: string;
+            label: string;
+        }>,
     });
-
-    // TODO: Pull special_consideration_options from booking_attributes
-    // in the database once the 'special_considerations' attribute definition exists.
 
     const [currentMonth] = useState(filters.month);
     const [currentYear] = useState(filters.year);
@@ -531,6 +539,7 @@ export default function Bookings() {
                                                             )}
                                                         </span>{' '}
                                                     </button>
+                                                    {/* eslint-disable-next-line no-constant-binary-expression */}
                                                     {false && canCharge && (
                                                         <button
                                                             onClick={(e) => {
@@ -759,6 +768,7 @@ export default function Bookings() {
                                                         </td>
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex justify-end gap-2">
+                                                                {/* eslint-disable-next-line no-constant-binary-expression */}
                                                                 {false &&
                                                                     (statusKey ===
                                                                         'completed' ||

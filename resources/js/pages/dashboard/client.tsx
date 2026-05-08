@@ -8,7 +8,6 @@ import {
     CheckCircle2,
     Activity,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
@@ -64,39 +63,6 @@ export default function ClientDashboard({
 }: ClientDashboardProps) {
     const upcomingBookings = stats?.upcomingBookings || [];
     const recentBookings = stats?.recentBookings || [];
-
-    const renderStatusBadge = (status: string) => {
-        const statusLower = status.toLowerCase();
-        const displayStatus = status.toUpperCase();
-
-        if (statusLower === 'confirmed') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-green-600 text-[10px] hover:bg-green-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        if (statusLower === 'pending') {
-            return (
-                <Badge
-                    variant="default"
-                    className="bg-yellow-600 text-[10px] hover:bg-yellow-600"
-                >
-                    {displayStatus}
-                </Badge>
-            );
-        }
-
-        return (
-            <Badge variant="secondary" className="text-[10px]">
-                {displayStatus}
-            </Badge>
-        );
-    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -316,7 +282,9 @@ export default function ClientDashboard({
                                                             )}
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {booking.caregiver?.user?.name || 'No caregiver assigned'}
+                                                            {booking.caregiver
+                                                                ?.user?.name ||
+                                                                'No caregiver assigned'}
                                                         </p>
                                                     </div>
                                                 </div>

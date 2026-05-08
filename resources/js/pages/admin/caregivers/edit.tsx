@@ -389,9 +389,7 @@ export default function CaregiverEdit() {
                                     profile_photo_url={
                                         caregiver.user.profile_photo_url
                                     }
-                                    profile_photo_path={
-                                        caregiver.user.profile_photo_path
-                                    }
+                                    profile_photo_path={currentProfilePhoto}
                                     name={`${caregiver.first_name} ${caregiver.last_name}`}
                                     size="md"
                                     className="size-10 md:size-16"
@@ -510,6 +508,8 @@ export default function CaregiverEdit() {
                                         )
                                     }
                                     placeholder="Select date of birth"
+                                    fromYear={new Date().getFullYear() - 120}
+                                    toYear={new Date().getFullYear() - 10}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -870,6 +870,14 @@ export default function CaregiverEdit() {
                                                         )
                                                     }
                                                     placeholder="Select date"
+                                                    fromYear={
+                                                        new Date().getFullYear() -
+                                                        3
+                                                    }
+                                                    toYear={
+                                                        new Date().getFullYear() +
+                                                        5
+                                                    }
                                                 />
                                             </div>
                                             <div className="flex flex-col space-y-2">

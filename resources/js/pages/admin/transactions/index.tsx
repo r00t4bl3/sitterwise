@@ -311,7 +311,7 @@ export default function TransactionsIndex() {
                                                     {booking.client.last_name}
                                                 </Link>
                                             </td>
-                                            <td className="px-4 py-3 text-sm font-medium text-ring ">
+                                            <td className="px-4 py-3 text-sm font-medium text-ring">
                                                 {booking.caregiver ? (
                                                     <>
                                                         <Link

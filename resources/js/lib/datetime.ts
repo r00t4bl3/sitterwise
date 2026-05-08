@@ -98,7 +98,6 @@ export const formatPointInTime = (
  */
 export const getTimeOptionsWithDisabled = (
     startTime: string | undefined,
-    selectedTime?: string,
 ): Array<{ value: string; label: string; disabled: boolean }> => {
     const options = [];
     const startDate = startTime ? new Date(startTime) : null;

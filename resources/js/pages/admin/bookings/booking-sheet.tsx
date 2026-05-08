@@ -80,9 +80,9 @@ export function BookingSheet({
     setAddressValue,
     saveChildrenPetsToProfile,
     setSaveChildrenPetsToProfile,
-    client_type_options,
+    client_types,
     booking_attributes,
-    sitter_preference_options,
+    sitter_preferences,
     service_types,
     location_types,
     pet_types,
@@ -168,25 +168,8 @@ export function BookingSheet({
                                 handleClientChange={handleClientChange}
                                 selectedClientType={selectedClientType}
                                 location_types={location_types}
-                                sitter_preference_options={
-                                    sitter_preference_options
-                                }
-                                client_type_options={
-                                    client_type_options ?? [
-                                        {
-                                            value: 'resident',
-                                            label: 'San Diego Resident',
-                                        },
-                                        {
-                                            value: 'vacationer',
-                                            label: 'Vacationer',
-                                        },
-                                        {
-                                            value: 'invoiced',
-                                            label: 'Invoiced',
-                                        },
-                                    ]
-                                }
+                                sitter_preferences={sitter_preferences}
+                                client_types={client_types}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}
                                 hotelSuggestions={hotelSuggestions}

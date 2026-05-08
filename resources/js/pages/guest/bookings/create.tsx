@@ -886,6 +886,7 @@ export default function GuestBookingCreate() {
                                 />
                             </div>
 
+                            {/* eslint-disable-next-line no-constant-binary-expression */}
                             {false && form.data.special_needs_notes && (
                                 <div>
                                     <Label className="text-sm font-medium text-foreground">
@@ -1000,22 +1001,24 @@ export default function GuestBookingCreate() {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Breed
-                                                    </Label>
-                                                    <Input
-                                                        value={pet.breed}
-                                                        onChange={(e) =>
-                                                            handleUpdatePet(
-                                                                pet.tempId,
-                                                                'breed',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Breed"
-                                                    />
-                                                </div>
+                                                {pet.type === 'dog' && (
+                                                    <div>
+                                                        <Label className="text-xs font-medium text-muted-foreground uppercase">
+                                                            Breed
+                                                        </Label>
+                                                        <Input
+                                                            value={pet.breed}
+                                                            onChange={(e) =>
+                                                                handleUpdatePet(
+                                                                    pet.tempId,
+                                                                    'breed',
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            placeholder="Breed"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Notes

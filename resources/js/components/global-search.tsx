@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { Search, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface SearchResult {
@@ -13,16 +13,25 @@ interface SearchResult {
 }
 
 function highlightText(text: string, query: string): React.ReactNode {
-    if (!query.trim()) return text;
+    if (!query.trim()) {
+        return text;
+    }
 
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
     const parts = text.split(regex);
 
     return parts.map((part, index) =>
-        regex.test(part)
-            ? <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5">{part}</mark>
-            : part
+        regex.test(part) ? (
+            <mark
+                key={index}
+                className="rounded bg-yellow-200 px-0.5 dark:bg-yellow-800"
+            >
+                {part}
+            </mark>
+        ) : (
+            part
+        ),
     );
 }
 
@@ -65,8 +74,11 @@ export function GlobalSearch() {
 
         debounceRef.current = setTimeout(async () => {
             setLoading(true);
+
             try {
-                const response = await fetch(`/search?q=${encodeURIComponent(value)}`);
+                const response = await fetch(
+                    `/search?q=${encodeURIComponent(value)}`,
+                );
                 const data = await response.json();
                 setResults(data);
                 setShowResults(true);
@@ -105,7 +117,9 @@ export function GlobalSearch() {
         }
     };
 
-    const getTypeVariant = (type: string): 'default' | 'secondary' | 'outline' => {
+    const getTypeVariant = (
+        type: string,
+    ): 'default' | 'secondary' | 'outline' => {
         switch (type) {
             case 'booking':
                 return 'default';
@@ -121,27 +135,27 @@ export function GlobalSearch() {
     return (
         <div ref={wrapperRef} className="relative">
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => results.length > 0 && setShowResults(true)}
                     placeholder="Search bookings, caregivers, clients..."
-                    className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-8 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring md:w-[200px] lg:w-[300px]"
+                    className="h-9 w-full rounded-md border border-input bg-background pr-8 pl-9 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring md:w-[200px] lg:w-[300px]"
                 />
                 {query && (
                     <button
                         type="button"
                         onClick={clearSearch}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                         <X className="h-4 w-4" />
                     </button>
                 )}
             </div>
             {showResults && (
-                <div className="absolute right-0 top-full z-[100] mt-1 max-h-[400px] w-full min-w-[300px] overflow-auto rounded-md border border-border bg-card shadow-md md:w-[400px]">
+                <div className="absolute top-full right-0 z-[100] mt-1 max-h-[400px] w-full min-w-[300px] overflow-auto rounded-md border border-border bg-card shadow-md md:w-[400px]">
                     {loading ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             Searching...
@@ -157,15 +171,22 @@ export function GlobalSearch() {
                                     key={`${item.type}-${item.id}`}
                                     type="button"
                                     onClick={() => handleItemClick(item)}
-                                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm cursor-pointer hover:bg-accent"
+                                    className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left text-sm hover:bg-accent"
                                 >
                                     <div className="flex flex-col gap-1">
-                                        <span className="font-medium">{highlightText(item.name, query)}</span>
-                                        {item.type === 'booking' && item.ulid && (
-                                            <span className="text-xs text-muted-foreground">
-                                                Booking ID: {highlightText(item.ulid, query)}
-                                            </span>
-                                        )}
+                                        <span className="font-medium">
+                                            {highlightText(item.name, query)}
+                                        </span>
+                                        {item.type === 'booking' &&
+                                            item.ulid && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Booking ID:{' '}
+                                                    {highlightText(
+                                                        item.ulid,
+                                                        query,
+                                                    )}
+                                                </span>
+                                            )}
                                     </div>
                                     <Badge variant={getTypeVariant(item.type)}>
                                         {getTypeLabel(item.type)}

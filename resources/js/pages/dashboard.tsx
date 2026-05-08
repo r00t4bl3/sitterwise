@@ -60,7 +60,17 @@ interface Props {
             label: string;
             colors: { bg: string; text: string; border: string };
         }>;
+        clients: any[];
+        clientTypes: any[];
+        hotels: any[];
+        caregivers: any[];
+        serviceTypes: any[];
+        locationTypes: any[];
+        paymentStatuses: any[];
         petTypes: any[];
+        bookingAttributes: any[];
+        sitterPreferences: any[];
+        quickLinks: any[];
     };
 }
 

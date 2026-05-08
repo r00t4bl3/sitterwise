@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AvailabilityCalendar } from '@/components/availability-calendar';
-import { ToasterMessage } from '@/components/toaster-message';
 import { StatusBadge } from '@/components/status-badge';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -280,9 +280,7 @@ export default function CaregiverDashboard({
                             <div className="relative overflow-hidden rounded-xl border-2 border-primary/20 bg-card p-6 shadow-md transition-all hover:border-primary/40">
                                 <div className="absolute top-0 right-0 p-4">
                                     <StatusBadge
-                                        status={
-                                            caregiver.nextJob.status
-                                        }
+                                        status={caregiver.nextJob.status}
                                         bookingStatuses={
                                             caregiver.bookingStatuses
                                         }

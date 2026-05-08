@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
+use App\Enums\ClientType;
 use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
 use App\Enums\TimeSlot;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -37,7 +39,6 @@ class DashboardController extends Controller
             ],
             BookingStatus::cases()
         );
-
 
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             $stats = [
@@ -73,28 +74,12 @@ class DashboardController extends Controller
                 BookingPaymentStatus::cases()
             );
 
-            $specialConsiderationOptions = AttributeDefinition::where('slug', 'special_considerations')
-                ->first()
-                ?->options ?? [];
-
-            $specialConsiderationOptions = array_map(
-                fn ($option) => [
-                    'value' => $option,
-                    'label' => $option,
+            $sitterPreferences = array_map(
+                fn ($case) => [
+                    'value' => $case->value,
+                    'label' => $case->label(),
                 ],
-                $specialConsiderationOptions
-            );
-
-            $sitterPreferenceOptions = AttributeDefinition::where('slug', 'sitter_preferences')
-                ->first()
-                ?->options ?? [];
-
-            $sitterPreferenceOptions = array_map(
-                fn ($option) => [
-                    'value' => $option,
-                    'label' => $option,
-                ],
-                $sitterPreferenceOptions
+                SitterPreference::cases()
             );
 
             $bookingAttributes = AttributeDefinition::where('type', 'booking')
@@ -137,6 +122,10 @@ class DashboardController extends Controller
                         'name' => $client->user->name,
                     ])
                     ->toArray(),
+                'clientTypes' => array_map(
+                    fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                    ClientType::cases()
+                ),
                 'hotels' => Hotel::all()
                     ->map(fn ($hotel) => [
                         'id' => $hotel->id,
@@ -153,13 +142,12 @@ class DashboardController extends Controller
                 'serviceTypes' => $serviceTypes,
                 'locationTypes' => $locationTypes,
                 'paymentStatuses' => $paymentStatuses,
-                'specialConsiderationOptions' => $specialConsiderationOptions,
-                'pet_types' => array_map(
+                'petTypes' => array_map(
                     fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                     PetType::cases()
                 ),
                 'bookingAttributes' => $bookingAttributes,
-                'sitterPreferenceOptions' => $sitterPreferenceOptions,
+                'sitterPreferences' => $sitterPreferences,
                 'quickLinks' => QuickLink::where('is_active', true)
                     ->orderBy('sort_order')
                     ->get(),
@@ -287,7 +275,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'caregiver' => $caregiverData,
             'client' => $clientData,
-            'admin' => $adminData ?? null,
+            'admin' => $adminData,
         ]);
     }
 }

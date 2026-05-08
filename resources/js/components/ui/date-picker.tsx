@@ -18,6 +18,8 @@ interface DatePickerProps {
   onChange?: (date: string) => void
   placeholder?: string
   name?: string
+  fromYear?: number
+  toYear?: number
 }
 
 export function DatePicker({
@@ -25,7 +27,11 @@ export function DatePicker({
   onChange,
   placeholder = "Pick a date",
   name,
+  fromYear,
+  toYear,
 }: DatePickerProps) {
+  const startMonth = fromYear ? new Date(fromYear, 0) : undefined
+  const endMonth = toYear ? new Date(toYear, 11) : undefined
   const [date, setDate] = React.useState<Date | undefined>(
     value ? parseAsLocal(value) ?? undefined : undefined
   )
@@ -64,6 +70,8 @@ export function DatePicker({
           onSelect={handleSelect}
           defaultMonth={date}
           captionLayout="dropdown"
+          startMonth={startMonth}
+          endMonth={endMonth}
         />
       </PopoverContent>
       {name && (

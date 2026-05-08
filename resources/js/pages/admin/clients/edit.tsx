@@ -344,9 +344,7 @@ export default function ClientEdit() {
                                     profile_photo_url={
                                         client.user.profile_photo_url
                                     }
-                                    profile_photo_path={
-                                        client.user.profile_photo_path
-                                    }
+                                    profile_photo_path={currentProfilePhoto}
                                     name={`${client.first_name} ${client.last_name}`}
                                     size="md"
                                     className="size-10 md:size-16"
@@ -1254,6 +1252,7 @@ export default function ClientEdit() {
                         </div>
                     </div>
 
+                    {/* eslint-disable-next-line no-constant-binary-expression */}
                     {false && (
                         <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
