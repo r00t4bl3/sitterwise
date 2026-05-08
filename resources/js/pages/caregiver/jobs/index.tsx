@@ -117,11 +117,18 @@ export default function CaregiverJobsIndex() {
         if (statusKey === 'confirmed' && start_datetime && end_datetime) {
             const now = new Date();
             const start = parseAsLocal(start_datetime) as Date;
+            const end = parseAsLocal(end_datetime) as Date;
 
-            if (now >= start) {
+            if (now >= end) {
                 return (
                     <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
-                        Active / Ready for Checkout
+                        Ready for Checkout
+                    </span>
+                );
+            } else if (now >= start) {
+                return (
+                    <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                        Active
                     </span>
                 );
             }
