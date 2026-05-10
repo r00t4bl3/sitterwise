@@ -77,6 +77,7 @@ interface Client {
     other_adults_present: string | null;
     emergency_instructions: string | null;
     special_needs_notes: string | null;
+    notes: string | null;
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
@@ -235,6 +236,7 @@ export default function ClientEdit() {
         other_adults_present: client.other_adults_present || '',
         emergency_instructions: client.emergency_instructions || '',
         special_needs_notes: client.special_needs_notes || '',
+        notes: client.notes || '',
         attributes: attributeValues,
         children: client.children,
         pets: client.pets,
@@ -494,6 +496,21 @@ export default function ClientEdit() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="other_adults_present"
+                                    checked={!!form.data.other_adults_present}
+                                    onCheckedChange={(checked) =>
+                                        form.setData(
+                                            'other_adults_present',
+                                            checked ? '1' : '',
+                                        )
+                                    }
+                                />
+                                <Label htmlFor="other_adults_present">
+                                    Other Adults in Home
+                                </Label>
+                            </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="biography">Biography</Label>
                                 <Textarea
@@ -524,20 +541,22 @@ export default function ClientEdit() {
                                     rows={3}
                                 />
                             </div>
-                            <div className="flex items-center gap-2 space-y-2">
-                                <Checkbox
-                                    id="other_adults_present"
-                                    checked={!!form.data.other_adults_present}
-                                    onCheckedChange={(checked) =>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="notes">
+                                    Admin Notes
+                                </Label>
+                                <Textarea
+                                    id="notes"
+                                    value={form.data.notes || ''}
+                                    onChange={(e) =>
                                         form.setData(
-                                            'other_adults_present',
-                                            checked ? '1' : '',
+                                            'notes',
+                                            e.target.value,
                                         )
                                     }
+                                    rows={3}
+                                    placeholder="Internal notes, not visible to client"
                                 />
-                                <Label htmlFor="other_adults_present">
-                                    Other Adults in Home
-                                </Label>
                             </div>
                         </div>
                     </div>
@@ -546,7 +565,7 @@ export default function ClientEdit() {
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Sitter Preferences
                         </h2>
-                        <div className="flex flex-wrap gap-4">
+                            <div className="gap-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                             {sitter_preferences.map((pref) => (
                                 <div
                                     key={pref.value}
@@ -565,7 +584,7 @@ export default function ClientEdit() {
                                         }
                                     />
                                     <Label
-                                        htmlFor={`pref-${pref}`}
+                                        htmlFor={`pref-${pref.value}`}
                                         className="capitalize"
                                     >
                                         {pref.value.replace(/_/g, ' ')}
@@ -580,7 +599,7 @@ export default function ClientEdit() {
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Attributes
                             </h2>
-                            <div className="flex flex-wrap gap-4">
+                            <div className="gap-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                 {attribute_definitions.map((def) => (
                                     <div
                                         key={def.id}

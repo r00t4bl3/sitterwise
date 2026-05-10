@@ -156,8 +156,10 @@ interface Client {
     how_did_you_hear: string | null;
     how_did_you_hear_label: string | null;
     sitter_preferences: string[] | null;
+    sitter_preferences_labels: string[];
     biography: string | null;
     special_needs_notes: string | null;
+    notes: string | null;
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
@@ -811,6 +813,28 @@ export default function ClientShow() {
                                         '—'}
                                 </p>
                             </div>
+
+                            {client.sitter_preferences &&
+                                client.sitter_preferences.length > 0 && (
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Sitter Preferences
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {client.sitter_preferences_labels.map(
+                                                (label) => (
+                                                    <span
+                                                        key={label}
+                                                        className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
+                                                    >
+                                                        {label}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                             {client.client_type !== 'vacationer' &&
                                 client.biography && (
                                     <div className="sm:col-span-2">
@@ -825,7 +849,7 @@ export default function ClientShow() {
                         </div>
 
                         {client.children.length > 0 && (
-                            <div className="border-t border-border pt-6">
+                            <div className="border-t border-border mt-6 pt-3">
                                 <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                     Children ({client.children.length})
                                 </h3>
@@ -967,27 +991,6 @@ export default function ClientShow() {
                             )}
                         </div>
 
-                        {client.sitter_preferences &&
-                            client.sitter_preferences.length > 0 && (
-                                <div className="border border-border bg-card p-6">
-                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                        Sitter Preferences
-                                    </h2>
-                                    <div className="flex flex-wrap gap-2">
-                                        {client.sitter_preferences.map(
-                                            (pref) => (
-                                                <span
-                                                    key={pref}
-                                                    className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
-                                                >
-                                                    {pref.replace(/_/g, ' ')}
-                                                </span>
-                                            ),
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
                         {client.special_needs_notes && (
                             <div className="border border-red-200 bg-red-50 p-6">
                                 <h2 className="mb-2 font-serif text-lg font-semibold text-red-800">
@@ -995,6 +998,17 @@ export default function ClientShow() {
                                 </h2>
                                 <p className="text-sm text-red-700">
                                     {client.special_needs_notes}
+                                </p>
+                            </div>
+                        )}
+
+                        {client.notes && (
+                            <div className="border border-amber-200 bg-amber-50 p-6">
+                                <h2 className="mb-2 font-serif text-lg font-semibold text-amber-800">
+                                    Admin Notes
+                                </h2>
+                                <p className="text-sm text-amber-700">
+                                    {client.notes}
                                 </p>
                             </div>
                         )}

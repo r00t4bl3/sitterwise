@@ -36,6 +36,7 @@ class Client extends Model
         'other_adults_present',
         'emergency_instructions',
         'special_needs_notes',
+        'notes',
     ];
 
     protected $appends = [

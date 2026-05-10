@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('other_adults_present')->nullable();
             $table->text('special_needs_notes')->nullable();
             $table->text('emergency_instructions')->nullable();
+            $table->text('notes')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

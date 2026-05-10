@@ -231,9 +231,13 @@ class ClientController extends Controller
                 'how_did_you_hear' => $client->how_did_you_hear,
                 'how_did_you_hear_label' => $client->how_did_you_hear ? DiscoverySource::tryFrom($client->how_did_you_hear)?->label() : null,
                 'sitter_preferences' => $client->sitter_preferences,
+                'sitter_preferences_labels' => $client->sitter_preferences
+                    ? array_map(fn ($pref) => SitterPreference::tryFrom($pref)?->label() ?? $pref, $client->sitter_preferences)
+                    : [],
                 'other_adults_present' => $client->other_adults_present,
                 'emergency_instructions' => $client->emergency_instructions,
                 'special_needs_notes' => $client->special_needs_notes,
+                'notes' => $client->notes,
                 'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
@@ -389,6 +393,7 @@ class ClientController extends Controller
                 'other_adults_present' => $client->other_adults_present,
                 'emergency_instructions' => $client->emergency_instructions,
                 'special_needs_notes' => $client->special_needs_notes,
+                'notes' => $client->notes,
                 'user' => [
                     'profile_photo_path' => $client->user->profile_photo_path,
                 ],
