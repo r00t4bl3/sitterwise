@@ -735,6 +735,7 @@ class AdminBookingService implements BookingServiceInterface
     public function processPayment(Request $request, Booking $booking)
     {
         $validated = $request->validate([
+            'checkout_at' => 'nullable|date',
             'total_working_hour' => 'nullable|numeric|min:0',
             'reimbursement' => 'nullable|numeric|min:0',
             'reimbursement_description' => 'nullable|string',
@@ -747,6 +748,7 @@ class AdminBookingService implements BookingServiceInterface
             'booking_id' => $booking->id,
             'exists' => $booking->exists,
             'input' => [
+                'checkout_at' => $validated['checkout_at'] ?? $booking->checkout_at,
                 'total_working_hour' => $validated['total_working_hour'] ?? $booking->total_working_hour ?? 0,
                 'reimbursement' => $validated['reimbursement'] ?? 0,
                 'reimbursement_description' => $validated['reimbursement_description'] ?? null,
@@ -756,6 +758,7 @@ class AdminBookingService implements BookingServiceInterface
         ]);
 
         $success = $booking->update([
+            'checkout_at' => $validated['checkout_at'] ?? $booking->checkout_at,
             'total_working_hour' => $validated['total_working_hour'] ?? $booking->total_working_hour ?? 0,
             'reimbursement' => $validated['reimbursement'] ?? 0,
             'reimbursement_description' => $validated['reimbursement_description'] ?? null,

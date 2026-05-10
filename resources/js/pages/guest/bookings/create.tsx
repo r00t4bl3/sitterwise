@@ -1012,7 +1012,8 @@ export default function GuestBookingCreate() {
                                                                 handleUpdatePet(
                                                                     pet.tempId,
                                                                     'breed',
-                                                                    e.target.value,
+                                                                    e.target
+                                                                        .value,
                                                                 )
                                                             }
                                                             placeholder="Breed"

@@ -35,28 +35,31 @@ export function DateTimePicker({
         value ? format(parseAsLocal(value) as Date, "HH:mm") : "09:00"
     )
 
+    const startDate = startTime ? parseAsLocal(startTime) : null
+
+    const MIN_DURATION_MS = 4 * 60 * 60 * 1000
+
     const timeOptions = React.useMemo(() => {
     const options = []
-    const startDate = startTime ? parseAsLocal(startTime) : null
-    
+
     for (let i = 0; i < 96; i++) {
       const totalMins = i * 15
       const hours24 = Math.floor(totalMins / 60)
       const minutes = totalMins % 60
       const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24
       const ampm = hours24 < 12 ? 'AM' : 'PM'
-      
+
       const timeValue = `${String(hours24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
       const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`
-      
+
       let disabled = false
-      if (startDate) {
-        const optionDate = new Date(startDate)
+      if (startDate && date) {
+        const optionDate = new Date(date)
         optionDate.setHours(hours24, minutes, 0, 0)
-        const diffHours = (optionDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
-        disabled = diffHours < 4
+        const diffMs = optionDate.getTime() - startDate.getTime()
+        disabled = diffMs < MIN_DURATION_MS
       }
-      
+
       options.push({
         value: timeValue,
         label: disabled ? `${label} (min 4h)` : label,
@@ -64,7 +67,7 @@ export function DateTimePicker({
       })
     }
     return options
-  }, [startTime])
+  }, [startTime, date])
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -76,6 +79,25 @@ export function DateTimePicker({
             }
         }
     }, [value])
+
+    // Enforce minimum 4-hour duration from startTime
+    React.useEffect(() => {
+        if (!startDate || !value || !onChange) return
+
+        const current = parseAsLocal(value)
+        if (!current) return
+
+        const diffMs = current.getTime() - startDate.getTime()
+        const diffHours = diffMs / (1000 * 60 * 60)
+
+        if (diffHours < 4) {
+            const minDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000)
+            const corrected = format(minDate, "yyyy-MM-dd'T'HH:mm")
+            setDate(minDate)
+            setTime(format(minDate, "HH:mm"))
+            onChange(corrected)
+        }
+    }, [value, startTime])
 
     const handleDateSelect = (selectedDate: Date | undefined) => {
         setDate(selectedDate)
@@ -134,6 +156,7 @@ export function DateTimePicker({
                         selected={date}
                         onSelect={handleDateSelect}
                         defaultMonth={date}
+                        disabled={startDate ? { before: startDate } : undefined}
                         initialFocus
                     />
                 </PopoverContent>

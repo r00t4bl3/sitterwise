@@ -849,8 +849,7 @@ export default function CaregiverShow() {
                                             )}
                                             {cert.notes && (
                                                 <p className="text-xs text-muted-foreground">
-                                                    Note:{' '}
-                                                    {cert.notes}
+                                                    Note: {cert.notes}
                                                 </p>
                                             )}
                                         </div>

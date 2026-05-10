@@ -997,7 +997,8 @@ export default function ClientBookingCreate() {
                                                                 handleUpdatePet(
                                                                     pet.id,
                                                                     'breed',
-                                                                    e.target.value,
+                                                                    e.target
+                                                                        .value,
                                                                 )
                                                             }
                                                             placeholder="Breed"

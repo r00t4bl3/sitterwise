@@ -849,7 +849,7 @@ export default function ClientShow() {
                         </div>
 
                         {client.children.length > 0 && (
-                            <div className="border-t border-border mt-6 pt-3">
+                            <div className="mt-6 border-t border-border pt-3">
                                 <h3 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                     Children ({client.children.length})
                                 </h3>

@@ -18,6 +18,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -28,7 +29,9 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { parseAsLocal } from '@/lib/datetime';
 import AppLayout from '@/layouts/app-layout';
+import { format } from 'date-fns';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -125,6 +128,7 @@ export default function TransactionsIndex() {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     const [localValues, setLocalValues] = useState({
+        checkout_at: '',
         total_working_hour: '',
         reimbursement: '',
         reimbursement_description: '',
@@ -139,6 +143,7 @@ export default function TransactionsIndex() {
     });
 
     const paymentForm = useForm({
+        checkout_at: '',
         total_working_hour: 0,
         reimbursement: 0,
         reimbursement_description: '',
@@ -147,7 +152,8 @@ export default function TransactionsIndex() {
     });
 
     const formatDateTime = (dateStr: string) => {
-        const date = new Date(dateStr);
+        const date = parseAsLocal(dateStr);
+        if (!date) return '—';
 
         return date.toLocaleString('en-US', {
             month: 'short',
@@ -167,6 +173,7 @@ export default function TransactionsIndex() {
 
         setSelectedBooking(booking);
         setLocalValues({
+            checkout_at: booking.checkout_at || booking.end_datetime || '',
             total_working_hour: String(booking.total_working_hour ?? ''),
             reimbursement: String(booking.reimbursement ?? ''),
             reimbursement_description: booking.reimbursement_description ?? '',
@@ -174,6 +181,7 @@ export default function TransactionsIndex() {
             bonus: String(booking.bonus ?? ''),
         });
         paymentForm.setData({
+            checkout_at: booking.checkout_at || booking.end_datetime || '',
             total_working_hour: booking.total_working_hour ?? 0,
             reimbursement: booking.reimbursement ?? 0,
             reimbursement_description: booking.reimbursement_description ?? '',
@@ -207,7 +215,12 @@ export default function TransactionsIndex() {
             return;
         }
 
-        const hours = parseFloat(hoursStr) || 0;
+        // Enforce minimum 4 hours
+        let hours = parseFloat(hoursStr) || 0;
+        if (hours > 0 && hours < 4) {
+            hours = 4;
+        }
+
         const hourlyRate = selectedBooking.charge_to_client_hourly ?? 0;
         const caregiverHourly = selectedBooking.paid_to_caregiver_hourly ?? 0;
         const cutHourly = selectedBooking.sitterwise_cut_hourly ?? 0;
@@ -219,8 +232,95 @@ export default function TransactionsIndex() {
         });
 
         paymentForm.setData({
+            ...paymentForm.data,
             total_working_hour: hours,
         });
+
+        // Two-way: update checkout_at based on start_datetime + hours
+        if (selectedBooking.start_datetime && hours > 0) {
+            const startDate = parseAsLocal(selectedBooking.start_datetime);
+            if (startDate) {
+                const newCheckout = new Date(
+                    startDate.getTime() + hours * 60 * 60 * 1000,
+                );
+                const checkoutStr = format(newCheckout, "yyyy-MM-dd'T'HH:mm");
+                setLocalValues((prev) => ({
+                    ...prev,
+                    checkout_at: checkoutStr,
+                }));
+                paymentForm.setData({
+                    ...paymentForm.data,
+                    total_working_hour: hours,
+                    checkout_at: checkoutStr,
+                });
+            }
+        }
+    };
+
+    const handleCheckoutAtChange = (checkoutStr: string) => {
+        if (!selectedBooking) {
+            return;
+        }
+
+        // Enforce minimum 4 hours from start_datetime
+        let validatedCheckout = checkoutStr;
+        if (selectedBooking.start_datetime && checkoutStr) {
+            const startDate = parseAsLocal(selectedBooking.start_datetime);
+            const checkoutDate = parseAsLocal(checkoutStr);
+            if (startDate && checkoutDate) {
+                const diffMs = checkoutDate.getTime() - startDate.getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+                if (diffHours < 4) {
+                    const startLocal = parseAsLocal(
+                        selectedBooking.start_datetime,
+                    );
+                    const minCheckout = startLocal
+                        ? new Date(startLocal.getTime() + 4 * 60 * 60 * 1000)
+                        : null;
+                    validatedCheckout = minCheckout
+                        ? format(minCheckout, "yyyy-MM-dd'T'HH:mm")
+                        : checkoutStr;
+                }
+            }
+        }
+
+        setLocalValues((prev) => ({
+            ...prev,
+            checkout_at: validatedCheckout,
+        }));
+
+        // Two-way: calculate hours from start_datetime to checkout_at
+        if (selectedBooking.start_datetime && validatedCheckout) {
+            const startDate = parseAsLocal(selectedBooking.start_datetime);
+            const checkoutDate = parseAsLocal(validatedCheckout);
+            if (startDate && checkoutDate) {
+                const diffMs = checkoutDate.getTime() - startDate.getTime();
+                const hours =
+                    Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+                const hoursStr = hours > 0 ? String(hours) : '0';
+
+                const hourlyRate = selectedBooking.charge_to_client_hourly ?? 0;
+                const caregiverHourly =
+                    selectedBooking.paid_to_caregiver_hourly ?? 0;
+                const cutHourly = selectedBooking.sitterwise_cut_hourly ?? 0;
+
+                setLocalValues((prev) => ({
+                    ...prev,
+                    checkout_at: validatedCheckout,
+                    total_working_hour: hoursStr,
+                }));
+                setRecalculatedValues({
+                    charge_to_client: hourlyRate * hours,
+                    paid_to_caregiver: caregiverHourly * hours,
+                    sitterwise_cut: cutHourly * hours,
+                });
+                paymentForm.setData({
+                    ...paymentForm.data,
+                    checkout_at: validatedCheckout,
+                    total_working_hour: hours,
+                });
+            }
+        }
     };
 
     return (
@@ -460,13 +560,9 @@ export default function TransactionsIndex() {
                     <div className="space-y-4 overflow-y-auto px-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>Checkout At</Label>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    {selectedBooking?.checkout_at
-                                        ? formatDateTime(
-                                              selectedBooking.checkout_at,
-                                          )
-                                        : '-'}
+                                <Label>Client Name</Label>
+                                <p className="mt-1 text-sm text-muted-foreground capitalize">
+                                    {`${selectedBooking?.client?.first_name} ${selectedBooking?.client?.last_name}`}
                                 </p>
                             </div>
                             <div>
@@ -476,6 +572,27 @@ export default function TransactionsIndex() {
                                         /_/g,
                                         ' ',
                                     ) ?? '-'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Start Date</Label>
+                                <p className="mt-1 text-sm text-muted-foreground capitalize">
+                                    {selectedBooking
+                                        ? formatDateTime(
+                                              selectedBooking.start_datetime,
+                                          )
+                                        : '-'}
+                                </p>
+                            </div>
+                            <div>
+                                <Label>End Date</Label>
+                                <p className="mt-1 text-sm text-muted-foreground capitalize">
+                                    {formatDateTime(
+                                        selectedBooking?.end_datetime ?? '',
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -496,6 +613,17 @@ export default function TransactionsIndex() {
                         </div>
 
                         <div>
+                            <Label>Checkout At</Label>
+                            <div className="mt-1">
+                                <DateTimePicker
+                                    value={localValues.checkout_at}
+                                    onChange={handleCheckoutAtChange}
+                                    placeholder="Set checkout time"
+                                    startTime={selectedBooking?.start_datetime}
+                                />
+                            </div>
+                        </div>
+                        <div>
                             <Label>Total Working Hours</Label>
                             <Input
                                 type="text"
@@ -511,6 +639,17 @@ export default function TransactionsIndex() {
                                         total_working_hour: val,
                                     });
                                     recalculatePayment(val);
+                                }}
+                                onBlur={() => {
+                                    // Sync local string value back to form on blur
+                                    const hours =
+                                        parseFloat(
+                                            localValues.total_working_hour,
+                                        ) || 0;
+                                    paymentForm.setData({
+                                        ...paymentForm.data,
+                                        total_working_hour: hours,
+                                    });
                                 }}
                                 placeholder="0.00"
                                 className="mt-1"

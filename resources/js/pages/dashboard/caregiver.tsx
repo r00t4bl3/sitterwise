@@ -249,7 +249,6 @@ export default function CaregiverDashboard({
                         href="/payouts"
                         className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
                     >
-
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <DollarSign className="h-4 w-4 text-green-500" />
                             <span className="text-xs font-medium tracking-wider uppercase">

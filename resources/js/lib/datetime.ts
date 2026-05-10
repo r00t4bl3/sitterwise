@@ -12,15 +12,21 @@ export const parseAsLocal = (
         return null;
     }
 
-    // Remove 'Z' if present to treat as local time
-    // ISO strings like "2023-10-27T09:15:00.000000Z" -> "2023-10-27T09:15:00.000000"
+    // Strip timezone indicator 'Z' to treat as local time
     const cleanStr = dateStr.endsWith('Z') ? dateStr.slice(0, -1) : dateStr;
 
     // For simple YYYY-MM-DD, append T00:00:00 to ensure local interpretation
-    // Browsers treat "2023-10-27" as UTC 00:00:00, but "2023-10-27T00:00:00" as local 00:00:00
-    const finalStr = cleanStr.length === 10 ? `${cleanStr}T00:00:00` : cleanStr;
+    if (cleanStr.length === 10) {
+        return new Date(`${cleanStr}T00:00:00`);
+    }
 
-    return new Date(finalStr);
+    // Parse the datetime components manually to ensure local timezone interpretation
+    // Browser's new Date() treats "YYYY-MM-DDTHH:mm:ss" as UTC, not local
+    const [datePart, timePart] = cleanStr.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute, second] = timePart.split(':').map(Number);
+
+    return new Date(year, month - 1, day, hour, minute, second);
 };
 
 /**

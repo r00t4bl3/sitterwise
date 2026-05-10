@@ -542,17 +542,12 @@ export default function ClientEdit() {
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="notes">
-                                    Admin Notes
-                                </Label>
+                                <Label htmlFor="notes">Admin Notes</Label>
                                 <Textarea
                                     id="notes"
                                     value={form.data.notes || ''}
                                     onChange={(e) =>
-                                        form.setData(
-                                            'notes',
-                                            e.target.value,
-                                        )
+                                        form.setData('notes', e.target.value)
                                     }
                                     rows={3}
                                     placeholder="Internal notes, not visible to client"
@@ -565,7 +560,7 @@ export default function ClientEdit() {
                         <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                             Sitter Preferences
                         </h2>
-                            <div className="gap-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                             {sitter_preferences.map((pref) => (
                                 <div
                                     key={pref.value}
@@ -599,7 +594,7 @@ export default function ClientEdit() {
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Attributes
                             </h2>
-                            <div className="gap-4 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                 {attribute_definitions.map((def) => (
                                     <div
                                         key={def.id}
