@@ -12,14 +12,14 @@ beforeEach(function () {
     $this->client = Client::factory()->create(['user_id' => $this->clientUser->id]);
 });
 
-it('passes pet_types to the admin dashboard', function () {
+it('passes petTypes to the admin dashboard', function () {
     $response = $this->actingAs($this->admin)->get('/dashboard');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->has('admin.pet_types', 3)
-        ->where('admin.pet_types.0.value', 'dog')
-        ->where('admin.pet_types.0.label', 'Dog')
+        ->has('admin.petTypes', 3)
+        ->where('admin.petTypes.0.value', 'dog')
+        ->where('admin.petTypes.0.label', 'Dog')
     );
 });
 
