@@ -107,9 +107,9 @@ class ImportBubbleDatabase extends Command
                             $client = Client::createChromeClient(
                                 $chromeDriverPath,
                                 [
-                                    // '--headless=new',
-                                    // '--no-sandbox',
-                                    // '--disable-dev-shm-usage',
+                                    '--headless=new',
+                                    '--no-sandbox',
+                                    '--disable-dev-shm-usage',
                                     '--window-size=1920,1080',
                                     '--user-data-dir='.$userDataDir,
                                 ]
@@ -287,23 +287,22 @@ class ImportBubbleDatabase extends Command
             sleep(2); // Wait for row to appear
 
             // 2. Select Field
-            $this->selectBubbleDropdown($client, '.constraint-field', $c['field']);
+            $this->selectBubbleDropdown($client, '.composer-dropdown.bubble-ui.constraint-field', $c['field']);
 
             // 3. Select Operator
-            $this->selectBubbleDropdown($client, '.operator-field', $c['operator']);
+            $this->selectBubbleDropdown($client, '.composer-dropdown.bubble-ui.operator-field', $c['operator']);
 
             // 4. Enter Value
             $client->executeScript("
-                const rows = document.querySelectorAll('.constraint-row');
-                const lastRow = rows[rows.length - 1];
-                const input = lastRow.querySelector('input');
+                const inputs = document.querySelectorAll('.property-editor-control.bubble-ui.value-field');
+                const input = inputs[inputs.length - 1];
                 if (input) {
                     input.value = '{$c['value']}';
                     input.dispatchEvent(new Event('change', { bubbles: true }));
                     input.dispatchEvent(new Event('blur', { bubbles: true }));
                 }
             ");
-            sleep(1);
+            sleep(1000);
         }
 
         $this->info('Constraints applied.');
@@ -312,38 +311,58 @@ class ImportBubbleDatabase extends Command
 
     protected function selectBubbleDropdown(Client $client, string $containerSelector, string $searchText): void
     {
-        $client->executeScript("
-            const rows = document.querySelectorAll('.property-editor-control');
-            const lastRow = rows[rows.length - 1];
-            const dropdown = lastRow.querySelector('{$containerSelector}');
-            if (dropdown) {
-                dropdown.click();
-            }
-        ");
-        sleep(1);
+        // Try multiple times to handle timing issues
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $this->line("    Attempt {$attempt} to select dropdown: {$searchText}");
 
-        $client->executeScript("
-            const searchBox = document.querySelector('.dropdown-search input') || document.querySelector('.bubble-ui.input[placeholder*=\"Search\"]');
-            if (searchBox) {
-                searchBox.value = '{$searchText}';
-                searchBox.dispatchEvent(new Event('input', { bubbles: true }));
-                searchBox.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        ");
-        sleep(1);
-
-        $client->executeScript("
-            const items = document.querySelectorAll('.dropdown-item, .list-item, .selection-item');
-            for (const item of items) {
-                if (item.textContent.trim().toLowerCase() === '{$searchText}'.toLowerCase()) {
-                    item.click();
-                    return;
+            // Click the dropdown container
+            sleep(1);
+            $this->line('    Clicking dropdown');
+            $dropdownClicked = $client->executeScript("
+                const containers = document.querySelectorAll('{$containerSelector}');
+                const container = containers[containers.length - 1];
+                if (container) {
+                    const dropdownTrigger = container.querySelector('.property-editor-control');
+                    if (dropdownTrigger) {
+                        console.log('clicking dropdown', dropdownTrigger);
+                        dropdownTrigger.dispatchEvent(new Event('mousedown', { bubbles: true, cancelable: true }));
+                        return true;
+                    }
                 }
+                return false;
+            ");
+
+            sleep(1);
+
+            if ($dropdownClicked) {
+                $this->info("    Successfully clicked: {$containerSelector}");
+            } else {
+                $this->warn("    Could not find matching item on attempt {$attempt}");
             }
-            // Fallback: Click first item if exact match fails but search was applied
-            if (items.length > 0) item[0].click();
-        ");
-        sleep(1);
+
+            sleep(1);
+
+            $this->line('    Selecting option');
+            $optionClicked = $client->executeScript("
+                targetOption = [...document.querySelectorAll('.dropdown-option')].find(el => el.textContent.trim() === '{$searchText}');
+                if (targetOption) {
+                    console.log('clicking option', targetOption);
+                    targetOption.click();
+                    return true;
+                }
+                return false;
+            ");
+
+            if ($optionClicked) {
+                $this->info("    Successfully clicked: {$searchText}");
+
+                return;
+            } else {
+                $this->warn("    Could not find matching item on attempt {$attempt}");
+            }
+        }
+
+        $this->error("    Failed to select dropdown after 3 attempts: {$searchText}");
     }
 
     protected function scrapeAndSync(Client $client, string $type, string $url, int $limit, bool $liveInsert, bool $force, bool $dryRun, array $constraints = []): void
@@ -410,6 +429,8 @@ class ImportBubbleDatabase extends Command
             sleep(1);
 
             $this->applyConstraints($client, $constraints);
+
+            sleep(2);
 
             $this->info('Ensuring Modified Date sorting (Descending)...');
             $client->executeScript("
@@ -481,7 +502,11 @@ class ImportBubbleDatabase extends Command
                     // End of Data detection: Batch size < 50 is a definitive end signal in Bubble
                     if (count($hits) < 50 && count($hits) > 0) {
                         $this->info("Reached the absolute end of data for [{$type}] (Batch size ".count($hits).' < 50).');
-                        $this->markTypeComplete($type);
+                        if (empty($constraints)) {
+                            $this->markTypeComplete($type);
+                        } else {
+                            $this->line('    [Note] Completion marker skipped because filters are active.');
+                        }
                         break;
                     }
 
@@ -492,7 +517,9 @@ class ImportBubbleDatabase extends Command
                             break;
                         }
 
-                        if (! $hasFastForwarded && $stagedCount > 50) {
+                        // IMPORTANT: Only fast-forward if we are NOT using server-side filters.
+                        // Filters change the offset context, making stagedCount an invalid skip indicator.
+                        if (! $hasFastForwarded && $stagedCount > 50 && empty($constraints)) {
                             $skipCount = floor($stagedCount / 50) - $page;
                             if ($skipCount > 0) {
                                 $this->info("Found perfectly synced batch. Triggering automatic fast-forward (skipping {$skipCount} pages)...");
@@ -501,6 +528,7 @@ class ImportBubbleDatabase extends Command
                                 $client->executeScript('window._capturedResponse = null;');
 
                                 for ($i = 0; $i < $skipCount; $i++) {
+                                    $this->line('  Skipping page '.($page + $i + 1).' of '.($page + $skipCount).'...');
                                     $status = 'not_found';
                                     for ($retry = 0; $retry < 8; $retry++) {
                                         $status = $this->clickLoadMore($client);
@@ -583,7 +611,11 @@ class ImportBubbleDatabase extends Command
 
                     if (! $loadMoreSuccess) {
                         $this->info("Reached the end of data for [{$type}] (No 'Load more' button found after retries).");
-                        $this->markTypeComplete($type);
+                        if (empty($constraints)) {
+                            $this->markTypeComplete($type);
+                        } else {
+                            $this->line('    [Note] Completion marker skipped because filters are active.');
+                        }
                         break;
                     }
 
