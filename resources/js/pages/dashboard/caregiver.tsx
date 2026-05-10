@@ -245,7 +245,11 @@ export default function CaregiverDashboard({
                                 : 'No rating'}
                         </p>
                     </div>
-                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    <Link
+                        href="/payouts"
+                        className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
+                    >
+
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <DollarSign className="h-4 w-4 text-green-500" />
                             <span className="text-xs font-medium tracking-wider uppercase">
@@ -255,8 +259,11 @@ export default function CaregiverDashboard({
                         <p className="text-2xl font-bold text-foreground">
                             ${stats.totalEarned.toFixed(2)}
                         </p>
-                    </div>
-                    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md">
+                    </Link>
+                    <Link
+                        href="/jobs"
+                        className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
+                    >
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Briefcase className="h-4 w-4 text-blue-500" />
                             <span className="text-xs font-medium tracking-wider uppercase">
@@ -266,7 +273,7 @@ export default function CaregiverDashboard({
                         <p className="text-2xl font-bold text-foreground">
                             {stats.completedJobs}
                         </p>
-                    </div>
+                    </Link>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -334,7 +341,7 @@ export default function CaregiverDashboard({
 
                                 <Button asChild className="w-full">
                                     <Link
-                                        href={`/bookings/${caregiver.nextJob.ulid}`}
+                                        href={`/jobs/${caregiver.nextJob.ulid}`}
                                     >
                                         View Job Details
                                         <ChevronRight className="ml-2 h-4 w-4" />

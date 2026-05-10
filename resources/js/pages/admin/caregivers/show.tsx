@@ -65,6 +65,7 @@ interface CertificationType {
 interface Certification {
     id: number;
     certification_type: CertificationType;
+    notes: string;
     expiration_date: string;
     verified_at: string;
 }
@@ -844,6 +845,12 @@ export default function CaregiverShow() {
                                                 <p className="text-xs text-muted-foreground">
                                                     Expires:{' '}
                                                     {cert.expiration_date}
+                                                </p>
+                                            )}
+                                            {cert.notes && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Note:{' '}
+                                                    {cert.notes}
                                                 </p>
                                             )}
                                         </div>

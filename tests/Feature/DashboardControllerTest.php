@@ -110,8 +110,8 @@ class DashboardControllerTest extends TestCase
             ->where('user.role', 'client')
             ->where('stats.active_bookings', 1)
             ->where('stats.past_bookings', 1)
-            ->has('client.next_booking')
-            ->has('client.recent_bookings', 1)
+            ->has('client.nextBooking')
+            ->has('client.recentBookings', 1)
         );
     }
 

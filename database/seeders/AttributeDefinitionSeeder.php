@@ -23,8 +23,6 @@ class AttributeDefinitionSeeder extends Seeder
 
         // Client attributes
         $clientAttributes = [
-            ['name' => 'Has Pets', 'slug' => 'has_pets', 'type' => 'boolean', 'entity_type' => 'client', 'sort_order' => 1],
-            ['name' => 'Has Pool', 'slug' => 'has_pool', 'type' => 'boolean', 'entity_type' => 'client', 'sort_order' => 2],
             ['name' => 'Needs Night Care', 'slug' => 'needs_night_care', 'type' => 'boolean', 'entity_type' => 'client', 'sort_order' => 3],
             ['name' => 'Needs Weekend Care', 'slug' => 'needs_weekend_care', 'type' => 'boolean', 'entity_type' => 'client', 'sort_order' => 4],
             ['name' => 'Smoke Detectors', 'slug' => 'smoke_detectors', 'type' => 'boolean', 'entity_type' => 'client', 'sort_order' => 5],

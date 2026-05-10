@@ -27,6 +27,7 @@ class UpdateClientRequest extends FormRequest
             'other_adults_present' => ['nullable', 'string', 'max:10'],
             'emergency_instructions' => ['nullable', 'string'],
             'special_needs_notes' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
             'attributes' => ['nullable', 'array'],
             'children' => ['nullable', 'array'],
             'children.*.name' => ['nullable', 'string', 'max:255'],

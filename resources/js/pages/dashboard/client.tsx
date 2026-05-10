@@ -261,8 +261,8 @@ export default function ClientDashboard({
                         <h3 className="text-lg leading-none font-semibold tracking-tight">
                             Upcoming Bookings
                         </h3>
-                        <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                            <div className="p-6">
+                        <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
+                            <div className="flex h-[200px] flex-col items-center justify-center text-center">
                                 {upcomingBookings.length > 0 ? (
                                     <div className="space-y-2">
                                         {upcomingBookings.map((booking) => (
