@@ -13,6 +13,7 @@ class CaregiverStatusSeeder extends Seeder
     public function run(): void
     {
         $statuses = [
+            ['name' => 'Applicant', 'description' => 'Applied, under review', 'color' => '#F48A91', 'sort_order' => 0],
             ['name' => 'Active', 'description' => 'Available for booking', 'color' => '#22C55E', 'sort_order' => 1],
             ['name' => 'Inactive', 'description' => 'Not currently available', 'color' => '#6B7280', 'sort_order' => 2],
             ['name' => 'In Process', 'description' => 'Onboarding in progress', 'color' => '#F59E0B', 'sort_order' => 3],

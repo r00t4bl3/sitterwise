@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitterwise Caregiver Profile System — Interactive Wireframe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #F48A91;
+    --navy: #1B3A5C;
+    --gray: #5A6B73;
+    --teal-bg: #E8F5F5;
+    --blush: #FDF5F2;
+    --teal-border: #C6E7E7;
+    --teal-logo: #84D0D2;
+    --white: #ffffff;
+    --light-gray: #f7f8f9;
+    --border: #e2e6ea;
+    --text: #2d3748;
+    --text-light: #718096;
+    --danger: #e53e3e;
+    --success: #38a169;
+    --warning: #d69e2e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--light-gray);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* WIREFRAME NAVIGATION                        */
+  /* ═══════════════════════════════════════════ */
+  .wf-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    padding: 0;
+    box-shadow: 0 2px 20px rgba(27,58,92,0.3);
+  }
+  .wf-nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: stretch;
+  }
+  .wf-nav-brand {
+    padding: 16px 24px;
+    font-family: 'Playfair Display', serif;
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .wf-nav-brand span { color: var(--coral); font-size: 12px; font-family: 'Poppins'; font-weight: 400; letter-spacing: 0; }
+  .wf-nav-tabs {
+    display: flex;
+    margin-left: auto;
+  }
+  .wf-nav-tab {
+    padding: 16px 20px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .wf-nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .wf-nav-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--coral);
+    background: rgba(255,255,255,0.05);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* SCREEN PANELS                               */
+  /* ═══════════════════════════════════════════ */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .screen-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #244b6e 100%);
+    padding: 40px 0 32px;
+    color: var(--white);
+  }
+  .screen-header-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .screen-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .screen-header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    max-width: 560px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* FORM STYLES (Application + Reference)       */
+  /* ═══════════════════════════════════════════ */
+  .form-container {
+    max-width: 680px;
+    margin: -20px auto 40px;
+    padding: 0 24px;
+  }
+  .form-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+  }
+  .form-card.highlight {
+    border-left: 4px solid var(--coral);
+  }
+
+  .form-section-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .form-section-desc {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .form-group { margin-bottom: 0; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group label .req { color: var(--coral); }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--light-gray);
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--teal-logo);
+    background: var(--white);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group .hint {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 3px;
+  }
+
+  .checkbox-group { margin-bottom: 16px; }
+  .checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--light-gray);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .checkbox-item:hover { border-color: var(--teal-logo); background: var(--teal-bg); }
+  .checkbox-item.checked {
+    border-color: var(--teal-logo);
+    background: var(--teal-bg);
+  }
+  .checkbox-item input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--teal-logo);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .checkbox-item .cb-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--navy);
+  }
+  .checkbox-item .cb-desc {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* Star rating */
+  .star-rating {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0;
+  }
+  .star-rating .star {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    color: var(--border);
+    transition: color 0.15s;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .star-rating .star.filled { color: #f6c343; }
+  .star-rating .star:hover { color: #f6c343; }
+
+  .rating-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .rating-row:last-child { border-bottom: none; }
+  .rating-label { font-size: 14px; font-weight: 500; }
+
+  /* Progress bar */
+  .progress-bar {
+    background: rgba(255,255,255,0.15);
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--coral);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .step-indicator {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 6px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 28px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-coral {
+    background: var(--coral);
+    color: var(--white);
+  }
+  .btn-coral:hover { background: #e57a82; }
+  .btn-outline {
+    background: transparent;
+    color: var(--teal-logo);
+    border: 2px solid var(--teal-logo);
+  }
+  .btn-outline:hover { background: var(--teal-bg); }
+  .btn-navy {
+    background: var(--navy);
+    color: var(--white);
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Step navigation pills */
+  .step-pills {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 16px 0;
+    flex-wrap: wrap;
+  }
+  .step-pill {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid var(--border);
+    color: var(--text-light);
+    background: var(--white);
+  }
+  .step-pill.active {
+    background: var(--coral);
+    color: var(--white);
+    border-color: var(--coral);
+  }
+  .step-pill.completed {
+    background: var(--teal-logo);
+    color: var(--white);
+    border-color: var(--teal-logo);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* ADMIN DASHBOARD                             */
+  /* ═══════════════════════════════════════════ */
+  .admin-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+
+  .admin-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #244b6e 100%);
+    padding: 32px 0;
+  }
+  .admin-header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .admin-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--teal-bg);
+    border: 3px solid var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: var(--navy);
+    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    flex-shrink: 0;
+  }
+
+  .admin-info { flex: 1; }
+  .admin-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .admin-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+
+  .admin-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-active { background: var(--success); color: var(--white); }
+  .badge-clear { background: var(--teal-logo); color: var(--white); }
+  .badge-warning { background: var(--warning); color: var(--white); }
+  .badge-coral { background: var(--coral); color: var(--white); }
+
+  .admin-scores {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .score-block {
+    text-align: center;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    min-width: 80px;
+  }
+  .score-number {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .score-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Admin Tabs */
+  .admin-tabs {
+    display: flex;
+    gap: 0;
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    margin-top: -1px;
+    overflow-x: auto;
+  }
+  .admin-tab {
+    padding: 14px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .admin-tab:hover { color: var(--navy); }
+  .admin-tab.active {
+    color: var(--navy);
+    border-bottom-color: var(--coral);
+  }
+
+  /* Admin Content Panels */
+  .admin-panel { display: none; margin-top: 20px; }
+  .admin-panel.active { display: block; }
+
+  .panel-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+  }
+  .panel-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .data-item {
+    padding: 8px 0;
+  }
+  .data-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    font-weight: 600;
+  }
+  .data-value {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  /* Reference tracker */
+  .ref-tracker {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .ref-dot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .ref-dot.complete { background: var(--teal-logo); color: var(--white); }
+  .ref-dot.pending { background: var(--border); color: var(--text-light); }
+  .ref-dot.overdue { background: var(--coral); color: var(--white); }
+
+  .ref-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+  }
+  .ref-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .ref-card-name { font-weight: 600; font-size: 14px; color: var(--navy); }
+  .ref-card-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .ref-card-status.complete { background: #c6f6d5; color: #276749; }
+  .ref-card-status.pending { background: #fefcbf; color: #975a16; }
+
+  .ref-rating-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+  .ref-rating-label { color: var(--text-light); }
+  .ref-rating-value { font-weight: 600; color: var(--navy); }
+
+  /* Review cards */
+  .review-card {
+    border-left: 3px solid var(--teal-border);
+    padding: 16px;
+    margin-bottom: 12px;
+    background: var(--light-gray);
+    border-radius: 0 6px 6px 0;
+  }
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .review-client { font-weight: 600; font-size: 13px; color: var(--navy); }
+  .review-date { font-size: 11px; color: var(--text-light); }
+  .review-stars { color: #f6c343; font-size: 14px; letter-spacing: 1px; }
+  .review-text { font-size: 13px; color: var(--text); line-height: 1.5; margin-top: 6px; }
+  .review-private {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #fff5f5;
+    border-left: 3px solid var(--coral);
+    font-size: 12px;
+    color: var(--coral);
+    border-radius: 0 4px 4px 0;
+  }
+  .review-private strong { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Internal rating bars */
+  .rating-bar-container { margin-bottom: 16px; }
+  .rating-bar-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .rating-bar-label { font-size: 13px; font-weight: 500; }
+  .rating-bar-value { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .rating-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .rating-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .rating-bar-fill.excellent { background: var(--teal-logo); }
+  .rating-bar-fill.good { background: #68d391; }
+  .rating-bar-fill.fair { background: var(--warning); }
+  .rating-bar-fill.poor { background: var(--danger); }
+
+  /* Engagement metrics */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .metric-card {
+    background: var(--light-gray);
+    border: 1px solid var(--border);
+    padding: 16px;
+    text-align: center;
+    border-radius: 6px;
+  }
+  .metric-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  /* Status lifecycle */
+  .lifecycle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 0;
+    overflow-x: auto;
+  }
+  .lifecycle-step {
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    white-space: nowrap;
+    background: var(--border);
+    color: var(--text-light);
+  }
+  .lifecycle-step.current { background: var(--success); color: var(--white); }
+  .lifecycle-step.past { background: var(--teal-logo); color: var(--white); }
+  .lifecycle-arrow { color: var(--border); font-size: 16px; }
+
+  /* ═══════════════════════════════════════════ */
+  /* WIREFRAME LABEL                             */
+  /* ═══════════════════════════════════════════ */
+  .wf-label {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: var(--navy);
+    color: var(--white);
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    z-index: 200;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+  }
+
+  /* S2Verify button */
+  .s2v-section {
+    padding: 16px;
+    background: var(--blush);
+    border: 1px dashed var(--coral);
+    border-radius: 6px;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .s2v-section p {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 10px;
+  }
+
+  /* Admin notes */
+  .note-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .note-entry:last-child { border-bottom: none; }
+  .note-meta { font-size: 11px; color: var(--text-light); margin-bottom: 2px; }
+  .note-text { font-size: 13px; }
+
+  @media (max-width: 768px) {
+    .wf-nav-inner { flex-wrap: wrap; }
+    .wf-nav-tabs { width: 100%; overflow-x: auto; }
+    .form-row { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr; }
+    .admin-header-inner { flex-direction: column; text-align: center; }
+    .admin-scores { justify-content: center; }
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- WIREFRAME NAVIGATION                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<nav class="wf-nav">
+  <div class="wf-nav-inner">
+    <div class="wf-nav-brand">SITTERWISE <span>WIREFRAME</span></div>
+    <div class="wf-nav-tabs">
+      <div class="wf-nav-tab active" onclick="showScreen('app', this)">A: Application Form</div>
+      <div class="wf-nav-tab" onclick="showScreen('ref', this)">B: Reference Form</div>
+      <div class="wf-nav-tab" onclick="showScreen('admin', this)">Admin Profile View</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN A: CAREGIVER APPLICATION FORM                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-app" class="screen active">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Join the Sitterwise Team</h1>
+      <p>We hire on a referral basis only. Complete this application to begin your journey with San Diego's most trusted childcare agency.</p>
+      <div class="progress-bar"><div class="progress-fill" id="app-progress" style="width: 12.5%"></div></div>
+      <div class="step-indicator" id="step-label">Step 1 of 8 — Sponsor & Your Info</div>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <div class="step-pills" id="step-pills">
+      <div class="step-pill active" onclick="goToStep(1)">1</div>
+      <div class="step-pill" onclick="goToStep(2)">2</div>
+      <div class="step-pill" onclick="goToStep(3)">3</div>
+      <div class="step-pill" onclick="goToStep(4)">4</div>
+      <div class="step-pill" onclick="goToStep(5)">5</div>
+      <div class="step-pill" onclick="goToStep(6)">6</div>
+      <div class="step-pill" onclick="goToStep(7)">7</div>
+      <div class="step-pill" onclick="goToStep(8)">8</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="app-step" id="app-step-1">
+      <div class="form-card highlight">
+        <div class="form-section-label">Sponsor Information</div>
+        <div class="form-section-desc">Who referred you to Sitterwise? This person will also serve as a reference.</div>
+        <div class="form-row">
+          <div class="form-group"><label>First Name <span class="req">*</span></label><input type="text" placeholder="Sponsor's first name"></div>
+          <div class="form-group"><label>Last Name <span class="req">*</span></label><input type="text" placeholder="Sponsor's last name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" placeholder="sponsor@email.com"></div>
+          <div class="form-group"><label>Phone</label><input type="tel" placeholder="(619) 555-0000"></div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group"><label>Relationship to You</label><input type="text" placeholder="How does this person know you?"></div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-section-label">Your Information</div>
+        <div class="form-row">
+          <div class="form-group"><label>First Name <span class="req">*</span></label><input type="text" value="Sarah"></div>
+          <div class="form-group"><label>Last Name <span class="req">*</span></label><input type="text" value="Mitchell"></div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group"><label>Address <span class="req">*</span></label><input type="text" placeholder="Start typing for autocomplete..." value="4521 Cass Street, San Diego, CA 92109"><div class="hint">Stored as structured data (street, city, state, zip)</div></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone <span class="req">*</span></label><input type="tel" value="(858) 555-1234"></div>
+          <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" value="sarah.mitchell@email.com"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date of Birth <span class="req">*</span></label><input type="date" value="1995-03-15"><div class="hint">Required for background check</div></div>
+          <div class="form-group"><label>Profile Photo</label><input type="file" accept="image/*"><div class="hint">Headshot for admin review (not published until approved)</div></div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <div></div>
+        <button class="btn btn-coral" onclick="goToStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="app-step" id="app-step-2" style="display:none">
+      <div class="form-card">
+        <div class="form-section-label">Position</div>
+        <div class="form-section-desc">What are you applying for? Check all that apply.</div>
+        <div class="checkbox-group">
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">On-Call Babysitting</div></div></label>
+          <label class="checkbox-item"><input type="checkbox"><div><div class="cb-label">On-Call Petsitting</div></div></label>
+          <label class="checkbox-item"><input type="checkbox"><div><div class="cb-label">Group Events</div></div></label>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-section-label">Availability</div>
+        <div class="form-section-desc">When are you generally available? Check all that apply.</div>
+        <div class="checkbox-group">
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Weekday Mornings</div></div></label>
+          <label class="checkbox-item"><input type="checkbox"><div><div class="cb-label">Weekday Afternoons</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Weekday Evenings</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Weekends</div></div></label>
+          <label class="checkbox-item"><input type="checkbox"><div><div class="cb-label">Overnights</div></div></label>
+        </div>
+        <div class="form-row single">
+          <div class="form-group"><label>Availability Notes</label><textarea placeholder="Any scheduling nuance? E.g., 'Not available Tuesdays' or 'Available June-August only'"></textarea></div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-section-label">Education</div>
+        <div class="form-row single">
+          <div class="form-group"><label>Highest Level Completed <span class="req">*</span></label>
+            <select><option>Bachelor's Degree</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>College</label><input type="text" value="San Diego State University"></div>
+          <div class="form-group"><label>Graduation Year</label><input type="text" value="2017"></div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group"><label>Degree / Major</label><input type="text" value="Child & Family Development"><div class="hint">Shown conditionally for Associate degree and above</div></div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+        <button class="btn btn-coral" onclick="goToStep(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 6 (Age Groups - showing the self-attestation pattern) -->
+    <div class="app-step" id="app-step-6" style="display:none">
+      <div class="form-card">
+        <div class="form-section-label">Location Preferences</div>
+        <div class="form-section-desc">Where are you willing to work?</div>
+        <div class="checkbox-group">
+          <label class="checkbox-item"><input type="checkbox"><div><div class="cb-label">North County</div><div class="cb-desc">Rancho Santa Fe, Del Mar, Carlsbad, Encinitas, Escondido, San Marcos, Vista</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">South / East County</div><div class="cb-desc">Coronado, Downtown, La Jolla, Mission Valley, Chula Vista, El Cajon, La Mesa</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Flexible (in a pinch)</div><div class="cb-desc">Would you sometimes be willing to work at the other location group if we were in a pinch?</div></div></label>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-section-label">Age Groups</div>
+        <div class="form-section-desc">Check each age group you feel comfortable caring for. By checking, you're agreeing with the statement below.</div>
+        <div class="checkbox-group">
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Babies</div><div class="cb-desc">I am comfortable changing diapers and fixing bottles. I am familiar with safe sleep practices. I can remain calm when a baby is crying and know how to soothe a fussy baby. I wash my hands upon entering the room.</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Toddlers</div><div class="cb-desc">I am aware of dangerous situations — stairs, sharp corners. I am patient with typical toddler meltdowns and can gently take control of a situation. I know how to distract a crying child when parents leave.</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">Preschool</div><div class="cb-desc">I love getting on the floor and playing actively with small children. I enjoy reading books and teaching little ones new things. I'm okay with an occasional potty training accident.</div></div></label>
+          <label class="checkbox-item checked"><input type="checkbox" checked><div><div class="cb-label">School Age</div><div class="cb-desc">I enjoy older kids and bring plenty of crafts and board games! I know to keep conversation light and avoid controversial topics and questionable media. I like to keep big kids active and engaged.</div></div></label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="goToStep(5)">← Back</button>
+        <button class="btn btn-coral" onclick="goToStep(7)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 8 (Agreements) -->
+    <div class="app-step" id="app-step-8" style="display:none">
+      <div class="form-card highlight">
+        <div class="form-section-label">Caregiver Statement of Verification</div>
+        <p style="font-size:13px; color: var(--text); line-height:1.7; margin-bottom:16px">I certify under penalty of perjury that the answers given herein are true and complete to the best of my knowledge. I authorize the investigation of all statements contained in this document, and I understand that this document is not intended to be a contract of employment.</p>
+        <p style="font-size:13px; color: var(--text); line-height:1.7; margin-bottom:20px">In the event that I am accepted as a Sitterwise caregiver, I understand that false or misleading information given on this document or in my interview may result in termination of our agreement.</p>
+        <div class="form-row">
+          <div class="form-group"><label>Typed Signature <span class="req">*</span></label><input type="text" value="Sarah Mitchell" style="font-size:18px; font-style:italic;"></div>
+          <div class="form-group"><label>Today's Date</label><input type="text" value="04/06/2026" disabled style="background:#eee"></div>
+        </div>
+        <label class="checkbox-item checked" style="margin-top:8px"><input type="checkbox" checked><div><div class="cb-desc">By typing your name in the above box, you agree that this constitutes the equivalent of a physical signature.</div></div></label>
+      </div>
+
+      <div class="form-card highlight">
+        <div class="form-section-label">Caregiver Statement of Agreement</div>
+        <p style="font-size:13px; color: var(--text); line-height:1.7; margin-bottom:8px">I understand that I am working as an independent contractor for Sitterwise, Inc. I am free to accept or reject any job offered. I will not provide childcare for families originally referred by Sitterwise "under the table" without notifying Sitterwise...</p>
+        <p style="font-size:12px; color: var(--text-light); margin-bottom:16px">(Full agreement text displayed — truncated in wireframe)</p>
+        <div class="form-row">
+          <div class="form-group"><label>Typed Signature <span class="req">*</span></label><input type="text" value="Sarah Mitchell" style="font-size:18px; font-style:italic;"></div>
+          <div class="form-group"><label>Today's Date</label><input type="text" value="04/06/2026" disabled style="background:#eee"></div>
+        </div>
+        <label class="checkbox-item checked" style="margin-top:8px"><input type="checkbox" checked><div><div class="cb-desc">By typing your name in the above box, you agree that this constitutes the equivalent of a physical signature.</div></div></label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="goToStep(7)">← Back</button>
+        <button class="btn btn-coral" style="padding: 14px 48px; font-size:16px" onclick="alert('Application submitted!\n\nReference request emails sent to all 4 references.\nConfirmation email sent to applicant.\nNotification sent to admin.')">Submit Application</button>
+      </div>
+    </div>
+
+    <!-- Placeholder for steps 3,4,5,7 -->
+    <div class="app-step" id="app-step-placeholder" style="display:none">
+      <div class="form-card" style="text-align:center; padding:48px 32px;">
+        <div style="font-size:48px; margin-bottom:12px">📋</div>
+        <div class="form-section-label" style="margin-bottom:8px" id="placeholder-title">Step Content</div>
+        <div class="form-section-desc" id="placeholder-desc">This step is fully specified in the spec document. The wireframe shows Steps 1, 2, 6, and 8 in detail as representative examples of the form patterns.</div>
+        <div style="margin-top: 20px; padding: 16px; background: var(--teal-bg); border-left: 3px solid var(--teal-logo); text-align: left; font-size: 13px; color: var(--navy);" id="placeholder-fields"></div>
+      </div>
+      <div class="form-actions" id="placeholder-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN B: REFERENCE FORM                            -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-ref" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Reference for Sarah Mitchell</h1>
+      <p>Sarah has applied to join the Sitterwise caregiver team and listed you as a reference. Your honest feedback helps us ensure only the best caregivers work with our families. This takes about 5 minutes.</p>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <div class="form-card">
+      <div class="form-section-label">Your Information</div>
+      <div class="form-row">
+        <div class="form-group"><label>Your Name <span class="req">*</span></label><input type="text" value="Amy Gray" style="background:#edf2f7"></div>
+        <div class="form-group"><label>Your Email</label><input type="email" value="amy@sitterwise.com" disabled style="background:#eee"><div class="hint">Locked — matches the email Sarah provided</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Your Phone</label><input type="tel" placeholder="(optional)"></div>
+        <div class="form-group"><label>How do you know Sarah? <span class="req">*</span></label>
+          <select><option>Church / Community</option><option>Friend</option><option>Former employer</option><option>Co-worker</option><option>Family member</option><option>Client</option><option>Other</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>How long have you known Sarah? <span class="req">*</span></label>
+          <select><option>5-10 years</option><option>Less than 1 year</option><option>1-3 years</option><option>3-5 years</option><option>10+ years</option></select>
+        </div>
+        <div class="form-group"><label>Have you seen Sarah interact with children? <span class="req">*</span></label>
+          <select><option>Yes</option><option>No</option></select>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Describe what you observed</label><textarea placeholder="Tell us about a time you saw Sarah with children...">Sarah has watched my two kids (ages 4 and 7) multiple times at church events and once for a full evening at our home. She's incredibly patient, gets right down on their level, and my kids ask for her by name. She handled a meltdown from my 4-year-old with total calm and creativity.</textarea></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-section-label">Rate Sarah on Each Quality</div>
+      <div class="form-section-desc">1 = Poor · 2 = Below Average · 3 = Average · 4 = Good · 5 = Excellent</div>
+
+      <div class="rating-row">
+        <span class="rating-label">Reliability / Dependability</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></div>
+      </div>
+      <div class="rating-row">
+        <span class="rating-label">Trustworthiness</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></div>
+      </div>
+      <div class="rating-row">
+        <span class="rating-label">Maturity & Judgment</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span></div>
+      </div>
+      <div class="rating-row">
+        <span class="rating-label">Communication Skills</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></div>
+      </div>
+      <div class="rating-row">
+        <span class="rating-label">Warmth with Children</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></div>
+      </div>
+      <div class="rating-row">
+        <span class="rating-label">Overall Recommendation</span>
+        <div class="star-rating"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-section-label">Open-Ended Questions</div>
+      <div class="form-row single">
+        <div class="form-group"><label>What are Sarah's greatest strengths?</label><textarea placeholder="As a caregiver or as a person..."></textarea></div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Is there anything we should be aware of?</label><textarea placeholder="Anything that might affect her ability to provide excellent childcare..."></textarea></div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Anything else you'd like us to know?</label><textarea placeholder="Optional additional comments"></textarea></div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group"><label>Would you trust Sarah with your own children? <span class="req">*</span></label>
+          <select><option>Yes</option><option>No</option><option>N/A (I don't have children)</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <div></div>
+      <button class="btn btn-coral" style="padding:14px 48px" onclick="alert('Thank you! Your reference has been submitted.\n\nThis response is confidential and will only be seen by Sitterwise administration.')">Submit Reference</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN C: ADMIN CAREGIVER PROFILE                   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-admin" class="screen">
+  <div class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-avatar">SM</div>
+      <div class="admin-info">
+        <div class="admin-name">Sarah Mitchell</div>
+        <div class="admin-meta">(858) 555-1234 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="27544655464f094a4e53444f424b4b67424a464e4b0944484a">[email&#160;protected]</a> · South/East County (Flexible)</div>
+        <div class="admin-badges">
+          <span class="badge badge-active">Active</span>
+          <span class="badge badge-clear">BG Check Clear</span>
+          <span class="badge badge-coral">147 Jobs</span>
+          <span class="badge" style="background:var(--teal-logo);color:white">82% Acceptance</span>
+        </div>
+        <div class="lifecycle" style="margin-top:10px">
+          <span class="lifecycle-step past">Applicant</span>
+          <span class="lifecycle-arrow">→</span>
+          <span class="lifecycle-step past">Review</span>
+          <span class="lifecycle-arrow">→</span>
+          <span class="lifecycle-step past">Interview</span>
+          <span class="lifecycle-arrow">→</span>
+          <span class="lifecycle-step past">BG Check</span>
+          <span class="lifecycle-arrow">→</span>
+          <span class="lifecycle-step past">Onboarding</span>
+          <span class="lifecycle-arrow">→</span>
+          <span class="lifecycle-step current">Active</span>
+        </div>
+      </div>
+      <div class="admin-scores">
+        <div class="score-block">
+          <div class="score-number">4.6</div>
+          <div class="score-label">Internal</div>
+        </div>
+        <div class="score-block">
+          <div class="score-number">4.8</div>
+          <div class="score-label">Client Avg</div>
+        </div>
+        <div class="score-block">
+          <div class="score-number">4.9</div>
+          <div class="score-label">Ref Avg</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-tabs" id="admin-tabs">
+    <div class="admin-tab active" onclick="showAdminTab('application', this)">Application</div>
+    <div class="admin-tab" onclick="showAdminTab('references', this)">References</div>
+    <div class="admin-tab" onclick="showAdminTab('reviews', this)">Reviews</div>
+    <div class="admin-tab" onclick="showAdminTab('internal', this)">Internal Rating</div>
+    <div class="admin-tab" onclick="showAdminTab('engagement', this)">Engagement</div>
+    <div class="admin-tab" onclick="showAdminTab('compliance', this)">Compliance</div>
+    <div class="admin-tab" onclick="showAdminTab('notes', this)">Notes</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- APPLICATION TAB -->
+    <div class="admin-panel active" id="panel-application">
+      <div class="panel-card">
+        <div class="panel-card-title">Application Snapshot — Submitted 01/15/2024</div>
+        <div class="data-grid">
+          <div class="data-item"><div class="data-label">Full Name</div><div class="data-value">Sarah Mitchell</div></div>
+          <div class="data-item"><div class="data-label">Date of Birth</div><div class="data-value">03/15/1995 (Age 31)</div></div>
+          <div class="data-item"><div class="data-label">Address</div><div class="data-value">4521 Cass St, San Diego, CA 92109</div></div>
+          <div class="data-item"><div class="data-label">Phone / Email</div><div class="data-value">(858) 555-1234 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="33405241525b1d5e5a47505b565f5f73565e525a5f1d505c5e">[email&#160;protected]</a></div></div>
+          <div class="data-item"><div class="data-label">Position(s)</div><div class="data-value">On-Call Babysitting</div></div>
+          <div class="data-item"><div class="data-label">Availability</div><div class="data-value">Weekday Mornings, Weekday Evenings, Weekends</div></div>
+          <div class="data-item"><div class="data-label">Education</div><div class="data-value">BS, Child & Family Development — SDSU 2017</div></div>
+          <div class="data-item"><div class="data-label">Currently Employed</div><div class="data-value">Yes, part-time (YMCA after-school program)</div></div>
+          <div class="data-item"><div class="data-label">Location Pref</div><div class="data-value">South/East County (Flexible in a pinch)</div></div>
+          <div class="data-item"><div class="data-label">Sponsor</div><div class="data-value">Julie Ortiz (<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2c465940454902435e5845566c49414d4540024f4341">[email&#160;protected]</a>)</div></div>
+          <div class="data-item"><div class="data-label">Age Groups</div><div class="data-value">Babies ✓ Toddlers ✓ Preschool ✓ School Age ✓</div></div>
+          <div class="data-item"><div class="data-label">Qualifications</div><div class="data-value">Special Needs ✓ Work-From-Home ✓ Swimming ✓ Driving ✓</div></div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-title">Childcare Experience</div>
+        <div style="padding:8px 0; border-bottom: 1px solid var(--border); margin-bottom:8px">
+          <div style="font-weight:600; font-size:14px; color:var(--navy)">Nanny — The Rodriguez Family</div>
+          <div style="font-size:12px; color:var(--text-light)">Jun 2017 – Aug 2020 · Ages: Infant (0-1), Toddler (1-3)</div>
+          <div style="font-size:13px; margin-top:4px">Full-time nanny for two children. Responsible for all daily care including meals, naps, activities, and transportation. Started when the baby was 3 months old.</div>
+        </div>
+        <div style="padding:8px 0; border-bottom: 1px solid var(--border); margin-bottom:8px">
+          <div style="font-weight:600; font-size:14px; color:var(--navy)">After-School Care — YMCA Pacific Beach</div>
+          <div style="font-size:12px; color:var(--text-light)">Sep 2020 – Present · Ages: School Age (5-12)</div>
+          <div style="font-size:13px; margin-top:4px">Lead caregiver for after-school program. Manage groups of 15-20 children ages 5-12. Plan activities, help with homework, coordinate snacks and outdoor play.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REFERENCES TAB -->
+    <div class="admin-panel" id="panel-references">
+      <div class="panel-card">
+        <div class="panel-card-title">Reference Status — 4/4 Complete</div>
+        <div class="ref-tracker">
+          <div class="ref-dot complete" title="Sponsor — Julie Ortiz">S</div>
+          <div class="ref-dot complete" title="Ref 1 — Amy Gray">R1</div>
+          <div class="ref-dot complete" title="Ref 2 — Pastor Dave">R2</div>
+          <div class="ref-dot complete" title="Ref 3 — Maria Chen">R3</div>
+        </div>
+        <div style="font-size:13px; color:var(--text-light); margin-bottom:8px">Average reference rating: <strong style="color:var(--navy); font-size:16px">4.9 / 5.0</strong></div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-card-title">Reference Details</div>
+        <div class="ref-card">
+          <div class="ref-card-header">
+            <div>
+              <div class="ref-card-name">Julie Ortiz (Sponsor)</div>
+              <div style="font-size:11px; color:var(--text-light)">Church / Community · Known 5-10 years · Completed 01/16/2024</div>
+            </div>
+            <span class="ref-card-status complete">Complete</span>
+          </div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Reliability</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Trustworthiness</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Maturity & Judgment</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Communication</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Warmth with Children</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Overall Recommendation</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div style="margin-top:10px; font-size:13px; color:var(--text); padding:8px; background:var(--teal-bg); border-radius:4px">
+            <strong>Strengths:</strong> "Sarah is one of the most responsible and caring people I know. She genuinely loves children and it shows in everything she does."<br>
+            <strong>Would trust with own children:</strong> Yes
+          </div>
+        </div>
+
+        <div class="ref-card">
+          <div class="ref-card-header">
+            <div>
+              <div class="ref-card-name">Pastor Dave Simmons</div>
+              <div style="font-size:11px; color:var(--text-light)">Church / Community · Known 10+ years · Completed 01/18/2024</div>
+            </div>
+            <span class="ref-card-status complete">Complete</span>
+          </div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Reliability</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Trustworthiness</span><span class="ref-rating-value">★★★★★ 5.0</span></div>
+          <div class="ref-rating-row"><span class="ref-rating-label">Overall Recommendation</span><span class="ref-rating-value">★★★★☆ 4.0</span></div>
+          <div style="margin-top:10px; font-size:12px; color:var(--text-light)">(Remaining ratings and comments expandable — click to view full response)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEWS TAB -->
+    <div class="admin-panel" id="panel-reviews">
+      <div class="panel-card">
+        <div class="panel-card-title">Client Reviews — 23 Total · 4.8 Average</div>
+        <div style="font-size:13px; color:var(--text-light); margin-bottom:16px">
+          <strong>Would Book Again:</strong> 96% (22 of 23) · 
+          <strong>Visibility:</strong> Caregiver can see her own reviews. Clients cannot see reviews.
+        </div>
+
+        <div class="review-card">
+          <div class="review-header">
+            <div><span class="review-client">Jennifer L.</span> <span class="review-stars">★★★★★</span></div>
+            <span class="review-date">Mar 22, 2026</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-light)">Punctuality: ★★★★★ · Communication: ★★★★★ · Engagement: ★★★★★ · Would book again: Yes</div>
+          <div class="review-text">Sarah was absolutely wonderful with our kids. She arrived early, had activities planned, and our 3-year-old didn't want her to leave. We will definitely be requesting her again!</div>
+        </div>
+
+        <div class="review-card">
+          <div class="review-header">
+            <div><span class="review-client">Michael & Tracy R.</span> <span class="review-stars">★★★★☆</span></div>
+            <span class="review-date">Mar 8, 2026</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-light)">Punctuality: ★★★☆☆ · Communication: ★★★★★ · Engagement: ★★★★★ · Would book again: Yes</div>
+          <div class="review-text">Great with the kids but arrived about 10 minutes late. Once she was there everything was perfect. The kids had a blast.</div>
+          <div class="review-private">
+            <strong>Private Note to Sitterwise (admin only):</strong><br>
+            We had to scramble a bit because she was late. Not a dealbreaker but wanted to mention it. Otherwise she's great.
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="review-header">
+            <div><span class="review-client">David & Kim P.</span> <span class="review-stars">★★★★★</span></div>
+            <span class="review-date">Feb 14, 2026</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-light)">Punctuality: ★★★★★ · Communication: ★★★★★ · Engagement: ★★★★★ · Would book again: Yes</div>
+          <div class="review-text">We've used Sarah three times now and she's become our go-to. She remembers our kids' names and what they like to do. Can't recommend her enough.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERNAL RATING TAB -->
+    <div class="admin-panel" id="panel-internal">
+      <div class="panel-card">
+        <div class="panel-card-title">Internal Staff Rating — Composite: 4.6 / 5.0</div>
+        <div style="font-size:12px; color:var(--text-light); margin-bottom:20px">This rating is ADMIN-ONLY. Sarah cannot see this. Used for matching priority.</div>
+
+        <div class="rating-bar-container">
+          <div class="rating-bar-header"><span class="rating-bar-label">Interview Score</span><span class="rating-bar-value">4.5 / 5.0</span></div>
+          <div class="rating-bar"><div class="rating-bar-fill excellent" style="width:90%"></div></div>
+          <div style="font-size:11px; color:var(--text-light); margin-top:4px">Interviewed by Amy Gray · 01/22/2024 · "Very confident, warm personality, strong childcare background. Only hesitation: limited overnight experience."</div>
+        </div>
+
+        <div class="rating-bar-container">
+          <div class="rating-bar-header"><span class="rating-bar-label">Communication Score</span><span class="rating-bar-value">4.0 / 5.0</span></div>
+          <div class="rating-bar"><div class="rating-bar-fill good" style="width:80%"></div></div>
+          <div style="font-size:11px; color:var(--text-light); margin-top:4px">Updated 03/15/2026 · "Responds within a few hours usually. Occasionally slow on weekday mornings (probably at YMCA)."</div>
+        </div>
+
+        <div class="rating-bar-container">
+          <div class="rating-bar-header"><span class="rating-bar-label">Reliability Score</span><span class="rating-bar-value">4.8 / 5.0</span></div>
+          <div class="rating-bar"><div class="rating-bar-fill excellent" style="width:96%"></div></div>
+          <div style="font-size:11px; color:var(--text-light); margin-top:4px">147 completed · 3 back-outs (2.0% rate) · Last back-out: 11/02/2025 (family emergency — noted as understandable)</div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-title">Composite Score Breakdown</div>
+        <div class="data-grid">
+          <div class="data-item"><div class="data-label">Interview (20%)</div><div class="data-value">4.5 × 0.20 = 0.90</div></div>
+          <div class="data-item"><div class="data-label">Communication (30%)</div><div class="data-value">4.0 × 0.30 = 1.20</div></div>
+          <div class="data-item"><div class="data-label">Reliability (50%)</div><div class="data-value">4.8 × 0.50 = 2.40</div></div>
+          <div class="data-item"><div class="data-label" style="font-weight:700; color:var(--navy)">COMPOSITE</div><div class="data-value" style="font-size:20px; font-weight:700; color:var(--coral)">4.50 → Rounded to 4.6</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENGAGEMENT TAB -->
+    <div class="admin-panel" id="panel-engagement">
+      <div class="panel-card">
+        <div class="panel-card-title">Job Engagement Metrics — Admin Only</div>
+        <div class="metric-grid">
+          <div class="metric-card"><div class="metric-number">147</div><div class="metric-label">Jobs Completed</div></div>
+          <div class="metric-card"><div class="metric-number">82%</div><div class="metric-label">Acceptance Rate</div></div>
+          <div class="metric-card"><div class="metric-number">1.2h</div><div class="metric-label">Avg Response Time</div></div>
+          <div class="metric-card"><div class="metric-number">2.0%</div><div class="metric-label">Back-Out Rate</div></div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-title">Activity Detail</div>
+        <div class="data-grid">
+          <div class="data-item"><div class="data-label">Jobs Offered (All-Time)</div><div class="data-value">179</div></div>
+          <div class="data-item"><div class="data-label">Jobs Accepted</div><div class="data-value">147</div></div>
+          <div class="data-item"><div class="data-label">Jobs Declined / Ignored</div><div class="data-value">32 (17.9%)</div></div>
+          <div class="data-item"><div class="data-label">Jobs Backed Out</div><div class="data-value">3 (2.0%)</div></div>
+          <div class="data-item"><div class="data-label">Jobs This Month</div><div class="data-value">6</div></div>
+          <div class="data-item"><div class="data-label">Jobs This Quarter</div><div class="data-value">18</div></div>
+          <div class="data-item"><div class="data-label">Last Job Date</div><div class="data-value">Apr 3, 2026 (3 days ago)</div></div>
+          <div class="data-item"><div class="data-label">Member Since</div><div class="data-value">Feb 2024 (2 yrs, 2 mo)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE TAB -->
+    <div class="admin-panel" id="panel-compliance">
+      <div class="panel-card">
+        <div class="panel-card-title">Background Check — S2Verify</div>
+        <div class="data-grid">
+          <div class="data-item"><div class="data-label">Status</div><div class="data-value"><span class="badge badge-clear">Clear</span></div></div>
+          <div class="data-item"><div class="data-label">Check Date</div><div class="data-value">02/01/2024</div></div>
+          <div class="data-item"><div class="data-label">Expiration</div><div class="data-value">02/01/2026 <span style="color:var(--coral); font-weight:600">⚠ EXPIRED — Renewal needed</span></div></div>
+          <div class="data-item"><div class="data-label">Report</div><div class="data-value"><a href="#" style="color:var(--teal-logo)">View on S2Verify →</a></div></div>
+        </div>
+        <div class="s2v-section">
+          <p>Background check is expired. Initiate a new check to maintain Active status.</p>
+          <button class="btn btn-coral" onclick="alert('S2Verify API call initiated.\n\nSecure SSN collection link sent to Sarah at sarah.mitchell@email.com.\n\nStatus: Pending')">🔒 Initiate Background Check (Admin)</button>
+          <p style="margin-top:12px; font-size:11px; color:var(--text-light)">Sarah can also initiate this from her own portal.</p>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-title">📱 Caregiver Portal Preview — What Sarah Sees</div>
+        <div style="background: var(--light-gray); border: 2px dashed var(--border); border-radius:8px; padding:24px; max-width:480px; margin: 0 auto;">
+          <div style="text-align:center; margin-bottom:16px">
+            <div style="font-family:'Playfair Display',serif; font-size:18px; color:var(--navy); font-weight:600;">Background Check</div>
+            <div style="margin-top:6px"><span class="badge badge-warning">Expired</span></div>
+          </div>
+          <div style="background: var(--blush); border: 1px solid var(--coral); border-radius:6px; padding:16px; margin-bottom:16px; font-size:12px; line-height:1.7; color:var(--text);">
+            <div style="font-weight:700; color:var(--navy); margin-bottom:6px; font-size:13px;">Before you proceed:</div>
+            Background checks are required for all Sitterwise caregivers and are <strong>paid for by Sitterwise</strong>. Because this is a real cost to our agency, we ask that you only initiate this step when you are confident you will be joining our team and ready to begin working soon.
+            <br><br>
+            If you have questions, please reach out to us at <span style="color:var(--coral); font-weight:600">hello@sitterwise.com</span> before proceeding.
+          </div>
+          <div style="text-align:center">
+            <button class="btn btn-coral" style="width:100%; padding:14px" onclick="alert('Confirmation dialog:\n\n&quot;Are you sure? This initiates a background check that costs Sitterwise approximately $30-50. Please only proceed if you are ready to begin working with our families soon.&quot;\n\n[Cancel]  [Yes, I\'m Ready]')">Start My Background Check</button>
+          </div>
+          <div style="font-size:10px; color:var(--text-light); text-align:center; margin-top:8px">A secure form will be sent to your email to collect required information.</div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-title">Certifications</div>
+        <div class="data-grid">
+          <div class="data-item"><div class="data-label">CPR / First Aid</div><div class="data-value"><span class="badge badge-active">Current</span> Expires 08/15/2026</div></div>
+          <div class="data-item"><div class="data-label">CPR Card</div><div class="data-value"><a href="#" style="color:var(--teal-logo)">View uploaded card →</a></div></div>
+          <div class="data-item"><div class="data-label">Trustline</div><div class="data-value"><span class="badge badge-active">Verified</span></div></div>
+          <div class="data-item"><div class="data-label">Trustline Doc</div><div class="data-value"><a href="#" style="color:var(--teal-logo)">View uploaded doc →</a></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES TAB -->
+    <div class="admin-panel" id="panel-notes">
+      <div class="panel-card">
+        <div class="panel-card-title">Internal Admin Notes</div>
+        <div style="margin-bottom:16px">
+          <textarea style="width:100%; padding:10px; border:1px solid var(--border); font-family:Poppins; font-size:13px; min-height:60px; border-radius:0" placeholder="Add a note..."></textarea>
+          <button class="btn btn-coral" style="margin-top:8px; padding:8px 20px; font-size:12px">Add Note</button>
+        </div>
+        <div class="note-entry">
+          <div class="note-meta">Amy Gray · Apr 3, 2026</div>
+          <div class="note-text">Sarah mentioned she'll be out of town May 10-17 for a family wedding. Won't be available that week.</div>
+        </div>
+        <div class="note-entry">
+          <div class="note-meta">Amy Gray · Mar 15, 2026</div>
+          <div class="note-text">Updated communication score from 4.5 to 4.0. She's been a bit slower to respond lately — probably her YMCA schedule picking up for spring break.</div>
+        </div>
+        <div class="note-entry">
+          <div class="note-meta">Amy Gray · Nov 2, 2025</div>
+          <div class="note-text">Sarah backed out of the Henderson job tomorrow. Family emergency — her mom was admitted to the hospital. Completely understandable. Reached out to check on her.</div>
+        </div>
+        <div class="note-entry">
+          <div class="note-meta">Amy Gray · Jan 22, 2024</div>
+          <div class="note-text">Interviewed Sarah today. Fantastic candidate. Warm, confident, great childcare background (SDSU + YMCA + nanny experience). Julie Ortiz referred her — one of our best. Recommending immediate hire pending BG check.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wf-label">WIREFRAME · Sitterwise Caregiver Profile System · v1.0</div>
+
+<script>
+// Screen switching
+function showScreen(id, el) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.wf-nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('screen-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Application step navigation
+const stepLabels = {
+  1: "Sponsor & Your Info",
+  2: "Position, Availability & Education",
+  3: "Employment & Experience",
+  4: "Screening Questions",
+  5: "References",
+  6: "Location & Age Groups",
+  7: "Qualifications, Activities & Bio",
+  8: "Agreements & Signature"
+};
+
+const stepFields = {
+  3: "<strong>Fields in this step:</strong> Currently employed? (dropdown) · Current employer · 3× Childcare Experience entries (start/end date, role title, family/org name, description, ages served checkboxes)",
+  4: "<strong>Fields in this step:</strong> Smoke · Alcohol · Substance history · Physical/psych limitations · Dog/cat allergies · Visible tattoos · Work authorization · Reliable vehicle · CPR certified (+ expiration date + upload) · Trustline certified (+ upload) · Languages · Own children",
+  5: "<strong>Fields in this step:</strong> 3× References (first name, last name, email, phone, relationship, duration). Validates no duplicate emails and no self-referencing.",
+  7: "<strong>Fields in this step:</strong> Qualifications checkboxes (Special Needs, Companion Care, Sick Care, WFH Parents, Driving, Dogsitting, Catsitting, Swimming, Overnight) · What you bring to a job · Interests/Hobbies · Caregiver Bio (with AI helper prompt)"
+};
+
+function goToStep(n) {
+  // Hide all steps
+  document.querySelectorAll('.app-step').forEach(s => s.style.display = 'none');
+  
+  // Show the right step
+  const directSteps = [1, 2, 6, 8];
+  if (directSteps.includes(n)) {
+    document.getElementById('app-step-' + n).style.display = 'block';
+  } else {
+    const ph = document.getElementById('app-step-placeholder');
+    ph.style.display = 'block';
+    document.getElementById('placeholder-title').textContent = 'Step ' + n + ': ' + stepLabels[n];
+    document.getElementById('placeholder-fields').innerHTML = stepFields[n] || '';
+    
+    const prevStep = n > 1 ? n - 1 : 1;
+    const nextStep = n < 8 ? n + 1 : 8;
+    document.getElementById('placeholder-actions').innerHTML = 
+      '<button class="btn btn-outline" onclick="goToStep(' + prevStep + ')">← Back</button>' +
+      '<button class="btn btn-coral" onclick="goToStep(' + nextStep + ')">Next →</button>';
+  }
+
+  // Update progress
+  document.getElementById('app-progress').style.width = (n / 8 * 100) + '%';
+  document.getElementById('step-label').textContent = 'Step ' + n + ' of 8 — ' + stepLabels[n];
+
+  // Update pills
+  document.querySelectorAll('.step-pill').forEach((pill, i) => {
+    pill.classList.remove('active', 'completed');
+    if (i + 1 === n) pill.classList.add('active');
+    else if (i + 1 < n) pill.classList.add('completed');
+  });
+
+  window.scrollTo(0, 200);
+}
+
+// Admin tab switching
+function showAdminTab(id, el) {
+  document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// Checkbox toggle styling
+document.querySelectorAll('.checkbox-item').forEach(function(item) {
+  var cb = item.querySelector('input[type="checkbox"]');
+  if (cb) {
+    item.addEventListener('click', function(e) {
+      if (e.target !== cb) {
+        cb.checked = !cb.checked;
+      }
+      item.classList.toggle('checked', cb.checked);
+    });
+  }
+});
+</script>
+</body>
+</html>

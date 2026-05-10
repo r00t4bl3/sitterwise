@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CaregiverApplicationController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\CaregiverPayoutController;
 use App\Http\Controllers\CertificationTypeController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\PricingRuleController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -38,6 +40,18 @@ Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class,
 Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status');
 Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify');
 Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
+
+// Caregiver application routes (public, no auth required)
+Route::get('/caregiver/apply/verify-email', [CaregiverApplicationController::class, 'showVerifyEmail'])->name('caregiver.apply.verify');
+Route::post('/caregiver/apply/send-otp', [CaregiverApplicationController::class, 'sendOtp'])->name('caregiver.apply.send-otp');
+Route::post('/caregiver/apply/verify-otp', [CaregiverApplicationController::class, 'verifyOtp'])->name('caregiver.apply.verify-otp');
+
+Route::middleware(VerifyEmail::class)->group(function () {
+    Route::get('/caregiver/apply', [CaregiverApplicationController::class, 'showWizard'])->name('caregiver.apply');
+    Route::post('/caregiver/apply/submit', [CaregiverApplicationController::class, 'submit'])->name('caregiver.apply.submit');
+});
+
+Route::get('/caregiver/apply/thank-you', [CaregiverApplicationController::class, 'thankYou'])->name('caregiver.apply.thank-you');
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
