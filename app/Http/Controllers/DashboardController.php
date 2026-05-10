@@ -28,6 +28,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $stats = [];
+        $adminData = null;
         $caregiverData = null;
         $clientData = null;
 
