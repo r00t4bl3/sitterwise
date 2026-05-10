@@ -7,7 +7,6 @@ use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\ClientPet;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ClientSeeder extends Seeder
@@ -17,13 +16,7 @@ class ClientSeeder extends Seeder
         $attributes = AttributeDefinition::active()->forClients()->get();
 
         for ($i = 0; $i < 21; $i++) {
-            $user = User::factory()->create([
-                'role' => 'client',
-            ]);
-
-            $client = Client::factory()->create([
-                'user_id' => $user->id,
-            ]);
+            $client = Client::factory()->create();
 
             if (fake()->boolean(70)) {
                 ClientAddress::factory()->create([

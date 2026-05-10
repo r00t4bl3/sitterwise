@@ -1,6 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
+function highlightText(text: string, query: string): React.ReactNode {
+    if (!query.trim()) {
+        return text;
+    }
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+        regex.test(part) ? (
+            <mark
+                key={index}
+                className="rounded bg-yellow-200 px-0.5 dark:bg-yellow-800"
+            >
+                {part}
+            </mark>
+        ) : (
+            part
+        ),
+    );
+}
+
 interface AutocompleteProps {
     value: number | null;
     onChange: (id: number | null) => void;
@@ -30,8 +53,12 @@ export function Autocomplete({
 }: AutocompleteProps) {
     const [query, setQuery] = useState(displayValue ?? '');
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const totalItems = suggestions.length + (showAddNew && onAddNew ? 1 : 0);
 
     useEffect(() => {
         if (displayValue !== undefined) {
@@ -60,8 +87,15 @@ export function Autocomplete({
             document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (activeIndex < 0 || !suggestionsRef.current) return;
+        const items = suggestionsRef.current.querySelectorAll('[data-suggestion]');
+        items[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    }, [activeIndex]);
+
     const handleInputChange = (value: string) => {
         setQuery(value);
+        setActiveIndex(-1);
 
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
@@ -86,6 +120,54 @@ export function Autocomplete({
             setQuery(item.name);
         }
         setShowSuggestions(false);
+        setActiveIndex(-1);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions || totalItems === 0) {
+            if (e.key === 'Escape') {
+                setShowSuggestions(false);
+                setActiveIndex(-1);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev >= totalItems - 1 ? 0 : prev + 1,
+                );
+                break;
+
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev <= 0 ? totalItems - 1 : prev - 1,
+                );
+                break;
+
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && activeIndex < suggestions.length) {
+                    handleItemClick(suggestions[activeIndex]);
+                } else if (
+                    activeIndex === suggestions.length &&
+                    showAddNew &&
+                    onAddNew
+                ) {
+                    onAddNew();
+                    setShowSuggestions(false);
+                    setActiveIndex(-1);
+                }
+                break;
+
+            case 'Escape':
+                e.preventDefault();
+                setShowSuggestions(false);
+                setActiveIndex(-1);
+                break;
+        }
     };
 
     return (
@@ -97,6 +179,7 @@ export function Autocomplete({
                 onFocus={() =>
                     suggestions.length > 0 && setShowSuggestions(true)
                 }
+                onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 className="h-11 w-full rounded-[3px] border border-input px-3 pr-10 text-sm outline-none focus:border-ring"
             />
@@ -113,7 +196,10 @@ export function Autocomplete({
                 </button>
             )}
             {showSuggestions && (
-                <div className="absolute top-full right-0 left-0 z-[100] mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md">
+                <div
+                    ref={suggestionsRef}
+                    className="absolute top-full right-0 left-0 z-[100] mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md"
+                >
                     {loading ? (
                         <div className="p-3 text-sm text-muted-foreground">
                             Loading...
@@ -123,11 +209,20 @@ export function Autocomplete({
                             {showAddNew && onAddNew ? (
                                 <button
                                     type="button"
+                                    data-suggestion
                                     onClick={() => {
                                         onAddNew();
                                         setShowSuggestions(false);
+                                        setActiveIndex(-1);
                                     }}
-                                    className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+                                    onMouseEnter={() =>
+                                        setActiveIndex(suggestions.length)
+                                    }
+                                    className={`w-full px-3 py-2 text-left text-sm text-foreground ${
+                                        activeIndex === suggestions.length
+                                            ? 'bg-accent'
+                                            : 'hover:bg-accent'
+                                    }`}
                                 >
                                     + Add new client
                                 </button>
@@ -138,14 +233,20 @@ export function Autocomplete({
                             )}
                         </div>
                     ) : (
-                        suggestions.map((item) => (
+                        suggestions.map((item, index) => (
                             <button
                                 key={item.id}
                                 type="button"
+                                data-suggestion
                                 onClick={() => handleItemClick(item)}
-                                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+                                onMouseEnter={() => setActiveIndex(index)}
+                                className={`w-full px-3 py-2 text-left text-sm text-foreground ${
+                                    activeIndex === index
+                                        ? 'bg-accent'
+                                        : 'hover:bg-accent'
+                                }`}
                             >
-                                {renderItem ? renderItem(item) : item.name}
+                                {renderItem ? renderItem(item) : highlightText(item.name, query)}
                             </button>
                         ))
                     )}

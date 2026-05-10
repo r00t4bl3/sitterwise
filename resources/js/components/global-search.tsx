@@ -40,7 +40,9 @@ export function GlobalSearch() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
@@ -58,8 +60,19 @@ export function GlobalSearch() {
             document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        setActiveIndex(-1);
+    }, [results]);
+
+    useEffect(() => {
+        if (activeIndex < 0 || !resultsRef.current) return;
+        const items = resultsRef.current.querySelectorAll('[data-search-result]');
+        items[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    }, [activeIndex]);
+
     const handleInputChange = (value: string) => {
         setQuery(value);
+        setActiveIndex(-1);
 
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
@@ -96,12 +109,53 @@ export function GlobalSearch() {
         setQuery('');
         setResults([]);
         setShowResults(false);
+        setActiveIndex(-1);
     };
 
     const clearSearch = () => {
         setQuery('');
         setResults([]);
         setShowResults(false);
+        setActiveIndex(-1);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showResults || results.length === 0) {
+            if (e.key === 'Escape') {
+                setShowResults(false);
+                setActiveIndex(-1);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev >= results.length - 1 ? 0 : prev + 1,
+                );
+                break;
+
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev <= 0 ? results.length - 1 : prev - 1,
+                );
+                break;
+
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && activeIndex < results.length) {
+                    handleItemClick(results[activeIndex]);
+                }
+                break;
+
+            case 'Escape':
+                e.preventDefault();
+                setShowResults(false);
+                setActiveIndex(-1);
+                break;
+        }
     };
 
     const getTypeLabel = (type: string) => {
@@ -141,6 +195,7 @@ export function GlobalSearch() {
                     value={query}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => results.length > 0 && setShowResults(true)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Search bookings, caregivers, clients..."
                     className="h-9 w-full rounded-md border border-input bg-background pr-8 pl-9 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring md:w-[200px] lg:w-[300px]"
                 />
@@ -155,7 +210,10 @@ export function GlobalSearch() {
                 )}
             </div>
             {showResults && (
-                <div className="absolute top-full right-0 z-[100] mt-1 max-h-[400px] w-full min-w-[300px] overflow-auto rounded-md border border-border bg-card shadow-md md:w-[400px]">
+                <div
+                    ref={resultsRef}
+                    className="absolute top-full right-0 z-[100] mt-1 max-h-[400px] w-full min-w-[300px] overflow-auto rounded-md border border-border bg-card shadow-md md:w-[400px]"
+                >
                     {loading ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             Searching...
@@ -166,12 +224,18 @@ export function GlobalSearch() {
                         </div>
                     ) : (
                         <div className="py-1">
-                            {results.map((item) => (
+                            {results.map((item, index) => (
                                 <button
                                     key={`${item.type}-${item.id}`}
                                     type="button"
+                                    data-search-result
                                     onClick={() => handleItemClick(item)}
-                                    className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left text-sm hover:bg-accent"
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    className={`flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left text-sm ${
+                                        activeIndex === index
+                                            ? 'bg-accent'
+                                            : 'hover:bg-accent'
+                                    }`}
                                 >
                                     <div className="flex flex-col gap-1">
                                         <span className="font-medium">

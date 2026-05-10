@@ -28,12 +28,14 @@ export function DateTimePicker({
     placeholder = "Pick date and time",
     error,
     startTime}: DateTimePickerProps) {
-    const [date, setDate] = React.useState<Date | undefined>(
-        value ? parseAsLocal(value) ?? undefined : undefined
-    )
-    const [time, setTime] = React.useState(
-        value ? format(parseAsLocal(value) as Date, "HH:mm") : "09:00"
-    )
+    const [date, setDate] = React.useState<Date | undefined>(() => {
+        const parsed = value ? parseAsLocal(value) : null
+        return parsed && !isNaN(parsed.getTime()) ? parsed : undefined
+    })
+    const [time, setTime] = React.useState(() => {
+        const parsed = value ? parseAsLocal(value) : null
+        return parsed && !isNaN(parsed.getTime()) ? format(parsed, "HH:mm") : "09:00"
+    })
 
     const startDate = startTime ? parseAsLocal(startTime) : null
 
@@ -73,7 +75,7 @@ export function DateTimePicker({
     React.useEffect(() => {
         if (value) {
             const d = parseAsLocal(value)
-            if (d) {
+            if (d && !isNaN(d.getTime())) {
                 setDate(d)
                 setTime(format(d, "HH:mm"))
             }
@@ -82,10 +84,10 @@ export function DateTimePicker({
 
     // Enforce minimum 4-hour duration from startTime
     React.useEffect(() => {
-        if (!startDate || !value || !onChange) return
+        if (!startDate || isNaN(startDate.getTime()) || !value || !onChange) return
 
         const current = parseAsLocal(value)
-        if (!current) return
+        if (!current || isNaN(current.getTime())) return
 
         const diffMs = current.getTime() - startDate.getTime()
         const diffHours = diffMs / (1000 * 60 * 60)
