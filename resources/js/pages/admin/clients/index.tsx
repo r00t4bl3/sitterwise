@@ -1,16 +1,9 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
-import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -91,47 +84,53 @@ interface Props {
 export default function ClientsIndex() {
     const { clients, filters } = usePage<Props>().props;
 
-    const [searchQuery] = useState(filters.search || '');
-    const [suggestions, setSuggestions] = useState<
-        Array<{ id: number; name: string; client_type: string }>
-    >([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedClientId, setSelectedClientId] = useState<number | null>(
-        null,
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [typeFilter, setTypeFilter] = useState<string | null>(
+        filters.client_type && filters.client_type !== 'all'
+            ? filters.client_type
+            : null,
     );
+    const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    const handleClientSearch = async (query: string) => {
-        if (query.trim().length < 2) {
-            setSuggestions([]);
+    const clientTypes = [
+        { value: 'resident', label: 'SD Resident' },
+        { value: 'vacationer', label: 'Vacationer' },
+        { value: 'invoiced', label: 'Invoiced' },
+    ];
 
-            return;
+    const applyFilters = (search: string, type: string | null) => {
+        const params: Record<string, string> = {};
+
+        if (search.trim()) {
+            params.search = search.trim();
         }
 
-        setIsLoading(true);
-
-        try {
-            const params = new URLSearchParams({ q: query });
-            const response = await fetch(
-                `/clients/search-suggestions?${params}`,
-            );
-            const data: Array<{
-                id: number;
-                name: string;
-                client_type?: string;
-            }> = await response.json();
-            setSuggestions(
-                data.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    client_type: c.client_type || '',
-                })),
-            );
-        } catch (error) {
-            console.error('Search error:', error);
-        } finally {
-            setIsLoading(false);
+        if (type) {
+            params.client_type = type;
         }
+
+        router.get('/clients', params, {
+            preserveState: true,
+            replace: true,
+        });
     };
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            applyFilters(value, typeFilter);
+        }, 300);
+    };
+
+    const handleTypeChange = (type: string | null) => {
+        setTypeFilter(type);
+        applyFilters(searchQuery, type);
+    };
+
+    useEffect(() => {
+        return () => clearTimeout(debounceTimer.current);
+    }, []);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -144,7 +143,21 @@ export default function ClientsIndex() {
                             Clients
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {clients.total} clients total
+                            {clients.total} clients
+                            {typeFilter && (
+                                <span className="ml-1">
+                                    (
+                                    {clientTypes.find(
+                                        (t) => t.value === typeFilter,
+                                    )?.label || typeFilter}
+                                    )
+                                </span>
+                            )}
+                            {searchQuery && (
+                                <span className="ml-1">
+                                    (search: "{searchQuery}")
+                                </span>
+                            )}
                         </p>
                     </div>
                     <Link href="/clients/create" className="btn-primary">
@@ -152,62 +165,55 @@ export default function ClientsIndex() {
                     </Link>
                 </div>
 
-                <div className="flex gap-4">
-                    <form method="get" className="flex flex-1 gap-2">
-                        <div className="relative max-w-md flex-1">
-                            <Autocomplete
-                                value={selectedClientId}
-                                onChange={setSelectedClientId}
-                                suggestions={suggestions}
-                                onSearch={handleClientSearch}
-                                placeholder="Search by name or email..."
-                                loading={isLoading}
-                                displayValue={searchQuery}
-                                onItemClick={(item) => {
-                                    window.location.href = `/clients/${item.id}`;
-                                }}
-                                renderItem={(item) => {
-                                    const client = item as {
-                                        id: number;
-                                        name: string;
-                                        client_type: string;
-                                    };
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Search by name or email..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="h-8"
+                        />
+                        {searchQuery && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSearchChange('')}
+                                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                ×
+                            </Button>
+                        )}
+                    </div>
 
-                                    return (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground">
-                                                {item.name}
-                                            </span>
-                                            <ClientTypeBadge
-                                                type={client.client_type}
-                                            />
-                                        </div>
-                                    );
-                                }}
-                            />
-                        </div>
-                        <Select
-                            name="client_type"
-                            defaultValue={filters.client_type || 'all'}
+                    <Button
+                        variant={!typeFilter ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleTypeChange(null)}
+                    >
+                        All
+                    </Button>
+                    {clientTypes.map((type) => (
+                        <Button
+                            key={type.value}
+                            variant={
+                                typeFilter === type.value
+                                    ? 'default'
+                                    : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                                handleTypeChange(
+                                    typeFilter === type.value
+                                        ? null
+                                        : type.value,
+                                )
+                            }
                         >
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="All Types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="resident">
-                                    SD Resident
-                                </SelectItem>
-                                <SelectItem value="vacationer">
-                                    Vacationer
-                                </SelectItem>
-                                <SelectItem value="invoiced">
-                                    Invoiced
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button type="submit">Filter</Button>
-                    </form>
+                            {type.label}
+                        </Button>
+                    ))}
                 </div>
 
                 <div className="overflow-x-auto border border-border bg-card">

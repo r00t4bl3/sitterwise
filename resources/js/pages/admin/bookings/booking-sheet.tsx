@@ -191,6 +191,7 @@ export function BookingSheet({
                             />
 
                             <BookingDetailsSection
+                                sheetMode={sheetMode}
                                 form={form}
                                 editingBooking={editingBooking}
                                 service_types={service_types}

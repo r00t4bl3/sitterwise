@@ -1,4 +1,5 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
+import { format } from 'date-fns';
 import {
     ChevronLeft,
     ChevronRight,
@@ -10,6 +11,7 @@ import {
 import { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
     Dialog,
     DialogContent,
@@ -18,7 +20,6 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,9 +30,8 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
-import { parseAsLocal } from '@/lib/datetime';
 import AppLayout from '@/layouts/app-layout';
-import { format } from 'date-fns';
+import { parseAsLocal } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -153,7 +153,10 @@ export default function TransactionsIndex() {
 
     const formatDateTime = (dateStr: string) => {
         const date = parseAsLocal(dateStr);
-        if (!date) return '—';
+
+        if (!date) {
+            return '—';
+        }
 
         return date.toLocaleString('en-US', {
             month: 'short',
@@ -217,6 +220,7 @@ export default function TransactionsIndex() {
 
         // Enforce minimum 4 hours
         let hours = parseFloat(hoursStr) || 0;
+
         if (hours > 0 && hours < 4) {
             hours = 4;
         }
@@ -239,6 +243,7 @@ export default function TransactionsIndex() {
         // Two-way: update checkout_at based on start_datetime + hours
         if (selectedBooking.start_datetime && hours > 0) {
             const startDate = parseAsLocal(selectedBooking.start_datetime);
+
             if (startDate) {
                 const newCheckout = new Date(
                     startDate.getTime() + hours * 60 * 60 * 1000,
@@ -264,12 +269,15 @@ export default function TransactionsIndex() {
 
         // Enforce minimum 4 hours from start_datetime
         let validatedCheckout = checkoutStr;
+
         if (selectedBooking.start_datetime && checkoutStr) {
             const startDate = parseAsLocal(selectedBooking.start_datetime);
             const checkoutDate = parseAsLocal(checkoutStr);
+
             if (startDate && checkoutDate) {
                 const diffMs = checkoutDate.getTime() - startDate.getTime();
                 const diffHours = diffMs / (1000 * 60 * 60);
+
                 if (diffHours < 4) {
                     const startLocal = parseAsLocal(
                         selectedBooking.start_datetime,
@@ -293,6 +301,7 @@ export default function TransactionsIndex() {
         if (selectedBooking.start_datetime && validatedCheckout) {
             const startDate = parseAsLocal(selectedBooking.start_datetime);
             const checkoutDate = parseAsLocal(validatedCheckout);
+
             if (startDate && checkoutDate) {
                 const diffMs = checkoutDate.getTime() - startDate.getTime();
                 const hours =

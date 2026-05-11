@@ -23,12 +23,17 @@ export const parseAsLocal = (
     // Parse the datetime components manually to ensure local timezone interpretation
     // Browser's new Date() treats "YYYY-MM-DDTHH:mm:ss" as UTC, not local
     const [datePart, timePart] = cleanStr.split('T');
-    if (!datePart || !timePart) return null;
+
+    if (!datePart || !timePart) {
+        return null;
+    }
 
     const [year, month, day] = datePart.split('-').map(Number);
     const [hour, minute, second] = timePart.split(':').map(Number);
 
-    if ([year, month, day, hour, minute].some((v) => Number.isNaN(v))) return null;
+    if ([year, month, day, hour, minute].some((v) => Number.isNaN(v))) {
+        return null;
+    }
 
     return new Date(year, month - 1, day, hour, minute, second ?? 0);
 };

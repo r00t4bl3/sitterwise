@@ -61,7 +61,7 @@ class SearchController extends Controller
                     'id' => $caregiver->id,
                     'name' => "{$caregiver->first_name} {$caregiver->last_name}",
                     'type' => 'caregiver',
-                    'url' => route('caregivers.index', $caregiver),
+                    'url' => route('caregivers.show', $caregiver),
                 ]);
 
             // Priority 3: Clients (names)
@@ -73,7 +73,7 @@ class SearchController extends Controller
                     'id' => $client->id,
                     'name' => "{$client->first_name} {$client->last_name}",
                     'type' => 'client',
-                    'url' => route('clients.index', $client),
+                    'url' => route('clients.show', $client),
                 ]);
         } else {
             $caregivers = collect();
