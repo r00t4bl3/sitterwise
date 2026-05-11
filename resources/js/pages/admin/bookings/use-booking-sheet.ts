@@ -837,11 +837,6 @@ export function useBookingSheet({
 
         const startDate = new Date(start);
         const endDate = new Date(end);
-        const now = new Date();
-
-        if (startDate < now) {
-            return;
-        }
 
         if (endDate <= startDate) {
             return;

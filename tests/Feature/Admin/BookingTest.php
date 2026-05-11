@@ -1011,13 +1011,14 @@ describe('Booking - Admin', function () {
         expect($updatedBooking->pets[0]['name'])->toBe('Updated Transient Pet');
     });
 
-    test('admin can update a booking without adding new pets and retain existing pets when save_children_pets_to_profile is false', function () {
+test('admin can update a booking without adding new pets and retain existing pets when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
 
         // Create a booking with existing pets but not saving to profile
         $booking = Booking::factory()->create([
             'client_id' => $this->client->id,
-            'service_type' => 'petsitter',
+            'hotel_id' => $this->hotel->id,
+            'service_type' => 'babysitter',
             'location_type' => 'private_home',
             'start_datetime' => now()->addDays(1)->setHour(10),
             'end_datetime' => now()->addDays(1)->setHour(14),
@@ -1046,7 +1047,7 @@ describe('Booking - Admin', function () {
         // Update the booking without changing pets
         $response = $this->patch(route('bookings.update', $booking), [
             'client_id' => $this->client->id,
-            'service_type' => 'petsitter',
+            'service_type' => 'babysitter',
             'location_type' => 'private_home',
             'start_datetime' => $booking->start_datetime->toISOString(),
             'end_datetime' => $booking->end_datetime->toISOString(),
@@ -1066,6 +1067,130 @@ describe('Booking - Admin', function () {
         $updatedBooking = Booking::find($booking->id);
         expect($updatedBooking->pets)->toHaveCount(1);
         expect($updatedBooking->pets[0]['name'])->toBe('Original Pet');
+    });
+
+    // ---- Date validation tests for create vs update ----
+
+    test('admin cannot create a booking with a past start datetime', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->subHours(2)->toISOString(),
+            'end_datetime' => now()->addHours(2)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertSessionHasErrors('start_datetime');
+    });
+
+    test('admin cannot create a booking with a past end datetime', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addHours(1)->toISOString(),
+            'end_datetime' => now()->subHours(1)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertSessionHasErrors('end_datetime');
+    });
+
+    test('admin can update a booking with a past start datetime', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $this->client->id,
+            'hotel_id' => $this->hotel->id,
+            'start_datetime' => now()->subDays(1)->setHour(14),
+            'end_datetime' => now()->subDays(1)->setHour(18),
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'hotel_id' => $booking->hotel_id,
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+        ]);
+
+        $response->assertRedirect();
+    });
+
+    test('admin cannot update a booking where end datetime is before start datetime', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $this->client->id,
+            'hotel_id' => $this->hotel->id,
+            'start_datetime' => now()->subDays(1)->setHour(14),
+            'end_datetime' => now()->subDays(1)->setHour(18),
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->end_datetime->toISOString(),
+            'end_datetime' => $booking->start_datetime->toISOString(),
+            'hotel_id' => $booking->hotel_id,
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+        ]);
+
+        $response->assertSessionHasErrors('end_datetime');
+    });
+
+    test('admin cannot update a booking with less than 4 hours duration', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create([
+            'client_id' => $this->client->id,
+            'hotel_id' => $this->hotel->id,
+            'start_datetime' => now()->subDays(1)->setHour(14),
+            'end_datetime' => now()->subDays(1)->setHour(18),
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => now()->subHours(3)->toISOString(),
+            'end_datetime' => now()->subHour()->toISOString(),
+            'hotel_id' => $booking->hotel_id,
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+        ]);
+
+        $response->assertSessionHasErrors('end_datetime');
     });
 
 });
