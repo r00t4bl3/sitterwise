@@ -1,4 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
 import {
     ChevronLeft,
     ChevronRight,
@@ -17,6 +18,12 @@ import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayTime, parseAsLocal } from '@/lib/datetime';
@@ -125,6 +132,10 @@ export default function Bookings() {
 
     const [currentMonth] = useState(filters.month);
     const [currentYear] = useState(filters.year);
+    const [selectedDay, setSelectedDay] = useState<{
+        date: string;
+        bookings: FullBooking[];
+    } | null>(null);
     const [statusFilter, setStatusFilter] = useState<string | null>(
         filters.status,
     );
@@ -449,8 +460,8 @@ export default function Bookings() {
                                     bookingsByDate[dateStr] || []
                                 ).sort(
                                     (a, b) =>
-                                        new Date(a.start_datetime).getTime() -
-                                        new Date(b.start_datetime).getTime(),
+                                        (parseAsLocal(a.start_datetime)?.getTime() || 0) -
+                                        (parseAsLocal(b.start_datetime)?.getTime() || 0),
                                 );
                                 const displayBookings = dayBookings.slice(0, 5);
                                 const remainingCount = dayBookings.length - 5;
@@ -517,7 +528,7 @@ export default function Bookings() {
                                                                 booking as unknown as FullBooking,
                                                             )
                                                         }
-                                                        className={`flex w-full cursor-pointer items-center gap-1 rounded-[3px] border px-1 py-0.5 text-xs ${
+                                                        className={`flex w-full cursor-pointer items-start gap-2 rounded-[3px] border px-1.5 py-1 text-xs transition-colors hover:brightness-95 ${
                                                             colors?.bg ||
                                                             'bg-blue-100'
                                                         } ${
@@ -528,16 +539,25 @@ export default function Bookings() {
                                                             'border-blue-300'
                                                         }`}
                                                     >
-                                                        <ServiceIcon className="h-3 w-3 flex-shrink-0" />
-                                                        <span className="truncate">
-                                                            {formatDisplayTime(
-                                                                booking.start_datetime,
-                                                            )}
-                                                            -
-                                                            {formatDisplayTime(
-                                                                booking.end_datetime,
-                                                            )}
-                                                        </span>{' '}
+                                                        <ServiceIcon className="h-4 w-4 mt-0.5 flex-shrink-0 opacity-90" />
+                                                        <div className="flex min-w-0 flex-col items-start text-left">
+                                                            <span className="font-semibold whitespace-nowrap leading-tight">
+                                                                {formatDisplayTime(
+                                                                    booking.start_datetime,
+                                                                )}
+                                                                -
+                                                                {formatDisplayTime(
+                                                                    booking.end_datetime,
+                                                                )}
+                                                            </span>
+                                                            <span className="w-full truncate text-[10px] leading-tight opacity-80">
+                                                                {booking.client
+                                                                    ?.user
+                                                                    ?.name ||
+                                                                    `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||
+                                                                    'Unknown Client'}
+                                                            </span>
+                                                        </div>
                                                     </button>
                                                     {/* eslint-disable-next-line no-constant-binary-expression */}
                                                     {false && canCharge && (
@@ -560,9 +580,10 @@ export default function Bookings() {
                                         {remainingCount > 0 && (
                                             <button
                                                 onClick={() =>
-                                                    sheet.openCreateSheet(
-                                                        dateStr,
-                                                    )
+                                                    setSelectedDay({
+                                                        date: dateStr,
+                                                        bookings: dayBookings,
+                                                    })
                                                 }
                                                 className="text-xs font-medium text-ring hover:text-foreground"
                                             >
@@ -629,12 +650,8 @@ export default function Bookings() {
                                         [...currentMonthBookings]
                                             .sort(
                                                 (a, b) =>
-                                                    new Date(
-                                                        a.start_datetime,
-                                                    ).getTime() -
-                                                    new Date(
-                                                        b.start_datetime,
-                                                    ).getTime(),
+                                                    (parseAsLocal(a.start_datetime)?.getTime() || 0) -
+                                                    (parseAsLocal(b.start_datetime)?.getTime() || 0),
                                             )
                                             .map((booking) => {
                                                 const statusKey =
@@ -822,6 +839,87 @@ export default function Bookings() {
                 </div>
 
                 <BookingSheet {...sheet} />
+
+                <Dialog
+                    open={!!selectedDay}
+                    onOpenChange={(open) => !open && setSelectedDay(null)}
+                >
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Bookings for{' '}
+                                {selectedDay &&
+                                    format(
+                                        parseAsLocal(selectedDay.date)!,
+                                        'PPPP',
+                                    )}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto py-4 pr-2">
+                            {selectedDay?.bookings.map((booking) => {
+                                const statusKey =
+                                    booking.status?.toLowerCase() || 'received';
+                                const statusObj =
+                                    booking_statuses.find(
+                                        (s) => s.value === statusKey,
+                                    ) ||
+                                    booking_statuses.find(
+                                        (s) => s.value === 'received',
+                                    );
+                                const colors = statusObj?.colors;
+                                const ServiceIcon =
+                                    serviceTypeIcons[booking.service_type] ||
+                                    CalendarIcon;
+
+                                return (
+                                    <button
+                                        key={booking.id}
+                                        onClick={() => {
+                                            setSelectedDay(null);
+                                            sheet.openEditSheet(
+                                                booking as unknown as FullBooking,
+                                            );
+                                        }}
+                                        className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border p-3 text-left transition hover:brightness-95 ${
+                                            colors?.bg || 'bg-blue-100'
+                                        } ${
+                                            colors?.text || 'text-blue-800'
+                                        } ${
+                                            colors?.border || 'border-blue-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="bg-background/20 rounded-full p-2">
+                                                <ServiceIcon className="h-4 w-4" />
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className="font-semibold whitespace-nowrap">
+                                                    {formatDisplayTime(
+                                                        booking.start_datetime,
+                                                    )}
+                                                    -
+                                                    {formatDisplayTime(
+                                                        booking.end_datetime,
+                                                    )}
+                                                </div>
+                                                <div className="truncate text-xs opacity-80">
+                                                    {booking.client?.user
+                                                        ?.name ||
+                                                        `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||
+                                                        'Unknown Client'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <StatusBadge
+                                            status={statusKey}
+                                            bookingStatuses={booking_statuses}
+                                        />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

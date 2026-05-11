@@ -121,15 +121,15 @@ export default function CaregiverJobsIndex() {
 
             if (now >= end) {
                 return (
-                    <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                    <div className="inline-flex w-24 items-center text-center justify-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold bg-green-100 text-green-800 border-green-300 ">
                         Ready for Checkout
-                    </span>
+                    </div>
                 );
             } else if (now >= start) {
                 return (
-                    <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                    <div className="inline-flex w-24 items-center text-center justify-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold bg-green-100 text-green-800 border-green-300 ">
                         Active
-                    </span>
+                    </div>
                 );
             }
         }

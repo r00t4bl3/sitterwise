@@ -110,7 +110,7 @@ export const getTimeOptionsWithDisabled = (
     startTime: string | undefined,
 ): Array<{ value: string; label: string; disabled: boolean }> => {
     const options = [];
-    const startDate = startTime ? new Date(startTime) : null;
+    const startDate = parseAsLocal(startTime);
 
     for (let i = 0; i < 96; i++) {
         const totalMins = i * 15;
@@ -147,7 +147,7 @@ export const getTimeOptionsWithDisabled = (
  * Auto-set end datetime to minimum 4 hours after start
  */
 export const autoSetEndDateTime = (startDatetime: string): string => {
-    const startDate = new Date(startDatetime);
+    const startDate = parseAsLocal(startDatetime)!;
     const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
 
     const year = endDate.getFullYear();
@@ -171,10 +171,10 @@ export const validateMinimumDuration = (
         return null;
     }
 
-    const startDate = new Date(startDatetime);
-    const endDate = new Date(endDatetime);
+    const startDate = parseAsLocal(startDatetime);
+    const endDate = parseAsLocal(endDatetime);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         return 'Invalid date/time.';
     }
 
