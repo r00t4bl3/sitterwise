@@ -29,6 +29,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Status {
     id: number;
     name: string;
+    label: string;
     color: string;
 }
 
@@ -161,7 +162,7 @@ export default function CaregiversIndex() {
                                     (
                                     {statuses.find(
                                         (s) => s.id.toString() === statusFilter,
-                                    )?.name || statusFilter}
+                                    )?.label || statusFilter}
                                     )
                                 </span>
                             )}
@@ -223,7 +224,7 @@ export default function CaregiversIndex() {
                                 )
                             }
                         >
-                            {status.name}
+                            {status.label}
                         </Button>
                     ))}
                 </div>

@@ -460,8 +460,12 @@ export default function Bookings() {
                                     bookingsByDate[dateStr] || []
                                 ).sort(
                                     (a, b) =>
-                                        (parseAsLocal(a.start_datetime)?.getTime() || 0) -
-                                        (parseAsLocal(b.start_datetime)?.getTime() || 0),
+                                        (parseAsLocal(
+                                            a.start_datetime,
+                                        )?.getTime() || 0) -
+                                        (parseAsLocal(
+                                            b.start_datetime,
+                                        )?.getTime() || 0),
                                 );
                                 const displayBookings = dayBookings.slice(0, 5);
                                 const remainingCount = dayBookings.length - 5;
@@ -539,9 +543,9 @@ export default function Bookings() {
                                                             'border-blue-300'
                                                         }`}
                                                     >
-                                                        <ServiceIcon className="h-4 w-4 mt-0.5 flex-shrink-0 opacity-90" />
+                                                        <ServiceIcon className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-90" />
                                                         <div className="flex min-w-0 flex-col items-start text-left">
-                                                            <span className="font-semibold whitespace-nowrap leading-tight">
+                                                            <span className="leading-tight font-semibold whitespace-nowrap">
                                                                 {formatDisplayTime(
                                                                     booking.start_datetime,
                                                                 )}
@@ -650,8 +654,12 @@ export default function Bookings() {
                                         [...currentMonthBookings]
                                             .sort(
                                                 (a, b) =>
-                                                    (parseAsLocal(a.start_datetime)?.getTime() || 0) -
-                                                    (parseAsLocal(b.start_datetime)?.getTime() || 0),
+                                                    (parseAsLocal(
+                                                        a.start_datetime,
+                                                    )?.getTime() || 0) -
+                                                    (parseAsLocal(
+                                                        b.start_datetime,
+                                                    )?.getTime() || 0),
                                             )
                                             .map((booking) => {
                                                 const statusKey =
@@ -882,14 +890,12 @@ export default function Bookings() {
                                         }}
                                         className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border p-3 text-left transition hover:brightness-95 ${
                                             colors?.bg || 'bg-blue-100'
-                                        } ${
-                                            colors?.text || 'text-blue-800'
-                                        } ${
+                                        } ${colors?.text || 'text-blue-800'} ${
                                             colors?.border || 'border-blue-300'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="bg-background/20 rounded-full p-2">
+                                            <div className="rounded-full bg-background/20 p-2">
                                                 <ServiceIcon className="h-4 w-4" />
                                             </div>
                                             <div className="overflow-hidden">

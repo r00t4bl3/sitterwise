@@ -45,6 +45,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Status {
     id: number;
     name: string;
+    label: string;
     color: string;
 }
 
@@ -571,7 +572,7 @@ export default function CaregiverEdit() {
                                                 key={status.id}
                                                 value={status.id.toString()}
                                             >
-                                                {status.name}
+                                                {status.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

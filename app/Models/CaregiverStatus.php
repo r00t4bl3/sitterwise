@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Database\Factories\CaregiverStatusFactory;
+use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Appends(['label'])]
 class CaregiverStatus extends Model
 {
     /** @use HasFactory<CaregiverStatusFactory> */
@@ -27,6 +29,11 @@ class CaregiverStatus extends Model
     public function caregivers(): HasMany
     {
         return $this->hasMany(Caregiver::class, 'status_id');
+    }
+
+    public function getLabelAttribute(): string
+    {
+        return ucfirst(str_replace('_', ' ', $this->name));
     }
 
     public function scopeActive($query)

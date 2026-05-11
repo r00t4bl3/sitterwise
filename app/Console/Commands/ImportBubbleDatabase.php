@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Enums\BookingStatus;
 use App\Enums\ClientType;
+use App\Enums\LocationType;
+use App\Enums\ServiceType;
 use App\Enums\SpecialConsideration;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -963,35 +965,35 @@ class ImportBubbleDatabase extends Command
     protected function mapClientType(array $source): string
     {
         if (! empty($source['corporate__boolean'])) {
-            return \App\Enums\ClientType::Invoiced->value;
+            return ClientType::Invoiced->value;
         }
 
         if (! empty($source['address_is_hotel__boolean'])) {
-            return \App\Enums\ClientType::Vacationer->value;
+            return ClientType::Vacationer->value;
         }
 
-        return \App\Enums\ClientType::Resident->value;
+        return ClientType::Resident->value;
     }
 
     protected function mapServiceType(?string $bubbleService): string
     {
         return match (strtolower($bubbleService ?? '')) {
-            'corporate__invoiced_' => \App\Enums\ServiceType::CorporateInvoiced->value,
-            'group_childcare' => \App\Enums\ServiceType::GroupChildcareInvoiced->value,
-            'petsitting' => \App\Enums\ServiceType::Petsitter->value,
-            'comped' => \App\Enums\ServiceType::Comped->value,
-            'companion_care' => \App\Enums\ServiceType::CompanionCare->value,
-            default => \App\Enums\ServiceType::Babysitter->value,
+            'corporate__invoiced_' => ServiceType::CorporateInvoiced->value,
+            'group_childcare' => ServiceType::GroupChildcareInvoiced->value,
+            'petsitting' => ServiceType::Petsitter->value,
+            'comped' => ServiceType::Comped->value,
+            'companion_care' => ServiceType::CompanionCare->value,
+            default => ServiceType::Babysitter->value,
         };
     }
 
     protected function mapLocationType(?string $hotelOption): string
     {
         if (! $hotelOption || strtolower($hotelOption) === 'no') {
-            return \App\Enums\LocationType::PrivateHome->value;
+            return LocationType::PrivateHome->value;
         }
 
-        return \App\Enums\LocationType::Hotel->value;
+        return LocationType::Hotel->value;
     }
 
     protected function syncClientChildren(ClientModel $client, ?string $text): void

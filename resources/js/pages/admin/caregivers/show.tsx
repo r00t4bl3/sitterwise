@@ -73,6 +73,7 @@ interface Certification {
 interface Status {
     id: number;
     name: string;
+    label: string;
     color: string;
 }
 
@@ -170,7 +171,7 @@ function StatusBadge({ status }: { status: Status }) {
                 color: status.color,
             }}
         >
-            {status.name}
+            {status.label}
         </span>
     );
 }
@@ -772,7 +773,7 @@ export default function CaregiverShow() {
                                                 key={status.id}
                                                 value={status.id.toString()}
                                             >
-                                                {status.name}
+                                                {status.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

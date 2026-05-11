@@ -75,6 +75,7 @@ interface Props {
             active: boolean;
         }>;
     };
+    clientTypes: Array<{ value: string; label: string }>;
     filters: {
         search: string | null;
         client_type: string | null;
@@ -82,7 +83,7 @@ interface Props {
 }
 
 export default function ClientsIndex() {
-    const { clients, filters } = usePage<Props>().props;
+    const { clients, clientTypes, filters } = usePage<Props>().props;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [typeFilter, setTypeFilter] = useState<string | null>(
@@ -91,12 +92,6 @@ export default function ClientsIndex() {
             : null,
     );
     const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-    const clientTypes = [
-        { value: 'resident', label: 'SD Resident' },
-        { value: 'vacationer', label: 'Vacationer' },
-        { value: 'invoiced', label: 'Invoiced' },
-    ];
 
     const applyFilters = (search: string, type: string | null) => {
         const params: Record<string, string> = {};

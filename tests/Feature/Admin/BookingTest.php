@@ -1011,7 +1011,7 @@ describe('Booking - Admin', function () {
         expect($updatedBooking->pets[0]['name'])->toBe('Updated Transient Pet');
     });
 
-test('admin can update a booking without adding new pets and retain existing pets when save_children_pets_to_profile is false', function () {
+    test('admin can update a booking without adding new pets and retain existing pets when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
 
         // Create a booking with existing pets but not saving to profile

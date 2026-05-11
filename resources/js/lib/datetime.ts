@@ -179,7 +179,12 @@ export const validateMinimumDuration = (
     const startDate = parseAsLocal(startDatetime);
     const endDate = parseAsLocal(endDatetime);
 
-    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (
+        !startDate ||
+        !endDate ||
+        isNaN(startDate.getTime()) ||
+        isNaN(endDate.getTime())
+    ) {
         return 'Invalid date/time.';
     }
 

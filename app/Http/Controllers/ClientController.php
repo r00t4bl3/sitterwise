@@ -27,7 +27,7 @@ class ClientController extends Controller
     public function __construct(ClientPaymentServiceFactory $paymentServiceFactory)
     {
         $this->paymentService = $paymentServiceFactory->make();
-        $this->clientType = array_map(
+        $this->clientTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             ClientType::cases(),
         );
@@ -66,6 +66,7 @@ class ClientController extends Controller
 
         return Inertia::render('admin/clients/index', [
             'clients' => $clients,
+            'clientTypes' => $this->clientTypes,
             'filters' => [
                 'search' => $request->search,
                 'client_type' => $request->client_type ?? 'all',
@@ -76,7 +77,7 @@ class ClientController extends Controller
     public function create()
     {
         return Inertia::render('admin/clients/create', [
-            'client_types' => $this->clientType,
+            'client_types' => $this->clientTypes,
             'discovery_sources' => $this->discoverySources,
             'pet_types' => $this->petTypes,
         ]);
@@ -448,7 +449,7 @@ class ClientController extends Controller
             ]),
             'attribute_definitions' => $attributeDefinitions,
             'sitter_preferences' => $this->sitterPreference,
-            'client_types' => $this->clientType,
+            'client_types' => $this->clientTypes,
             'discovery_sources' => $this->discoverySources,
             'pet_types' => $this->petTypes,
             'caregivers' => $caregivers->map(fn ($c) => [
