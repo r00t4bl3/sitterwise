@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 
 interface BookingDetailsSectionProps {
+    sheetMode: 'create' | 'edit' | 'duplicate';
     form: any;
     editingBooking: { id: number } | null;
     service_types: Array<{ value: string; label: string }>;
@@ -46,6 +47,7 @@ export function BookingDetailsSection({
     handleSubmit,
     handleDelete,
     setIsSheetOpen,
+    sheetMode,
 }: BookingDetailsSectionProps) {
     const [isOpen, setIsOpen] = useState(true);
     const startDatetime = form.data.start_datetime;
@@ -315,11 +317,13 @@ export function BookingDetailsSection({
                         {form.processing && <Spinner className="size-4" />}
                         {form.processing
                             ? 'Saving...'
-                            : editingBooking
+                            : sheetMode === 'edit'
                               ? 'Update'
-                              : 'Create'}
+                              : sheetMode === 'duplicate'
+                                ? 'Duplicate'
+                                : 'Create'}
                     </Button>
-                    {editingBooking && (
+                    {sheetMode === 'edit' && (
                         <Button
                             onClick={handleDelete}
                             disabled={form.processing}

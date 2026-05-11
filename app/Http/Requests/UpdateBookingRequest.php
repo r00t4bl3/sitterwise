@@ -27,7 +27,7 @@ class UpdateBookingRequest extends FormRequest
             'client_id' => ['required', 'exists:clients,id'],
             'service_type' => ['required', 'string'],
             'location_type' => ['required', 'string'],
-            'start_datetime' => ['required', 'date', 'after:now'],
+            'start_datetime' => ['required', 'date'],
             'end_datetime' => ['required', 'date', 'after:start_datetime', new MinimumBookingDuration],
             'hotel_id' => ['nullable', 'exists:hotels,id'],
             'address_id' => ['nullable', 'exists:client_addresses,id'],

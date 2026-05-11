@@ -62,7 +62,7 @@ class ClientController extends Controller
             $query->where('client_type', $request->client_type);
         }
 
-        $clients = $query->orderBy('last_name')->paginate(20);
+        $clients = $query->orderBy('last_name')->paginate(20)->appends($request->query());
 
         return Inertia::render('admin/clients/index', [
             'clients' => $clients,

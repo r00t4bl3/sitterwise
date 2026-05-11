@@ -65,8 +65,13 @@ export function GlobalSearch() {
     }, [results]);
 
     useEffect(() => {
-        if (activeIndex < 0 || !resultsRef.current) return;
-        const items = resultsRef.current.querySelectorAll('[data-search-result]');
+        if (activeIndex < 0 || !resultsRef.current) {
+            return;
+        }
+
+        const items = resultsRef.current.querySelectorAll(
+            '[data-search-result]',
+        );
         items[activeIndex]?.scrollIntoView({ block: 'nearest' });
     }, [activeIndex]);
 
@@ -125,6 +130,7 @@ export function GlobalSearch() {
                 setShowResults(false);
                 setActiveIndex(-1);
             }
+
             return;
         }
 
@@ -145,9 +151,11 @@ export function GlobalSearch() {
 
             case 'Enter':
                 e.preventDefault();
+
                 if (activeIndex >= 0 && activeIndex < results.length) {
                     handleItemClick(results[activeIndex]);
                 }
+
                 break;
 
             case 'Escape':

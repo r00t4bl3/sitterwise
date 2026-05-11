@@ -1,17 +1,10 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
-import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Rating } from '@/components/ui/rating';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
     Tooltip,
@@ -90,20 +83,6 @@ interface Props {
     };
 }
 
-function StatusBadge({ status }: { status: Status }) {
-    return (
-        <span
-            className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium"
-            style={{
-                backgroundColor: status.color + '20',
-                color: status.color,
-            }}
-        >
-            {status.name}
-        </span>
-    );
-}
-
 function calculateAge(dateOfBirth: string): number {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -123,43 +102,47 @@ function calculateAge(dateOfBirth: string): number {
 export default function CaregiversIndex() {
     const { caregivers, statuses, filters } = usePage<Props>().props;
 
-    const [searchQuery] = useState(filters.search || '');
-    const [suggestions, setSuggestions] = useState<
-        Array<{ id: number; name: string; status: Status | null }>
-    >([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedCaregiverId, setSelectedCaregiverId] = useState<
-        number | null
-    >(null);
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [statusFilter, setStatusFilter] = useState<string | null>(
+        filters.status && filters.status !== 'all' ? filters.status : null,
+    );
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
 
-    const handleCaregiverSearch = async (query: string) => {
-        if (query.trim().length < 2) {
-            setSuggestions([]);
+    const applyFilters = (search: string, status: string | null) => {
+        const params: Record<string, string> = {};
 
-            return;
+        if (search.trim()) {
+            params.search = search.trim();
         }
 
-        setIsLoading(true);
-
-        try {
-            const params = new URLSearchParams({ q: query });
-            const response = await fetch(
-                `/caregivers/search-suggestions?${params}`,
-            );
-            const data: Caregiver[] = await response.json();
-            setSuggestions(
-                data.map((c) => ({
-                    id: c.id,
-                    name: `${c.first_name} ${c.last_name}`,
-                    status: c.status,
-                })),
-            );
-        } catch (error) {
-            console.error('Search error:', error);
-        } finally {
-            setIsLoading(false);
+        if (status) {
+            params.status = status;
         }
+
+        router.get('/caregivers', params, {
+            preserveState: true,
+            replace: true,
+        });
     };
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            applyFilters(value, statusFilter);
+        }, 300);
+    };
+
+    const handleStatusChange = (status: string | null) => {
+        setStatusFilter(status);
+        applyFilters(searchQuery, status);
+    };
+
+    useEffect(() => {
+        return () => clearTimeout(debounceTimer.current);
+    }, []);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -172,7 +155,21 @@ export default function CaregiversIndex() {
                             Caregivers
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {caregivers.total} caregivers total
+                            {caregivers.total} caregivers
+                            {statusFilter && (
+                                <span className="ml-1">
+                                    (
+                                    {statuses.find(
+                                        (s) => s.id.toString() === statusFilter,
+                                    )?.name || statusFilter}
+                                    )
+                                </span>
+                            )}
+                            {searchQuery && (
+                                <span className="ml-1">
+                                    (search: "{searchQuery}")
+                                </span>
+                            )}
                         </p>
                     </div>
                     <Link href="/caregivers/create" className="btn-primary">
@@ -180,65 +177,55 @@ export default function CaregiversIndex() {
                     </Link>
                 </div>
 
-                <div className="flex gap-4">
-                    <form method="get" className="flex flex-1 gap-2">
-                        <div className="relative max-w-md flex-1">
-                            <Autocomplete
-                                value={selectedCaregiverId}
-                                onChange={setSelectedCaregiverId}
-                                suggestions={suggestions}
-                                onSearch={handleCaregiverSearch}
-                                placeholder="Search by name..."
-                                loading={isLoading}
-                                displayValue={searchQuery}
-                                onItemClick={(item) => {
-                                    window.location.href = `/caregivers/${item.id}`;
-                                }}
-                                renderItem={(item) => {
-                                    const caregiver = item as {
-                                        id: number;
-                                        name: string;
-                                        status: Status | null;
-                                    };
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Search by name..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="h-8"
+                        />
+                        {searchQuery && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSearchChange('')}
+                                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                ×
+                            </Button>
+                        )}
+                    </div>
 
-                                    return (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground">
-                                                {item.name}
-                                            </span>
-                                            {caregiver.status && (
-                                                <StatusBadge
-                                                    status={caregiver.status}
-                                                />
-                                            )}
-                                        </div>
-                                    );
-                                }}
-                            />
-                        </div>
-                        <Select
-                            name="status"
-                            defaultValue={filters.status || 'all'}
+                    <Button
+                        variant={!statusFilter ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleStatusChange(null)}
+                    >
+                        All
+                    </Button>
+                    {statuses.map((status) => (
+                        <Button
+                            key={status.id}
+                            variant={
+                                statusFilter === status.id.toString()
+                                    ? 'default'
+                                    : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                                handleStatusChange(
+                                    statusFilter === status.id.toString()
+                                        ? null
+                                        : status.id.toString(),
+                                )
+                            }
                         >
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="All Statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    All Statuses
-                                </SelectItem>
-                                {statuses.map((status) => (
-                                    <SelectItem
-                                        key={status.id}
-                                        value={status.id.toString()}
-                                    >
-                                        {status.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Button type="submit">Filter</Button>
-                    </form>
+                            {status.name}
+                        </Button>
+                    ))}
                 </div>
 
                 <div className="overflow-x-auto border border-border bg-card">

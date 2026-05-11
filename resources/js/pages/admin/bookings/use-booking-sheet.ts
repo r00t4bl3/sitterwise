@@ -871,8 +871,8 @@ export function useBookingSheet({
             save_children_pets_to_profile: saveChildrenPetsToProfile,
         }));
 
-        if (editingBooking) {
-            form.put(`/bookings/${editingBooking.id}`, {
+        if (sheetMode === 'edit') {
+            form.put(`/bookings/${editingBooking!.id}`, {
                 onSuccess: () => {
                     setIsSheetOpen(false);
                 },
@@ -895,14 +895,14 @@ export function useBookingSheet({
     };
 
     const handleDelete = () => {
-        if (editingBooking) {
+        if (sheetMode === 'edit') {
             setShowDeleteDialog(true);
         }
     };
 
     const handleConfirmDelete = () => {
-        if (editingBooking) {
-            form.delete(`/bookings/${editingBooking.id}`, {
+        if (sheetMode === 'edit') {
+            form.delete(`/bookings/${editingBooking!.id}`, {
                 onSuccess: () => {
                     setIsSheetOpen(false);
                     setShowDeleteDialog(false);
