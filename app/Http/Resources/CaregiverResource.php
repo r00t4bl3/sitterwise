@@ -83,6 +83,21 @@ class CaregiverResource extends JsonResource
             ]),
             'stripe_account_id' => $this->stripe_account_id,
             'stripe_charges_enabled' => $this->stripe_charges_enabled,
+            'applications' => $this->whenLoaded('applications', function () {
+                return $this->applications->map(fn ($app) => [
+                    'id' => $app->id,
+                    'submitted_at' => $app->submitted_at?->format('Y-m-d H:i:s'),
+                    'data' => $app->data,
+                ]);
+            }),
+            'agreements' => $this->whenLoaded('agreements', function () {
+                return $this->agreements->map(fn ($agreement) => [
+                    'id' => $agreement->id,
+                    'type' => $agreement->type,
+                    'pdf_path' => $agreement->pdf_path,
+                    'signed_at' => $agreement->signed_at?->format('Y-m-d H:i:s'),
+                ]);
+            }),
         ];
     }
 }

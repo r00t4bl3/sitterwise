@@ -862,13 +862,84 @@ export default function CaregiverShow() {
                                         )}
                                     </div>
                                 ))}
-                                {caregiver.certifications.length === 0 && (
+                            {caregiver.certifications.length === 0 && (
                                     <p className="text-sm text-muted-foreground">
                                         No certifications
                                     </p>
                                 )}
                             </div>
                         </div>
+
+                        {/* Application Section */}
+                        {caregiver.applications && caregiver.applications.length > 0 && (
+                            <div className="mt-6 border-t border-border pt-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Application
+                                </h2>
+                                {caregiver.applications.map((app) => (
+                                    <div key={app.id} className="space-y-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Submitted: {app.submitted_at}
+                                        </p>
+
+                                        {/* Display application data */}
+                                        {app.data && (
+                                            <div className="space-y-3">
+                                                {app.data.personal && (
+                                                    <div>
+                                                        <h4 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                                                            Personal Info
+                                                        </h4>
+                                                        <p className="text-sm">
+                                                            {app.data.personal.first_name} {app.data.personal.last_name}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {app.data.personal.address}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {app.data.sponsor && (
+                                                    <div>
+                                                        <h4 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                                                            Sponsor
+                                                        </h4>
+                                                        <p className="text-sm">
+                                                            {app.data.sponsor.first_name} {app.data.sponsor.last_name}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {app.data.sponsor.email}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Agreements */}
+                                        {caregiver.agreements && caregiver.agreements.length > 0 && (
+                                            <div className="mt-4">
+                                                <h4 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                                                    Agreements
+                                                </h4>
+                                                <div className="flex gap-2">
+                                                    {caregiver.agreements.map((agreement) => (
+                                                        <a
+                                                            key={agreement.id}
+                                                            href={`/storage/${agreement.pdf_path}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn-secondary text-sm"
+                                                        >
+                                                            Download {agreement.type === 'verification' ? 'Verification' : 'Agreement'} PDF
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
