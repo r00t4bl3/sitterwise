@@ -121,7 +121,11 @@ class CaregiverApplicationController extends Controller
             'last_name' => $validated['personal']['last_name'],
             'phone' => $validated['personal']['phone'],
             'date_of_birth' => $validated['personal']['dob'],
-            'address' => $validated['personal']['address'],
+            'address_line1' => $validated['personal']['address_line1'] ?? null,
+            'address_line2' => $validated['personal']['address_line2'] ?? null,
+            'address_city' => $validated['personal']['address_city'] ?? null,
+            'address_state' => $validated['personal']['address_state'] ?? null,
+            'address_zip' => $validated['personal']['address_zip'] ?? null,
         ]);
 
         // Store application snapshot

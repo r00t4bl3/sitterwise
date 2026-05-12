@@ -8,6 +8,7 @@ interface Props {
     form: any;
     label?: string;
     prefix?: string;
+    isRequired?: boolean;
 }
 
 interface Suggestion {
@@ -28,7 +29,7 @@ interface Suggestion {
     };
 }
 
-export function AddressAutocomplete({ form, label = 'Address', prefix = 'address_' }: Props) {
+export function AddressAutocomplete({ form, label = 'Address', prefix = 'address_', isRequired = true }: Props) {
     const getIndex = (): number | null => {
         const match = prefix.match(/^addresses\.(\d+)\.$/);
         return match ? parseInt(match[1], 10) : null;
@@ -36,8 +37,9 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
 
     const getField = (field: string): string => {
         const dotKey = prefix + field;
-        if (form.data[dotKey] !== undefined) {
-            return form.data[dotKey];
+        const value = dotKey.split('.').reduce((obj: any, key) => obj?.[key], form.data);
+        if (value !== undefined && value !== null) {
+            return value;
         }
         const idx = getIndex();
         if (idx !== null) {
@@ -289,7 +291,7 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
         return (
             <div className="space-y-3" ref={containerRef}>
                 <Label>
-                    {label}
+                    {label}{isRequired && <span className="text-red-500"> *</span>}
                 </Label>
                     <div className="mt-1 flex items-center gap-2 rounded-[3px] border border-input px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">{addressValue}</span>
@@ -309,7 +311,7 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
         <div className="space-y-3" ref={containerRef}>
             <div className="relative">
                 <Label>
-                    {label}
+                    {label}{isRequired && <span className="text-red-500"> *</span>}
                 </Label>
                 <Input
                     ref={inputRef}

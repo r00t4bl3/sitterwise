@@ -415,7 +415,7 @@ export default function ClientShow() {
                             </div>
                         </div>
                     </div>
-                    <div className="hidden gap-2 md:flex">
+                    <div className="hidden gap-2 xl:flex">
                         <Button
                             variant="secondary"
                             onClick={() => setIsPaymentSheetOpen(true)}
@@ -439,7 +439,7 @@ export default function ClientShow() {
                             Edit
                         </Link>
                     </div>
-                    <div className="md:hidden">
+                    <div className="xl:hidden">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon">
@@ -816,7 +816,7 @@ export default function ClientShow() {
 
                             {client.sitter_preferences &&
                                 client.sitter_preferences.length > 0 && (
-                                    <div>
+                                    <div className="sm:col-span-2">
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                             Sitter Preferences
                                         </p>

@@ -108,6 +108,29 @@ interface Location {
     is_preferred: boolean;
 }
 
+interface CaregiverApplication {
+    id: number;
+    submitted_at: string;
+    data: {
+        personal?: {
+            first_name: string;
+            last_name: string;
+            address: string;
+        };
+        sponsor?: {
+            first_name: string;
+            last_name: string;
+            email: string;
+        };
+    };
+}
+
+interface Agreement {
+    id: number;
+    pdf_path: string;
+    type: string;
+}
+
 interface Caregiver {
     id: number;
     first_name: string;
@@ -138,6 +161,8 @@ interface Caregiver {
     certifications: Certification[];
     attributes: Attribute[];
     educations: Education[];
+    applications: CaregiverApplication[];
+    agreements: Agreement[];
 }
 
 interface Props {
@@ -317,7 +342,7 @@ export default function CaregiverShow() {
                             </p>
                         </div>
                     </div>
-                    <div className="hidden gap-2 md:flex">
+                    <div className="hidden gap-2 xl:flex">
                         <Link
                             href={`/availabilities/${caregiver.id}`}
                             className="btn-secondary"
@@ -345,7 +370,7 @@ export default function CaregiverShow() {
                             Edit
                         </Link>
                     </div>
-                    <div className="md:hidden">
+                    <div className="xl:hidden">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="icon">

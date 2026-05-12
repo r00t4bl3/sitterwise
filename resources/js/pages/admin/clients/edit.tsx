@@ -126,6 +126,38 @@ interface Props {
     pet_types: Array<{ value: string; label: string }>;
 }
 
+function calculateAge(
+    birthYear: number | null,
+    birthMonth: number | null,
+): string {
+    if (!birthYear) {
+        return '-';
+    }
+
+    const today = new Date();
+    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    if (age < 1) {
+        const months =
+            (today.getFullYear() - birthDate.getFullYear()) * 12 +
+            today.getMonth() -
+            birthDate.getMonth();
+
+        return `${months} ${months === 1 ? 'month' : 'months'}`;
+    }
+
+    return `${age} ${age === 1 ? 'year' : 'years'}`;
+}
+
 export default function ClientEdit() {
     const {
         client,
@@ -651,7 +683,7 @@ export default function ClientEdit() {
                                 {form.data.children.map((child, index) => (
                                     <div
                                         key={child.id || `child-${index}`}
-                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 lg:grid-cols-6"
+                                        className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 lg:grid-cols-7"
                                     >
                                         <div className="sm:col-span-2">
                                             <Input
@@ -776,6 +808,12 @@ export default function ClientEdit() {
                                                 }}
                                                 placeholder="Year"
                                             />
+                                        </div>
+                                        <div className="flex items-center text-sm text-muted-foreground">
+                                            {calculateAge(
+                                                child.birth_year,
+                                                child.birth_month,
+                                            )}
                                         </div>
                                         <div className="flex items-center justify-end">
                                             <Button

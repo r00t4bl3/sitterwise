@@ -31,7 +31,11 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'sponsor.relationship' => 'nullable|string|max:255',
             'personal.first_name' => 'required|string|max:255',
             'personal.last_name' => 'required|string|max:255',
-            'personal.address' => 'required|string|max:500',
+            'personal.address_line1' => 'required|string|max:255',
+            'personal.address_line2' => 'nullable|string|max:255',
+            'personal.address_city' => 'required|string|max:255',
+            'personal.address_state' => 'required|string|max:255',
+            'personal.address_zip' => 'required|string|max:20',
             'personal.phone' => 'required|string|max:20',
             'personal.dob' => 'required|date|before:-18 years',
             'personal.photo' => 'nullable|image|max:5120',
@@ -53,13 +57,14 @@ class StoreCaregiverApplicationRequest extends FormRequest
 
             // Step 3: Experience
             'experiences' => 'required|array|min:1',
-            'experiences.*.start_month' => 'required|date_format:Y-m',
-            'experiences.*.end_month' => 'nullable|date_format:Y-m|after_or_equal:experiences.*.start_month',
+            'experiences.*.start_date' => 'required|date',
+            'experiences.*.end_date' => 'nullable|date|after_or_equal:experiences.*.start_date',
+            'experiences.*.present' => 'boolean',
             'experiences.*.role' => 'required|string|max:255',
             'experiences.*.organization' => 'required|string|max:255',
-            'experiences.*.description' => 'nullable|string|max:2000',
-            'experiences.*.ages_served' => 'nullable|array',
-            'experiences.*.ages_served.*' => 'in:babies,toddlers,preschool,school_age',
+            'experiences.*.description' => 'required|string|max:2000',
+            'experiences.*.ages_served' => 'required|array|min:1',
+            'experiences.*.ages_served.*' => 'in:infant,toddler,preschool,school_age,teen',
 
             // Step 4: Certifications & Skills
             'certifications' => 'nullable|array',

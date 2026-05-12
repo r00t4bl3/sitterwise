@@ -46,10 +46,10 @@ function calculateAge(
             today.getMonth() -
             birthDate.getMonth();
 
-        return `${months} months`;
+        return `${months} ${months === 1 ? 'month' : 'months'}`;
     }
 
-    return `${age} years`;
+    return `${age} ${age === 1 ? 'year' : 'years'}`;
 }
 
 export function BookingSheet({
