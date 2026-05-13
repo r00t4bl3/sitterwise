@@ -131,6 +131,11 @@ class DashboardController extends Controller
                     ->map(fn ($hotel) => [
                         'id' => $hotel->id,
                         'name' => $hotel->name,
+                        'line1' => $hotel->line1,
+                        'line2' => $hotel->line2,
+                        'city' => $hotel->city,
+                        'state' => $hotel->state,
+                        'zip' => $hotel->zip,
                     ])
                     ->toArray(),
                 'caregivers' => Caregiver::with('user')
