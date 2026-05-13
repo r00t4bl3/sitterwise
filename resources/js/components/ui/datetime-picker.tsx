@@ -20,6 +20,7 @@ interface DateTimePickerProps {
     placeholder?: string
     error?: string
     startTime?: string  // For disabling invalid time options
+    minDate?: Date  // Earliest selectable date
 }
 
 export function DateTimePicker({
@@ -27,7 +28,8 @@ export function DateTimePicker({
     onChange,
     placeholder = "Pick date and time",
     error,
-    startTime}: DateTimePickerProps) {
+    startTime,
+    minDate}: DateTimePickerProps) {
     const [date, setDate] = React.useState<Date | undefined>(() => {
         const parsed = value ? parseAsLocal(value) : null
         return parsed && !isNaN(parsed.getTime()) ? parsed : undefined
@@ -38,6 +40,7 @@ export function DateTimePicker({
     })
 
     const startDate = startTime ? parseAsLocal(startTime) : null
+    const minDateConstraint = startDate ? { before: startDate } : minDate ? { before: minDate } : undefined
 
     const MIN_DURATION_MS = 4 * 60 * 60 * 1000
 
@@ -158,7 +161,7 @@ export function DateTimePicker({
                         selected={date}
                         onSelect={handleDateSelect}
                         defaultMonth={date}
-                        disabled={startDate ? { before: startDate } : undefined}
+                        disabled={minDateConstraint}
                         initialFocus
                     />
                 </PopoverContent>

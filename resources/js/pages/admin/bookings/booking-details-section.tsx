@@ -83,7 +83,7 @@ export function BookingDetailsSection({
             </summary>
             <div className="space-y-4 p-4">
                 <div className="grid gap-2">
-                    <Label htmlFor="service_type">
+                    <Label htmlFor="service_type" className={form.errors.service_type ? 'text-destructive' : ''}>
                         Service Type <span className="text-red-500">*</span>
                     </Label>
                     <Select
@@ -103,6 +103,9 @@ export function BookingDetailsSection({
                             ))}
                         </SelectContent>
                     </Select>
+                    {form.errors.service_type && (
+                        <p className="text-sm text-destructive">{form.errors.service_type}</p>
+                    )}
                 </div>
 
                 {form.data.service_type === 'corporate_invoiced' && (
@@ -120,12 +123,13 @@ export function BookingDetailsSection({
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
-                        <Label>
+                        <Label className={form.errors.start_datetime ? 'text-destructive' : ''}>
                             Start DateTime{' '}
                             <span className="text-red-500">*</span>
                         </Label>
                         <DateTimePicker
                             value={startDatetime}
+                            minDate={sheetMode !== 'edit' ? new Date() : undefined}
                             onChange={(datetime) => {
                                 form.setData('start_datetime', datetime);
 
@@ -137,18 +141,25 @@ export function BookingDetailsSection({
                                 }
                             }}
                         />
+                        {form.errors.start_datetime && (
+                            <p className="text-sm text-destructive">{form.errors.start_datetime}</p>
+                        )}
                     </div>
                     <div className="grid gap-2">
-                        <Label>
+                        <Label className={form.errors.end_datetime ? 'text-destructive' : ''}>
                             End DateTime <span className="text-red-500">*</span>
                         </Label>
                         <DateTimePicker
                             value={endDatetime}
                             startTime={startDatetime}
+                            minDate={sheetMode !== 'edit' ? new Date() : undefined}
                             onChange={(datetime) => {
                                 form.setData('end_datetime', datetime);
                             }}
                         />
+                        {form.errors.end_datetime && (
+                            <p className="text-sm text-destructive">{form.errors.end_datetime}</p>
+                        )}
                     </div>
                     {datetimeError && (
                         <div className="col-span-2 text-sm text-destructive">
@@ -158,7 +169,9 @@ export function BookingDetailsSection({
                 </div>
 
                 <div className="grid gap-2">
-                    <Label>Caregiver</Label>
+                    <Label className={form.errors.caregiver_id ? 'text-destructive' : ''}>
+                        Caregiver
+                    </Label>
                     <Autocomplete
                         value={form.data.caregiver_id}
                         onChange={(id) => form.setData('caregiver_id', id)}
@@ -195,6 +208,9 @@ export function BookingDetailsSection({
                             );
                         }}
                     />
+                    {form.errors.caregiver_id && (
+                        <p className="text-sm text-destructive">{form.errors.caregiver_id}</p>
+                    )}
                 </div>
 
                 <div className="grid gap-2">
@@ -255,7 +271,7 @@ export function BookingDetailsSection({
                 {editingBooking && (
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="status">
+                            <Label htmlFor="status" className={form.errors.status ? 'text-destructive' : ''}>
                                 Status <span className="text-red-500">*</span>
                             </Label>
                             <Select
@@ -278,9 +294,12 @@ export function BookingDetailsSection({
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {form.errors.status && (
+                                <p className="text-sm text-destructive">{form.errors.status}</p>
+                            )}
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="payment_status">
+                            <Label htmlFor="payment_status" className={form.errors.payment_status ? 'text-destructive' : ''}>
                                 Payment Status{' '}
                                 <span className="text-red-500">*</span>
                             </Label>
@@ -304,6 +323,9 @@ export function BookingDetailsSection({
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {form.errors.payment_status && (
+                                <p className="text-sm text-destructive">{form.errors.payment_status}</p>
+                            )}
                         </div>
                     </div>
                 )}

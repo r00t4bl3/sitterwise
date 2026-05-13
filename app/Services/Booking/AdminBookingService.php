@@ -292,6 +292,10 @@ class AdminBookingService implements BookingServiceInterface
             $this->saveNewPets($clientId, $validated['new_pets']);
         }
 
+        if (($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+            $this->saveClientAddress($clientId, $validated);
+        }
+
         $bookingGroup = BookingGroup::create([
             'client_id' => $clientId,
             'submitted_at' => now(),
@@ -483,10 +487,12 @@ class AdminBookingService implements BookingServiceInterface
             // Use childrenSnapshot (which may be existing or new)
             $this->syncClientChildren($booking->client_id, $childrenSnapshot);
             $this->syncClientPets($booking->client_id, $petsSnapshot);
+            $this->saveClientAddress($booking->client_id, $validated);
         }
 
         $updateData = [
-            ...collect($validated)->except(['special_considerations'])->toArray(),
+            ...collect($validated)->except(['special_considerations', 'hotel_id'])->toArray(),
+            'hotel_id' => $validated['hotel_id'] ?? $booking->hotel_id,
             'address_id' => $addressId,
             'client_first_name' => $client?->first_name,
             'client_last_name' => $client?->last_name,
@@ -640,6 +646,45 @@ class AdminBookingService implements BookingServiceInterface
                     'notes' => $petData['notes'] ?? null,
                 ]
             );
+        }
+    }
+
+    /**
+     * Save address to client profile if it doesn't already exist.
+     * Creates a new ClientAddress record only when no matching address exists.
+     */
+    protected function saveClientAddress(int $clientId, array $validated): void
+    {
+        if (empty($validated['address_line1'])) {
+            return;
+        }
+
+        $exists = ClientAddress::where('client_id', $clientId)
+            ->where('line1', $validated['address_line1'])
+            ->where('line2', $validated['address_line2'] ?? null)
+            ->where('city', $validated['address_city'] ?? '')
+            ->where('state', $validated['address_state'] ?? '')
+            ->where('zip', $validated['address_zip'] ?? '')
+            ->exists();
+
+        if (! $exists) {
+            $locationType = $validated['location_type'] ?? null;
+
+            $label = match ($locationType) {
+                'hotel' => Hotel::where('id', $validated['hotel_id'])->value('name'),
+                default => $locationType,
+            };
+
+            ClientAddress::create([
+                'client_id' => $clientId,
+                'label' => $label,
+                'line1' => $validated['address_line1'],
+                'line2' => $validated['address_line2'] ?? null,
+                'city' => $validated['address_city'] ?? '',
+                'state' => $validated['address_state'] ?? '',
+                'zip' => $validated['address_zip'] ?? '',
+                'location_type' => $locationType,
+            ]);
         }
     }
 

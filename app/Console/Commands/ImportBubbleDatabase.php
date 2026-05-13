@@ -17,6 +17,7 @@ use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
+use App\Models\Hotel;
 use App\Models\SpecialtyType;
 use App\Models\User;
 use Carbon\Carbon;
@@ -172,10 +173,16 @@ class ImportBubbleDatabase extends Command
         $this->info('Finalizing import (Calculating summary fields)...');
 
         $clients = ClientModel::all();
-        $this->withProgressBar($clients, function ($client) {
+        $this->withProgressBar($clients, function (ClientModel $client) {
             $lastBooking = $client->bookings()->orderBy('start_datetime', 'desc')->first();
             if ($lastBooking) {
                 $client->update(['last_booking_date' => $lastBooking->start_datetime]);
+            }
+
+            // Link bookings to client's primary address where address_id is null
+            $primaryAddress = $client->addresses()->where('is_primary', true)->first();
+            if ($primaryAddress) {
+                $client->bookings()->whereNull('address_id')->update(['address_id' => $primaryAddress->id]);
             }
         });
 
@@ -958,8 +965,11 @@ class ImportBubbleDatabase extends Command
 
         $client = ClientModel::updateOrCreate(['user_id' => $user->id], $clientData);
 
+        $this->syncClientAddresses($client, $source);
         $this->syncClientChildren($client, $source['names_and_ages_of_kids_text'] ?? null);
         $this->syncClientPets($client, $source['pets_in_the_home_text'] ?? null);
+        $this->syncClientCaregiverList($client, 'favorite', $source['favorite_caregivers_list_text'] ?? null);
+        $this->syncClientCaregiverList($client, 'blocked', $source['do_not_use_list_text'] ?? null);
     }
 
     protected function mapClientType(array $source): string
@@ -994,6 +1004,117 @@ class ImportBubbleDatabase extends Command
         }
 
         return LocationType::Hotel->value;
+    }
+
+    protected function syncClientAddresses(ClientModel $client, array $source): void
+    {
+        $geo = $source['address_geographic_address'] ?? null;
+        if ($geo && ! empty($geo['components'])) {
+            $c = $geo['components'];
+            $client->addresses()->updateOrCreate(
+                ['label' => LocationType::PrivateHome->label(), 'is_primary' => true],
+                [
+                    'location_type' => LocationType::PrivateHome->value,
+                    'line1' => trim(($c['street number'] ?? '').' '.($c['street'] ?? '')),
+                    'city' => $c['city'] ?? 'Unknown',
+                    'state' => $c['state code'] ?? 'Unknown',
+                    'zip' => $c['zip code'] ?? '00000',
+                ]
+            );
+        }
+
+        // Only create Home (Alternate) if it differs from primary address
+        $homeGeo = $source['home_address_geographic_address'] ?? null;
+        if ($homeGeo && ! empty($homeGeo['components'])) {
+            $primary = $client->addresses()->where('is_primary', true)->first();
+            $homeLine1 = trim(($homeGeo['components']['street number'] ?? '').' '.($homeGeo['components']['street'] ?? ''));
+            if (! $primary || $primary->line1 !== $homeLine1) {
+                $c = $homeGeo['components'];
+                $client->addresses()->updateOrCreate(
+                    ['label' => LocationType::PrivateHome->label(), 'is_primary' => false],
+                    [
+                        'location_type' => LocationType::PrivateHome->value,
+                        'line1' => $homeLine1,
+                        'city' => $c['city'] ?? 'Unknown',
+                        'state' => $c['state code'] ?? 'Unknown',
+                        'zip' => $c['zip code'] ?? '00000',
+                    ]
+                );
+            }
+        }
+
+        $addrBook = $source['address_book_list_text'] ?? [];
+        if (is_array($addrBook)) {
+            foreach ($addrBook as $addr) {
+                $addr = trim((string) $addr);
+                if (! $addr) {
+                    continue;
+                }
+
+                $parts = array_map('trim', explode(',', $addr));
+                $line1 = $parts[0] ?? $addr;
+                $city = $parts[1] ?? null;
+                $state = null;
+                $zip = null;
+                if (count($parts) >= 3) {
+                    $stateZip = explode(' ', trim($parts[count($parts) - 2]));
+                    $state = $stateZip[0] ?? null;
+                    $zip = $stateZip[1] ?? null;
+                }
+
+                $client->addresses()->firstOrCreate(
+                    ['line1' => $line1],
+                    [
+                        'label' => 'Address Book',
+                        'is_primary' => false,
+                        'city' => $city ?? 'Unknown',
+                        'state' => $state ?? 'Unknown',
+                        'zip' => $zip ?? '00000',
+                    ]
+                );
+            }
+        }
+    }
+
+    protected function syncClientCaregiverList(ClientModel $client, string $type, $list): void
+    {
+        if (is_string($list)) {
+            $list = array_map('trim', explode(',', $list));
+        }
+
+        if (! is_array($list) || empty($list)) {
+            return;
+        }
+
+        $caregiverIds = [];
+        foreach ($list as $fullName) {
+            $fullName = trim((string) $fullName);
+            if (! $fullName) {
+                continue;
+            }
+
+            $parts = explode(' ', $fullName, 2);
+            $firstName = $parts[0] ?? '';
+            $lastName = $parts[1] ?? '';
+
+            $caregiver = Caregiver::where('first_name', $firstName)
+                ->where('last_name', $lastName)
+                ->first();
+
+            if ($caregiver) {
+                $caregiverIds[] = $caregiver->id;
+            } else {
+                $this->warn("       {$type} caregiver not found by name: {$fullName}");
+            }
+        }
+
+        if (! empty($caregiverIds)) {
+            if ($type === 'favorite') {
+                $client->favoriteCaregivers()->sync($caregiverIds);
+            } else {
+                $client->blockedCaregivers()->sync($caregiverIds);
+            }
+        }
     }
 
     protected function syncClientChildren(ClientModel $client, ?string $text): void
@@ -1101,6 +1222,7 @@ class ImportBubbleDatabase extends Command
             'reimbursement' => ($source['check_out_reimbursement_number'] ?? 0) * 100,
             'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
             'hotel_fee' => ($source['job_hotel_booking_fee_number'] ?? 0) * 100,
+            'hotel_id' => $this->findHotelId($source['hotel_name_text'] ?? null, $source['address_is_hotel__option_list_of_hotels'] ?? null),
             'client_first_name' => $this->formatName($source['client_first_name1_text'] ?? null),
             'client_last_name' => $this->formatName($source['client_last_name1_text'] ?? null),
             'client_email' => $clientEmail,
@@ -1154,6 +1276,55 @@ class ImportBubbleDatabase extends Command
         }
 
         Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
+    }
+
+    protected function findHotelId(?string $hotelName, ?string $bubbleSlug): ?int
+    {
+        // Only match when hotel_name_text is present — slugs (snake_case) don't resemble hotel names
+        if (! $hotelName || in_array(strtolower($hotelName), ['no', 'other', '', 'none'], true)) {
+            return null;
+        }
+
+        $normalized = $this->normalizeHotelName($hotelName);
+
+        $hotels = Hotel::all();
+
+        // 1. Exact normalized match
+        foreach ($hotels as $hotel) {
+            if ($this->normalizeHotelName($hotel->name) === $normalized) {
+                return $hotel->id;
+            }
+        }
+
+        // 2. Levenshtein distance <= 2 (catches typos like "mariott" -> "marriott")
+        foreach ($hotels as $hotel) {
+            if (levenshtein($normalized, $this->normalizeHotelName($hotel->name)) <= 2) {
+                return $hotel->id;
+            }
+        }
+
+        // 3. Contains check (catches truncated/wordy names)
+        foreach ($hotels as $hotel) {
+            $hotelNorm = $this->normalizeHotelName($hotel->name);
+            if (str_contains($hotelNorm, $normalized) || str_contains($normalized, $hotelNorm)) {
+                return $hotel->id;
+            }
+        }
+
+        $this->warn("       No hotel match found for: {$name}");
+
+        return null;
+    }
+
+    protected function normalizeHotelName(string $name): string
+    {
+        $name = strtolower(trim($name));
+        $name = str_replace([' - ', ' & ', ' and ', ' by ', ' the ', ' at '], ' ', $name);
+        $name = str_replace(['-', ',', '.', '’', "'"], '', $name);
+        $name = preg_replace('/\b(the|hotel|resort|spa|inn|suites)\b/', '', $name);
+        $name = preg_replace('/\s+/', ' ', $name);
+
+        return trim($name);
     }
 
     protected function parseChildren(?string $text, ?string $countStr): ?array

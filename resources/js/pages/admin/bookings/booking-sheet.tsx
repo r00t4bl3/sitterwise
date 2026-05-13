@@ -141,6 +141,20 @@ export function BookingSheet({
                         </div>
                     ) : (
                         <div className="space-y-4 px-4">
+                            {Object.keys(form.errors).length > 0 && (
+                                <div className="rounded-[3px] border border-destructive bg-destructive/10 p-3">
+                                    <p className="mb-1 text-sm font-medium text-destructive">
+                                        Please fix the following errors:
+                                    </p>
+                                    <ul className="list-inside list-disc space-y-0.5 text-sm text-destructive">
+                                        {Object.values(form.errors).map(
+                                            (error, index) => (
+                                                <li key={index}>{error}</li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
                             <PersonalInfoSection
                                 form={form}
                                 editingBooking={editingBooking}

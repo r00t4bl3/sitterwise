@@ -575,6 +575,13 @@ export function useBookingSheet({
                     name: string;
                     [key: string]: unknown;
                 }>);
+            } else if (fullBooking.hotel) {
+                setSelectedHotelName(fullBooking.hotel.name);
+                setHotelSuggestions([fullBooking.hotel] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
             }
 
             const caregiver = caregivers.find(
@@ -791,6 +798,13 @@ export function useBookingSheet({
                         name: string;
                         [key: string]: unknown;
                     }>);
+                } else if (fullBooking.hotel) {
+                    setSelectedHotelName(fullBooking.hotel.name);
+                    setHotelSuggestions([fullBooking.hotel] as unknown as Array<{
+                        id: number;
+                        name: string;
+                        [key: string]: unknown;
+                    }>);
                 }
             }
 
@@ -818,8 +832,6 @@ export function useBookingSheet({
                 setAddressValue('');
             }
 
-            setClientSuggestions([]);
-            setHotelSuggestions([]);
             setCaregiverSuggestions([]);
 
             setIsSheetOpen(true);
@@ -876,19 +888,11 @@ export function useBookingSheet({
                 onSuccess: () => {
                     setIsSheetOpen(false);
                 },
-                onError: (errors) => {
-                    const errorMessage = Object.values(errors).join(', ');
-                    console.log('Error updating booking:', errorMessage);
-                },
             });
         } else {
             form.post('/bookings', {
                 onSuccess: () => {
                     setIsSheetOpen(false);
-                },
-                onError: (errors) => {
-                    const errorMessage = Object.values(errors).join(', ');
-                    console.log('Error creating booking:', errorMessage);
                 },
             });
         }
