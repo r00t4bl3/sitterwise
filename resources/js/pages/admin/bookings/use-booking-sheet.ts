@@ -570,6 +570,11 @@ export function useBookingSheet({
 
             if (hotel) {
                 setSelectedHotelName(hotel.name);
+                setHotelSuggestions([hotel] as unknown as Array<{
+                    id: number;
+                    name: string;
+                    [key: string]: unknown;
+                }>);
             }
 
             const caregiver = caregivers.find(
