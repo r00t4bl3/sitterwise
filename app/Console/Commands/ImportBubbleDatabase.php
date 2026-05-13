@@ -1008,13 +1008,24 @@ class ImportBubbleDatabase extends Command
 
     protected function syncClientAddresses(ClientModel $client, array $source): void
     {
+        $locationType = match ($client->client_type) {
+            ClientType::Vacationer->value => LocationType::Hotel->value,
+            ClientType::Invoiced->value => LocationType::EventVenue->value,
+            default => LocationType::PrivateHome->value,
+        };
+        $label = match ($client->client_type) {
+            ClientType::Vacationer->value => LocationType::Hotel->label(),
+            ClientType::Invoiced->value => LocationType::EventVenue->label(),
+            default => LocationType::PrivateHome->label(),
+        };
+
         $geo = $source['address_geographic_address'] ?? null;
         if ($geo && ! empty($geo['components'])) {
             $c = $geo['components'];
             $client->addresses()->updateOrCreate(
-                ['label' => LocationType::PrivateHome->label(), 'is_primary' => true],
+                ['label' => $label, 'is_primary' => true],
                 [
-                    'location_type' => LocationType::PrivateHome->value,
+                    'location_type' => $locationType,
                     'line1' => trim(($c['street number'] ?? '').' '.($c['street'] ?? '')),
                     'city' => $c['city'] ?? 'Unknown',
                     'state' => $c['state code'] ?? 'Unknown',
@@ -1023,7 +1034,7 @@ class ImportBubbleDatabase extends Command
             );
         }
 
-        // Only create Home (Alternate) if it differs from primary address
+        // Only create alternate address if it differs from primary
         $homeGeo = $source['home_address_geographic_address'] ?? null;
         if ($homeGeo && ! empty($homeGeo['components'])) {
             $primary = $client->addresses()->where('is_primary', true)->first();
@@ -1031,9 +1042,9 @@ class ImportBubbleDatabase extends Command
             if (! $primary || $primary->line1 !== $homeLine1) {
                 $c = $homeGeo['components'];
                 $client->addresses()->updateOrCreate(
-                    ['label' => LocationType::PrivateHome->label(), 'is_primary' => false],
+                    ['label' => $label, 'is_primary' => false],
                     [
-                        'location_type' => LocationType::PrivateHome->value,
+                        'location_type' => $locationType,
                         'line1' => $homeLine1,
                         'city' => $c['city'] ?? 'Unknown',
                         'state' => $c['state code'] ?? 'Unknown',
@@ -1065,8 +1076,9 @@ class ImportBubbleDatabase extends Command
                 $client->addresses()->firstOrCreate(
                     ['line1' => $line1],
                     [
-                        'label' => 'Address Book',
+                        'label' => $label,
                         'is_primary' => false,
+                        'location_type' => $locationType,
                         'city' => $city ?? 'Unknown',
                         'state' => $state ?? 'Unknown',
                         'zip' => $zip ?? '00000',
