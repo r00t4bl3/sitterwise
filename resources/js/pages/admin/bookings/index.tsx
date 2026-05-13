@@ -13,7 +13,7 @@ import {
     Grid3X3,
     List,
 } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
@@ -163,6 +163,26 @@ export default function Bookings() {
             'bookings_view_mode',
             isTableView ? 'table' : 'calendar',
         );
+    }, [isTableView]);
+
+    const tableBodyRef = useRef<HTMLTableSectionElement>(null);
+
+    useEffect(() => {
+        if (!isTableView || !tableBodyRef.current) return;
+
+        const todayStr = new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
+
+        const todayRow = tableBodyRef.current.querySelector(
+            `[data-date="${todayStr}"]`,
+        ) as HTMLElement | null;
+
+        if (todayRow) {
+            todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }, [isTableView]);
 
     const days = getDaysInMonth(currentYear, currentMonth);
@@ -685,23 +705,26 @@ export default function Bookings() {
                                                 const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
+                                                const rowDate =
+                                                    parseAsLocal(
+                                                        booking.start_datetime,
+                                                    )?.toLocaleDateString(
+                                                        'en-US',
+                                                        {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                        },
+                                                    );
 
                                                 return (
                                                     <tr
                                                         key={booking.id}
+                                                        data-date={rowDate}
                                                         className="border-b border-border transition hover:bg-blush"
                                                     >
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                                            {parseAsLocal(
-                                                                booking.start_datetime,
-                                                            )?.toLocaleDateString(
-                                                                'en-US',
-                                                                {
-                                                                    month: 'short',
-                                                                    day: 'numeric',
-                                                                    year: 'numeric',
-                                                                },
-                                                            )}
+                                                            {rowDate}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
                                                             <Link
