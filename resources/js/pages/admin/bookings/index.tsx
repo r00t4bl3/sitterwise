@@ -168,21 +168,23 @@ export default function Bookings() {
     const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
     useEffect(() => {
-        if (!isTableView || !tableBodyRef.current) return;
+        if (!isTableView) return;
 
-        const todayStr = new Date().toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
+        requestAnimationFrame(() => {
+            if (!tableBodyRef.current) return;
+
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+            const todayRow = tableBodyRef.current.querySelector(
+                `tr[data-date="${todayStr}"]`,
+            ) as HTMLElement | null;
+
+            const targetRow = todayRow ?? (tableBodyRef.current.querySelector(
+                'tr[data-date]',
+            ) as HTMLElement | null);
+
+            targetRow?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
-
-        const todayRow = tableBodyRef.current.querySelector(
-            `[data-date="${todayStr}"]`,
-        ) as HTMLElement | null;
-
-        if (todayRow) {
-            todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
     }, [isTableView]);
 
     const days = getDaysInMonth(currentYear, currentMonth);
@@ -659,7 +661,7 @@ export default function Bookings() {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-background">
+                                <tbody className="bg-background" ref={tableBodyRef}>
                                     {currentMonthBookings.length === 0 ? (
                                         <tr>
                                             <td
@@ -705,22 +707,21 @@ export default function Bookings() {
                                                 const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
-                                                const rowDate =
+                                                const parsedDate =
                                                     parseAsLocal(
                                                         booking.start_datetime,
-                                                    )?.toLocaleDateString(
-                                                        'en-US',
-                                                        {
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            year: 'numeric',
-                                                        },
                                                     );
+                                                const rowIso = parsedDate
+                                                    ? format(parsedDate, 'yyyy-MM-dd')
+                                                    : '';
+                                                const rowDate = parsedDate
+                                                    ? format(parsedDate, 'MMM d, yyyy')
+                                                    : '';
 
                                                 return (
                                                     <tr
                                                         key={booking.id}
-                                                        data-date={rowDate}
+                                                        data-date={rowIso}
                                                         className="border-b border-border transition hover:bg-blush"
                                                     >
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
