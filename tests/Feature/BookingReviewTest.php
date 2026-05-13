@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Enums\BookingStatus;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -13,291 +11,258 @@ use App\Models\Client;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
-use Tests\TestCase;
 
-class BookingReviewTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    protected $clientUser;
+beforeEach(function () {
+    $this->withoutMiddleware(PreventRequestForgery::class);
 
-    protected $client;
+    CaregiverStatus::factory()->create(['is_active' => true]);
+    SpecialtyType::factory()->count(5)->create(['is_active' => true]);
+    Location::factory()->count(5)->create(['is_active' => true]);
+    AttributeDefinition::factory()->count(5)->create(['is_active' => true, 'entity_type' => 'caregiver']);
+    CertificationType::factory()->count(5)->create(['is_active' => true]);
 
-    protected $caregiverUser;
+    $this->clientUser = User::factory()->create(['role' => 'client']);
+    $this->client = Client::factory()->create(['user_id' => $this->clientUser->id]);
 
-    protected $caregiver;
+    $this->caregiverUser = User::factory()->create(['role' => 'caregiver']);
+    $this->caregiver = Caregiver::factory()->create([
+        'user_id' => $this->caregiverUser->id,
+        'rating' => 0,
+    ]);
 
-    protected $completedBooking;
+    $this->completedBooking = Booking::factory()->create([
+        'client_id' => $this->client->id,
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Completed->value,
+    ]);
+});
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+test('review form accessible for logged in client', function () {
+    $response = $this->actingAs($this->clientUser)
+        ->get(route('reviews.create', $this->completedBooking));
 
-        $this->withoutMiddleware(PreventRequestForgery::class);
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->has('booking')
+        ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
+    );
+});
 
-        CaregiverStatus::factory()->create(['is_active' => true]);
-        SpecialtyType::factory()->count(5)->create(['is_active' => true]);
-        Location::factory()->count(5)->create(['is_active' => true]);
-        AttributeDefinition::factory()->count(5)->create(['is_active' => true, 'entity_type' => 'caregiver']);
-        CertificationType::factory()->count(5)->create(['is_active' => true]);
+test('review form only works for completed bookings', function () {
+    $pendingBooking = Booking::factory()->create([
+        'client_id' => $this->client->id,
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Pending->value,
+    ]);
 
-        $this->clientUser = User::factory()->create(['role' => 'client']);
-        $this->client = Client::factory()->create(['user_id' => $this->clientUser->id]);
+    $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $pendingBooking));
 
-        $this->caregiverUser = User::factory()->create(['role' => 'caregiver']);
-        $this->caregiver = Caregiver::factory()->create([
-            'user_id' => $this->caregiverUser->id,
-            'rating' => 0,
-        ]);
+    $response->assertStatus(403);
+});
 
-        $this->completedBooking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'status' => BookingStatus::Completed->value,
-        ]);
-    }
+test('review form only works for own bookings', function () {
+    $otherClientUser = User::factory()->create(['role' => 'client']);
+    $otherClient = Client::factory()->create(['user_id' => $otherClientUser->id]);
 
-    public function test_review_form_accessible_for_logged_in_client()
-    {
-        $response = $this->actingAs($this->clientUser)
-            ->get(route('reviews.create', $this->completedBooking));
+    $otherBooking = Booking::factory()->create([
+        'client_id' => $otherClient->id,
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Completed->value,
+    ]);
 
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->has('booking')
-            ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
-        );
-    }
+    $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $otherBooking));
 
-    public function test_review_form_only_works_for_completed_bookings()
-    {
-        $pendingBooking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'status' => BookingStatus::Pending->value,
-        ]);
+    $response->assertStatus(403);
+});
 
-        $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $pendingBooking));
+test('client can submit review with rating and comment', function () {
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 5,
+        'comment' => 'Great caregiver! Very professional.',
+        'tip' => '',
+    ]);
 
-        $response->assertStatus(403);
-    }
+    $response->assertSessionHas('success');
+    $response->assertStatus(302);
 
-    public function test_review_form_only_works_for_own_bookings()
-    {
-        $otherClientUser = User::factory()->create(['role' => 'client']);
-        $otherClient = Client::factory()->create(['user_id' => $otherClientUser->id]);
+    $this->assertDatabaseHas('booking_ratings', [
+        'booking_id' => $this->completedBooking->id,
+        'rater_id' => $this->clientUser->id,
+        'ratable_id' => $this->caregiver->id,
+        'ratable_type' => Caregiver::class,
+        'rating' => 5,
+        'comment' => 'Great caregiver! Very professional.',
+    ]);
+});
 
-        $otherBooking = Booking::factory()->create([
-            'client_id' => $otherClient->id,
-            'caregiver_id' => $this->caregiver->id,
-            'status' => BookingStatus::Completed->value,
-        ]);
+test('review can be updated', function () {
+    BookingRating::create([
+        'booking_id' => $this->completedBooking->id,
+        'rater_id' => $this->clientUser->id,
+        'ratable_id' => $this->caregiver->id,
+        'ratable_type' => Caregiver::class,
+        'rating' => 4,
+        'comment' => 'Good service',
+    ]);
 
-        $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $otherBooking));
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 5,
+        'comment' => 'Updated: Actually excellent service!',
+        'tip' => '',
+    ]);
 
-        $response->assertStatus(403);
-    }
+    $response->assertSessionHas('success');
+    $response->assertStatus(302);
 
-    public function test_client_can_submit_review_with_rating_and_comment()
-    {
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => 5,
-            'comment' => 'Great caregiver! Very professional.',
-            'tip' => '',
-        ]);
+    $this->assertEquals(1, BookingRating::count());
+    $this->assertEquals(5, BookingRating::first()->rating);
+    $this->assertEquals('Updated: Actually excellent service!', BookingRating::first()->comment);
+});
 
-        $response->assertSessionHas('success');
-        $response->assertStatus(302);
+test('rating is required', function () {
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => '',
+        'comment' => 'Some comment',
+    ]);
 
-        $this->assertDatabaseHas('booking_ratings', [
-            'booking_id' => $this->completedBooking->id,
-            'rater_id' => $this->clientUser->id,
-            'ratable_id' => $this->caregiver->id,
-            'ratable_type' => Caregiver::class,
-            'rating' => 5,
-            'comment' => 'Great caregiver! Very professional.',
-        ]);
-    }
+    $response->assertSessionHasErrors('rating');
+});
 
-    public function test_review_can_be_updated()
-    {
-        BookingRating::create([
-            'booking_id' => $this->completedBooking->id,
-            'rater_id' => $this->clientUser->id,
-            'ratable_id' => $this->caregiver->id,
-            'ratable_type' => Caregiver::class,
-            'rating' => 4,
-            'comment' => 'Good service',
-        ]);
+test('rating must be between 1 and 5', function () {
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 6,
+        'comment' => 'Invalid rating',
+    ]);
 
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => 5,
-            'comment' => 'Updated: Actually excellent service!',
-            'tip' => '',
-        ]);
+    $response->assertSessionHasErrors('rating');
+});
 
-        $response->assertSessionHas('success');
-        $response->assertStatus(302);
+test('comment is optional', function () {
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 5,
+        'comment' => '',
+    ]);
 
-        $this->assertEquals(1, BookingRating::count());
-        $this->assertEquals(5, BookingRating::first()->rating);
-        $this->assertEquals('Updated: Actually excellent service!', BookingRating::first()->comment);
-    }
+    $response->assertSessionHas('success');
+    $response->assertStatus(302);
+    $this->assertDatabaseHas('booking_ratings', [
+        'booking_id' => $this->completedBooking->id,
+        'rating' => 5,
+    ]);
+});
 
-    public function test_rating_is_required()
-    {
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => '',
-            'comment' => 'Some comment',
-        ]);
+test('tip field is optional', function () {
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 5,
+        'comment' => 'Nice',
+        'tip' => '',
+    ]);
 
-        $response->assertSessionHasErrors('rating');
-    }
+    $response->assertSessionHas('success');
+    $response->assertStatus(302);
+});
 
-    public function test_rating_must_be_between_1_and_5()
-    {
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => 6,
-            'comment' => 'Invalid rating',
-        ]);
+test('existing review data is prepopulated', function () {
+    BookingRating::create([
+        'booking_id' => $this->completedBooking->id,
+        'rater_id' => $this->clientUser->id,
+        'ratable_id' => $this->caregiver->id,
+        'ratable_type' => Caregiver::class,
+        'rating' => 4,
+        'comment' => 'Original comment',
+    ]);
 
-        $response->assertSessionHasErrors('rating');
-    }
+    $this->completedBooking->update(['tip' => 10.00]);
 
-    public function test_comment_is_optional()
-    {
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => 5,
-            'comment' => '',
-        ]);
+    $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $this->completedBooking));
 
-        $response->assertSessionHas('success');
-        $response->assertStatus(302);
-        $this->assertDatabaseHas('booking_ratings', [
-            'booking_id' => $this->completedBooking->id,
-            'rating' => 5,
-        ]);
-    }
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->where('booking.existing_rating', '4.00')
+        ->where('booking.existing_comment', 'Original comment')
+        ->where('booking.existing_tip', '10.00')
+    );
+});
 
-    public function test_tip_field_is_optional()
-    {
-        $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
-            'rating' => 5,
-            'comment' => 'Nice',
-            'tip' => '',
-        ]);
+// ========== GUEST/NON-LOGGED-IN CLIENT TESTS ==========
 
-        $response->assertSessionHas('success');
-        $response->assertStatus(302);
-    }
+test('guest can access review via signed url', function () {
+    $signedUrl = URL::signedRoute('review.create', [
+        'booking' => $this->completedBooking->ulid,
+    ]);
 
-    public function test_existing_review_data_is_prepopulated()
-    {
-        BookingRating::create([
-            'booking_id' => $this->completedBooking->id,
-            'rater_id' => $this->clientUser->id,
-            'ratable_id' => $this->caregiver->id,
-            'ratable_type' => Caregiver::class,
-            'rating' => 4,
-            'comment' => 'Original comment',
-        ]);
+    $response = $this->get($signedUrl);
 
-        $this->completedBooking->update(['tip' => 10.00]);
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->has('booking')
+        ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
+    );
+});
 
-        $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $this->completedBooking));
+test('guest can submit review via signed url', function () {
+    $signedUrl = URL::signedRoute('review.store', [
+        'booking' => $this->completedBooking->ulid,
+    ]);
 
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->where('booking.existing_rating', '4.00')
-            ->where('booking.existing_comment', 'Original comment')
-            ->where('booking.existing_tip', '10.00')
-        );
-    }
+    $response = $this->post($signedUrl, [
+        'rating' => 5,
+        'comment' => 'Guest review test',
+        'tip' => '',
+    ]);
 
-    // ========== GUEST/NON-LOGGED-IN CLIENT TESTS ==========
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->has('caregiver_name')
+    );
 
-    public function test_guest_can_access_review_via_signed_url()
-    {
-        $signedUrl = URL::signedRoute('review.create', [
-            'booking' => $this->completedBooking->ulid,
-        ]);
+    $this->assertDatabaseHas('booking_ratings', [
+        'booking_id' => $this->completedBooking->id,
+        'rater_id' => $this->client->user_id,
+        'rating' => 5,
+        'comment' => 'Guest review test',
+    ]);
+});
 
-        $response = $this->get($signedUrl);
+test('guest review uses booking client user id as rater', function () {
+    $signedUrl = URL::signedRoute('review.store', [
+        'booking' => $this->completedBooking->ulid,
+    ]);
 
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->has('booking')
-            ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
-        );
-    }
+    $this->post($signedUrl, [
+        'rating' => 4,
+        'comment' => 'Test rating from guest',
+        'tip' => '',
+    ]);
 
-    public function test_guest_can_submit_review_via_signed_url()
-    {
-        $signedUrl = URL::signedRoute('review.store', [
-            'booking' => $this->completedBooking->ulid,
-        ]);
+    $rating = BookingRating::where('booking_id', $this->completedBooking->id)->first();
+    $this->assertEquals($this->client->user_id, $rating->rater_id);
+});
 
-        $response = $this->post($signedUrl, [
-            'rating' => 5,
-            'comment' => 'Guest review test',
-            'tip' => '',
-        ]);
+test('invalid signed url rejected', function () {
+    $invalidUrl = route('review.create', $this->completedBooking->ulid).'?signature=invalid';
 
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->has('caregiver_name')
-        );
+    $response = $this->get($invalidUrl);
 
-        $this->assertDatabaseHas('booking_ratings', [
-            'booking_id' => $this->completedBooking->id,
-            'rater_id' => $this->client->user_id,
-            'rating' => 5,
-            'comment' => 'Guest review test',
-        ]);
-    }
+    $response->assertStatus(403);
+});
 
-    public function test_guest_review_uses_booking_client_user_id_as_rater()
-    {
-        $signedUrl = URL::signedRoute('review.store', [
-            'booking' => $this->completedBooking->ulid,
-        ]);
+test('guest cannot review non completed booking', function () {
+    $pendingBooking = Booking::factory()->create([
+        'client_id' => $this->client->id,
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Pending->value,
+    ]);
 
-        $this->post($signedUrl, [
-            'rating' => 4,
-            'comment' => 'Test rating from guest',
-            'tip' => '',
-        ]);
+    $signedUrl = URL::signedRoute('review.create', [
+        'booking' => $pendingBooking->ulid,
+    ]);
 
-        $rating = BookingRating::where('booking_id', $this->completedBooking->id)->first();
-        $this->assertEquals($this->client->user_id, $rating->rater_id);
-    }
+    $response = $this->get($signedUrl);
 
-    public function test_invalid_signed_url_rejected()
-    {
-        $invalidUrl = route('review.create', $this->completedBooking->ulid).'?signature=invalid';
-
-        $response = $this->get($invalidUrl);
-
-        $response->assertStatus(403);
-    }
-
-    public function test_guest_cannot_review_non_completed_booking()
-    {
-        $pendingBooking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'status' => BookingStatus::Pending->value,
-        ]);
-
-        $signedUrl = URL::signedRoute('review.create', [
-            'booking' => $pendingBooking->ulid,
-        ]);
-
-        $response = $this->get($signedUrl);
-
-        $response->assertStatus(403);
-    }
-}
+    $response->assertStatus(403);
+});

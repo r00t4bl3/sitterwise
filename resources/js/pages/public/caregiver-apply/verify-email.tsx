@@ -25,11 +25,13 @@ export default function VerifyEmail() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md space-y-8">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        {step === 'email' ? 'Verify Your Email' : 'Enter Verification Code'}
+                        {step === 'email'
+                            ? 'Verify Your Email'
+                            : 'Enter Verification Code'}
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
                         {step === 'email'
@@ -41,39 +43,53 @@ export default function VerifyEmail() {
                 {step === 'email' ? (
                     <form onSubmit={sendOtp} className="mt-8 space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="email"
+                                className="block text-sm font-medium text-gray-700"
+                            >
                                 Email address
                             </label>
                             <input
                                 id="email"
                                 type="email"
                                 required
-                                className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-coral focus:border-coral sm:text-sm"
+                                className="relative mt-1 block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-coral focus:ring-coral focus:outline-none sm:text-sm"
                                 placeholder="you@example.com"
                                 value={emailForm.data.email}
-                                onChange={(e) => emailForm.setData('email', e.target.value)}
+                                onChange={(e) =>
+                                    emailForm.setData('email', e.target.value)
+                                }
                             />
                             {emailForm.errors.email && (
-                                <p className="mt-2 text-sm text-red-600">{emailForm.errors.email}</p>
+                                <p className="mt-2 text-sm text-red-600">
+                                    {emailForm.errors.email}
+                                </p>
                             )}
                         </div>
 
                         <button
                             type="submit"
                             disabled={emailForm.processing}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-coral hover:bg-coral-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
+                            className="group hover:bg-coral-dark relative flex w-full justify-center rounded-md border border-transparent bg-coral px-4 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:outline-none"
                         >
-                            {emailForm.processing ? 'Sending...' : 'Send Verification Code'}
+                            {emailForm.processing
+                                ? 'Sending...'
+                                : 'Send Verification Code'}
                         </button>
 
                         {emailForm.recentlySuccessful && (
-                            <p className="text-sm text-green-600 text-center">Verification code sent!</p>
+                            <p className="text-center text-sm text-green-600">
+                                Verification code sent!
+                            </p>
                         )}
                     </form>
                 ) : (
                     <form onSubmit={verifyOtp} className="mt-8 space-y-6">
                         <div>
-                            <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="otp"
+                                className="block text-sm font-medium text-gray-700"
+                            >
                                 Verification Code
                             </label>
                             <input
@@ -81,28 +97,34 @@ export default function VerifyEmail() {
                                 type="text"
                                 required
                                 maxLength={6}
-                                className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-coral focus:border-coral sm:text-sm text-center text-2xl tracking-widest"
+                                className="relative mt-1 block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-center text-2xl tracking-widest text-gray-900 placeholder-gray-500 focus:border-coral focus:ring-coral focus:outline-none sm:text-sm"
                                 placeholder="000000"
                                 value={otpForm.data.otp}
-                                onChange={(e) => otpForm.setData('otp', e.target.value)}
+                                onChange={(e) =>
+                                    otpForm.setData('otp', e.target.value)
+                                }
                             />
                             {otpForm.errors.otp && (
-                                <p className="mt-2 text-sm text-red-600">{otpForm.errors.otp}</p>
+                                <p className="mt-2 text-sm text-red-600">
+                                    {otpForm.errors.otp}
+                                </p>
                             )}
                         </div>
 
                         <button
                             type="submit"
                             disabled={otpForm.processing}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-coral hover:bg-coral-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
+                            className="group hover:bg-coral-dark relative flex w-full justify-center rounded-md border border-transparent bg-coral px-4 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:outline-none"
                         >
-                            {otpForm.processing ? 'Verifying...' : 'Verify & Continue'}
+                            {otpForm.processing
+                                ? 'Verifying...'
+                                : 'Verify & Continue'}
                         </button>
 
                         <button
                             type="button"
                             onClick={() => setStep('email')}
-                            className="w-full text-sm text-coral hover:text-coral-dark"
+                            className="hover:text-coral-dark w-full text-sm text-coral"
                         >
                             ← Back to email
                         </button>

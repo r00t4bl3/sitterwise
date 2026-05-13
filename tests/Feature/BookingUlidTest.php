@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Booking;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;

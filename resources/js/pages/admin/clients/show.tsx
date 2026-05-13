@@ -416,6 +416,12 @@ export default function ClientShow() {
                         </div>
                     </div>
                     <div className="hidden gap-2 xl:flex">
+                        <Link
+                            href={`/clients/${client.id}/bookings`}
+                            className="btn-secondary"
+                        >
+                            View Bookings
+                        </Link>
                         <Button
                             variant="secondary"
                             onClick={() => setIsPaymentSheetOpen(true)}
@@ -447,6 +453,13 @@ export default function ClientShow() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/clients/${client.id}/bookings`}
+                                    >
+                                        View Bookings
+                                    </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={() => setIsPaymentSheetOpen(true)}
                                 >

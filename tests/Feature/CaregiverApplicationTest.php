@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Session;
 
 uses(RefreshDatabase::class);
 
-function ensureApplicantStatus(): void
+function caregiverApplicationEnsureApplicantStatus(): void
 {
     if (! DB::table('caregiver_statuses')->where('name', 'applicant')->exists()) {
         CaregiverStatus::create([
@@ -23,7 +23,7 @@ function ensureApplicantStatus(): void
     }
 }
 
-function getValidApplicationData(string $applicantEmail = 'test@example.com'): array
+function caregiverApplicationGetValidApplicationData(string $applicantEmail = 'test@example.com'): array
 {
     return [
         'sponsor' => [
@@ -246,11 +246,11 @@ describe('Caregiver Application - Wizard Access', function () {
 
 describe('Caregiver Application - Submission', function () {
     it('submit creates user with caregiver role', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'new-cgiver@example.com');
         Session::put('verified_at', now());
 
-        $this->post('/caregiver/apply/submit', getValidApplicationData('new-cgiver@example.com'));
+        $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('new-cgiver@example.com'));
 
         $this->assertDatabaseHas('users', [
             'email' => 'new-cgiver@example.com',
@@ -259,11 +259,11 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates caregiver with applicant status', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'caregiver-submit@example.com');
         Session::put('verified_at', now());
 
-        $this->post('/caregiver/apply/submit', getValidApplicationData('caregiver-submit@example.com'));
+        $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('caregiver-submit@example.com'));
 
         $user = User::where('email', 'caregiver-submit@example.com')->first();
 
@@ -275,11 +275,11 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates application with full data snapshot', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'snapshot@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('snapshot@example.com');
+        $data = caregiverApplicationGetValidApplicationData('snapshot@example.com');
 
         $this->post('/caregiver/apply/submit', $data);
 
@@ -292,11 +292,11 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates verification and agreement PDFs', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'pdfs@example.com');
         Session::put('verified_at', now());
 
-        $this->post('/caregiver/apply/submit', getValidApplicationData('pdfs@example.com'));
+        $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('pdfs@example.com'));
 
         $user = User::where('email', 'pdfs@example.com')->first();
         $caregiver = Caregiver::where('user_id', $user->id)->first();
@@ -313,21 +313,21 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit clears session after success', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'clear-session@example.com');
         Session::put('verified_at', now());
 
-        $this->post('/caregiver/apply/submit', getValidApplicationData('clear-session@example.com'));
+        $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('clear-session@example.com'));
 
         expect(Cache::get('otp_clear-session@example.com'))->toBeNull();
     });
 
     it('submit redirects to thank you page', function () {
-        ensureApplicantStatus();
+        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'thankyou@example.com');
         Session::put('verified_at', now());
 
-        $response = $this->post('/caregiver/apply/submit', getValidApplicationData('thankyou@example.com'));
+        $response = $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('thankyou@example.com'));
 
         $response->assertRedirect('/caregiver/apply/thank-you');
     });
@@ -351,7 +351,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'validation-sponsor@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('validation-sponsor@example.com');
+        $data = caregiverApplicationGetValidApplicationData('validation-sponsor@example.com');
         unset($data['sponsor']['first_name']);
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -363,7 +363,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'validation-personal@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('validation-personal@example.com');
+        $data = caregiverApplicationGetValidApplicationData('validation-personal@example.com');
         unset($data['personal']['first_name']);
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -375,7 +375,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'underage@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('underage@example.com');
+        $data = caregiverApplicationGetValidApplicationData('underage@example.com');
         $data['personal']['dob'] = '2010-01-01';
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -387,7 +387,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-experience@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-experience@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-experience@example.com');
         $data['experiences'] = [];
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -399,7 +399,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'few-references@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('few-references@example.com');
+        $data = caregiverApplicationGetValidApplicationData('few-references@example.com');
         $data['references'] = [
             ['name' => 'Ref1', 'email' => 'ref1@example.com', 'relationship' => 'Friend', 'years_known' => '1-3'],
         ];
@@ -413,7 +413,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'duplicate-refs@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('duplicate-refs@example.com');
+        $data = caregiverApplicationGetValidApplicationData('duplicate-refs@example.com');
         $data['references'][1]['email'] = $data['references'][0]['email'];
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -425,7 +425,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'ref-matches-applicant@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('ref-matches-applicant@example.com');
+        $data = caregiverApplicationGetValidApplicationData('ref-matches-applicant@example.com');
         $data['references'][0]['email'] = 'ref-matches-applicant@example.com';
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -437,7 +437,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'sponsor-matches@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('sponsor-matches@example.com');
+        $data = caregiverApplicationGetValidApplicationData('sponsor-matches@example.com');
         $data['sponsor']['email'] = 'sponsor-matches@example.com';
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -449,7 +449,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-education@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-education@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-education@example.com');
         unset($data['education']['level']);
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -461,7 +461,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-terms@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-terms@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-terms@example.com');
         $data['terms']['agree'] = false;
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -473,7 +473,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-verification-sig@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-verification-sig@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-verification-sig@example.com');
         $data['verification']['signature'] = '';
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -485,7 +485,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-agreement-sig@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-agreement-sig@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-agreement-sig@example.com');
         $data['agreement']['signature'] = '';
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -497,7 +497,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-verification-agree@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-verification-agree@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-verification-agree@example.com');
         $data['verification']['agree'] = false;
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -509,7 +509,7 @@ describe('Caregiver Application - Validation Rules', function () {
         Session::put('verified_email', 'no-agreement-agree@example.com');
         Session::put('verified_at', now());
 
-        $data = getValidApplicationData('no-agreement-agree@example.com');
+        $data = caregiverApplicationGetValidApplicationData('no-agreement-agree@example.com');
         $data['agreement']['agree'] = false;
 
         $response = $this->post('/caregiver/apply/submit', $data);

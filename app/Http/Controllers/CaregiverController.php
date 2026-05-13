@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingStatus;
+use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
 use App\Http\Requests\StoreCaregiverRequest;
 use App\Http\Requests\UpdateCaregiverProfilePhotoRequest;
 use App\Http\Requests\UpdateCaregiverRequest;
 use App\Http\Resources\CaregiverResource;
 use App\Models\AttributeDefinition;
+use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
@@ -113,6 +116,58 @@ class CaregiverController extends Controller
         return Inertia::render('admin/caregivers/show', [
             'caregiver' => (new CaregiverResource($caregiver))->resolve(),
             'statuses' => $statuses,
+        ]);
+    }
+
+    public function jobHistory(Request $request, Caregiver $caregiver)
+    {
+        $query = Booking::with(['client.user', 'hotel'])
+            ->where('caregiver_id', $caregiver->id);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('client.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhere('location_type', 'like', "%{$search}%");
+            });
+        }
+
+        $bookings = $query->orderBy('start_datetime', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
+        $serviceTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ServiceType::cases()
+        );
+
+        return Inertia::render('admin/caregivers/job-history', [
+            'caregiver' => [
+                'id' => $caregiver->id,
+                'first_name' => $caregiver->first_name,
+                'last_name' => $caregiver->last_name,
+            ],
+            'bookings' => $bookings,
+            'bookingStatuses' => $bookingStatuses,
+            'serviceTypes' => $serviceTypes,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
         ]);
     }
 

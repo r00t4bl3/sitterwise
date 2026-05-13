@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PetType;
 use App\Models\Client;
 use App\Models\ClientPet;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +22,7 @@ class ClientPetFactory extends Factory
         return [
             'client_id' => Client::factory(),
             'name' => fake()->firstName(),
-            'type' => fake()->randomElement(['dog', 'cat', 'other']),
+            'type' => fake()->randomElement(PetType::cases())->value,
             'breed' => fake()->word(),
             'notes' => fake()->optional()->sentence(),
         ];

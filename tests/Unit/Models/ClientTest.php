@@ -13,178 +13,158 @@ use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class ClientTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_can_be_instantiated()
-    {
-        $client = Client::factory()->make();
+test('can be instantiated', function () {
+    $client = Client::factory()->make();
 
-        $this->assertInstanceOf(Client::class, $client);
-    }
+    $this->assertInstanceOf(Client::class, $client);
+});
 
-    public function test_has_correct_fillable_fields()
-    {
-        $user = User::factory()->create();
-        $client = Client::factory()->create([
-            'user_id' => $user->id,
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'phone' => '123-456-7890',
-            'client_type' => 'vacationer',
-            'how_did_you_hear' => 'google',
-        ]);
+test('has correct fillable fields', function () {
+    $user = User::factory()->create();
+    $client = Client::factory()->create([
+        'user_id' => $user->id,
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'phone' => '123-456-7890',
+        'client_type' => 'vacationer',
+        'how_did_you_hear' => 'google',
+    ]);
 
-        $this->assertEquals('John', $client->first_name);
-        $this->assertEquals('Doe', $client->last_name);
-        $this->assertEquals('123-456-7890', $client->phone);
-        $this->assertEquals('vacationer', $client->client_type);
-        $this->assertEquals('google', $client->how_did_you_hear);
-    }
+    $this->assertEquals('John', $client->first_name);
+    $this->assertEquals('Doe', $client->last_name);
+    $this->assertEquals('123-456-7890', $client->phone);
+    $this->assertEquals('vacationer', $client->client_type);
+    $this->assertEquals('google', $client->how_did_you_hear);
+});
 
-    public function test_casts_sitter_preferences_as_array()
-    {
-        $client = Client::factory()->create([
-            'sitter_preferences' => ['pref1' => 'value1', 'pref2' => 'value2'],
-        ]);
+test('casts sitter preferences as array', function () {
+    $client = Client::factory()->create([
+        'sitter_preferences' => ['pref1' => 'value1', 'pref2' => 'value2'],
+    ]);
 
-        $this->assertIsArray($client->sitter_preferences);
-        $this->assertArrayHasKey('pref1', $client->sitter_preferences);
-        $this->assertEquals('value1', $client->sitter_preferences['pref1']);
-    }
+    $this->assertIsArray($client->sitter_preferences);
+    $this->assertArrayHasKey('pref1', $client->sitter_preferences);
+    $this->assertEquals('value1', $client->sitter_preferences['pref1']);
+});
 
-    public function test_defines_user_relationship()
-    {
-        $user = User::factory()->create();
-        $client = Client::factory()->create(['user_id' => $user->id]);
+test('defines user relationship', function () {
+    $user = User::factory()->create();
+    $client = Client::factory()->create(['user_id' => $user->id]);
 
-        $this->assertInstanceOf(User::class, $client->user);
-        $this->assertEquals($user->id, $client->user->id);
-    }
+    $this->assertInstanceOf(User::class, $client->user);
+    $this->assertEquals($user->id, $client->user->id);
+});
 
-    public function test_defines_addresses_relationship()
-    {
-        $client = Client::factory()->create();
-        $address = ClientAddress::factory()->create(['client_id' => $client->id]);
+test('defines addresses relationship', function () {
+    $client = Client::factory()->create();
+    $address = ClientAddress::factory()->create(['client_id' => $client->id]);
 
-        $this->assertTrue($client->addresses->contains($address));
-    }
+    $this->assertTrue($client->addresses->contains($address));
+});
 
-    public function test_defines_children_relationship()
-    {
-        $client = Client::factory()->create();
-        $child = ClientChild::factory()->create(['client_id' => $client->id]);
+test('defines children relationship', function () {
+    $client = Client::factory()->create();
+    $child = ClientChild::factory()->create(['client_id' => $client->id]);
 
-        $this->assertTrue($client->children->contains($child));
-    }
+    $this->assertTrue($client->children->contains($child));
+});
 
-    public function test_defines_pets_relationship()
-    {
-        $client = Client::factory()->create();
-        $pet = ClientPet::factory()->create(['client_id' => $client->id]);
+test('defines pets relationship', function () {
+    $client = Client::factory()->create();
+    $pet = ClientPet::factory()->create(['client_id' => $client->id]);
 
-        $this->assertTrue($client->pets->contains($pet));
-    }
+    $this->assertTrue($client->pets->contains($pet));
+});
 
-    public function test_defines_attribute_definitions_relationship()
-    {
-        $client = Client::factory()->make();
-        $relation = $client->attributes();
+test('defines attribute definitions relationship', function () {
+    $client = Client::factory()->make();
+    $relation = $client->attributes();
 
-        $this->assertInstanceOf(BelongsToMany::class, $relation);
-    }
+    $this->assertInstanceOf(BelongsToMany::class, $relation);
+});
 
-    public function test_returns_full_name()
-    {
-        $client = Client::factory()->make([
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-        ]);
+test('returns full name', function () {
+    $client = Client::factory()->make([
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+    ]);
 
-        $this->assertEquals('John Doe', $client->full_name);
-    }
+    $this->assertEquals('John Doe', $client->full_name);
+});
 
-    public function test_special_needs_is_inferred_from_notes()
-    {
-        $clientWithNotes = Client::factory()->create([
-            'special_needs_notes' => 'Client requires special accommodations',
-        ]);
-        $this->assertTrue($clientWithNotes->special_needs);
+test('special needs is inferred from notes', function () {
+    $clientWithNotes = Client::factory()->create([
+        'special_needs_notes' => 'Client requires special accommodations',
+    ]);
+    $this->assertTrue($clientWithNotes->special_needs);
 
-        $clientWithoutNotes = Client::factory()->create([
-            'special_needs_notes' => null,
-        ]);
-        $this->assertFalse($clientWithoutNotes->special_needs);
-    }
+    $clientWithoutNotes = Client::factory()->create([
+        'special_needs_notes' => null,
+    ]);
+    $this->assertFalse($clientWithoutNotes->special_needs);
+});
 
-    public function test_has_special_needs_notes_field()
-    {
-        $client = Client::factory()->create([
-            'special_needs_notes' => 'Client requires special accommodations',
-        ]);
+test('has special needs notes field', function () {
+    $client = Client::factory()->create([
+        'special_needs_notes' => 'Client requires special accommodations',
+    ]);
 
-        $this->assertEquals('Client requires special accommodations', $client->special_needs_notes);
-    }
+    $this->assertEquals('Client requires special accommodations', $client->special_needs_notes);
+});
 
-    public function test_defines_favorite_caregivers_relationship()
-    {
-        $client = Client::factory()->create();
-        $relation = $client->favoriteCaregivers();
+test('defines favorite caregivers relationship', function () {
+    $client = Client::factory()->create();
+    $relation = $client->favoriteCaregivers();
 
-        $this->assertInstanceOf(BelongsToMany::class, $relation);
-    }
+    $this->assertInstanceOf(BelongsToMany::class, $relation);
+});
 
-    public function test_defines_blocked_caregivers_relationship()
-    {
-        $client = Client::factory()->create();
-        $relation = $client->blockedCaregivers();
+test('defines blocked caregivers relationship', function () {
+    $client = Client::factory()->create();
+    $relation = $client->blockedCaregivers();
 
-        $this->assertInstanceOf(BelongsToMany::class, $relation);
-    }
+    $this->assertInstanceOf(BelongsToMany::class, $relation);
+});
 
-    public function test_defines_previous_caregivers_relationship()
-    {
-        $client = Client::factory()->create();
-        $relation = $client->previousCaregivers();
+test('defines previous caregivers relationship', function () {
+    $client = Client::factory()->create();
+    $relation = $client->previousCaregivers();
 
-        $this->assertInstanceOf(BelongsToMany::class, $relation);
-    }
+    $this->assertInstanceOf(BelongsToMany::class, $relation);
+});
 
-    public function test_favorite_caregivers_syncs_correctly()
-    {
-        $this->seed([
-            CaregiverStatusSeeder::class,
-            CertificationTypeSeeder::class,
-            SpecialtyTypeSeeder::class,
-            LocationSeeder::class,
-            AttributeDefinitionSeeder::class,
-        ]);
-        $client = Client::factory()->create();
-        $caregivers = Caregiver::factory()->count(3)->create();
+test('favorite caregivers syncs correctly', function () {
+    $this->seed([
+        CaregiverStatusSeeder::class,
+        CertificationTypeSeeder::class,
+        SpecialtyTypeSeeder::class,
+        LocationSeeder::class,
+        AttributeDefinitionSeeder::class,
+    ]);
+    $client = Client::factory()->create();
+    $caregivers = Caregiver::factory()->count(3)->create();
 
-        $client->favoriteCaregivers()->sync([$caregivers[0]->id, $caregivers[1]->id]);
+    $client->favoriteCaregivers()->sync([$caregivers[0]->id, $caregivers[1]->id]);
 
-        $this->assertCount(2, $client->favoriteCaregivers);
-        $this->assertTrue($client->favoriteCaregivers->contains($caregivers[0]));
-    }
+    $this->assertCount(2, $client->favoriteCaregivers);
+    $this->assertTrue($client->favoriteCaregivers->contains($caregivers[0]));
+});
 
-    public function test_blocked_caregivers_syncs_correctly()
-    {
-        $this->seed([
-            CaregiverStatusSeeder::class,
-            CertificationTypeSeeder::class,
-            SpecialtyTypeSeeder::class,
-            LocationSeeder::class,
-            AttributeDefinitionSeeder::class,
-        ]);
-        $client = Client::factory()->create();
-        $caregiver = Caregiver::factory()->create();
+test('blocked caregivers syncs correctly', function () {
+    $this->seed([
+        CaregiverStatusSeeder::class,
+        CertificationTypeSeeder::class,
+        SpecialtyTypeSeeder::class,
+        LocationSeeder::class,
+        AttributeDefinitionSeeder::class,
+    ]);
+    $client = Client::factory()->create();
+    $caregiver = Caregiver::factory()->create();
 
-        $client->blockedCaregivers()->attach($caregiver->id);
+    $client->blockedCaregivers()->attach($caregiver->id);
 
-        $this->assertCount(1, $client->blockedCaregivers);
-    }
-}
+    $this->assertCount(1, $client->blockedCaregivers);
+});

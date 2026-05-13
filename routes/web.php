@@ -116,8 +116,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('clients/{client}/payment-method', [ClientController::class, 'storePaymentMethod'])->name('clients.paymentMethod.store');
         Route::patch('clients/{client}/payment-method/{paymentMethod}/default', [ClientController::class, 'setDefaultPaymentMethod'])->name('clients.paymentMethod.default');
         Route::delete('clients/{client}/payment-method/{paymentMethod}', [ClientController::class, 'deletePaymentMethod'])->name('clients.paymentMethod.destroy');
+        Route::get('clients/{client}/bookings', [ClientController::class, 'bookingHistory'])->name('clients.bookingHistory');
         Route::resource('clients', ClientController::class)->except(['destroy']);
 
+        Route::get('caregivers/{caregiver}/jobs', [CaregiverController::class, 'jobHistory'])->name('caregivers.jobHistory');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');
         Route::post('caregivers/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
