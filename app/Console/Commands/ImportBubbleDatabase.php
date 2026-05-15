@@ -1161,26 +1161,94 @@ class ImportBubbleDatabase extends Command
 
     protected function syncClientChildren(ClientModel $client, ?string $text): void
     {
+        $client->children()->delete();
+
         if (! $text) {
             return;
         }
 
-        $names = preg_split('/[,;]/', $text);
-        foreach ($names as $name) {
-            $name = trim($name);
-            if (! $name) {
+        // Normalize separators: newlines, /, &, ; → commas
+        $normalized = preg_replace('/[\n\/;&]+/', ',', $text);
+        $parts = explode(',', $normalized);
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if (! $part) {
                 continue;
             }
 
+            $name = null;
+            $age = null;
+
+            // 1. "Name (age)" e.g. "Jaiden (5)"
+            if (preg_match('/^(.+?)\s*\((\d+)\)\s*$/u', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 2. "Name - age" e.g. "Penelope - 6.5", "Adya - 4"
+            elseif (preg_match('/^(.+?)\s*[-–]\s*(\d+)\b/u', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 3. "age" keyword e.g. "Amelia age 3"
+            elseif (preg_match('/^(.+?)\s+age\s+(\d+)\b/i', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 4. "turning X" e.g. "Isabella turning 6"
+            elseif (preg_match('/^(.+?)\s+turning\s+(\d+)\b/i', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 5. "X year old ... Name" e.g. "7 year old boy, Declan"
+            elseif (preg_match('/^(\d+)\s*(?:yr|yrs?|year|yo)\D*,\s*(.+)$/iu', $part, $m)) {
+                $name = trim($m[2]);
+                $age = (int) $m[1];
+            }
+            // 6. "Name Xyr" e.g. "Jack 9yr", "Eric 2yrs"
+            elseif (preg_match('/^(.+?)\s+(\d+)\s*(?:yr|yrs?|year|yo)\s*$/iu', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 7. "Name, age" e.g. "George, 11", "Christopher , 5"
+            elseif (preg_match('/^(.+?),\s*(\d+)\s*$/u', $part, $m)) {
+                $name = trim($m[1]);
+                $age = (int) $m[2];
+            }
+            // 8. "Name age" e.g. "Arthur 3", "Courtney 8"
+            elseif (preg_match('/^(.+?)\s+(\d+)\s*$/u', $part, $m)) {
+                $potentialName = trim($m[1]);
+                if (preg_match('/\p{L}/u', $potentialName)) {
+                    $name = $potentialName;
+                    $age = (int) $m[2];
+                }
+            }
+            // 9. Fallback — just the name text if it looks like a name
+            elseif (preg_match('/^\s*(\p{L}+[\p{L}\s-]*\p{L}+)\s*$/u', $part, $m)) {
+                $name = trim($m[1]);
+            }
+
+            if (! $name || ! preg_match('/\p{L}/u', $name)) {
+                continue;
+            }
+
+            $birthYear = $age ? (int) date('Y') - $age : null;
+
             $client->children()->updateOrCreate(
                 ['name' => $name],
-                []
+                [
+                    'birth_year' => $birthYear,
+                    'birth_month' => null,
+                    'gender' => null,
+                ]
             );
         }
     }
 
     protected function syncClientPets(ClientModel $client, ?string $text): void
     {
+        $client->pets()->delete();
+
         if (! $text) {
             return;
         }
