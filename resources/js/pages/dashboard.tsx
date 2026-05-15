@@ -139,6 +139,7 @@ export default function Dashboard() {
                         recentBookings: client?.recentBookings || [],
                     }}
                     client={client as any}
+                    bookingStatuses={client?.bookingStatuses || []}
                 />
             );
     }

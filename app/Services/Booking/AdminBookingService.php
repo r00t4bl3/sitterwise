@@ -373,14 +373,31 @@ class AdminBookingService implements BookingServiceInterface
             return response()->json($booking);
         }
 
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
+        $booking->load('caregiver.user');
+
         return Inertia::render('admin/bookings/show', [
+            'booking_statuses' => $bookingStatuses,
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
                 'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                'client_id' => $booking->client_id,
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
                 'client_email' => $booking->client_email ?? $booking->client->user?->email,
+                'caregiver_id' => $booking->caregiver_id,
+                'caregiver_name' => $booking->caregiver
+                    ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
+                    : null,
                 'address_line1' => $booking->address_line1,
                 'address_line2' => $booking->address_line2,
                 'address_city' => $booking->address_city,
@@ -398,7 +415,11 @@ class AdminBookingService implements BookingServiceInterface
                 'hotel_id' => $booking->hotel_id,
                 'hotel_name' => $booking->hotel?->name,
                 'location_type' => $booking->location_type,
-
+                'charge_to_client' => $booking->charge_to_client,
+                'paid_to_caregiver' => $booking->paid_to_caregiver,
+                'sitterwise_cut' => $booking->sitterwise_cut,
+                'tip' => $booking->tip,
+                'reimbursement' => $booking->reimbursement,
                 'children' => $booking->children,
                 'pets' => $booking->pets,
             ],

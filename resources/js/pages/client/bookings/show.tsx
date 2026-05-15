@@ -1,6 +1,9 @@
 import { Link, Head } from '@inertiajs/react';
 import {
     Calendar,
+    DollarSign,
+    ExternalLink,
+    Flag,
     MapPin,
     User,
     Phone,
@@ -14,6 +17,7 @@ import {
     Star,
 } from 'lucide-react';
 import React from 'react';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -23,9 +27,12 @@ interface Booking {
     id: number;
     ulid: string;
     service_type: string;
+    client_id: number;
     client_name: string;
     client_phone: string | null;
     client_email: string | null;
+    caregiver_id: number | null;
+    caregiver_name: string | null;
     hotel_id: number | null;
     hotel_name: string | null;
     location_type: string;
@@ -37,6 +44,12 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
+    has_review: boolean;
+    charge_to_client: number | null;
+    paid_to_caregiver: number | null;
+    sitterwise_cut: number | null;
+    tip: number | null;
+    reimbursement: number | null;
     special_considerations: string[] | null;
     caregiver_notes: string | null;
     children: Array<{
@@ -53,8 +66,19 @@ interface Booking {
     }> | null;
 }
 
+interface BookingStatus {
+    value: string;
+    label: string;
+    colors: {
+        bg: string;
+        text: string;
+        border: string;
+    };
+}
+
 interface PageProps {
     booking: Booking;
+    booking_statuses: BookingStatus[];
 }
 
 const breadcrumbs = [
@@ -72,7 +96,7 @@ const breadcrumbs = [
     },
 ];
 
-export default function BookingDetail({ booking }: PageProps) {
+export default function BookingDetail({ booking, booking_statuses }: PageProps) {
     const calculateAge = (
         birthYear: number | null,
         birthMonth: number | null,
@@ -115,6 +139,29 @@ export default function BookingDetail({ booking }: PageProps) {
         return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
     };
 
+    const buildGoogleMapsUrl = () => {
+        const parts = [
+            booking.address_line1,
+            booking.address_city,
+            booking.address_state,
+            booking.address_zip,
+        ].filter(Boolean);
+
+        if (parts.length === 0) {
+            return null;
+        }
+
+        return `https://www.google.com/maps/search/${encodeURIComponent(parts.join(', '))}`;
+    };
+
+    const formatCurrency = (amount: number | null): string | null => {
+        if (amount === null || amount === undefined) {
+            return null;
+        }
+
+        return `$${Number(amount).toFixed(2)}`;
+    };
+
     const getLocationIcon = (locationType: string) => {
         switch (locationType) {
             case 'hotel':
@@ -129,6 +176,16 @@ export default function BookingDetail({ booking }: PageProps) {
                 return MapPin;
         }
     };
+
+    const mapsUrl = buildGoogleMapsUrl();
+
+    const feeItems = [
+        { label: 'Charge to Client', value: booking.charge_to_client },
+        { label: 'Paid to Caregiver', value: booking.paid_to_caregiver },
+        { label: 'Sitterwise Cut', value: booking.sitterwise_cut },
+        { label: 'Tip', value: booking.tip },
+        { label: 'Reimbursement', value: booking.reimbursement },
+    ].filter((f) => f.value !== null && f.value !== undefined);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -163,6 +220,10 @@ export default function BookingDetail({ booking }: PageProps) {
                                     <span className="text-sm text-foreground">
                                         {booking.service_type}
                                     </span>
+                                    <StatusBadge
+                                        status={booking.status}
+                                        bookingStatuses={booking_statuses}
+                                    />
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -181,6 +242,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                         )}
                                     </span>
                                 </div>
+
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
@@ -188,21 +250,36 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </span>
                                 </div>
 
+                                {booking.caregiver_name && (
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {booking.caregiver_name}
+                                        </span>
+                                    </div>
+                                )}
+
                                 {booking.client_phone && (
                                     <div className="flex items-center gap-2">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
+                                        <a
+                                            href={`tel:${booking.client_phone.replace(/\D/g, '')}`}
+                                            className="text-sm text-primary hover:underline"
+                                        >
                                             {booking.client_phone}
-                                        </span>
+                                        </a>
                                     </div>
                                 )}
 
                                 {booking.client_email && (
                                     <div className="flex items-center gap-2">
                                         <Mail className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
+                                        <a
+                                            href={`mailto:${booking.client_email}`}
+                                            className="text-sm text-primary hover:underline"
+                                        >
                                             {booking.client_email}
-                                        </span>
+                                        </a>
                                     </div>
                                 )}
 
@@ -215,8 +292,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </div>
                                 )}
 
-                                {!booking.address_line1 &&
-                                !booking.address_city ? null : (
+                                {mapsUrl && (
                                     <div className="flex items-start gap-2">
                                         {React.createElement(
                                             getLocationIcon(
@@ -227,47 +303,54 @@ export default function BookingDetail({ booking }: PageProps) {
                                                     'mt-0.5 h-4 w-4 text-muted-foreground',
                                             },
                                         )}
-                                        <span className="text-sm text-muted-foreground">
-                                            {booking.address_line1 && (
-                                                <span>
-                                                    {booking.address_line1}
-                                                    {booking.address_line2 && (
-                                                        <span>
-                                                            ,{' '}
-                                                            {
-                                                                booking.address_line2
-                                                            }
-                                                        </span>
-                                                    )}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_city && (
-                                                <span>
-                                                    {booking.address_city},{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_state && (
-                                                <span>
-                                                    {booking.address_state}
-                                                    ,{' '}
-                                                </span>
-                                            )}
-                                            {booking.address_zip && (
-                                                <span>
-                                                    {booking.address_zip}
-                                                </span>
-                                            )}
-                                        </span>
+                                        <a
+                                            href={mapsUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-start gap-1 text-sm text-primary hover:underline"
+                                        >
+                                            <span>
+                                                {booking.address_line1 && (
+                                                    <span>
+                                                        {booking.address_line1}
+                                                        {booking.address_line2 && (
+                                                            <span>
+                                                                ,{' '}
+                                                                {
+                                                                    booking.address_line2
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_city && (
+                                                    <span>
+                                                        {booking.address_city}
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_state && (
+                                                    <span>
+                                                        {booking.address_state}
+                                                        ,{' '}
+                                                    </span>
+                                                )}
+                                                {booking.address_zip && (
+                                                    <span>
+                                                        {booking.address_zip}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />
+                                        </a>
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-                        <div className="right-panel grid gap-6">
                             {booking.children &&
                                 booking.children.length > 0 && (
-                                    <div>
+                                    <div className="mt-6">
                                         <h2 className="text-md mb-2 font-semibold text-foreground">
                                             Children ({booking.children.length})
                                         </h2>
@@ -289,7 +372,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                 )}
 
                             {booking.pets && booking.pets.length > 0 && (
-                                <div>
+                                <div className="mt-6">
                                     <h2 className="text-md mb-2 font-semibold text-foreground">
                                         Pets ({booking.pets.length})
                                     </h2>
@@ -303,7 +386,9 @@ export default function BookingDetail({ booking }: PageProps) {
                                     </ul>
                                 </div>
                             )}
+                        </div>
 
+                        <div className="right-panel grid gap-6">
                             <div>
                                 <h2 className="text-md mb-2 font-semibold text-foreground">
                                     Notes & Considerations
@@ -343,12 +428,37 @@ export default function BookingDetail({ booking }: PageProps) {
                                     )}
                                 </div>
                             </div>
+
+                            {feeItems.length > 0 && (
+                                <div>
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Fees
+                                    </h2>
+                                    <div className="space-y-2">
+                                        {feeItems.map((item) => (
+                                            <div
+                                                key={item.label}
+                                                className="flex items-center justify-between"
+                                            >
+                                                <span className="text-sm text-muted-foreground">
+                                                    {item.label}
+                                                </span>
+                                                <span className="text-sm font-medium text-foreground">
+                                                    {formatCurrency(
+                                                        item.value,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
-                    {booking.status === 'completed' && (
+                    {(booking.status === 'completed' || booking.status === 'paid') && !booking.has_review && (
                         <Button asChild>
                             <Link href={`/reviews/${booking.ulid}`}>
                                 <Star className="mr-2 h-4 w-4" />

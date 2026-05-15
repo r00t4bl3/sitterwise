@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     Activity,
 } from 'lucide-react';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
@@ -26,6 +27,16 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
+}
+
+interface BookingStatus {
+    value: string;
+    label: string;
+    colors: {
+        bg: string;
+        text: string;
+        border: string;
+    };
 }
 
 interface ClientDashboardProps {
@@ -47,6 +58,7 @@ interface ClientDashboardProps {
         upcomingBookings: Booking[];
         recentBookings: Booking[];
     };
+    bookingStatuses: BookingStatus[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -60,6 +72,7 @@ export default function ClientDashboard({
     user,
     stats,
     client,
+    bookingStatuses,
 }: ClientDashboardProps) {
     const upcomingBookings = stats?.upcomingBookings || [];
     const recentBookings = stats?.recentBookings || [];
@@ -207,52 +220,56 @@ export default function ClientDashboard({
                         <h3 className="text-lg leading-none font-semibold tracking-tight">
                             Recent Activity
                         </h3>
-                        <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
-                            <div className="flex h-[200px] flex-col items-center justify-center text-center">
+                        <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
+                            <div className="p-6">
                                 {recentBookings.length > 0 ? (
-                                    recentBookings.map((booking) => (
-                                        <Link
-                                            key={booking.id}
-                                            href={`/bookings/${booking.ulid}`}
-                                            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                                    <Activity className="h-4 w-4 text-muted-foreground" />
+                                    <div className="space-y-2">
+                                        {recentBookings.slice(0, 3).map((booking) => (
+                                            <Link
+                                                key={booking.id}
+                                                href={`/bookings/${booking.ulid}`}
+                                                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="flex flex-col text-left">
+                                                        <p className="text-sm font-medium">
+                                                            {formatDisplayDateTime(
+                                                                booking.start_datetime,
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {booking.caregiver
+                                                                ?.user.name}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium">
-                                                        {formatDisplayDateTime(
-                                                            booking.start_datetime,
-                                                        )}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {
-                                                            booking.caregiver
-                                                                ?.user.name
-                                                        }
-                                                    </p>
+                                                <div className="flex items-center gap-2">
+                                                    <StatusBadge
+                                                        status={booking.status}
+                                                        bookingStatuses={bookingStatuses}
+                                                    />
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                                 </div>
-                                            </div>
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                        </Link>
-                                    ))
-                                ) : (
-                                    <>
-                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                            <Activity className="h-8 w-8 text-muted-foreground" />
+                                            </Link>
+                                        ))}
+                                        <div className="pt-2">
+                                            <Button variant="outline" asChild className="w-full">
+                                                <Link href="/bookings">
+                                                    View All Bookings
+                                                </Link>
+                                            </Button>
                                         </div>
-                                        <h3 className="mb-4 text-lg font-medium">
-                                            No recent activity.
-                                        </h3>
-                                    </>
+                                    </div>
+                                ) : (
+                                    <div className="flex h-[100px] flex-col items-center justify-center text-center">
+                                        <p className="text-sm text-muted-foreground">
+                                            No recent activity
+                                        </p>
+                                    </div>
                                 )}
-
-                                <Button asChild>
-                                    <Link href="/bookings">
-                                        View All Bookings
-                                    </Link>
-                                </Button>
                             </div>
                         </div>
                     </div>

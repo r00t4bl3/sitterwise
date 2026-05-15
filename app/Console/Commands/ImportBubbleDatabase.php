@@ -1212,6 +1212,7 @@ class ImportBubbleDatabase extends Command
         $bookingData = [
             'bubble_id' => $externalId,
             'client_id' => $client?->id,
+            'client_id' => $client?->id,
             'caregiver_id' => $caregiver?->id,
             'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
             'end_datetime' => $this->timestampToDateTime($source['end_date_date'] ?? null),
@@ -1223,17 +1224,17 @@ class ImportBubbleDatabase extends Command
             'address_state' => $components['state code'] ?? null,
             'address_zip' => $components['zip code'] ?? null,
             'total_working_hour' => $source['total_hours_number'] ?? 0,
-            'charge_to_client_hourly' => ($source['client_job_hourly_rate_number'] ?? 0) * 100,
-            'paid_to_caregiver_hourly' => ($source['job_cg_hourly_rate_number'] ?? 0) * 100,
-            'sitterwise_cut_hourly' => ($source['job_agency_hourly_rate_number'] ?? 0) * 100,
-            'charge_to_client' => ($source['client_total_number'] ?? 0) * 100,
-            'paid_to_caregiver' => ($source['caregiver_total_number'] ?? 0) * 100,
-            'sitterwise_cut' => ($source['sw_total_number'] ?? 0) * 100,
-            'tip' => ($source['cg_tip_number'] ?? 0) * 100,
-            'bonus' => ($source['bonus_number'] ?? 0) * 100,
-            'reimbursement' => ($source['check_out_reimbursement_number'] ?? 0) * 100,
+            'charge_to_client_hourly' => $source['client_job_hourly_rate_number'] ?? 0,
+            'paid_to_caregiver_hourly' => $source['job_cg_hourly_rate_number'] ?? 0,
+            'sitterwise_cut_hourly' => $source['job_agency_hourly_rate_number'] ?? 0,
+            'charge_to_client' => $source['client_total_number'] ?? 0,
+            'paid_to_caregiver' => $source['caregiver_total_number'] ?? 0,
+            'sitterwise_cut' => $source['sw_total_number'] ?? 0,
+            'tip' => $source['cg_tip_number'] ?? 0,
+            'bonus' => $source['bonus_number'] ?? 0,
+            'reimbursement' => $source['check_out_reimbursement_number'] ?? 0,
             'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
-            'hotel_fee' => ($source['job_hotel_booking_fee_number'] ?? 0) * 100,
+            'hotel_fee' => $source['job_hotel_booking_fee_number'] ?? 0,
             'hotel_id' => $this->findHotelId($source['hotel_name_text'] ?? null, $source['address_is_hotel__option_list_of_hotels'] ?? null),
             'client_first_name' => $this->formatName($source['client_first_name1_text'] ?? null),
             'client_last_name' => $this->formatName($source['client_last_name1_text'] ?? null),
@@ -1287,7 +1288,14 @@ class ImportBubbleDatabase extends Command
             $bookingData['client_id'] = $group->client_id;
         }
 
-        Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
+        Booking::withoutEvents(function () use ($externalId, $bookingData) {
+            $existing = Booking::where('bubble_id', $externalId)->first();
+            if (! $existing) {
+                $bookingData['ulid'] = (string) Str::ulid();
+            }
+
+            Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
+        });
     }
 
     protected function findHotelId(?string $hotelName, ?string $bubbleSlug): ?int

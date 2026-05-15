@@ -265,14 +265,32 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             abort(403, 'Unauthorized');
         }
 
+        $booking->load('caregiver.user', 'caregiverRating');
+
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
         return Inertia::render('client/bookings/show', [
+            'booking_statuses' => $bookingStatuses,
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
                 'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                'client_id' => $booking->client_id,
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,
                 'client_email' => $booking->client_email ?? $booking->client->user?->email,
+                'caregiver_id' => $booking->caregiver_id,
+                'caregiver_name' => $booking->caregiver
+                    ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
+                    : null,
+                'has_review' => $booking->relationLoaded('caregiverRating') && $booking->getRelation('caregiverRating') !== null,
                 'address_line1' => $booking->address_line1,
                 'address_line2' => $booking->address_line2,
                 'address_city' => $booking->address_city,
@@ -290,7 +308,11 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'hotel_id' => $booking->hotel_id,
                 'hotel_name' => $booking->hotel?->name,
                 'location_type' => $booking->location_type,
-
+                'charge_to_client' => $booking->charge_to_client,
+                'paid_to_caregiver' => $booking->paid_to_caregiver,
+                'sitterwise_cut' => $booking->sitterwise_cut,
+                'tip' => $booking->tip,
+                'reimbursement' => $booking->reimbursement,
                 'children' => $booking->children,
                 'pets' => $booking->pets,
             ],

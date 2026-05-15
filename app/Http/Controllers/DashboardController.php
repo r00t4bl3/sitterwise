@@ -269,6 +269,7 @@ class DashboardController extends Controller
                     'nextBooking' => $nextBooking,
                     'upcomingBookings' => $upcomingBookings,
                     'recentBookings' => $recentBookings,
+                    'bookingStatuses' => $bookingStatuses,
                 ];
             }
         }

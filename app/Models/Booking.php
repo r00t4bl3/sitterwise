@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
@@ -83,6 +84,16 @@ class Booking extends Model
 
     private function calculateTotalAmount(): void
     {
+        if ($this->status === BookingStatus::Cancelled->value) {
+            $this->charge_to_client = 0;
+            $this->paid_to_caregiver = 0;
+            $this->sitterwise_cut = 0;
+            $this->total_service_amount = 0;
+            $this->total_amount = 0;
+
+            return;
+        }
+
         $this->charge_to_client = round($this->charge_to_client_hourly * $this->total_working_hour, 2);
         $this->paid_to_caregiver = round($this->paid_to_caregiver_hourly * $this->total_working_hour, 2);
         $this->sitterwise_cut = round($this->sitterwise_cut_hourly * $this->total_working_hour, 2);
