@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
 use App\Http\Requests\StoreCaregiverRequest;
@@ -164,6 +165,10 @@ class CaregiverController extends Controller
             'bookings' => $bookings,
             'bookingStatuses' => $bookingStatuses,
             'serviceTypes' => $serviceTypes,
+            'locationTypes' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                LocationType::cases()
+            ),
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,

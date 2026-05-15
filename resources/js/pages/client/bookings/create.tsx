@@ -19,6 +19,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
 import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
@@ -97,33 +98,6 @@ function convertPetToEditable(pet: {
         breed: pet.breed || '',
         notes: pet.notes || '',
     };
-}
-
-function calculateAge(
-    birthYear: number | null,
-    birthMonth: number | null,
-): string {
-    if (!birthYear) {
-        return '';
-    }
-
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
-    let years = currentYear - birthYear;
-    let months = currentMonth - (birthMonth || 1);
-
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-
-    if (years === 0) {
-        return `${months}m`;
-    }
-
-    return `${years}y ${months}m`;
 }
 
 export default function ClientBookingCreate() {
@@ -798,26 +772,20 @@ export default function ClientBookingCreate() {
                                                             <SelectValue placeholder="Year" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            {Array.from(
-                                                                {
-                                                                    length:
-                                                                        new Date().getFullYear() -
-                                                                        new Date().getFullYear() +
-                                                                        18,
-                                                                },
-                                                                (_, i) =>
-                                                                    new Date().getFullYear() -
-                                                                    i,
-                                                            ).map((year) => (
-                                                                <SelectItem
-                                                                    key={year}
-                                                                    value={String(
-                                                                        year,
-                                                                    )}
-                                                                >
-                                                                    {year}
-                                                                </SelectItem>
-                                                            ))}
+                                                            {getChildBirthYearOptions().map(
+                                                                (year) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            year
+                                                                        }
+                                                                        value={String(
+                                                                            year,
+                                                                        )}
+                                                                    >
+                                                                        {year}
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>

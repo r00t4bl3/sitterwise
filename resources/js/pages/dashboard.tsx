@@ -49,6 +49,11 @@ interface Props {
         nextBooking: any;
         upcomingBookings: any[];
         recentBookings: any[];
+        bookingStatuses?: Array<{
+            value: string;
+            label: string;
+            colors: { bg: string; text: string; border: string };
+        }>;
     };
     admin?: {
         bookingsNeedingAttention: any[];

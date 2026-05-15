@@ -191,6 +191,7 @@ export interface Props {
     }>;
     sitter_preferences: Array<{ value: string; label: string }>;
     pet_types: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
 }
 
 export interface BookingFormData {

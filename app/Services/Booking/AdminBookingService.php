@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ClientType;
+use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
@@ -156,6 +157,10 @@ class AdminBookingService implements BookingServiceInterface
             'client_types' => array_map(
                 fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 ClientType::cases()
+            ),
+            'discovery_sources' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                DiscoverySource::cases()
             ),
             'filters' => [
                 'month' => (int) $month,

@@ -14,43 +14,12 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { calculateAge } from '@/lib/age';
 import { BookingDetailsSection } from './booking-details-section';
 import { PersonalInfoSection } from './personal-info-section';
 import type { UseBookingSheetReturn } from './use-booking-sheet';
 
 type BookingSheetProps = UseBookingSheetReturn;
-
-function calculateAge(
-    birthYear: number | null,
-    birthMonth: number | null,
-): string {
-    if (!birthYear) {
-        return '-';
-    }
-
-    const today = new Date();
-    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
-
-    if (age < 1) {
-        const months =
-            (today.getFullYear() - birthDate.getFullYear()) * 12 +
-            today.getMonth() -
-            birthDate.getMonth();
-
-        return `${months} ${months === 1 ? 'month' : 'months'}`;
-    }
-
-    return `${age} ${age === 1 ? 'year' : 'years'}`;
-}
 
 export function BookingSheet({
     isSheetOpen,
@@ -81,6 +50,7 @@ export function BookingSheet({
     saveChildrenPetsToProfile,
     setSaveChildrenPetsToProfile,
     client_types,
+    discovery_sources,
     booking_attributes,
     sitter_preferences,
     service_types,
@@ -184,6 +154,7 @@ export function BookingSheet({
                                 location_types={location_types}
                                 sitter_preferences={sitter_preferences}
                                 client_types={client_types}
+                                discovery_sources={discovery_sources}
                                 booking_attributes={booking_attributes}
                                 hotels={hotels}
                                 hotelSuggestions={hotelSuggestions}

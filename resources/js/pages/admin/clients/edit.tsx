@@ -19,6 +19,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge } from '@/lib/age';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -124,38 +125,6 @@ interface Props {
     favorite_caregivers: CaregiverSelect[];
     blocked_caregivers: CaregiverSelect[];
     pet_types: Array<{ value: string; label: string }>;
-}
-
-function calculateAge(
-    birthYear: number | null,
-    birthMonth: number | null,
-): string {
-    if (!birthYear) {
-        return '-';
-    }
-
-    const today = new Date();
-    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
-
-    if (age < 1) {
-        const months =
-            (today.getFullYear() - birthDate.getFullYear()) * 12 +
-            today.getMonth() -
-            birthDate.getMonth();
-
-        return `${months} ${months === 1 ? 'month' : 'months'}`;
-    }
-
-    return `${age} ${age === 1 ? 'year' : 'years'}`;
 }
 
 export default function ClientEdit() {
@@ -330,7 +299,6 @@ export default function ClientEdit() {
                 // toast.success('Client updated successfully');
             },
             onError: () => {
-                console.error('Failed to update client');
                 // toast.error('Failed to update client');
             },
         });
@@ -358,6 +326,20 @@ export default function ClientEdit() {
             );
         }
     };
+
+    const allErrors = form.errors as Record<string, string>;
+
+    const getAddrError = (index: number, field: string) =>
+        allErrors[`addresses.${index}.${field}`];
+
+    const getChildError = (index: number, field: string) =>
+        allErrors[`children.${index}.${field}`];
+
+    const getPetError = (index: number, field: string) =>
+        allErrors[`pets.${index}.${field}`];
+
+    const hasPrefixedError = (prefix: string) =>
+        Object.keys(allErrors).some((key) => key.startsWith(prefix));
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -442,7 +424,13 @@ export default function ClientEdit() {
                                         )
                                     }
                                     required
+                                    aria-invalid={!!form.errors.first_name}
                                 />
+                                {form.errors.first_name && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.first_name}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="last_name">
@@ -460,7 +448,13 @@ export default function ClientEdit() {
                                         )
                                     }
                                     required
+                                    aria-invalid={!!form.errors.last_name}
                                 />
+                                {form.errors.last_name && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.last_name}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">
@@ -475,7 +469,13 @@ export default function ClientEdit() {
                                         form.setData('phone', e.target.value)
                                     }
                                     required
+                                    aria-invalid={!!form.errors.phone}
                                 />
+                                {form.errors.phone && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.phone}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>
@@ -488,7 +488,9 @@ export default function ClientEdit() {
                                         form.setData('client_type', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger
+                                        aria-invalid={!!form.errors.client_type}
+                                    >
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -502,6 +504,11 @@ export default function ClientEdit() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {form.errors.client_type && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.client_type}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="how_did_you_hear">
@@ -527,6 +534,11 @@ export default function ClientEdit() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {form.errors.how_did_you_hear && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.how_did_you_hear}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <Checkbox
@@ -542,6 +554,11 @@ export default function ClientEdit() {
                                 <Label htmlFor="other_adults_present">
                                     Other Adults in Home
                                 </Label>
+                                {form.errors.other_adults_present && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.other_adults_present}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="biography">Biography</Label>
@@ -555,7 +572,13 @@ export default function ClientEdit() {
                                         )
                                     }
                                     rows={3}
+                                    aria-invalid={!!form.errors.biography}
                                 />
+                                {form.errors.biography && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.biography}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="special_needs_notes">
@@ -572,6 +595,11 @@ export default function ClientEdit() {
                                     }
                                     rows={3}
                                 />
+                                {form.errors.special_needs_notes && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.special_needs_notes}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="notes">Admin Notes</Label>
@@ -583,7 +611,13 @@ export default function ClientEdit() {
                                     }
                                     rows={3}
                                     placeholder="Internal notes, not visible to client"
+                                    aria-invalid={!!form.errors.notes}
                                 />
+                                {form.errors.notes && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.notes}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -619,6 +653,11 @@ export default function ClientEdit() {
                                 </div>
                             ))}
                         </div>
+                        {form.errors.sitter_preferences && (
+                            <p className="mt-2 text-sm text-destructive">
+                                {form.errors.sitter_preferences}
+                            </p>
+                        )}
                     </div>
 
                     {attribute_definitions.length > 0 && (
@@ -651,6 +690,11 @@ export default function ClientEdit() {
                                     </div>
                                 ))}
                             </div>
+                            {form.errors.attributes && (
+                                <p className="mt-2 text-sm text-destructive">
+                                    {form.errors.attributes}
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -685,7 +729,7 @@ export default function ClientEdit() {
                                         key={child.id || `child-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 lg:grid-cols-7"
                                     >
-                                        <div className="sm:col-span-2">
+                                        <div className="space-y-1 sm:col-span-2">
                                             <Input
                                                 type="text"
                                                 value={child.name || ''}
@@ -703,9 +747,23 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Name"
+                                                aria-invalid={
+                                                    !!getChildError(
+                                                        index,
+                                                        'name',
+                                                    )
+                                                }
                                             />
+                                            {getChildError(index, 'name') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getChildError(
+                                                        index,
+                                                        'name',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Select
                                                 value={child.gender || ''}
                                                 onValueChange={(value) => {
@@ -722,7 +780,14 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                <SelectTrigger>
+                                                <SelectTrigger
+                                                    aria-invalid={
+                                                        !!getChildError(
+                                                            index,
+                                                            'gender',
+                                                        )
+                                                    }
+                                                >
                                                     <SelectValue placeholder="Gender" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -734,8 +799,16 @@ export default function ClientEdit() {
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {getChildError(index, 'gender') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getChildError(
+                                                        index,
+                                                        'gender',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Select
                                                 value={
                                                     child.birth_month?.toString() ||
@@ -757,7 +830,14 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                <SelectTrigger>
+                                                <SelectTrigger
+                                                    aria-invalid={
+                                                        !!getChildError(
+                                                            index,
+                                                            'birth_month',
+                                                        )
+                                                    }
+                                                >
                                                     <SelectValue placeholder="Month" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -782,8 +862,19 @@ export default function ClientEdit() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            {getChildError(
+                                                index,
+                                                'birth_month',
+                                            ) && (
+                                                <p className="text-sm text-destructive">
+                                                    {getChildError(
+                                                        index,
+                                                        'birth_month',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Input
                                                 type="number"
                                                 value={child.birth_year || ''}
@@ -807,7 +898,24 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Year"
+                                                aria-invalid={
+                                                    !!getChildError(
+                                                        index,
+                                                        'birth_year',
+                                                    )
+                                                }
                                             />
+                                            {getChildError(
+                                                index,
+                                                'birth_year',
+                                            ) && (
+                                                <p className="text-sm text-destructive">
+                                                    {getChildError(
+                                                        index,
+                                                        'birth_year',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex items-center text-sm text-muted-foreground">
                                             {calculateAge(
@@ -873,7 +981,7 @@ export default function ClientEdit() {
                                         key={pet.id || `pet-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 sm:grid-cols-5"
                                     >
-                                        <div className="sm:col-span-2">
+                                        <div className="space-y-1 sm:col-span-2">
                                             <Input
                                                 type="text"
                                                 value={pet.name || ''}
@@ -891,9 +999,17 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Name"
+                                                aria-invalid={
+                                                    !!getPetError(index, 'name')
+                                                }
                                             />
+                                            {getPetError(index, 'name') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getPetError(index, 'name')}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Select
                                                 value={pet.type || ''}
                                                 onValueChange={(value) => {
@@ -910,7 +1026,14 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                <SelectTrigger>
+                                                <SelectTrigger
+                                                    aria-invalid={
+                                                        !!getPetError(
+                                                            index,
+                                                            'type',
+                                                        )
+                                                    }
+                                                >
                                                     <SelectValue placeholder="Type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -924,8 +1047,13 @@ export default function ClientEdit() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            {getPetError(index, 'type') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getPetError(index, 'type')}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Input
                                                 type="text"
                                                 value={pet.breed || ''}
@@ -945,7 +1073,21 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Breed"
+                                                aria-invalid={
+                                                    !!getPetError(
+                                                        index,
+                                                        'breed',
+                                                    )
+                                                }
                                             />
+                                            {getPetError(index, 'breed') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getPetError(
+                                                        index,
+                                                        'breed',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex items-center justify-end">
                                             <Button
@@ -1011,7 +1153,7 @@ export default function ClientEdit() {
                                         key={address.id || `address-${index}`}
                                         className="grid grid-cols-1 gap-3 rounded-[3px] border border-border bg-background px-4 py-2 sm:grid-cols-2 lg:grid-cols-4"
                                     >
-                                        <div className="lg:col sm:col-span-2">
+                                        <div className="lg:col space-y-1 sm:col-span-2">
                                             <Input
                                                 type="text"
                                                 value={address.label || ''}
@@ -1029,9 +1171,23 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                                 placeholder="Label (e.g., Home, Hotel)"
+                                                aria-invalid={
+                                                    !!getAddrError(
+                                                        index,
+                                                        'label',
+                                                    )
+                                                }
                                             />
+                                            {getAddrError(index, 'label') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'label',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div>
+                                        <div className="space-y-1">
                                             <Select
                                                 value={
                                                     address.location_type ||
@@ -1051,7 +1207,14 @@ export default function ClientEdit() {
                                                     );
                                                 }}
                                             >
-                                                <SelectTrigger>
+                                                <SelectTrigger
+                                                    aria-invalid={
+                                                        !!getAddrError(
+                                                            index,
+                                                            'location_type',
+                                                        )
+                                                    }
+                                                >
                                                     <SelectValue placeholder="Location Type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1069,6 +1232,17 @@ export default function ClientEdit() {
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {getAddrError(
+                                                index,
+                                                'location_type',
+                                            ) && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'location_type',
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex items-center justify-start sm:justify-center lg:justify-end">
                                             <div className="flex h-11 items-center gap-2">
@@ -1102,12 +1276,54 @@ export default function ClientEdit() {
                                                 </Label>
                                             </div>
                                         </div>
-                                        <div className="sm:col-span-2 lg:col-span-3">
+                                        <div className="space-y-1 sm:col-span-2 lg:col-span-3">
                                             <AddressAutocomplete
                                                 form={form}
                                                 prefix={`addresses.${index}.`}
                                                 label="Address"
                                             />
+                                            {getAddrError(index, 'line1') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'line1',
+                                                    )}
+                                                </p>
+                                            )}
+                                            {getAddrError(index, 'line2') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'line2',
+                                                    )}
+                                                </p>
+                                            )}
+                                            {getAddrError(index, 'city') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'city',
+                                                    )}
+                                                </p>
+                                            )}
+                                            {getAddrError(index, 'state') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(
+                                                        index,
+                                                        'state',
+                                                    )}
+                                                </p>
+                                            )}
+                                            {getAddrError(index, 'zip') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(index, 'zip')}
+                                                </p>
+                                            )}
+                                            {getAddrError(index, 'id') && (
+                                                <p className="text-sm text-destructive">
+                                                    {getAddrError(index, 'id')}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex items-end justify-end sm:col-span-2 lg:col-auto">
                                             <Button
@@ -1217,6 +1433,24 @@ export default function ClientEdit() {
                                     </p>
                                 )}
                         </div>
+                        {form.errors.favorite_caregiver_ids && (
+                            <p className="mt-2 text-sm text-destructive">
+                                {form.errors.favorite_caregiver_ids}
+                            </p>
+                        )}
+                        {hasPrefixedError('favorite_caregiver_ids.') &&
+                            Object.entries(form.errors)
+                                .filter(([k]) =>
+                                    k.startsWith('favorite_caregiver_ids.'),
+                                )
+                                .map(([key, msg]) => (
+                                    <p
+                                        key={key}
+                                        className="text-sm text-destructive"
+                                    >
+                                        {msg}
+                                    </p>
+                                ))}
                     </div>
 
                     <div className="border border-red-200 bg-red-50 p-6">
@@ -1302,6 +1536,24 @@ export default function ClientEdit() {
                                     </p>
                                 )}
                         </div>
+                        {form.errors.blocked_caregiver_ids && (
+                            <p className="mt-2 text-sm text-destructive">
+                                {form.errors.blocked_caregiver_ids}
+                            </p>
+                        )}
+                        {hasPrefixedError('blocked_caregiver_ids.') &&
+                            Object.entries(form.errors)
+                                .filter(([k]) =>
+                                    k.startsWith('blocked_caregiver_ids.'),
+                                )
+                                .map(([key, msg]) => (
+                                    <p
+                                        key={key}
+                                        className="text-sm text-destructive"
+                                    >
+                                        {msg}
+                                    </p>
+                                ))}
                     </div>
 
                     {/* eslint-disable-next-line no-constant-binary-expression */}

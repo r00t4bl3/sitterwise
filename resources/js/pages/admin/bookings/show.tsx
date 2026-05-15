@@ -1,9 +1,7 @@
 import { Link, Head } from '@inertiajs/react';
 import {
     Calendar,
-    DollarSign,
     ExternalLink,
-    Flag,
     MapPin,
     User,
     Phone,
@@ -20,6 +18,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge } from '@/lib/age';
 import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface Booking {
@@ -94,49 +93,10 @@ const breadcrumbs = [
     },
 ];
 
-export default function BookingDetail({ booking, booking_statuses }: PageProps) {
-    const calculateAge = (
-        birthYear: number | null,
-        birthMonth: number | null,
-    ): string => {
-        if (!birthYear && !birthMonth) {
-            return 'Age unknown';
-        }
-
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
-
-        const year = birthYear ?? currentYear;
-        const month = birthMonth ?? 1;
-
-        let years = currentYear - year;
-        let months = currentMonth - month;
-
-        if (months < 0) {
-            years--;
-            months += 12;
-        }
-
-        if (years < 0 || (years === 0 && months < 0)) {
-            return 'Age unknown';
-        }
-
-        if (years === 0 && months === 0) {
-            return 'Newborn';
-        }
-
-        if (years === 0) {
-            return `${months} month${months !== 1 ? 's' : ''} old`;
-        }
-
-        if (months === 0) {
-            return `${years} yr${years !== 1 ? 's' : ''} old`;
-        }
-
-        return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
-    };
-
+export default function BookingDetail({
+    booking,
+    booking_statuses,
+}: PageProps) {
     const buildGoogleMapsUrl = () => {
         const parts = [
             booking.address_line1,
@@ -448,9 +408,7 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                                                     {item.label}
                                                 </span>
                                                 <span className="text-sm font-medium text-foreground">
-                                                    {formatCurrency(
-                                                        item.value,
-                                                    )}
+                                                    {formatCurrency(item.value)}
                                                 </span>
                                             </div>
                                         ))}

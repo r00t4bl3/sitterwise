@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -18,6 +18,10 @@ import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 export default function Register() {
+    const { discovery_sources } = usePage<{
+        discovery_sources: Array<{ value: string; label: string }>;
+    }>().props;
+
     return (
         <AuthLayout
             title="Create an account"
@@ -146,27 +150,14 @@ export default function Register() {
                                         <SelectValue placeholder="Select..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="concierge">
-                                            Concierge
-                                        </SelectItem>
-                                        <SelectItem value="google">
-                                            Google Search
-                                        </SelectItem>
-                                        <SelectItem value="facebook">
-                                            Facebook
-                                        </SelectItem>
-                                        <SelectItem value="instagram">
-                                            Instagram
-                                        </SelectItem>
-                                        <SelectItem value="referral">
-                                            Referral
-                                        </SelectItem>
-                                        <SelectItem value="returning_client">
-                                            Returning Client
-                                        </SelectItem>
-                                        <SelectItem value="other">
-                                            Other
-                                        </SelectItem>
+                                        {discovery_sources.map((source) => (
+                                            <SelectItem
+                                                key={source.value}
+                                                value={source.value}
+                                            >
+                                                {source.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.how_did_you_hear} />

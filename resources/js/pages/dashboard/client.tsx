@@ -224,39 +224,53 @@ export default function ClientDashboard({
                             <div className="p-6">
                                 {recentBookings.length > 0 ? (
                                     <div className="space-y-2">
-                                        {recentBookings.slice(0, 3).map((booking) => (
-                                            <Link
-                                                key={booking.id}
-                                                href={`/bookings/${booking.ulid}`}
-                                                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        {recentBookings
+                                            .slice(0, 3)
+                                            .map((booking) => (
+                                                <Link
+                                                    key={booking.id}
+                                                    href={`/bookings/${booking.ulid}`}
+                                                    className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <p className="text-sm font-medium">
+                                                                {formatDisplayDateTime(
+                                                                    booking.start_datetime,
+                                                                )}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {
+                                                                    booking
+                                                                        .caregiver
+                                                                        ?.user
+                                                                        .name
+                                                                }
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col text-left">
-                                                        <p className="text-sm font-medium">
-                                                            {formatDisplayDateTime(
-                                                                booking.start_datetime,
-                                                            )}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {booking.caregiver
-                                                                ?.user.name}
-                                                        </p>
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusBadge
+                                                            status={
+                                                                booking.status
+                                                            }
+                                                            bookingStatuses={
+                                                                bookingStatuses
+                                                            }
+                                                        />
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <StatusBadge
-                                                        status={booking.status}
-                                                        bookingStatuses={bookingStatuses}
-                                                    />
-                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                </div>
-                                            </Link>
-                                        ))}
+                                                </Link>
+                                            ))}
                                         <div className="pt-2">
-                                            <Button variant="outline" asChild className="w-full">
+                                            <Button
+                                                variant="outline"
+                                                asChild
+                                                className="w-full"
+                                            >
                                                 <Link href="/bookings">
                                                     View All Bookings
                                                 </Link>

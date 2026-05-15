@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\ClientType;
 use App\Enums\DiscoverySource;
+use App\Enums\LocationType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,7 +43,7 @@ class UpdateClientRequest extends FormRequest
             'addresses' => ['nullable', 'array'],
             'addresses.*.id' => ['nullable', 'integer', 'exists:client_addresses,id'],
             'addresses.*.label' => ['nullable', 'string', 'max:255'],
-            'addresses.*.location_type' => ['nullable', 'in:private_home,hotel,vacation_rental,event_venue'],
+            'addresses.*.location_type' => ['nullable', Rule::enum(LocationType::class)],
             'addresses.*.line1' => ['nullable', 'string', 'max:255'],
             'addresses.*.line2' => ['nullable', 'string', 'max:255'],
             'addresses.*.city' => ['nullable', 'string', 'max:255'],

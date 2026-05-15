@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\BookingStatus;
 use App\Enums\ClientType;
 use App\Enums\DiscoverySource;
+use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
@@ -116,11 +117,15 @@ class ClientController extends Controller
         $query = Client::with(['user']);
 
         if ($request->has('q') && $request->q) {
-            $search = $request->q;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $request->q));
+            $query->where(function ($q) use ($terms) {
+                foreach ($terms as $term) {
+                    $q->where(function ($q) use ($term) {
+                        $q->where('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%")
+                            ->orWhere('email', 'like', "%{$term}%");
+                    });
+                }
             });
         }
 
@@ -411,6 +416,10 @@ class ClientController extends Controller
             'bookings' => $bookings,
             'bookingStatuses' => $bookingStatuses,
             'serviceTypes' => $serviceTypes,
+            'locationTypes' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                LocationType::cases()
+            ),
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,

@@ -24,6 +24,11 @@ interface ServiceType {
     label: string;
 }
 
+interface LocationType {
+    value: string;
+    label: string;
+}
+
 interface ClientUser {
     id: number;
     first_name: string;
@@ -82,12 +87,19 @@ interface Props {
     bookings: PaginatedData<Booking>;
     bookingStatuses: BookingStatus[];
     serviceTypes: ServiceType[];
+    locationTypes: LocationType[];
     filters: Filters;
 }
 
 export default function JobHistory() {
-    const { caregiver, bookings, bookingStatuses, serviceTypes, filters } =
-        usePage<Props>().props;
+    const {
+        caregiver,
+        bookings,
+        bookingStatuses,
+        serviceTypes,
+        locationTypes,
+        filters,
+    } = usePage<Props>().props;
 
     const [statusFilter, setStatusFilter] = useState<string | null>(
         filters.status ?? null,
@@ -303,6 +315,11 @@ export default function JobHistory() {
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                             {booking.hotel?.name ??
+                                                locationTypes.find(
+                                                    (l) =>
+                                                        l.value ===
+                                                        booking.location_type,
+                                                )?.label ??
                                                 booking.location_type}
                                         </td>
                                         <td className="px-4 py-3 text-right text-sm whitespace-nowrap text-foreground">

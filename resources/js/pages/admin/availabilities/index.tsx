@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/tooltip';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAgeFromDate } from '@/lib/age';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -85,22 +86,6 @@ interface Props {
         has_more: boolean;
     };
     timeSlots: Array<{ value: string; label: string }>;
-}
-
-function calculateAge(dateOfBirth: string): number {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
-
-    return age;
 }
 
 function formatDateHeader(dateString: string): { day: string; date: string } {
@@ -326,7 +311,7 @@ export default function AvailabilitiesIndex() {
                                                 </td>
                                                 <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                     {caregiver.date_of_birth
-                                                        ? calculateAge(
+                                                        ? calculateAgeFromDate(
                                                               caregiver.date_of_birth,
                                                           )
                                                         : '—'}

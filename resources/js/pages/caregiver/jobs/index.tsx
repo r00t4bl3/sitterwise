@@ -16,6 +16,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge } from '@/lib/age';
 import {
     formatDisplayDateTime,
     parseAsLocal,
@@ -82,10 +83,6 @@ interface Props {
             active: boolean;
         }>;
     };
-    calculateAge: (
-        birthYear: number | null,
-        birthMonth: number | null,
-    ) => string;
     booking_statuses: Array<{
         value: string;
         label: string;
@@ -104,7 +101,7 @@ function formatDateTimeLocal(date: Date): string {
 }
 
 export default function CaregiverJobsIndex() {
-    const { jobs, calculateAge, booking_statuses } = usePage<Props>().props;
+    const { jobs, booking_statuses } = usePage<Props>().props;
 
     const getStatusBadge = (
         status: string,

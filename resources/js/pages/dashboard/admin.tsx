@@ -115,6 +115,7 @@ interface AdminDashboardProps {
         sitterPreferences?: Array<{ value: string; label: string }>;
         petTypes?: Array<{ value: string; label: string }>;
         clientTypes?: Array<{ value: string; label: string }>;
+        discoverySources?: Array<{ value: string; label: string }>;
     };
 }
 
@@ -133,6 +134,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
         sitter_preferences: admin.sitterPreferences || [],
         pet_types: admin.petTypes || [],
         client_types: admin.clientTypes || [],
+        discovery_sources: admin.discoverySources || [],
     });
 
     return (

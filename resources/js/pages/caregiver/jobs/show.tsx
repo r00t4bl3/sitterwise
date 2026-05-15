@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge } from '@/lib/age';
 import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface Booking {
@@ -82,48 +83,6 @@ const getBreadcrumbTitle = (clientName: string) => [
 
 export default function JobDetail({ booking }: PageProps) {
     const breadcrumbs = getBreadcrumbTitle(booking.client_name);
-
-    const calculateAge = (
-        birthYear: number | null,
-        birthMonth: number | null,
-    ): string => {
-        if (!birthYear && !birthMonth) {
-            return 'Age unknown';
-        }
-
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
-
-        const year = birthYear ?? currentYear;
-        const month = birthMonth ?? 1;
-
-        let years = currentYear - year;
-        let months = currentMonth - month;
-
-        if (months < 0) {
-            years--;
-            months += 12;
-        }
-
-        if (years < 0 || (years === 0 && months < 0)) {
-            return 'Age unknown';
-        }
-
-        if (years === 0 && months === 0) {
-            return 'Newborn';
-        }
-
-        if (years === 0) {
-            return `${months} month${months !== 1 ? 's' : ''} old`;
-        }
-
-        if (months === 0) {
-            return `${years} yr${years !== 1 ? 's' : ''} old`;
-        }
-
-        return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
-    };
 
     const getLocationIcon = (locationType: string) => {
         switch (locationType) {

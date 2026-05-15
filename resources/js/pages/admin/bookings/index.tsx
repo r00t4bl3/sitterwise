@@ -97,6 +97,7 @@ export default function Bookings() {
         sitter_preferences,
         pet_types,
         client_types,
+        discovery_sources,
     } = usePage<Props>().props;
 
     const sheet = useBookingSheet({
@@ -128,6 +129,7 @@ export default function Bookings() {
             value: string;
             label: string;
         }>,
+        discovery_sources,
     });
 
     const [currentMonth] = useState(filters.month);
@@ -168,10 +170,14 @@ export default function Bookings() {
     const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
     useEffect(() => {
-        if (!isTableView) return;
+        if (!isTableView) {
+            return;
+        }
 
         requestAnimationFrame(() => {
-            if (!tableBodyRef.current) return;
+            if (!tableBodyRef.current) {
+                return;
+            }
 
             const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -179,9 +185,11 @@ export default function Bookings() {
                 `tr[data-date="${todayStr}"]`,
             ) as HTMLElement | null;
 
-            const targetRow = todayRow ?? (tableBodyRef.current.querySelector(
-                'tr[data-date]',
-            ) as HTMLElement | null);
+            const targetRow =
+                todayRow ??
+                (tableBodyRef.current.querySelector(
+                    'tr[data-date]',
+                ) as HTMLElement | null);
 
             targetRow?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
@@ -661,7 +669,10 @@ export default function Bookings() {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-background" ref={tableBodyRef}>
+                                <tbody
+                                    className="bg-background"
+                                    ref={tableBodyRef}
+                                >
                                     {currentMonthBookings.length === 0 ? (
                                         <tr>
                                             <td
@@ -707,15 +718,20 @@ export default function Bookings() {
                                                 const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
-                                                const parsedDate =
-                                                    parseAsLocal(
-                                                        booking.start_datetime,
-                                                    );
+                                                const parsedDate = parseAsLocal(
+                                                    booking.start_datetime,
+                                                );
                                                 const rowIso = parsedDate
-                                                    ? format(parsedDate, 'yyyy-MM-dd')
+                                                    ? format(
+                                                          parsedDate,
+                                                          'yyyy-MM-dd',
+                                                      )
                                                     : '';
                                                 const rowDate = parsedDate
-                                                    ? format(parsedDate, 'MMM d, yyyy')
+                                                    ? format(
+                                                          parsedDate,
+                                                          'MMM d, yyyy',
+                                                      )
                                                     : '';
 
                                                 return (

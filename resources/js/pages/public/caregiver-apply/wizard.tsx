@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect } from 'react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -11,8 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Experience {
     start_date: string;
@@ -66,7 +66,19 @@ const ageGroupDescriptions: Record<string, string> = {
 };
 
 export default function Wizard() {
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState<number>(() => {
+        const saved = sessionStorage.getItem('caregiver_application_draft');
+
+        if (saved) {
+            const draft = JSON.parse(saved);
+
+            if (draft.step && draft.data) {
+                return draft.step;
+            }
+        }
+
+        return 1;
+    });
 
     const today = new Date().toLocaleDateString('en-US', {
         month: '2-digit',
@@ -174,16 +186,18 @@ export default function Wizard() {
         agreement: { signature: '', agree: false },
     });
 
-    // Load draft from sessionStorage
+    // Load draft form data from sessionStorage
     useEffect(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
+
         if (saved) {
             const draft = JSON.parse(saved);
+
             if (draft.step && draft.data) {
-                setCurrentStep(draft.step);
                 form.setData(draft.data);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Save draft to sessionStorage on step change
@@ -238,21 +252,6 @@ export default function Wizard() {
             'experiences',
             form.data.experiences.filter((_, i) => i !== index),
         );
-    };
-
-    const addReference = () => {
-        if (form.data.references.length < 3) {
-            form.setData('references', [
-                ...form.data.references,
-                {
-                    name: '',
-                    email: '',
-                    phone: '',
-                    relationship: '',
-                    years_known: '',
-                },
-            ]);
-        }
     };
 
     return (
@@ -954,11 +953,13 @@ export default function Wizard() {
                                                         ];
                                                         newExp[index].present =
                                                             checked === true;
+
                                                         if (checked) {
                                                             newExp[
                                                                 index
                                                             ].end_date = '';
                                                         }
+
                                                         form.setData(
                                                             'experiences',
                                                             newExp,
@@ -1086,6 +1087,7 @@ export default function Wizard() {
                                                                     ...form.data
                                                                         .experiences,
                                                                 ];
+
                                                                 if (checked) {
                                                                     newExp[
                                                                         index
@@ -1111,6 +1113,7 @@ export default function Wizard() {
                                                                                 ageKey,
                                                                         );
                                                                 }
+
                                                                 form.setData(
                                                                     'experiences',
                                                                     newExp,

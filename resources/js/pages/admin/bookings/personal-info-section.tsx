@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { getChildBirthYearOptions } from '@/lib/age';
 import { ClientInfoPanel } from './client-info-panel';
 import type { Booking } from './types';
 
@@ -98,6 +99,7 @@ interface PersonalInfoSectionProps {
     location_types: Array<{ value: string; label: string }>;
     sitter_preferences: Array<{ value: string; label: string }>;
     client_types: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
     caregiverSuggestions: Array<{
         id: number;
         name: string;
@@ -168,6 +170,7 @@ export function PersonalInfoSection({
     location_types,
     sitter_preferences,
     client_types,
+    discovery_sources,
     booking_attributes,
     hotels,
     hotelSuggestions,
@@ -458,7 +461,11 @@ export function PersonalInfoSection({
                 </summary>
                 <div className="space-y-4 p-4">
                     <div>
-                        <Label className={form.errors.client_id ? 'text-destructive' : ''}>
+                        <Label
+                            className={
+                                form.errors.client_id ? 'text-destructive' : ''
+                            }
+                        >
                             Client <span className="text-red-500">*</span>
                         </Label>
                         <div className="mt-1">
@@ -475,7 +482,9 @@ export function PersonalInfoSection({
                             />
                         </div>
                         {form.errors.client_id && (
-                            <p className="mt-1 text-sm text-destructive">{form.errors.client_id}</p>
+                            <p className="mt-1 text-sm text-destructive">
+                                {form.errors.client_id}
+                            </p>
                         )}
                     </div>
 
@@ -483,7 +492,13 @@ export function PersonalInfoSection({
                         <div className="space-y-3 rounded-[3px] border border-border p-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <Label className={form.errors['new_client.first_name'] ? 'text-destructive' : ''}>
+                                    <Label
+                                        className={
+                                            form.errors['new_client.first_name']
+                                                ? 'text-destructive'
+                                                : ''
+                                        }
+                                    >
                                         First Name{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -496,14 +511,30 @@ export function PersonalInfoSection({
                                             })
                                         }
                                         placeholder="First Name"
-                                        aria-invalid={!!form.errors['new_client.first_name']}
+                                        aria-invalid={
+                                            !!form.errors[
+                                                'new_client.first_name'
+                                            ]
+                                        }
                                     />
                                     {form.errors['new_client.first_name'] && (
-                                        <p className="mt-1 text-sm text-destructive">{form.errors['new_client.first_name']}</p>
+                                        <p className="mt-1 text-sm text-destructive">
+                                            {
+                                                form.errors[
+                                                    'new_client.first_name'
+                                                ]
+                                            }
+                                        </p>
                                     )}
                                 </div>
                                 <div>
-                                    <Label className={form.errors['new_client.last_name'] ? 'text-destructive' : ''}>
+                                    <Label
+                                        className={
+                                            form.errors['new_client.last_name']
+                                                ? 'text-destructive'
+                                                : ''
+                                        }
+                                    >
                                         Last Name{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
@@ -516,16 +547,28 @@ export function PersonalInfoSection({
                                             })
                                         }
                                         placeholder="Last Name"
-                                        aria-invalid={!!form.errors['new_client.last_name']}
+                                        aria-invalid={
+                                            !!form.errors[
+                                                'new_client.last_name'
+                                            ]
+                                        }
                                     />
                                     {form.errors['new_client.last_name'] && (
-                                        <p className="mt-1 text-sm text-destructive">{form.errors['new_client.last_name']}</p>
+                                        <p className="mt-1 text-sm text-destructive">
+                                            {
+                                                form.errors[
+                                                    'new_client.last_name'
+                                                ]
+                                            }
+                                        </p>
                                     )}
                                 </div>
                             </div>
 
                             <div>
-                                <Label className={`text-sm font-medium ${form.errors['new_client.email'] ? 'text-destructive' : 'text-foreground'}`}>
+                                <Label
+                                    className={`text-sm font-medium ${form.errors['new_client.email'] ? 'text-destructive' : 'text-foreground'}`}
+                                >
                                     Email{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
@@ -539,14 +582,20 @@ export function PersonalInfoSection({
                                         })
                                     }
                                     placeholder="Email"
-                                    aria-invalid={!!form.errors['new_client.email']}
+                                    aria-invalid={
+                                        !!form.errors['new_client.email']
+                                    }
                                 />
                                 {form.errors['new_client.email'] && (
-                                    <p className="mt-1 text-sm text-destructive">{form.errors['new_client.email']}</p>
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {form.errors['new_client.email']}
+                                    </p>
                                 )}
                             </div>
                             <div>
-                                <Label className={`text-sm font-medium ${form.errors['new_client.phone'] ? 'text-destructive' : 'text-foreground'}`}>
+                                <Label
+                                    className={`text-sm font-medium ${form.errors['new_client.phone'] ? 'text-destructive' : 'text-foreground'}`}
+                                >
                                     Cell Phone{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
@@ -560,14 +609,20 @@ export function PersonalInfoSection({
                                     }
                                     placeholder="Cell Phone"
                                     required
-                                    aria-invalid={!!form.errors['new_client.phone']}
+                                    aria-invalid={
+                                        !!form.errors['new_client.phone']
+                                    }
                                 />
                                 {form.errors['new_client.phone'] && (
-                                    <p className="mt-1 text-sm text-destructive">{form.errors['new_client.phone']}</p>
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {form.errors['new_client.phone']}
+                                    </p>
                                 )}
                             </div>
                             <div>
-                                <Label className={`text-sm font-medium ${form.errors['new_client.client_type'] ? 'text-destructive' : 'text-foreground'}`}>
+                                <Label
+                                    className={`text-sm font-medium ${form.errors['new_client.client_type'] ? 'text-destructive' : 'text-foreground'}`}
+                                >
                                     Client Type{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
@@ -609,7 +664,9 @@ export function PersonalInfoSection({
                                     </SelectContent>
                                 </Select>
                                 {form.errors['new_client.client_type'] && (
-                                    <p className="mt-1 text-sm text-destructive">{form.errors['new_client.client_type']}</p>
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {form.errors['new_client.client_type']}
+                                    </p>
                                 )}
                             </div>
                             <Button
@@ -632,7 +689,9 @@ export function PersonalInfoSection({
                     )}
 
                     <div>
-                        <Label className={`text-sm font-medium ${form.errors.location_type ? 'text-destructive' : 'text-foreground'}`}>
+                        <Label
+                            className={`text-sm font-medium ${form.errors.location_type ? 'text-destructive' : 'text-foreground'}`}
+                        >
                             Location Type{' '}
                             <span className="text-red-500">*</span>
                         </Label>
@@ -681,7 +740,9 @@ export function PersonalInfoSection({
                             </SelectContent>
                         </Select>
                         {form.errors.location_type && (
-                            <p className="mt-1 text-sm text-destructive">{form.errors.location_type}</p>
+                            <p className="mt-1 text-sm text-destructive">
+                                {form.errors.location_type}
+                            </p>
                         )}
                     </div>
 
@@ -835,7 +896,9 @@ export function PersonalInfoSection({
 
                     {form.data.location_type === 'hotel' && (
                         <div>
-                            <Label className={`text-sm font-medium ${form.errors.hotel_id ? 'text-destructive' : 'text-foreground'}`}>
+                            <Label
+                                className={`text-sm font-medium ${form.errors.hotel_id ? 'text-destructive' : 'text-foreground'}`}
+                            >
                                 Hotel
                             </Label>
                             <div className="mt-1">
@@ -885,7 +948,9 @@ export function PersonalInfoSection({
                                 />
                             </div>
                             {form.errors.hotel_id && (
-                                <p className="mt-1 text-sm text-destructive">{form.errors.hotel_id}</p>
+                                <p className="mt-1 text-sm text-destructive">
+                                    {form.errors.hotel_id}
+                                </p>
                             )}
                         </div>
                     )}
@@ -1063,21 +1128,8 @@ export function PersonalInfoSection({
                                                         <SelectValue placeholder="Year" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {Array.from(
-                                                            {
-                                                                length:
-                                                                    new Date().getFullYear() -
-                                                                    (new Date().getFullYear() -
-                                                                        17) +
-                                                                    1,
-                                                            },
-                                                            (_, i) =>
-                                                                new Date().getFullYear() -
-                                                                17 +
-                                                                i,
-                                                        )
-                                                            .reverse()
-                                                            .map((year) => (
+                                                        {getChildBirthYearOptions().map(
+                                                            (year) => (
                                                                 <SelectItem
                                                                     key={year}
                                                                     value={String(
@@ -1086,7 +1138,8 @@ export function PersonalInfoSection({
                                                                 >
                                                                     {year}
                                                                 </SelectItem>
-                                                            ))}
+                                                            ),
+                                                        )}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -1361,20 +1414,14 @@ export function PersonalInfoSection({
                                 <SelectValue placeholder="Select..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="concierge">
-                                    Concierge
-                                </SelectItem>
-                                <SelectItem value="friend_family">
-                                    Friend/Family
-                                </SelectItem>
-                                <SelectItem value="google">Google</SelectItem>
-                                <SelectItem value="returning_client">
-                                    Returning Client
-                                </SelectItem>
-                                <SelectItem value="care_com">
-                                    Care.com
-                                </SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                                {discovery_sources.map((source) => (
+                                    <SelectItem
+                                        key={source.value}
+                                        value={source.value}
+                                    >
+                                        {source.label}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

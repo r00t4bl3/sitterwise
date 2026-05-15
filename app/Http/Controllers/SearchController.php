@@ -52,29 +52,43 @@ class SearchController extends Controller
 
         // Only admin/superadmin can search caregivers and clients
         if ($user->isAdmin() || $user->isSuperAdmin()) {
+            $terms = array_filter(explode(' ', $query));
+
             // Priority 2: Caregivers (names)
-            $caregivers = Caregiver::where('first_name', 'like', "%{$query}%")
-                ->orWhere('last_name', 'like', "%{$query}%")
+            $caregivers = Caregiver::where(function ($q) use ($terms) {
+                foreach ($terms as $term) {
+                    $q->where(function ($q) use ($term) {
+                        $q->where('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%");
+                    });
+                }
+            })
                 ->limit(5)
                 ->get(['id', 'first_name', 'last_name'])
                 ->map(fn ($caregiver) => [
-                    'id' => $caregiver->id,
-                    'name' => "{$caregiver->first_name} {$caregiver->last_name}",
-                    'type' => 'caregiver',
-                    'url' => route('caregivers.show', $caregiver),
-                ]);
+                'id' => $caregiver->id,
+                'name' => "{$caregiver->first_name} {$caregiver->last_name}",
+                'type' => 'caregiver',
+                'url' => route('caregivers.show', $caregiver),
+            ]);
 
             // Priority 3: Clients (names)
-            $clients = Client::where('first_name', 'like', "%{$query}%")
-                ->orWhere('last_name', 'like', "%{$query}%")
+            $clients = Client::where(function ($q) use ($terms) {
+                foreach ($terms as $term) {
+                    $q->where(function ($q) use ($term) {
+                        $q->where('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%");
+                    });
+                }
+            })
                 ->limit(5)
                 ->get(['id', 'first_name', 'last_name'])
                 ->map(fn ($client) => [
-                    'id' => $client->id,
-                    'name' => "{$client->first_name} {$client->last_name}",
-                    'type' => 'client',
-                    'url' => route('clients.show', $client),
-                ]);
+                'id' => $client->id,
+                'name' => "{$client->first_name} {$client->last_name}",
+                'type' => 'client',
+                'url' => route('clients.show', $client),
+            ]);
         } else {
             $caregivers = collect();
             $clients = collect();

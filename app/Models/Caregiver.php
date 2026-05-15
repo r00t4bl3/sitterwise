@@ -88,6 +88,7 @@ class Caregiver extends Model
         'education_level',
         'languages',
         'metadata',
+        'bubble_id',
     ];
 
     protected $casts = [

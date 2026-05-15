@@ -273,6 +273,7 @@ export default function CaregiverEdit() {
             return initial;
         })(),
         certifications: caregiver.certifications,
+        cert_files: {} as Record<number, File | null>,
         educations: caregiver.educations,
     });
 
@@ -452,7 +453,13 @@ export default function CaregiverEdit() {
                                         )
                                     }
                                     required
+                                    aria-invalid={!!form.errors.first_name}
                                 />
+                                {form.errors.first_name && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.first_name}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="last_name">Last Name</Label>
@@ -468,7 +475,13 @@ export default function CaregiverEdit() {
                                         )
                                     }
                                     required
+                                    aria-invalid={!!form.errors.last_name}
                                 />
+                                {form.errors.last_name && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.last_name}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
@@ -489,13 +502,32 @@ export default function CaregiverEdit() {
                                     onChange={(e) =>
                                         form.setData('phone', e.target.value)
                                     }
+                                    aria-invalid={!!form.errors.phone}
                                 />
+                                {form.errors.phone && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.phone}
+                                    </p>
+                                )}
                             </div>
-                            <div className="sm:col-span-2">
+                            <div className="space-y-1 sm:col-span-2">
                                 <AddressAutocomplete
                                     form={form}
                                     label="Address"
                                 />
+                                {(form.errors.address_line1 ||
+                                    form.errors.address_line2 ||
+                                    form.errors.address_city ||
+                                    form.errors.address_state ||
+                                    form.errors.address_zip) && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.address_line1 ||
+                                            form.errors.address_line2 ||
+                                            form.errors.address_city ||
+                                            form.errors.address_state ||
+                                            form.errors.address_zip}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>Date of Birth</Label>
@@ -512,6 +544,11 @@ export default function CaregiverEdit() {
                                     fromYear={new Date().getFullYear() - 120}
                                     toYear={new Date().getFullYear() - 10}
                                 />
+                                {form.errors.date_of_birth && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.date_of_birth}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="rating">Rating (0-5)</Label>
@@ -526,7 +563,13 @@ export default function CaregiverEdit() {
                                     min="0"
                                     max="5"
                                     step="0.01"
+                                    aria-invalid={!!form.errors.rating}
                                 />
+                                {form.errors.rating && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.rating}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2 sm:col-span-2">
                                 <Label htmlFor="biography">Biography</Label>
@@ -541,7 +584,13 @@ export default function CaregiverEdit() {
                                         )
                                     }
                                     rows={4}
+                                    aria-invalid={!!form.errors.biography}
                                 />
+                                {form.errors.biography && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.biography}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2 sm:col-span-2">
                                 <Label htmlFor="notes">Notes</Label>
@@ -553,7 +602,13 @@ export default function CaregiverEdit() {
                                         form.setData('notes', e.target.value)
                                     }
                                     rows={3}
+                                    aria-invalid={!!form.errors.notes}
                                 />
+                                {form.errors.notes && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.notes}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
@@ -563,7 +618,9 @@ export default function CaregiverEdit() {
                                         form.setData('status_id', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger
+                                        aria-invalid={!!form.errors.status_id}
+                                    >
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -577,6 +634,11 @@ export default function CaregiverEdit() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {form.errors.status_id && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.status_id}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -632,6 +694,11 @@ export default function CaregiverEdit() {
                                         </Label>
                                     </div>
                                 ))}
+                                {form.errors.specialty_type_ids && (
+                                    <p className="col-span-full text-sm text-destructive">
+                                        {form.errors.specialty_type_ids}
+                                    </p>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
@@ -723,6 +790,16 @@ export default function CaregiverEdit() {
                                         )}
                                     </div>
                                 ))}
+                                {form.errors.location_ids && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.location_ids}
+                                    </p>
+                                )}
+                                {form.errors.preferred_location_id && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.preferred_location_id}
+                                    </p>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
@@ -771,6 +848,11 @@ export default function CaregiverEdit() {
                                         </Label>
                                     </div>
                                 ))}
+                                {form.errors.attribute_values && (
+                                    <p className="col-span-full text-sm text-destructive">
+                                        {form.errors.attribute_values}
+                                    </p>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
@@ -962,6 +1044,16 @@ export default function CaregiverEdit() {
                                 >
                                     + Add Certification
                                 </Button>
+                                {form.errors.certifications && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.certifications}
+                                    </p>
+                                )}
+                                {form.errors.cert_files && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.cert_files}
+                                    </p>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>
@@ -1079,6 +1171,11 @@ export default function CaregiverEdit() {
                                 <Button type="button" onClick={addEducation}>
                                     + Add Education
                                 </Button>
+                                {form.errors.educations && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.educations}
+                                    </p>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>

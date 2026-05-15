@@ -30,17 +30,19 @@ function CaregiverNames({
 
     return (
         <span className="text-sm">
-            {caregivers.map((cg, index) => (
-                <span key={cg.id}>
-                    <Link
-                        href={`/caregivers/${cg.id}`}
-                        className={`hover:underline ${textClass}`}
-                    >
-                        {cg.first_name} {cg.last_name}
-                    </Link>
-                    {index < caregivers.length - 1 ? ', ' : ''}
-                </span>
-            ))}
+            {[...new Map(caregivers.map((cg) => [cg.id, cg])).values()].map(
+                (cg, index, arr) => (
+                    <span key={cg.id}>
+                        <Link
+                            href={`/caregivers/${cg.id}`}
+                            className={`hover:underline ${textClass}`}
+                        >
+                            {cg.first_name} {cg.last_name}
+                        </Link>
+                        {index < arr.length - 1 ? ', ' : ''}
+                    </span>
+                ),
+            )}
         </span>
     );
 }

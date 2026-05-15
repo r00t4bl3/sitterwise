@@ -25,7 +25,7 @@ function highlightText(text: string, query: string): React.ReactNode {
         regex.test(part) ? (
             <mark
                 key={index}
-                className="rounded bg-yellow-200 px-0.5 dark:bg-yellow-800"
+                className="rounded bg-yellow-200 dark:bg-yellow-800"
             >
                 {part}
             </mark>

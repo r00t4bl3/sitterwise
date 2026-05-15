@@ -31,6 +31,7 @@ export interface UseBookingSheetProps {
     }>;
     sitter_preferences: Array<{ value: string; label: string }>;
     client_types: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
     pet_types: Array<{ value: string; label: string }>;
 }
 
@@ -122,6 +123,7 @@ export function useBookingSheet({
     sitter_preferences,
     pet_types,
     client_types,
+    discovery_sources,
 }: UseBookingSheetProps) {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -708,7 +710,7 @@ export function useBookingSheet({
 
             const clientChildren =
                 fullBooking.children?.map((child: any, index: number) => ({
-                    tempId: `new-${Date.now()}-${index}`,
+                    tempId: `new-child-${Date.now()}-${index}`,
                     name: child.name || '',
                     gender: child.gender || '',
                     birth_month: child.birth_month
@@ -721,7 +723,7 @@ export function useBookingSheet({
 
             const clientPets =
                 fullBooking.pets?.map((pet: any, index: number) => ({
-                    tempId: `new-${Date.now()}-${index}`,
+                    tempId: `new-pet-${Date.now()}-${index}`,
                     name: pet.name || '',
                     type: pet.type?.toLowerCase() || '',
                     breed: pet.breed || '',
@@ -800,7 +802,9 @@ export function useBookingSheet({
                     }>);
                 } else if (fullBooking.hotel) {
                     setSelectedHotelName(fullBooking.hotel.name);
-                    setHotelSuggestions([fullBooking.hotel] as unknown as Array<{
+                    setHotelSuggestions([
+                        fullBooking.hotel,
+                    ] as unknown as Array<{
                         id: number;
                         name: string;
                         [key: string]: unknown;
@@ -1011,6 +1015,7 @@ export function useBookingSheet({
         saveChildrenPetsToProfile,
         setSaveChildrenPetsToProfile,
         client_types,
+        discovery_sources,
         booking_attributes,
         sitter_preferences,
         service_types,

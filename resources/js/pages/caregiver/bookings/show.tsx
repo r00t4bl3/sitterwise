@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAge } from '@/lib/age';
 import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
 
 interface Booking {
@@ -230,48 +231,6 @@ export default function BookingDetail({ booking }: PageProps) {
             }
         };
     }, [booking.id, booking.reserved_by]);
-
-    const calculateAge = (
-        birthYear: number | null,
-        birthMonth: number | null,
-    ): string => {
-        if (!birthYear && !birthMonth) {
-            return 'Age unknown';
-        }
-
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
-
-        const year = birthYear ?? currentYear;
-        const month = birthMonth ?? 1;
-
-        let years = currentYear - year;
-        let months = currentMonth - month;
-
-        if (months < 0) {
-            years--;
-            months += 12;
-        }
-
-        if (years < 0 || (years === 0 && months < 0)) {
-            return 'Age unknown';
-        }
-
-        if (years === 0 && months === 0) {
-            return 'Newborn';
-        }
-
-        if (years === 0) {
-            return `${months} month${months !== 1 ? 's' : ''} old`;
-        }
-
-        if (months === 0) {
-            return `${years} yr${years !== 1 ? 's' : ''} old`;
-        }
-
-        return `${years} yr${years !== 1 ? 's' : ''} ${months} mo${months !== 1 ? 's' : ''} old`;
-    };
 
     const getLocationIcon = (locationType: string) => {
         switch (locationType) {

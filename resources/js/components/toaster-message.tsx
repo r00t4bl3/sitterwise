@@ -11,6 +11,8 @@ interface ToasterMessageProps {
     message?: Message | null;
 }
 
+let lastFingerprint: string | null = null;
+
 export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
     const { props } = usePage();
     const flash = props.flash as
@@ -18,9 +20,20 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
         | undefined;
     const errors = props.errors;
 
-    const lastToastRef = useRef<string | null>(null);
+    const fingerprintRef = useRef(lastFingerprint);
 
     useEffect(() => {
+        // Reset dedup when navigating to a page without flash or errors
+        if (
+            !flash?.success &&
+            !flash?.error &&
+            !propMessage?.content &&
+            Object.keys(errors).length === 0
+        ) {
+            lastFingerprint = null;
+            fingerprintRef.current = null;
+        }
+
         const showToast = (
             type: Message['type'],
             content: string,
@@ -28,11 +41,12 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
         ) => {
             const finalFingerprint = fingerprint || content;
 
-            // if (lastToastRef.current === finalFingerprint) {
-            //     return;
-            // }
+            if (fingerprintRef.current === finalFingerprint) {
+                return;
+            }
 
-            lastToastRef.current = finalFingerprint;
+            lastFingerprint = finalFingerprint;
+            fingerprintRef.current = finalFingerprint;
 
             const options = { position: 'top-center' as const };
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
@@ -82,6 +83,10 @@ class GuestBookingService
                     'options' => $attr->options,
                 ]),
             'sitter_preferences' => $sitterPreferences,
+            'discovery_sources' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                DiscoverySource::cases()
+            ),
         ]);
     }
 

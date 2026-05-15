@@ -916,6 +916,26 @@ class ImportBubbleDatabase extends Command
             }
         }
 
+        $geo = $source['address_geographic_address'] ?? null;
+        $addressLine1 = null;
+        $addressCity = null;
+        $addressState = null;
+        $addressZip = null;
+
+        if ($geo) {
+            if (! empty($geo['components'])) {
+                $c = $geo['components'];
+                $addressLine1 = trim(($c['street number'] ?? '').' '.($c['street'] ?? ''));
+                $addressCity = $c['city'] ?? null;
+                $addressState = $c['state code'] ?? null;
+                $addressZip = $c['zip code'] ?? null;
+            }
+
+            if (! $addressLine1 && ! empty($geo['address'])) {
+                $addressLine1 = $geo['address'];
+            }
+        }
+
         $caregiverData = [
             'user_id' => $user->id,
             'bubble_id' => $user->bubble_id,
@@ -924,7 +944,11 @@ class ImportBubbleDatabase extends Command
             'last_name' => $names['last'],
             'slug' => $slug,
             'phone' => $this->formatPhone($source['phone_text'] ?? null),
-            'address' => $source['address_geographic_address']['address'] ?? null,
+            'address_line1' => $addressLine1,
+            'address_line2' => null,
+            'address_city' => $addressCity,
+            'address_state' => $addressState,
+            'address_zip' => $addressZip,
             'date_of_birth' => $this->timestampToDate($source['date_of_birth_date'] ?? null),
             'biography' => $source['bio_text'] ?? null,
             'notes' => $source['internal_notes_text'] ?? null,
@@ -950,16 +974,22 @@ class ImportBubbleDatabase extends Command
     {
         $names = $this->parseSourceNames($source, $user->email);
 
+        $bio = $source['bio_text'] ?? null;
+        $houseNotes = $source['house_notes_text'] ?? null;
+        if ($houseNotes) {
+            $bio = $bio ? $bio."\n\n".$houseNotes : $houseNotes;
+        }
+
         $clientData = [
             'user_id' => $user->id,
             'bubble_id' => $user->bubble_id,
             'first_name' => $names['first'],
             'last_name' => $names['last'],
-            'biography' => $source['bio_text'] ?? null,
+            'biography' => $bio,
             'phone' => $this->formatPhone($source['phone_text'] ?? 'N/A'), // phone is NOT NULL in DB
             'client_type' => $this->mapClientType($source),
             'how_did_you_hear' => $source['how_did_you_hear_about_us_text'] ?? null,
-            'special_needs_notes' => $source['internal_notes_text'] ?? null,
+            'notes' => $source['internal_notes_text'] ?? null,
             'stripe_customer_id' => $source['StripeCustomerID'] ?? null,
         ];
 
@@ -1250,6 +1280,17 @@ class ImportBubbleDatabase extends Command
             'children' => $this->parseChildren($source['names_and_ages_of_children_text'] ?? null, $source['__of_children_option_number_of_kids'] ?? null),
             'pets' => $this->parsePets($source['pets_text'] ?? null),
             'special_considerations' => $this->mapSpecialConsiderations($source),
+            'paid_to_caregiver_total' => ($source['caregiver_total_number'] ?? 0)
+                + ($source['check_out_reimbursement_number'] ?? 0)
+                + ($source['bonus_number'] ?? 0)
+                + ($source['cg_tip_number'] ?? 0),
+            'total_service_amount' => ($source['client_total_number'] ?? 0)
+                + ($source['check_out_reimbursement_number'] ?? 0)
+                + ($source['bonus_number'] ?? 0),
+            'total_amount' => ($source['client_total_number'] ?? 0)
+                + ($source['check_out_reimbursement_number'] ?? 0)
+                + ($source['bonus_number'] ?? 0)
+                + ($source['cg_tip_number'] ?? 0),
         ];
 
         // 1. Update Client Bio with House Notes

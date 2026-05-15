@@ -20,6 +20,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import GuestLayout from '@/layouts/guest-layout';
+import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
 import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
 
 interface NewChild {
@@ -80,39 +81,6 @@ interface ClientDetailsFormData {
     email: string;
     phone: string;
 }
-
-function calculateAge(
-    birthYear: number | null,
-    birthMonth: number | null,
-): string {
-    if (!birthYear) {
-        return '-';
-    }
-
-    const today = new Date();
-    const birthDate = new Date(birthYear, (birthMonth || 1) - 1, 1);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
-
-    if (age < 1) {
-        const months =
-            (today.getFullYear() - birthDate.getFullYear()) * 12 +
-            today.getMonth() -
-            birthDate.getMonth();
-
-        return `${months} ${months === 1 ? 'month' : 'months'}`;
-    }
-
-    return `${age} ${age === 1 ? 'year' : 'years'}`;
-}
-
 export default function GuestBookingCreate() {
     const {
         service_types,
@@ -121,6 +89,7 @@ export default function GuestBookingCreate() {
         pet_types,
         booking_attributes,
         sitter_preferences,
+        discovery_sources,
     } = usePage().props as unknown as {
         service_types: Array<{ value: string; label: string }>;
         location_types: Array<{ value: string; label: string }>;
@@ -142,6 +111,7 @@ export default function GuestBookingCreate() {
             options: string[];
         }>;
         sitter_preferences: Array<{ value: string; label: string }>;
+        discovery_sources: Array<{ value: string; label: string }>;
     };
 
     const [isFormSubmitting, setIsFormSubmitting] = useState(false);
@@ -809,26 +779,20 @@ export default function GuestBookingCreate() {
                                                             <SelectValue placeholder="Year" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            {Array.from(
-                                                                {
-                                                                    length:
-                                                                        new Date().getFullYear() -
-                                                                        new Date().getFullYear() +
-                                                                        18,
-                                                                },
-                                                                (_, i) =>
-                                                                    new Date().getFullYear() -
-                                                                    i,
-                                                            ).map((year) => (
-                                                                <SelectItem
-                                                                    key={year}
-                                                                    value={String(
-                                                                        year,
-                                                                    )}
-                                                                >
-                                                                    {year}
-                                                                </SelectItem>
-                                                            ))}
+                                                            {getChildBirthYearOptions().map(
+                                                                (year) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            year
+                                                                        }
+                                                                        value={String(
+                                                                            year,
+                                                                        )}
+                                                                    >
+                                                                        {year}
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
@@ -1133,27 +1097,14 @@ export default function GuestBookingCreate() {
                                         <SelectValue placeholder="Select..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="concierge">
-                                            Concierge
-                                        </SelectItem>
-                                        <SelectItem value="google">
-                                            Google Search
-                                        </SelectItem>
-                                        <SelectItem value="facebook">
-                                            Facebook
-                                        </SelectItem>
-                                        <SelectItem value="instagram">
-                                            Instagram
-                                        </SelectItem>
-                                        <SelectItem value="referral">
-                                            Referral
-                                        </SelectItem>
-                                        <SelectItem value="returning_client">
-                                            Returning Client
-                                        </SelectItem>
-                                        <SelectItem value="other">
-                                            Other
-                                        </SelectItem>
+                                        {discovery_sources.map((source) => (
+                                            <SelectItem
+                                                key={source.value}
+                                                value={source.value}
+                                            >
+                                                {source.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
