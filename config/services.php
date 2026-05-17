@@ -56,4 +56,9 @@ return [
         'api_key' => env('GOOGLE_PLACE_API_KEY'),
     ],
 
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
+        'model' => env('AI_MODEL', 'nvidia/nemotron-4-340b-instruct'),
+    ],
+
 ];

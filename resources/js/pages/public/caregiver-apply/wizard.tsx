@@ -4,6 +4,7 @@ import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -13,6 +14,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Trash2 } from 'lucide-react';
 
 interface Experience {
     start_date: string;
@@ -36,6 +38,12 @@ const positionLabels: Record<string, string> = {
     babysitting: 'On-Call Babysitting',
     petsitting: 'On-Call Petsitting',
     group_events: 'Group Events',
+};
+
+const locationLabels: Record<string, string> = {
+    north_county: 'North County',
+    south_east_county: 'South / East County',
+    flexible: 'Flexible',
 };
 
 const locationDescriptions: Record<string, string> = {
@@ -65,6 +73,24 @@ const ageGroupDescriptions: Record<string, string> = {
         'I enjoy older kids and bring plenty of crafts and board games! I know to keep conversation light and avoid controversial topics and questionable media. I like to keep big kids active and engaged.',
 };
 
+const months = [
+    { value: '01', label: 'Jan' },
+    { value: '02', label: 'Feb' },
+    { value: '03', label: 'Mar' },
+    { value: '04', label: 'Apr' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'Jun' },
+    { value: '07', label: 'Jul' },
+    { value: '08', label: 'Aug' },
+    { value: '09', label: 'Sep' },
+    { value: '10', label: 'Oct' },
+    { value: '11', label: 'Nov' },
+    { value: '12', label: 'Dec' },
+];
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 31 }, (_, i) => String(currentYear - 30 + i));
+
 export default function Wizard() {
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
@@ -86,7 +112,7 @@ export default function Wizard() {
         year: 'numeric',
     });
 
-    const form = useForm({
+    const defaultFormData = {
         sponsor: {
             first_name: '',
             last_name: '',
@@ -128,6 +154,7 @@ export default function Wizard() {
             high_school_name: '',
             high_school_graduation_year: '',
         },
+        employment_status: '',
         experiences: [
             {
                 start_date: '',
@@ -140,11 +167,40 @@ export default function Wizard() {
             },
         ] as Experience[],
         certifications: [],
+        smokes: '',
+        alcohol: '',
+        substance_abuse: '',
+        limitations: '',
+        allergic_to_pets: '',
+        visible_tattoos: '',
+        authorized_to_work: '',
+        reliable_vehicle: '',
+        cpr_certified: '',
+        cpr_expiration: '',
+        cpr_card: null as File | null,
+        trustline_certified: '',
+        trustline_upload: null as File | null,
+        languages: '',
+        has_children: '',
+        qualifications: {
+            special_needs: false,
+            companion_care: false,
+            sick_care: false,
+            work_from_home: false,
+            driving: false,
+            dogsitting: false,
+            catsitting: false,
+            swimming: false,
+            overnight_care: false,
+        },
+        things_i_bring: '',
+        bio: '',
+        interests: '',
         skills: {
             special_needs: false,
-            work_from_home: false,
             swimming: false,
             driving: false,
+            bilingual: false,
             other: '',
         },
         references: [
@@ -184,7 +240,27 @@ export default function Wizard() {
         terms: { agree: false },
         verification: { signature: '', agree: false },
         agreement: { signature: '', agree: false },
-    });
+    };
+
+    const form = useForm(defaultFormData);
+
+    // Deep merge draft data with defaults to fill missing fields
+    const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
+        const result = { ...target };
+        for (const key of Object.keys(result)) {
+            if (key in source && source[key] != null) {
+                if (typeof result[key] === 'object' && result[key] !== null && !Array.isArray(result[key]) && !(result[key] instanceof File)) {
+                    result[key] = deepMerge(
+                        result[key] as Record<string, unknown>,
+                        source[key] as Record<string, unknown>,
+                    );
+                } else {
+                    result[key] = source[key];
+                }
+            }
+        }
+        return result;
+    };
 
     // Load draft form data from sessionStorage
     useEffect(() => {
@@ -194,11 +270,23 @@ export default function Wizard() {
             const draft = JSON.parse(saved);
 
             if (draft.step && draft.data) {
-                form.setData(draft.data);
+                form.setData(deepMerge(defaultFormData, draft.data));
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Sync employment status with first experience's "present" checkbox
+    useEffect(() => {
+        const isEmployed =
+            form.data.employment_status === 'full_time' ||
+            form.data.employment_status === 'part_time';
+
+        const newExp = [...form.data.experiences];
+        newExp[0] = { ...newExp[0], present: isEmployed, end_date: isEmployed ? '' : newExp[0].end_date };
+        form.setData('experiences', newExp);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form.data.employment_status]);
 
     // Save draft to sessionStorage on step change
     const saveDraft = () => {
@@ -276,7 +364,7 @@ export default function Wizard() {
                             <button
                                 key={step}
                                 onClick={() => goToStep(step)}
-                                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium ${
+                                className={`cursor-pointer flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium ${
                                     step === currentStep
                                         ? 'bg-coral text-white'
                                         : step < currentStep
@@ -839,16 +927,48 @@ export default function Wizard() {
                         </div>
                     )}
 
-                    {/* Step 3: Work Experience */}
+                    {/* Step 3: Employment & Experience */}
                     {currentStep === 3 && (
                         <div>
                             <h2 className="mb-6 text-2xl font-bold">
-                                Work Experience
+                                Employment & Experience
                             </h2>
                             <p className="mb-4 text-gray-600">
                                 Add your childcare experience (at least one
                                 entry required)
                             </p>
+
+                            <div className="mb-6 space-y-2">
+                                <Label htmlFor="employment-status">
+                                    Are you currently employed?{' '}
+                                    <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={form.data.employment_status ?? ''}
+                                    onValueChange={(value) =>
+                                        form.setData(
+                                            'employment_status',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger id="employment-status">
+                                        <SelectValue placeholder="Select employment status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="full_time">
+                                            Yes &mdash; full-time
+                                        </SelectItem>
+                                        <SelectItem value="part_time">
+                                            Yes &mdash; part-time
+                                        </SelectItem>
+                                        <SelectItem value="no">No</SelectItem>
+                                        <SelectItem value="student">
+                                            Student
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
                             {form.data.experiences.map((exp, index) => (
                                 <div
@@ -860,78 +980,362 @@ export default function Wizard() {
                                             Experience #{index + 1}
                                         </h4>
                                         {index > 0 && (
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() =>
                                                     removeExperience(index)
                                                 }
-                                                className="text-sm text-red-600"
                                             >
+                                                <Trash2 className="mr-1 inline h-4 w-4" />
                                                 Remove
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label
-                                                htmlFor={`exp-start-${index}`}
-                                            >
+                                            <Label>
                                                 Start Date{' '}
                                                 <span className="text-red-500">
                                                     *
                                                 </span>
                                             </Label>
-                                            <DatePicker
-                                                value={exp.start_date}
-                                                onChange={(date) => {
-                                                    const newExp = [
-                                                        ...form.data
-                                                            .experiences,
-                                                    ];
-                                                    newExp[index].start_date =
-                                                        date;
-                                                    form.setData(
-                                                        'experiences',
-                                                        newExp,
-                                                    );
-                                                }}
-                                                placeholder="Select start date"
-                                                fromYear={1980}
-                                                toYear={
-                                                    new Date().getFullYear() + 1
-                                                }
-                                            />
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Select
+                                                    value={
+                                                        exp.start_date &&
+                                                        exp.start_date.length >=
+                                                            7
+                                                            ? exp.start_date.slice(
+                                                                  5,
+                                                                  7,
+                                                              )
+                                                            : ''
+                                                    }
+                                                    onValueChange={(month) => {
+                                                        const newExp = [
+                                                            ...form.data
+                                                                .experiences,
+                                                        ];
+                                                        const year =
+                                                            exp.start_date &&
+                                                            exp.start_date
+                                                                .length >= 4
+                                                                ? exp.start_date.slice(
+                                                                      0,
+                                                                      4,
+                                                                  )
+                                                                : '';
+                                                        newExp[
+                                                            index
+                                                        ].start_date = year
+                                                            ? `${year}-${month}`
+                                                            : '';
+                                                        form.setData(
+                                                            'experiences',
+                                                            newExp,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Month" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {months.map((m) => (
+                                                            <SelectItem
+                                                                key={m.value}
+                                                                value={m.value}
+                                                            >
+                                                                {m.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select
+                                                    value={
+                                                        exp.start_date &&
+                                                        exp.start_date
+                                                            .length >= 4
+                                                            ? exp.start_date.slice(
+                                                                  0,
+                                                                  4,
+                                                              )
+                                                            : ''
+                                                    }
+                                                    onValueChange={(year) => {
+                                                        const newExp = [
+                                                            ...form.data
+                                                                .experiences,
+                                                        ];
+                                                        const month =
+                                                            exp.start_date &&
+                                                            exp.start_date
+                                                                .length >= 7
+                                                                ? exp.start_date.slice(
+                                                                      5,
+                                                                      7,
+                                                                  )
+                                                                : '';
+                                                        newExp[
+                                                            index
+                                                        ].start_date = month
+                                                            ? `${year}-${month}`
+                                                            : year;
+                                                        form.setData(
+                                                            'experiences',
+                                                            newExp,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Year" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {years.map((y) => (
+                                                            <SelectItem
+                                                                key={y}
+                                                                value={y}
+                                                            >
+                                                                {y}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             {!exp.present ? (
                                                 <>
-                                                    <Label
-                                                        htmlFor={`exp-end-${index}`}
-                                                    >
+                                                    <Label>
                                                         End Date
                                                     </Label>
-                                                    <DatePicker
-                                                        value={exp.end_date}
-                                                        onChange={(date) => {
-                                                            const newExp = [
-                                                                ...form.data
-                                                                    .experiences,
-                                                            ];
-                                                            newExp[
-                                                                index
-                                                            ].end_date = date;
-                                                            form.setData(
-                                                                'experiences',
-                                                                newExp,
-                                                            );
-                                                        }}
-                                                        placeholder="Select end date"
-                                                        fromYear={1980}
-                                                        toYear={
-                                                            new Date().getFullYear() +
-                                                            1
-                                                        }
-                                                    />
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <Select
+                                                            value={
+                                                                exp.end_date &&
+                                                                exp.end_date
+                                                                    .length >= 7
+                                                                    ? exp.end_date.slice(
+                                                                          5,
+                                                                          7,
+                                                                      )
+                                                                    : ''
+                                                            }
+                                                            onValueChange={(
+                                                                month,
+                                                            ) => {
+                                                                const newExp = [
+                                                                    ...form
+                                                                        .data
+                                                                        .experiences,
+                                                                ];
+                                                                const year =
+                                                                    exp.end_date &&
+                                                                    exp.end_date
+                                                                        .length >=
+                                                                        4
+                                                                        ? exp.end_date.slice(
+                                                                              0,
+                                                                              4,
+                                                                          )
+                                                                        : '';
+                                                                newExp[
+                                                                    index
+                                                                ].end_date =
+                                                                    year
+                                                                        ? `${year}-${month}`
+                                                                        : '';
+                                                                form.setData(
+                                                                    'experiences',
+                                                                    newExp,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Month" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {months
+                                                                    .filter(
+                                                                        (
+                                                                            m,
+                                                                        ) => {
+                                                                            if (
+                                                                                !exp.start_date
+                                                                            )
+                                                                                return true;
+                                                                            const startYear =
+                                                                                exp.start_date.slice(
+                                                                                    0,
+                                                                                    4,
+                                                                                );
+                                                                            const startMonth =
+                                                                                exp.start_date.slice(
+                                                                                    5,
+                                                                                    7,
+                                                                                );
+                                                                            const endYear =
+                                                                                exp.end_date &&
+                                                                                exp
+                                                                                    .end_date
+                                                                                    .length >=
+                                                                                    4
+                                                                                    ? exp.end_date.slice(
+                                                                                          0,
+                                                                                          4,
+                                                                                      )
+                                                                                    : '';
+                                                                            if (
+                                                                                !endYear
+                                                                            )
+                                                                                return true;
+                                                                            if (
+                                                                                endYear ===
+                                                                                startYear
+                                                                            )
+                                                                                return (
+                                                                                    m.value >
+                                                                                    startMonth
+                                                                                );
+                                                                            return true;
+                                                                        },
+                                                                    )
+                                                                    .map(
+                                                                        (
+                                                                            m,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    m.value
+                                                                                }
+                                                                                value={
+                                                                                    m.value
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    m.label
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Select
+                                                            value={
+                                                                exp.end_date &&
+                                                                exp.end_date
+                                                                    .length >= 4
+                                                                    ? exp.end_date.slice(
+                                                                          0,
+                                                                          4,
+                                                                      )
+                                                                    : ''
+                                                            }
+                                                            onValueChange={(
+                                                                year,
+                                                            ) => {
+                                                                const newExp = [
+                                                                    ...form
+                                                                        .data
+                                                                        .experiences,
+                                                                ];
+                                                                const month =
+                                                                    exp.end_date &&
+                                                                    exp.end_date
+                                                                        .length >=
+                                                                        7
+                                                                        ? exp.end_date.slice(
+                                                                              5,
+                                                                              7,
+                                                                          )
+                                                                        : '';
+                                                                if (
+                                                                    month &&
+                                                                    exp.start_date
+                                                                ) {
+                                                                    const startYear =
+                                                                        exp.start_date.slice(
+                                                                            0,
+                                                                            4,
+                                                                        );
+                                                                    const startMonth =
+                                                                        exp.start_date.slice(
+                                                                            5,
+                                                                            7,
+                                                                        );
+                                                                    if (
+                                                                        year ===
+                                                                            startYear &&
+                                                                        month <=
+                                                                            startMonth
+                                                                    ) {
+                                                                        newExp[
+                                                                            index
+                                                                        ].end_date =
+                                                                            year;
+                                                                        form.setData(
+                                                                            'experiences',
+                                                                            newExp,
+                                                                        );
+                                                                        return;
+                                                                    }
+                                                                }
+                                                                newExp[
+                                                                    index
+                                                                ].end_date =
+                                                                    month
+                                                                        ? `${year}-${month}`
+                                                                        : year;
+                                                                form.setData(
+                                                                    'experiences',
+                                                                    newExp,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Year" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {years
+                                                                    .filter(
+                                                                        (
+                                                                            y,
+                                                                        ) => {
+                                                                            if (
+                                                                                !exp.start_date
+                                                                            )
+                                                                                return true;
+                                                                            const startYear =
+                                                                                exp.start_date.slice(
+                                                                                    0,
+                                                                                    4,
+                                                                                );
+                                                                            return (
+                                                                                y >=
+                                                                                startYear
+                                                                            );
+                                                                        },
+                                                                    )
+                                                                    .map(
+                                                                        (
+                                                                            y,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    y
+                                                                                }
+                                                                                value={
+                                                                                    y
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    y
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </>
                                             ) : (
                                                 <div className="space-y-2">
@@ -941,9 +1345,20 @@ export default function Wizard() {
                                                     </div>
                                                 </div>
                                             )}
-                                            <label className="flex cursor-pointer items-center gap-2">
+                                            <label
+                                                className={`flex items-center gap-2 ${index === 0 && (form.data.employment_status === 'full_time' || form.data.employment_status === 'part_time') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                            >
                                                 <Checkbox
                                                     checked={exp.present}
+                                                    disabled={
+                                                        index === 0 &&
+                                                        (form.data
+                                                            .employment_status ===
+                                                            'full_time' ||
+                                                            form.data
+                                                                .employment_status ===
+                                                                'part_time')
+                                                    }
                                                     onCheckedChange={(
                                                         checked,
                                                     ) => {
@@ -975,10 +1390,7 @@ export default function Wizard() {
                                             <Label
                                                 htmlFor={`exp-role-${index}`}
                                             >
-                                                Role / Title{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
+                                                Role / Title
                                             </Label>
                                             <Input
                                                 id={`exp-role-${index}`}
@@ -1001,10 +1413,7 @@ export default function Wizard() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor={`exp-org-${index}`}>
-                                                Family / Organization{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
+                                                Family / Organization
                                             </Label>
                                             <Input
                                                 id={`exp-org-${index}`}
@@ -1037,7 +1446,7 @@ export default function Wizard() {
                                             <Textarea
                                                 id={`exp-desc-${index}`}
                                                 rows={3}
-                                                placeholder="Describe your responsibilities and daily activities..."
+                                                placeholder="Please explain your role and responsibilities. Include children's ages."
                                                 value={exp.description}
                                                 onChange={(e) => {
                                                     const newExp = [
@@ -1055,10 +1464,7 @@ export default function Wizard() {
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
                                             <Label>
-                                                Ages Served{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
+                                                Ages Served
                                             </Label>
                                             <p className="text-sm text-gray-600">
                                                 Select all age groups you worked
@@ -1131,22 +1537,384 @@ export default function Wizard() {
                                 </div>
                             ))}
 
-                            <button
+                            <Button
                                 type="button"
                                 onClick={addExperience}
-                                className="font-medium text-coral"
                             >
                                 + Add Another Experience
-                            </button>
+                            </Button>
                         </div>
                     )}
 
-                    {/* Step 4: Certifications & Skills */}
+                    {/* Step 4: Screening Questions */}
                     {currentStep === 4 && (
                         <div>
                             <h2 className="mb-6 text-2xl font-bold">
-                                Certifications & Skills
+                                Screening Questions
                             </h2>
+
+                            <div className="space-y-6">
+                                {/* Authorized to work in the U.S.? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Authorized to work in the U.S.?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.authorized_to_work ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'authorized_to_work',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {form.data.authorized_to_work === 'no' && (
+                                        <div className="mt-2 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                                            Sitterwise is required by federal law
+                                            to verify work authorization for all
+                                            employees. If you are not currently
+                                            authorized to work in the United
+                                            States, we cannot move forward with
+                                            your application. If your status
+                                            changes, please reach out to us
+                                            directly.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Do you smoke? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Do you smoke?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.smokes ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData('smokes', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Do you drink alcohol? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Do you drink alcohol?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.alcohol ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData('alcohol', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="socially">
+                                                Socially/Occasionally
+                                            </SelectItem>
+                                            <SelectItem value="regularly">
+                                                Regularly
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Substance abuse history? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Substance abuse history?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Textarea
+                                        rows={3}
+                                        placeholder="Please explain..."
+                                        value={form.data.substance_abuse}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'substance_abuse',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                {/* Physical/psychological limitations? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Physical/psychological limitations?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Textarea
+                                        rows={3}
+                                        placeholder="Unable to lift, afraid of dogs, etc.?"
+                                        value={form.data.limitations}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'limitations',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                {/* Allergic to dogs or cats? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Allergic to dogs or cats?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.allergic_to_pets ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'allergic_to_pets',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Visible tattoos? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Visible tattoos?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.visible_tattoos ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'visible_tattoos',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Reliable vehicle? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Reliable vehicle?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.reliable_vehicle ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'reliable_vehicle',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* CPR & First Aid certified? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        CPR & First Aid certified?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.cpr_certified ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData('cpr_certified', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* CPR Expiration Date (conditional) */}
+                                {form.data.cpr_certified === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            CPR Expiration Date{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <DatePicker
+                                            value={form.data.cpr_expiration}
+                                            onChange={(date) =>
+                                                form.setData(
+                                                    'cpr_expiration',
+                                                    date,
+                                                )
+                                            }
+                                            placeholder="Select expiration date"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* CPR Card Upload (conditional) */}
+                                {form.data.cpr_certified === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            CPR Card Upload{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'cpr_card',
+                                                    e.target.files?.[0] || null,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Trustline certified? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Trustline certified?{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={form.data.trustline_certified ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'trustline_certified',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Trustline Upload (conditional) */}
+                                {form.data.trustline_certified === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Trustline Upload{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'trustline_upload',
+                                                    e.target.files?.[0] || null,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Languages */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Languages (other than English)
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g. Spanish, Tagalog, ASL"
+                                        value={form.data.languages}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'languages',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                {/* Do you have children of your own? */}
+                                <div className="space-y-2">
+                                    <Label>
+                                        Do you have children of your own?
+                                    </Label>
+                                    <Select
+                                        value={form.data.has_children ?? ''}
+                                        onValueChange={(value) =>
+                                            form.setData(
+                                                'has_children',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes_at_home">
+                                                Yes (ages at home)
+                                            </SelectItem>
+                                            <SelectItem value="yes_grown">
+                                                Yes (grown)
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <hr className="my-8" />
 
                             <div className="mb-6">
                                 <h3 className="mb-3 text-lg font-semibold">
@@ -1154,12 +1922,12 @@ export default function Wizard() {
                                 </h3>
                                 {(
                                     [
-                                        'special_needs',
-                                        'work_from_home',
-                                        'swimming',
-                                        'driving',
+                                        ['special_needs', 'Experienced Caring for Children with Special Needs'],
+                                        ['swimming', 'Willing to Accompany Children Swimming (Hotel Pools)'],
+                                        ['driving', 'Willing to Drive Children in your Personal Car'],
+                                        ['bilingual', 'Bilingual (English & Spanish)'],
                                     ] as const
-                                ).map((skill) => (
+                                ).map(([skill, label]) => (
                                     <label
                                         key={skill}
                                         className={`mb-2 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.skills[skill] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
@@ -1174,11 +1942,7 @@ export default function Wizard() {
                                             }
                                         />
                                         <span className="cursor-pointer">
-                                            {skill
-                                                .replace(/_/g, ' ')
-                                                .replace(/\b\w/g, (l) =>
-                                                    l.toUpperCase(),
-                                                )}
+                                            {label}
                                         </span>
                                     </label>
                                 ))}
@@ -1282,7 +2046,10 @@ export default function Wizard() {
                                             <Label
                                                 htmlFor={`ref-phone-${index}`}
                                             >
-                                                Phone
+                                                Phone{' '}
+                                                <span className="text-red-500">
+                                                    *
+                                                </span>
                                             </Label>
                                             <Input
                                                 id={`ref-phone-${index}`}
@@ -1420,11 +2187,7 @@ export default function Wizard() {
                                         />
                                         <div>
                                             <span className="font-medium">
-                                                {loc
-                                                    .replace('_', ' ')
-                                                    .replace(/\b\w/g, (l) =>
-                                                        l.toUpperCase(),
-                                                    )}
+                                                {locationLabels[loc]}
                                             </span>
                                             <p className="mt-1 text-sm text-gray-600">
                                                 {locationDescriptions[loc]}
@@ -1481,88 +2244,174 @@ export default function Wizard() {
                         </div>
                     )}
 
-                    {/* Step 7: Review */}
+                    {/* Step 7: Qualifications, Activities & Bio */}
                     {currentStep === 7 && (
                         <div>
                             <h2 className="mb-6 text-2xl font-bold">
-                                Review Your Application
+                                Qualifications, Activities & Bio
                             </h2>
-                            <p className="mb-6 text-gray-600">
-                                Please review all information before submitting.
-                            </p>
 
-                            <div className="mb-6 space-y-4">
-                                <div className="rounded border p-4">
-                                    <h4 className="mb-2 font-semibold">
-                                        Personal Info
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                        {form.data.personal.first_name}{' '}
-                                        {form.data.personal.last_name}
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                        {[
-                                            form.data.personal.address_line1,
-                                            form.data.personal.address_line2,
-                                            form.data.personal.address_city,
-                                            form.data.personal.address_state,
-                                            form.data.personal.address_zip,
-                                        ]
-                                            .filter(Boolean)
-                                            .join(', ')}
-                                    </p>
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Care Qualifications
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {(
+                                            [
+                                                [
+                                                    'special_needs',
+                                                    'Special Needs',
+                                                    'Autism, Down syndrome, ADHD, allergies, anxiety, behavioral needs',
+                                                ],
+                                                [
+                                                    'companion_care',
+                                                    'Companion Care',
+                                                    'Elderly or adults with special needs',
+                                                ],
+                                                [
+                                                    'sick_care',
+                                                    'Sick Care',
+                                                    'Comfortable caring for mildly sick children',
+                                                ],
+                                                [
+                                                    'work_from_home',
+                                                    'Work-From-Home Parents',
+                                                    'Comfortable with parent present in another room',
+                                                ],
+                                                [
+                                                    'driving',
+                                                    'Driving',
+                                                    'Can transport children safely',
+                                                ],
+                                                [
+                                                    'dogsitting',
+                                                    'Dogsitting',
+                                                    'Comfortable with all dog sizes/breeds',
+                                                ],
+                                                [
+                                                    'catsitting',
+                                                    'Catsitting',
+                                                    'Newly added separate catsitting option',
+                                                ],
+                                                [
+                                                    'swimming',
+                                                    'Swimming',
+                                                    'Pool/beach supervision and water safety',
+                                                ],
+                                                [
+                                                    'overnight_care',
+                                                    'Overnight Care',
+                                                    'Comfortable staying overnight with children',
+                                                ],
+                                            ] as const
+                                        ).map(([key, label, description]) => (
+                                            <label
+                                                key={key}
+                                                className={`flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors ${(form.data.qualifications?.[key] ?? false) ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                            >
+                                                <Checkbox
+                                                    checked={
+                                                        form.data
+                                                            .qualifications?.[key] ?? false
+                                                    }
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        form.setData(
+                                                            'qualifications',
+                                                            {
+                                                                ...(form.data
+                                                                    .qualifications ??
+                                                                    {}),
+                                                                [key]:
+                                                                    checked ===
+                                                                    true,
+                                                            },
+                                                        )
+                                                    }
+                                                />
+                                                <div>
+                                                    <span className="font-medium">
+                                                        {label}
+                                                    </span>
+                                                    <p className="mt-1 text-sm text-gray-600">
+                                                        {description}
+                                                    </p>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                <div className="rounded border p-4">
-                                    <h4 className="mb-2 font-semibold">
-                                        Sponsor
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                        {form.data.sponsor.first_name}{' '}
-                                        {form.data.sponsor.last_name} (
-                                        {form.data.sponsor.email})
-                                    </p>
+                                <div>
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Activities & Engagement
+                                    </h3>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="things-i-bring">
+                                            Things you bring to a job
+                                        </Label>
+                                        <Textarea
+                                            id="things-i-bring"
+                                            rows={3}
+                                            placeholder="What toys, games, or activities do you bring to engage children?"
+                                            value={form.data.things_i_bring}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'things_i_bring',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="rounded border p-4">
-                                    <h4 className="mb-2 font-semibold">
-                                        Experience
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                        {form.data.experiences.length}{' '}
-                                        experience entries
-                                    </p>
-                                </div>
-
-                                <div className="rounded border p-4">
-                                    <h4 className="mb-2 font-semibold">
-                                        References
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                        1 sponsor +{' '}
-                                        {form.data.references.length} additional
-                                        references
-                                    </p>
+                                <div>
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Bio & Interests
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bio">
+                                                Bio{' '}
+                                                <span className="text-red-500">
+                                                    *
+                                                </span>
+                                            </Label>
+                                            <Textarea
+                                                id="bio"
+                                                rows={5}
+                                                placeholder="Write a public-facing introduction about yourself (200–500 words recommended)"
+                                                value={form.data.bio}
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'bio',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="interests">
+                                                Interests / Hobbies
+                                            </Label>
+                                            <Input
+                                                id="interests"
+                                                type="text"
+                                                placeholder="e.g. hiking, painting, reading, playing guitar"
+                                                value={form.data.interests}
+                                                onChange={(e) =>
+                                                    form.setData(
+                                                        'interests',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <label
-                                className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.terms.agree ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
-                            >
-                                <Checkbox
-                                    checked={form.data.terms.agree}
-                                    onCheckedChange={(checked) =>
-                                        form.setData('terms', {
-                                            ...form.data.terms,
-                                            agree: checked === true,
-                                        })
-                                    }
-                                />
-                                <span className="text-sm">
-                                    I certify that all information provided is
-                                    true and complete.
-                                </span>
-                            </label>
                         </div>
                     )}
 
@@ -1643,16 +2492,23 @@ export default function Wizard() {
 
                             <div className="mb-6 border-l-4 border-coral pl-4">
                                 <h3 className="mb-2 text-lg font-semibold">
-                                    Caregiver Statement of Agreement
+                                    Conditional Offer Acknowledgment
                                 </h3>
                                 <p className="mb-4 text-sm text-gray-600">
-                                    I understand that I am working as an
-                                    independent contractor for Sitterwise, Inc.
-                                    I am free to accept or reject any job
-                                    offered. I will not provide childcare for
-                                    families originally referred by Sitterwise
-                                    "under the table" without notifying
-                                    Sitterwise...
+                                    I understand that this application does not
+                                    constitute an offer of employment. If
+                                    Sitterwise extends an offer, I will receive
+                                    a separate written offer letter outlining my
+                                    role, pay rate, and at-will employment
+                                    terms, which I will sign through OnPay
+                                    before beginning work. I understand that all
+                                    Sitterwise caregivers are W-2 employees and
+                                    that all pay is processed through OnPay,
+                                    with applicable taxes withheld. I agree to
+                                    maintain current CPR/First Aid certification
+                                    and to submit a Trustline application within
+                                    7 days of activation, as conditions of
+                                    employment.
                                 </p>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
@@ -1713,27 +2569,27 @@ export default function Wizard() {
 
                     <div className="mt-6 flex justify-between border-t pt-6">
                         {currentStep > 1 ? (
-                            <button
+                            <Button
                                 type="button"
+                                variant="secondary"
                                 onClick={prevStep}
-                                className="rounded border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
                             >
                                 ← Back
-                            </button>
+                            </Button>
                         ) : (
                             <div />
                         )}
 
                         {currentStep < 8 ? (
-                            <button
+                            <Button
                                 type="button"
                                 onClick={nextStep}
                                 className="hover:bg-coral-dark rounded bg-coral px-4 py-2 text-white"
                             >
                                 Next →
-                            </button>
+                            </Button>
                         ) : (
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={form.processing}
                                 className="hover:bg-coral-dark rounded bg-coral px-6 py-2 text-white disabled:opacity-50"
@@ -1741,7 +2597,7 @@ export default function Wizard() {
                                 {form.processing
                                     ? 'Submitting...'
                                     : 'Submit Application'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </form>

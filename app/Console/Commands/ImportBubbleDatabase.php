@@ -839,7 +839,9 @@ class ImportBubbleDatabase extends Command
         $user->update([
             'name' => $fullName,
             'role' => $role,
-            'profile_photo_url' => $source['profile_photo_url_text'] ?? null,
+            'profile_photo_url' => $this->parsePhotoUrl(
+                $source['profile_photo_url_text'] ?? $source['profile_photo_file'] ?? null
+            ),
         ]);
 
         // 2. Role-specific sync
@@ -888,16 +890,26 @@ class ImportBubbleDatabase extends Command
             return null;
         }
 
-        // Remove non-numeric characters
         $digits = preg_replace('/\D/', '', $phone);
 
-        // Standardize to (XXX) XXX-XXXX if it's a 10-digit number
         if (strlen($digits) === 10) {
             return '('.substr($digits, 0, 3).') '.substr($digits, 3, 3).'-'.substr($digits, 6);
         }
 
-        // Return as-is for international or short numbers
         return $phone;
+    }
+
+    protected function parsePhotoUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        if (str_starts_with($url, '//')) {
+            return 'https:'.$url;
+        }
+
+        return $url;
     }
 
     protected function syncCaregiver(User $user, array $source, bool $force): void
@@ -1038,6 +1050,8 @@ class ImportBubbleDatabase extends Command
 
     protected function syncClientAddresses(ClientModel $client, array $source): void
     {
+        $client->addresses()->delete();
+
         $locationType = match ($client->client_type) {
             ClientType::Vacationer->value => LocationType::Hotel->value,
             ClientType::Invoiced->value => LocationType::EventVenue->value,
@@ -1052,35 +1066,32 @@ class ImportBubbleDatabase extends Command
         $geo = $source['address_geographic_address'] ?? null;
         if ($geo && ! empty($geo['components'])) {
             $c = $geo['components'];
-            $client->addresses()->updateOrCreate(
-                ['label' => $label, 'is_primary' => true],
-                [
+            $client->addresses()->create([
+                'location_type' => $locationType,
+                'label' => $label,
+                'is_primary' => true,
+                'line1' => trim(($c['street number'] ?? '').' '.($c['street'] ?? '')),
+                'city' => $c['city'] ?? 'Unknown',
+                'state' => $c['state code'] ?? 'Unknown',
+                'zip' => $c['zip code'] ?? '00000',
+            ]);
+        }
+
+        $homeGeo = $source['home_address_geographic_address'] ?? null;
+        if ($homeGeo && ! empty($homeGeo['components'])) {
+            $line1 = trim(($homeGeo['components']['street number'] ?? '').' '.($homeGeo['components']['street'] ?? ''));
+            $alreadySaved = $client->addresses()->where('line1', $line1)->exists();
+            if (! $alreadySaved) {
+                $c = $homeGeo['components'];
+                $client->addresses()->create([
                     'location_type' => $locationType,
-                    'line1' => trim(($c['street number'] ?? '').' '.($c['street'] ?? '')),
+                    'label' => $label,
+                    'is_primary' => false,
+                    'line1' => $line1,
                     'city' => $c['city'] ?? 'Unknown',
                     'state' => $c['state code'] ?? 'Unknown',
                     'zip' => $c['zip code'] ?? '00000',
-                ]
-            );
-        }
-
-        // Only create alternate address if it differs from primary
-        $homeGeo = $source['home_address_geographic_address'] ?? null;
-        if ($homeGeo && ! empty($homeGeo['components'])) {
-            $primary = $client->addresses()->where('is_primary', true)->first();
-            $homeLine1 = trim(($homeGeo['components']['street number'] ?? '').' '.($homeGeo['components']['street'] ?? ''));
-            if (! $primary || $primary->line1 !== $homeLine1) {
-                $c = $homeGeo['components'];
-                $client->addresses()->updateOrCreate(
-                    ['label' => $label, 'is_primary' => false],
-                    [
-                        'location_type' => $locationType,
-                        'line1' => $homeLine1,
-                        'city' => $c['city'] ?? 'Unknown',
-                        'state' => $c['state code'] ?? 'Unknown',
-                        'zip' => $c['zip code'] ?? '00000',
-                    ]
-                );
+                ]);
             }
         }
 
@@ -1103,17 +1114,18 @@ class ImportBubbleDatabase extends Command
                     $zip = $stateZip[1] ?? null;
                 }
 
-                $client->addresses()->firstOrCreate(
-                    ['line1' => $line1],
-                    [
+                $alreadySaved = $client->addresses()->where('line1', $line1)->exists();
+                if (! $alreadySaved) {
+                    $client->addresses()->create([
+                        'location_type' => $locationType,
                         'label' => $label,
                         'is_primary' => false,
-                        'location_type' => $locationType,
+                        'line1' => $line1,
                         'city' => $city ?? 'Unknown',
                         'state' => $state ?? 'Unknown',
                         'zip' => $zip ?? '00000',
-                    ]
-                );
+                    ]);
+                }
             }
         }
     }

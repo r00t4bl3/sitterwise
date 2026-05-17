@@ -22,6 +22,7 @@ use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ClientController extends Controller
@@ -665,7 +666,10 @@ class ClientController extends Controller
             $file = $request->file('profile_photo');
             $filename = time().'_'.$file->getClientOriginalName();
             $path = $file->storeAs('profile-photos', $filename, 'public');
-            $client->user->update(['profile_photo_path' => $path]);
+            $client->user->update([
+                'profile_photo_path' => $path,
+                'profile_photo_url' => Storage::disk('public')->url($path),
+            ]);
 
             return redirect()->route('clients.edit', $client->id)
                 ->with('success', 'Profile photo updated successfully');

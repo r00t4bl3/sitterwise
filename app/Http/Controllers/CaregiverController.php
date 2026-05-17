@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CaregiverController extends Controller
@@ -224,7 +225,10 @@ class CaregiverController extends Controller
                 $file = $request->file('profile_photo');
                 $filename = time().'_'.$file->getClientOriginalName();
                 $path = $file->storeAs('profile-photos', $filename, 'public');
-                $caregiver->user->update(['profile_photo_path' => $path]);
+                $caregiver->user->update([
+                    'profile_photo_path' => $path,
+                    'profile_photo_url' => Storage::disk('public')->url($path),
+                ]);
             }
 
             $caregiver->update($updateData);
@@ -323,7 +327,10 @@ class CaregiverController extends Controller
         $file = $request->file('profile_photo');
         $filename = time().'_'.$file->getClientOriginalName();
         $path = $file->storeAs('profile-photos', $filename, 'public');
-        $caregiver->user->update(['profile_photo_path' => $path]);
+        $caregiver->user->update([
+            'profile_photo_path' => $path,
+            'profile_photo_url' => Storage::disk('public')->url($path),
+        ]);
 
         return redirect()->route('caregivers.edit', $caregiver->id)
             ->with('success', 'Profile photo updated successfully');

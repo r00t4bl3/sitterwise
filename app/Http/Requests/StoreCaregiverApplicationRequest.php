@@ -2,24 +2,15 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCaregiverApplicationRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true; // Public access for caregiver applications
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -54,11 +45,14 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'education.college' => 'nullable|string|max:255',
             'education.graduation_year' => 'nullable|digits:4|integer|min:1980|max:2026',
             'education.degree' => 'nullable|string|max:255',
+            'education.high_school_name' => 'nullable|string|max:255',
+            'education.high_school_graduation_year' => 'nullable|digits:4|integer|min:1950|max:2026',
 
-            // Step 3: Experience
+            // Step 3: Employment & Experience
+            'employment_status' => 'nullable|in:full_time,part_time,no,student',
             'experiences' => 'required|array|min:1',
-            'experiences.*.start_date' => 'required|date',
-            'experiences.*.end_date' => 'nullable|date|after_or_equal:experiences.*.start_date',
+            'experiences.*.start_date' => 'required|date_format:Y-m',
+            'experiences.*.end_date' => 'nullable|date_format:Y-m',
             'experiences.*.present' => 'boolean',
             'experiences.*.role' => 'required|string|max:255',
             'experiences.*.organization' => 'required|string|max:255',
@@ -66,21 +60,33 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'experiences.*.ages_served' => 'required|array|min:1',
             'experiences.*.ages_served.*' => 'in:infant,toddler,preschool,school_age,teen',
 
-            // Step 4: Certifications & Skills
-            'certifications' => 'nullable|array',
-            'certifications.*' => 'exists:certification_types,id',
-            'certification_files.*' => 'nullable|file|mimes:pdf,jpeg,png|max:10240',
+            // Step 4: Screening Questions
+            'smokes' => 'required|in:yes,no',
+            'alcohol' => 'required|in:no,socially,regularly',
+            'substance_abuse' => 'required|string|max:2000',
+            'limitations' => 'required|string|max:2000',
+            'allergic_to_pets' => 'required|in:yes,no',
+            'visible_tattoos' => 'required|in:yes,no',
+            'authorized_to_work' => 'required|in:yes,no',
+            'reliable_vehicle' => 'required|in:yes,no',
+            'cpr_certified' => 'required|in:yes,no',
+            'cpr_expiration' => 'nullable|date',
+            'cpr_card' => 'nullable|file|mimes:pdf,jpeg,png|max:10240',
+            'trustline_certified' => 'required|in:yes,no',
+            'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,png|max:10240',
+            'languages' => 'nullable|string|max:500',
+            'has_children' => 'nullable|in:no,yes_at_home,yes_grown',
             'skills.special_needs' => 'boolean',
-            'skills.work_from_home' => 'boolean',
             'skills.swimming' => 'boolean',
             'skills.driving' => 'boolean',
+            'skills.bilingual' => 'boolean',
             'skills.other' => 'nullable|string|max:1000',
 
             // Step 5: References
             'references' => 'required|array|min:3',
             'references.*.name' => 'required|string|max:255',
             'references.*.email' => 'required|email',
-            'references.*.phone' => 'nullable|string|max:20',
+            'references.*.phone' => 'required|string|max:20',
             'references.*.relationship' => 'required|string|max:255',
             'references.*.years_known' => 'required|in:<1,1-3,3-5,5-10,10+',
 
@@ -93,7 +99,12 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'age_groups.preschool' => 'boolean',
             'age_groups.school_age' => 'boolean',
 
-            // Step 7: Review (terms)
+            // Step 7: Qualifications, Activities & Bio
+            'qualifications' => 'nullable|array',
+            'qualifications.*' => 'boolean',
+            'things_i_bring' => 'nullable|string|max:2000',
+            'bio' => 'required|string|max:5000',
+            'interests' => 'nullable|string|max:1000',
             'terms.agree' => 'required|accepted',
 
             // Step 8: Agreements
@@ -115,7 +126,6 @@ class StoreCaregiverApplicationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            // Check sponsor email doesn't match applicant email
             $sponsorEmail = $this->input('sponsor.email');
             $applicantEmail = session('verified_email');
 
@@ -123,7 +133,6 @@ class StoreCaregiverApplicationRequest extends FormRequest
                 $validator->errors()->add('sponsor.email', 'Sponsor email cannot match your email address.');
             }
 
-            // Check for duplicate reference emails
             $references = $this->input('references', []);
             $emails = array_column($references, 'email');
             $uniqueEmails = array_unique($emails);
@@ -132,7 +141,6 @@ class StoreCaregiverApplicationRequest extends FormRequest
                 $validator->errors()->add('references', 'Reference emails must be unique.');
             }
 
-            // Check reference emails don't match applicant email
             foreach ($references as $index => $reference) {
                 if (isset($reference['email']) && $reference['email'] === $applicantEmail) {
                     $validator->errors()->add("references.{$index}.email", 'Reference email cannot match your email address.');
