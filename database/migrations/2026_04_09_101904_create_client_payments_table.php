@@ -22,10 +22,10 @@ return new class extends Migration
             $table->string('provider'); // stripe, invoice, manual, comped
             $table->string('provider_payment_id')->nullable();
             $table->string('provider_charge_id')->nullable();
-            $table->json('metadata')->after('paid_at')->nullable();
-            $table->string('error_code')->after('metadata')->nullable();
-            $table->text('error_message')->after('error_code')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->string('error_code')->nullable();
+            $table->text('error_message')->nullable();
             $table->timestamps();
 
             $table->index('client_id');
