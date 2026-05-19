@@ -21,7 +21,7 @@ return new class extends Migration
             // Prevent duplicate notifications
             $table->unique(['booking_id', 'caregiver_id']);
             // Index for finding open/available caregivers quickly
-            $table->index(['booking_id', 'claimed', 'responded_at']);
+            $table->index(['booking_id', 'claimed', 'responded_at'], 'bcn_booking_claimed_responded_idx');
         });
     }
 
