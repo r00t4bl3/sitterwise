@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('entity_type', 50)->default('caregiver');
             $table->timestamps();
 
-            $table->unique(['entity_id', 'attribute_definition_id', 'entity_type']);
+            $table->unique(['entity_id', 'attribute_definition_id', 'entity_type'], 'eav_entity_attr_type_unique');
         });
     }
 

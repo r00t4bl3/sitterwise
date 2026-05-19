@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->unique(['caregiver_id', 'certification_type_id']);
+            $table->unique(['caregiver_id', 'certification_type_id'], 'cc_cert_type_unique');
         });
     }
 
