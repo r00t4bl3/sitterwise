@@ -43,7 +43,7 @@ class CaregiverController extends Controller
             $query->where('status_id', $request->status);
         }
 
-        $caregivers = $query->orderByDesc('id')->paginate(20)->appends($request->query());
+        $caregivers = $query->orderBy('id')->paginate(20)->appends($request->query());
         $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
 
         return Inertia::render('admin/caregivers/index', [

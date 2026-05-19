@@ -1265,8 +1265,12 @@ class ImportBubbleDatabase extends Command
             return;
         }
 
-        $pets = [];
         $lower = strtolower($text);
+        if (in_array(trim($lower), ['no', 'none', 'n/a', 'na', 'no pets', 'no pet', 'no animals', 'none at this time'])) {
+            return;
+        }
+
+        $pets = [];
         if (str_contains($lower, 'dog')) {
             $pets[] = 'dog';
         }
@@ -1421,12 +1425,21 @@ class ImportBubbleDatabase extends Command
 
     protected function findHotelId(?string $hotelName, ?string $bubbleSlug): ?int
     {
-        // Only match when hotel_name_text is present — slugs (snake_case) don't resemble hotel names
-        if (! $hotelName || in_array(strtolower($hotelName), ['no', 'other', '', 'none'], true)) {
+        $negations = ['', 'no', 'none', 'na', 'other'];
+
+        $name = null;
+
+        if ($hotelName && ! in_array(strtolower($hotelName), $negations, true)) {
+            $name = $hotelName;
+        } elseif ($bubbleSlug && ! in_array(strtolower($bubbleSlug), $negations, true)) {
+            $name = str_replace('_', ' ', $bubbleSlug);
+        }
+
+        if ($name === null) {
             return null;
         }
 
-        $normalized = $this->normalizeHotelName($hotelName);
+        $normalized = $this->normalizeHotelName($name);
 
         $hotels = Hotel::all();
 
@@ -1501,8 +1514,12 @@ class ImportBubbleDatabase extends Command
             return null;
         }
 
-        $pets = [];
         $lower = strtolower($text);
+        if (in_array(trim($lower), ['no', 'none', 'n/a', 'na', 'no pets', 'no pet', 'no animals', 'none at this time'])) {
+            return null;
+        }
+
+        $pets = [];
         if (str_contains($lower, 'dog')) {
             $pets[] = ['type' => 'dog', 'notes' => $text];
         }

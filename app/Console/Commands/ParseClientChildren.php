@@ -279,28 +279,17 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
                 continue;
             }
 
-            $birthYear = null;
-            $birthMonth = null;
+            $birthDate = null;
 
             if (isset($child['age_months']) && $child['age_months'] !== null) {
-                $months = (int) $child['age_months'];
-                $years = (int) floor($months / 12);
-                $remainingMonths = $months % 12;
-                $birthYear = (int) date('Y') - $years;
-                $birthMonth = (int) date('n') - $remainingMonths;
-
-                if ($birthMonth <= 0) {
-                    $birthMonth += 12;
-                    $birthYear--;
-                }
+                $birthDate = now()->subMonths((int) $child['age_months']);
             } elseif (isset($child['age_years']) && $child['age_years'] !== null) {
-                $birthYear = (int) date('Y') - (int) $child['age_years'];
+                $birthDate = now()->subYears((int) $child['age_years']);
             }
 
             $client->children()->create([
                 'name' => $name,
-                'birth_year' => $birthYear,
-                'birth_month' => $birthMonth,
+                'birth_date' => $birthDate,
                 'gender' => $child['gender'] ?? null,
             ]);
         }

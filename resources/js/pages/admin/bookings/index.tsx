@@ -575,7 +575,7 @@ export default function Bookings() {
                                                     >
                                                         <ServiceIcon className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-90" />
                                                         <div className="flex min-w-0 flex-col items-start text-left">
-                                                            <span className="leading-tight font-semibold whitespace-nowrap">
+                                                            <span className="text-[10px] leading-tight opacity-80">
                                                                 {formatDisplayTime(
                                                                     booking.start_datetime,
                                                                 )}
@@ -584,7 +584,7 @@ export default function Bookings() {
                                                                     booking.end_datetime,
                                                                 )}
                                                             </span>
-                                                            <span className="w-full truncate text-[10px] leading-tight opacity-80">
+                                                            <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
                                                                 {booking.client
                                                                     ?.user
                                                                     ?.name ||
@@ -939,7 +939,7 @@ export default function Bookings() {
                                                 <ServiceIcon className="h-4 w-4" />
                                             </div>
                                             <div className="overflow-hidden">
-                                                <div className="font-semibold whitespace-nowrap">
+                                                <div className="text-xs opacity-80">
                                                     {formatDisplayTime(
                                                         booking.start_datetime,
                                                     )}
@@ -948,7 +948,7 @@ export default function Bookings() {
                                                         booking.end_datetime,
                                                     )}
                                                 </div>
-                                                <div className="truncate text-xs opacity-80">
+                                                <div className="font-semibold truncate whitespace-nowrap">
                                                     {booking.client?.user
                                                         ?.name ||
                                                         `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||

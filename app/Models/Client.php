@@ -111,11 +111,12 @@ class Client extends Model
     public function previousCaregivers(): BelongsToMany
     {
         return $this->belongsToMany(Caregiver::class, 'bookings')
+            ->select('caregivers.*')
             ->whereNotNull('bookings.caregiver_id')
-            ->whereIn('bookings.status', ['completed', 'confirmed'])
+            ->whereIn('bookings.status', ['completed', 'confirmed', 'paid'])
             ->withPivot('start_datetime')
             ->orderByPivot('start_datetime', 'desc')
-            ->distinct();
+            ->groupBy('caregivers.id');
     }
 
     public function typeChanges(): HasMany

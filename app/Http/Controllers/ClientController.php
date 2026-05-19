@@ -215,16 +215,7 @@ class ClientController extends Controller
     {
         $client->load(['user', 'addresses', 'children', 'pets', 'favoriteCaregivers.user', 'blockedCaregivers.user', 'typeChanges.admin']);
 
-        $previousCaregivers = $client->bookings()
-            ->whereNotNull('caregiver_id')
-            ->whereIn('status', ['completed', 'confirmed'])
-            ->with('caregiver.user')
-            ->orderBy('start_datetime', 'desc')
-            ->get()
-            ->pluck('caregiver')
-            ->unique('id')
-            ->take(10)
-            ->values();
+        $previousCaregivers = $client->previousCaregivers()->with('user')->get();
         $client->load(['attributes' => function ($query) {
             $query->withPivot('value');
         }]);

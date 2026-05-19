@@ -45,7 +45,7 @@ class ClientChild extends Model
             return null;
         }
 
-        return $this->birth_date->diffInYears(now());
+        return (int) $this->birth_date->diffInYears(now());
     }
 
     public function getBirthMonthAttribute(): ?int

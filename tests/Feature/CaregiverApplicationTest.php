@@ -546,6 +546,475 @@ describe('Caregiver Application - Validation Rules', function () {
     });
 });
 
+describe('Caregiver Application - Step 1 Validation', function () {
+    it('validates personal phone is required', function () {
+        Session::put('verified_email', 'no-phone@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-phone@example.com');
+        unset($data['personal']['phone']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('personal.phone');
+    });
+});
+
+describe('Caregiver Application - Step 3 Validation', function () {
+    it('validates experience start date format must be Y-m', function () {
+        Session::put('verified_email', 'bad-start-date@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-start-date@example.com');
+        $data['experiences'][0]['start_date'] = 'January 2020';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.start_date');
+    });
+
+    it('validates experience end date format must be Y-m', function () {
+        Session::put('verified_email', 'bad-end-date@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-end-date@example.com');
+        $data['experiences'][0]['end_date'] = 'not-a-date';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.end_date');
+    });
+
+    it('validates experience role is required', function () {
+        Session::put('verified_email', 'no-role@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-role@example.com');
+        unset($data['experiences'][0]['role']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.role');
+    });
+
+    it('validates experience organization is required', function () {
+        Session::put('verified_email', 'no-org@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-org@example.com');
+        unset($data['experiences'][0]['organization']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.organization');
+    });
+
+    it('validates experience description is required', function () {
+        Session::put('verified_email', 'no-exp-desc@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-exp-desc@example.com');
+        unset($data['experiences'][0]['description']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.description');
+    });
+
+    it('validates experience ages_served is required', function () {
+        Session::put('verified_email', 'no-ages@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ages@example.com');
+        unset($data['experiences'][0]['ages_served']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.ages_served');
+    });
+
+    it('validates experience ages_served must have at least one', function () {
+        Session::put('verified_email', 'empty-ages@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('empty-ages@example.com');
+        $data['experiences'][0]['ages_served'] = [];
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.ages_served');
+    });
+
+    it('accepts present experience without end date', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'present-exp@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('present-exp@example.com');
+        $data['experiences'][0]['present'] = true;
+        $data['experiences'][0]['end_date'] = '';
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $this->assertDatabaseHas('users', ['email' => 'present-exp@example.com']);
+    });
+
+    it('validates employment_status must be valid value', function () {
+        Session::put('verified_email', 'bad-employment@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-employment@example.com');
+        $data['employment_status'] = 'maybe';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('employment_status');
+    });
+});
+
+describe('Caregiver Application - Step 4 Validation', function () {
+    it('validates smokes is required', function () {
+        Session::put('verified_email', 'no-smokes@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-smokes@example.com');
+        unset($data['smokes']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('smokes');
+    });
+
+    it('validates alcohol is required', function () {
+        Session::put('verified_email', 'no-alcohol@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-alcohol@example.com');
+        unset($data['alcohol']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('alcohol');
+    });
+
+    it('validates alcohol must be valid value', function () {
+        Session::put('verified_email', 'bad-alcohol@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-alcohol@example.com');
+        $data['alcohol'] = 'everyday';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('alcohol');
+    });
+
+    it('validates substance_abuse is required', function () {
+        Session::put('verified_email', 'no-substance@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-substance@example.com');
+        unset($data['substance_abuse']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('substance_abuse');
+    });
+
+    it('validates limitations is required', function () {
+        Session::put('verified_email', 'no-limitations@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-limitations@example.com');
+        unset($data['limitations']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('limitations');
+    });
+
+    it('validates allergic_to_pets is required', function () {
+        Session::put('verified_email', 'no-allergies@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-allergies@example.com');
+        unset($data['allergic_to_pets']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('allergic_to_pets');
+    });
+
+    it('validates visible_tattoos is required', function () {
+        Session::put('verified_email', 'no-tattoos@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-tattoos@example.com');
+        unset($data['visible_tattoos']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('visible_tattoos');
+    });
+
+    it('validates authorized_to_work is required', function () {
+        Session::put('verified_email', 'no-auth@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-auth@example.com');
+        unset($data['authorized_to_work']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('authorized_to_work');
+    });
+
+    it('validates reliable_vehicle is required', function () {
+        Session::put('verified_email', 'no-vehicle@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-vehicle@example.com');
+        unset($data['reliable_vehicle']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('reliable_vehicle');
+    });
+
+    it('validates cpr_certified is required', function () {
+        Session::put('verified_email', 'no-cpr-field@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-cpr-field@example.com');
+        unset($data['cpr_certified']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('cpr_certified');
+    });
+
+    it('validates trustline_certified is required', function () {
+        Session::put('verified_email', 'no-trustline-field@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-trustline-field@example.com');
+        unset($data['trustline_certified']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('trustline_certified');
+    });
+
+    it('validates has_children must be valid value', function () {
+        Session::put('verified_email', 'bad-children@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-children@example.com');
+        $data['has_children'] = 'undecided';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('has_children');
+    });
+
+    it('accepts submission with cpr_certified = no without conditional fields', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'cpr-no@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('cpr-no@example.com');
+        $data['cpr_certified'] = 'no';
+        unset($data['cpr_expiration']);
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $this->assertDatabaseHas('users', ['email' => 'cpr-no@example.com']);
+    });
+
+    it('accepts submission with trustline_certified = no without conditional fields', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'trustline-no@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('trustline-no@example.com');
+        $data['trustline_certified'] = 'no';
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $this->assertDatabaseHas('users', ['email' => 'trustline-no@example.com']);
+    });
+});
+
+describe('Caregiver Application - Step 5 Validation', function () {
+    it('validates reference name is required', function () {
+        Session::put('verified_email', 'no-ref-name@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-name@example.com');
+        unset($data['references'][0]['name']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.name');
+    });
+
+    it('validates reference email is required', function () {
+        Session::put('verified_email', 'no-ref-email@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-email@example.com');
+        unset($data['references'][0]['email']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.email');
+    });
+
+    it('validates reference phone is required', function () {
+        Session::put('verified_email', 'no-ref-phone@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-phone@example.com');
+        unset($data['references'][0]['phone']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.phone');
+    });
+
+    it('validates reference relationship is required', function () {
+        Session::put('verified_email', 'no-ref-rel@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-rel@example.com');
+        unset($data['references'][0]['relationship']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.relationship');
+    });
+
+    it('validates reference years_known is required', function () {
+        Session::put('verified_email', 'no-ref-years@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-years@example.com');
+        unset($data['references'][0]['years_known']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.years_known');
+    });
+
+    it('validates reference years_known must be valid range', function () {
+        Session::put('verified_email', 'bad-ref-years@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-ref-years@example.com');
+        $data['references'][0]['years_known'] = '50+';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.years_known');
+    });
+});
+
+describe('Caregiver Application - Step 7 Validation', function () {
+    it('validates bio is required', function () {
+        Session::put('verified_email', 'no-bio@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-bio@example.com');
+        unset($data['bio']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('bio');
+    });
+});
+
+describe('Caregiver Application - Submission Edge Cases', function () {
+    it('submits successfully with full-time employment and present experience', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'fulltime-present@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('fulltime-present@example.com');
+        $data['employment_status'] = 'full_time';
+        $data['experiences'][0]['present'] = true;
+        $data['experiences'][0]['end_date'] = '';
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $user = User::where('email', 'fulltime-present@example.com')->first();
+        $this->assertNotNull($user);
+        $application = CaregiverApplication::where('caregiver_id', $user->caregiver->id)->first();
+        expect($application->data['employment_status'])->toBe('full_time');
+        expect($application->data['experiences'][0]['present'])->toBeTrue();
+    });
+
+    it('submits successfully with part-time employment', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'parttime@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('parttime@example.com');
+        $data['employment_status'] = 'part_time';
+        $data['experiences'][0]['present'] = true;
+        $data['experiences'][0]['end_date'] = '';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertRedirect('/caregiver/apply/thank-you');
+    });
+
+    it('submits successfully with student status', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'student@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('student@example.com');
+        $data['employment_status'] = 'student';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertRedirect('/caregiver/apply/thank-you');
+    });
+
+    it('submits with all optional fields empty', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'optional-empty@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('optional-empty@example.com');
+        $data['sponsor']['phone'] = '';
+        $data['sponsor']['relationship'] = '';
+        $data['personal']['address_line2'] = '';
+        $data['availability']['notes'] = '';
+        $data['education']['college'] = '';
+        $data['education']['degree'] = '';
+        $data['education']['high_school_name'] = '';
+        $data['education']['high_school_graduation_year'] = '';
+        $data['languages'] = '';
+        $data['has_children'] = '';
+        $data['things_i_bring'] = '';
+        $data['interests'] = '';
+        $data['qualifications'] = [];
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertRedirect('/caregiver/apply/thank-you');
+    });
+
+    it('rejects submission without session', function () {
+        $data = caregiverApplicationGetValidApplicationData();
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertRedirect('/caregiver/apply/verify-email');
+    });
+});
+
 describe('Caregiver Application - Form Request Authorization', function () {
     it('allows public access without authentication', function () {
         $response = $this->get('/caregiver/apply/verify-email');
