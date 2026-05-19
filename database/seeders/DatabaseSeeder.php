@@ -23,13 +23,13 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             AttributeDefinitionSeeder::class,
             // CaregiverSeeder::class,
-            ClientSeeder::class,
+            // ClientSeeder::class,
             // AvailabilitySeeder::class,
             HotelSeeder::class,
-            BookingGroupSeeder::class,
-            BookingSeeder::class,
+            // BookingGroupSeeder::class,
+            // BookingSeeder::class,
             PricingRulesTableSeeder::class,
-            ClientCaregiverRelationshipsSeeder::class,
+            // ClientCaregiverRelationshipsSeeder::class,
         ]);
 
         User::factory()->create([
@@ -66,7 +66,7 @@ class DatabaseSeeder extends Seeder
 
         // Run caregiver booking seeder after users are created
         $this->call([
-            CaregiverBookingSeeder::class,
+            // CaregiverBookingSeeder::class,
         ]);
     }
 }

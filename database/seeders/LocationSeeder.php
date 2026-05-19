@@ -15,9 +15,6 @@ class LocationSeeder extends Seeder
         $locations = [
             ['name' => 'South County', 'description' => 'Southern area of the county'],
             ['name' => 'North County', 'description' => 'Northern area of the county'],
-            ['name' => 'Downtown', 'description' => 'City center'],
-            ['name' => 'East County', 'description' => 'Eastern area'],
-            ['name' => 'West County', 'description' => 'Western area'],
         ];
 
         foreach ($locations as $location) {
