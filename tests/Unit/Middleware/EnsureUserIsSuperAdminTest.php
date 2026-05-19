@@ -4,14 +4,14 @@ use App\Http\Middleware\EnsureUserIsSuperAdmin;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-test('allows admin user', function () {
+test('denies admin user', function () {
     $user = User::factory()->make(['role' => 'admin']);
     $request = Request::create('/')->setUserResolver(fn () => $user);
 
     $middleware = new EnsureUserIsSuperAdmin;
     $response = $middleware->handle($request, fn ($req) => response('OK'));
 
-    $this->assertEquals(200, $response->getStatusCode());
+    $this->assertEquals(403, $response->getStatusCode());
 });
 
 test('allows super admin user', function () {

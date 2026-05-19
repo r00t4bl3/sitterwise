@@ -89,7 +89,9 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 31 }, (_, i) => String(currentYear - 30 + i));
+const years = Array.from({ length: 31 }, (_, i) =>
+    String(currentYear - 30 + i),
+);
 
 export default function Wizard() {
     const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -245,11 +247,19 @@ export default function Wizard() {
     const form = useForm(defaultFormData);
 
     // Deep merge draft data with defaults to fill missing fields
-    const deepMerge = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
+    const deepMerge = (
+        target: Record<string, unknown>,
+        source: Record<string, unknown>,
+    ): Record<string, unknown> => {
         const result = { ...target };
         for (const key of Object.keys(result)) {
             if (key in source && source[key] != null) {
-                if (typeof result[key] === 'object' && result[key] !== null && !Array.isArray(result[key]) && !(result[key] instanceof File)) {
+                if (
+                    typeof result[key] === 'object' &&
+                    result[key] !== null &&
+                    !Array.isArray(result[key]) &&
+                    !(result[key] instanceof File)
+                ) {
                     result[key] = deepMerge(
                         result[key] as Record<string, unknown>,
                         source[key] as Record<string, unknown>,
@@ -283,7 +293,11 @@ export default function Wizard() {
             form.data.employment_status === 'part_time';
 
         const newExp = [...form.data.experiences];
-        newExp[0] = { ...newExp[0], present: isEmployed, end_date: isEmployed ? '' : newExp[0].end_date };
+        newExp[0] = {
+            ...newExp[0],
+            present: isEmployed,
+            end_date: isEmployed ? '' : newExp[0].end_date,
+        };
         form.setData('experiences', newExp);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.employment_status]);
@@ -364,7 +378,7 @@ export default function Wizard() {
                             <button
                                 key={step}
                                 onClick={() => goToStep(step)}
-                                className={`cursor-pointer flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium ${
+                                className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-sm font-medium ${
                                     step === currentStep
                                         ? 'bg-coral text-white'
                                         : step < currentStep
@@ -946,10 +960,7 @@ export default function Wizard() {
                                 <Select
                                     value={form.data.employment_status ?? ''}
                                     onValueChange={(value) =>
-                                        form.setData(
-                                            'employment_status',
-                                            value,
-                                        )
+                                        form.setData('employment_status', value)
                                     }
                                 >
                                     <SelectTrigger id="employment-status">
@@ -1053,8 +1064,8 @@ export default function Wizard() {
                                                 <Select
                                                     value={
                                                         exp.start_date &&
-                                                        exp.start_date
-                                                            .length >= 4
+                                                        exp.start_date.length >=
+                                                            4
                                                             ? exp.start_date.slice(
                                                                   0,
                                                                   4,
@@ -1105,9 +1116,7 @@ export default function Wizard() {
                                         <div className="space-y-2">
                                             {!exp.present ? (
                                                 <>
-                                                    <Label>
-                                                        End Date
-                                                    </Label>
+                                                    <Label>End Date</Label>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <Select
                                                             value={
@@ -1124,8 +1133,7 @@ export default function Wizard() {
                                                                 month,
                                                             ) => {
                                                                 const newExp = [
-                                                                    ...form
-                                                                        .data
+                                                                    ...form.data
                                                                         .experiences,
                                                                 ];
                                                                 const year =
@@ -1156,9 +1164,7 @@ export default function Wizard() {
                                                             <SelectContent>
                                                                 {months
                                                                     .filter(
-                                                                        (
-                                                                            m,
-                                                                        ) => {
+                                                                        (m) => {
                                                                             if (
                                                                                 !exp.start_date
                                                                             )
@@ -1200,9 +1206,7 @@ export default function Wizard() {
                                                                         },
                                                                     )
                                                                     .map(
-                                                                        (
-                                                                            m,
-                                                                        ) => (
+                                                                        (m) => (
                                                                             <SelectItem
                                                                                 key={
                                                                                     m.value
@@ -1234,8 +1238,7 @@ export default function Wizard() {
                                                                 year,
                                                             ) => {
                                                                 const newExp = [
-                                                                    ...form
-                                                                        .data
+                                                                    ...form.data
                                                                         .experiences,
                                                                 ];
                                                                 const month =
@@ -1297,9 +1300,7 @@ export default function Wizard() {
                                                             <SelectContent>
                                                                 {years
                                                                     .filter(
-                                                                        (
-                                                                            y,
-                                                                        ) => {
+                                                                        (y) => {
                                                                             if (
                                                                                 !exp.start_date
                                                                             )
@@ -1316,9 +1317,7 @@ export default function Wizard() {
                                                                         },
                                                                     )
                                                                     .map(
-                                                                        (
-                                                                            y,
-                                                                        ) => (
+                                                                        (y) => (
                                                                             <SelectItem
                                                                                 key={
                                                                                     y
@@ -1463,9 +1462,7 @@ export default function Wizard() {
                                             />
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label>
-                                                Ages Served
-                                            </Label>
+                                            <Label>Ages Served</Label>
                                             <p className="text-sm text-gray-600">
                                                 Select all age groups you worked
                                                 with in this role.
@@ -1537,10 +1534,7 @@ export default function Wizard() {
                                 </div>
                             ))}
 
-                            <Button
-                                type="button"
-                                onClick={addExperience}
-                            >
+                            <Button type="button" onClick={addExperience}>
                                 + Add Another Experience
                             </Button>
                         </div>
@@ -1561,7 +1555,9 @@ export default function Wizard() {
                                         <span className="text-red-500">*</span>
                                     </Label>
                                     <Select
-                                        value={form.data.authorized_to_work ?? ''}
+                                        value={
+                                            form.data.authorized_to_work ?? ''
+                                        }
                                         onValueChange={(value) =>
                                             form.setData(
                                                 'authorized_to_work',
@@ -1573,20 +1569,24 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     {form.data.authorized_to_work === 'no' && (
                                         <div className="mt-2 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
-                                            Sitterwise is required by federal law
-                                            to verify work authorization for all
-                                            employees. If you are not currently
-                                            authorized to work in the United
-                                            States, we cannot move forward with
-                                            your application. If your status
-                                            changes, please reach out to us
-                                            directly.
+                                            Sitterwise is required by federal
+                                            law to verify work authorization for
+                                            all employees. If you are not
+                                            currently authorized to work in the
+                                            United States, we cannot move
+                                            forward with your application. If
+                                            your status changes, please reach
+                                            out to us directly.
                                         </div>
                                     )}
                                 </div>
@@ -1607,8 +1607,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1629,7 +1633,9 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                             <SelectItem value="socially">
                                                 Socially/Occasionally
                                             </SelectItem>
@@ -1697,8 +1703,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1722,8 +1732,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1747,8 +1761,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1769,8 +1787,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1826,7 +1848,9 @@ export default function Wizard() {
                                         <span className="text-red-500">*</span>
                                     </Label>
                                     <Select
-                                        value={form.data.trustline_certified ?? ''}
+                                        value={
+                                            form.data.trustline_certified ?? ''
+                                        }
                                         onValueChange={(value) =>
                                             form.setData(
                                                 'trustline_certified',
@@ -1838,8 +1862,12 @@ export default function Wizard() {
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="yes">
+                                                Yes
+                                            </SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1892,17 +1920,16 @@ export default function Wizard() {
                                     <Select
                                         value={form.data.has_children ?? ''}
                                         onValueChange={(value) =>
-                                            form.setData(
-                                                'has_children',
-                                                value,
-                                            )
+                                            form.setData('has_children', value)
                                         }
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="no">
+                                                No
+                                            </SelectItem>
                                             <SelectItem value="yes_at_home">
                                                 Yes (ages at home)
                                             </SelectItem>
@@ -1922,10 +1949,22 @@ export default function Wizard() {
                                 </h3>
                                 {(
                                     [
-                                        ['special_needs', 'Experienced Caring for Children with Special Needs'],
-                                        ['swimming', 'Willing to Accompany Children Swimming (Hotel Pools)'],
-                                        ['driving', 'Willing to Drive Children in your Personal Car'],
-                                        ['bilingual', 'Bilingual (English & Spanish)'],
+                                        [
+                                            'special_needs',
+                                            'Experienced Caring for Children with Special Needs',
+                                        ],
+                                        [
+                                            'swimming',
+                                            'Willing to Accompany Children Swimming (Hotel Pools)',
+                                        ],
+                                        [
+                                            'driving',
+                                            'Willing to Drive Children in your Personal Car',
+                                        ],
+                                        [
+                                            'bilingual',
+                                            'Bilingual (English & Spanish)',
+                                        ],
                                     ] as const
                                 ).map(([skill, label]) => (
                                     <label
@@ -2313,7 +2352,9 @@ export default function Wizard() {
                                                 <Checkbox
                                                     checked={
                                                         form.data
-                                                            .qualifications?.[key] ?? false
+                                                            .qualifications?.[
+                                                            key
+                                                        ] ?? false
                                                     }
                                                     onCheckedChange={(
                                                         checked,

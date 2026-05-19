@@ -82,6 +82,7 @@ class JobController extends Controller
                     ->toArray(),
                 'caregiver_notes' => $booking->caregiver_notes,
                 'children' => $booking->children,
+                'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
                 'client_rating' => $booking->client_rating,
                 'caregiver_rating' => $booking->caregiver_rating,

@@ -45,6 +45,9 @@ Resident (San Diego), Vacationer (hotel guests), Invoiced
 - **Stripe Connect** for caregiver payouts
 - Webhook-driven status updates
 
+### SMS Broadcast
+Super-admin tool to send a single SMS to all active, opted-in caregivers via the A2P 10DLC campaign-linked Twilio number. Messages are queued and throttled to 1/sec. Delivery status is tracked in `broadcast_messages` via Twilio status callbacks.
+
 ### Notifications
 Event-driven architecture with email (SendGrid), SMS (Twilio), and database notifications sent on booking creation, acceptance, invitations, receipts, and reminders.
 
@@ -124,6 +127,25 @@ php artisan test --compact
 php artisan test --compact --filter=testName
 vendor/bin/pint
 ```
+
+## Stripe Webhook Configuration
+
+Configure in [Stripe Dashboard](https://dashboard.stripe.com/webhooks) pointing `{BASE_URL}` to the production domain. Requires the `whsec_*` signing secret set as `STRIPE_WEBHOOK_SECRET` in `.env`.
+
+| Webhook | Route | Events | Purpose |
+|---------|-------|--------|---------|
+| **Payment Intents** | `POST {BASE_URL}/webhooks/stripe` | `payment_intent.succeeded`, `payment_intent.payment_failed` | Updates booking payment status, captures client payments, triggers payment failure notifications |
+
+## Twilio Webhook Configuration
+
+Configure these URLs in the [Twilio Console](https://console.twilio.com) under the phone number associated with the A2P 10DLC campaign.
+
+| Webhook | Route | Purpose |
+|---------|-------|---------|
+| **Status Callback** | `POST {BASE_URL}/webhooks/twilio/status` | Receives delivery status updates (`sent`, `delivered`, `failed`) for outbound broadcast messages |
+| **Inbound SMS** | `POST {BASE_URL}/webhooks/twilio/inbound` | Handles carrier opt-out replies (`STOP`, `STOPALL`, `UNSUBSCRIBE`, `CANCEL`, `END`, `QUIT`) — flips `sms_opted_out = true` on the matching caregiver record |
+
+Replace `{BASE_URL}` with the application's production domain (e.g. `https://sitterwise.com`). Both endpoints are excluded from CSRF protection.
 
 ## Directory Overview
 

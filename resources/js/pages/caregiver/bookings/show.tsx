@@ -59,6 +59,7 @@ interface Booking {
         birth_year: number | null;
         birth_month: number | null;
     }> | null;
+    children_notes: string | null;
     pets: Array<{
         name: string;
         type: string | null;
@@ -412,7 +413,16 @@ export default function BookingDetail({ booking }: PageProps) {
 
                         <div className="right-panel grid gap-6">
                             {/* Children  */}
-                            {booking.children && (
+                            {booking.children_notes ? (
+                                <div>
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Children
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        {booking.children_notes}
+                                    </p>
+                                </div>
+                            ) : booking.children ? (
                                 <div>
                                     <h2 className="text-md mb-2 font-semibold text-foreground">
                                         Children ({booking.children?.length})
@@ -437,7 +447,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                             )}
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
 
                             {/* Pets */}
                             {booking.pets && (

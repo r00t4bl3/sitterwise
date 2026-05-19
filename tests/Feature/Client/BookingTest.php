@@ -136,6 +136,7 @@ describe('Booking - Client', function () {
     });
 
     test('client can create a booking with manual address input', function () {
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
         $response = $this->post(route('bookings.store'), [
             'service_type' => 'petsitter',
             'location_type' => 'private_home',
@@ -157,6 +158,7 @@ describe('Booking - Client', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => 'friend_family',
             'save_children_pets_to_profile' => false, // No new children/pets
+            'child_ids' => [$child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -176,11 +178,12 @@ describe('Booking - Client', function () {
             'address_city' => 'San Diego',
             'how_did_you_hear' => 'friend_family',
         ]);
-        expect(Booking::where('client_id', $this->client->id)->first()->children)->toHaveCount(0);
+        expect(Booking::where('client_id', $this->client->id)->first()->children)->toHaveCount(1);
     });
 
     test('client can create a booking for a hotel', function () {
         $hotel = Hotel::factory()->create();
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $response = $this->post(route('bookings.store'), [
             'service_type' => 'companion_care',
@@ -204,6 +207,7 @@ describe('Booking - Client', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => 'concierge',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -226,6 +230,7 @@ describe('Booking - Client', function () {
     });
 
     test('client cannot create a booking shorter than 4 hours', function () {
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
         $response = $this->post(route('bookings.store'), [
             'service_type' => 'companion_care',
             'location_type' => 'private_home',
@@ -236,6 +241,7 @@ describe('Booking - Client', function () {
             'address_state' => 'CA',
             'address_zip' => '92101',
             'how_did_you_hear' => 'concierge',
+            'child_ids' => [$child->id],
         ]);
 
         $response->assertInvalid(['end_datetime']);
@@ -243,6 +249,7 @@ describe('Booking - Client', function () {
     });
 
     test('client cannot create a booking with past start_datetime', function () {
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
         $response = $this->post(route('bookings.store'), [
             'service_type' => 'babysitter',
             'location_type' => 'private_home',
@@ -253,6 +260,7 @@ describe('Booking - Client', function () {
             'address_state' => 'TS',
             'address_zip' => '12345',
             'how_did_you_hear' => 'google',
+            'child_ids' => [$child->id],
         ]);
 
         $response->assertInvalid(['start_datetime']);
@@ -280,6 +288,7 @@ describe('Booking - Client', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => 'google',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$childToKeep->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [$childToDelete->id],
@@ -300,6 +309,7 @@ describe('Booking - Client', function () {
     });
 
     test('client can delete a pet from their profile when creating a booking', function () {
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
         $petToDelete = ClientPet::factory()->for($this->client)->create();
         $petToKeep = ClientPet::factory()->for($this->client)->create();
 
@@ -320,6 +330,7 @@ describe('Booking - Client', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => 'google',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -374,6 +385,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -412,6 +424,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -450,6 +463,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -488,6 +502,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -526,6 +541,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],
@@ -573,6 +589,7 @@ describe('DateTime Picker Local Time Handling', function () {
             'special_needs_notes' => '',
             'how_did_you_hear' => '',
             'save_children_pets_to_profile' => false,
+            'child_ids' => [$this->child->id],
             'new_children' => [],
             'new_pets' => [],
             'deleted_child_ids' => [],

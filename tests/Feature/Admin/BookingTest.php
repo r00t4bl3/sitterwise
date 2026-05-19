@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
@@ -150,6 +151,7 @@ describe('Booking - Admin', function () {
 
     test('admin can create a booking with hotel location', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $response = $this->post(route('bookings.store'), [
             'client_id' => $this->client->id,
@@ -161,6 +163,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -180,6 +183,7 @@ describe('Booking - Admin', function () {
 
     test('admin can create a booking with vacation rental and save rental platform', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $response = $this->post(route('bookings.store'), [
             'client_id' => $this->client->id,
@@ -190,6 +194,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'rental_platform' => 'airbnb',
             'address_line1' => '123 Beach House Way',
             'address_line2' => '',
@@ -213,6 +218,7 @@ describe('Booking - Admin', function () {
 
     test('admin can create a booking with client address', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $clientAddress = ClientAddress::factory()->create();
 
@@ -226,6 +232,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '123 Home Way',
             'address_line2' => '',
             'address_city' => 'Home City',
@@ -243,6 +250,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $booking = Booking::factory()->create([
             'status' => 'received',
@@ -256,6 +264,7 @@ describe('Booking - Admin', function () {
             'end_datetime' => now()->addDays(11)->toISOString(),
             'hotel_id' => $booking->hotel_id,
             'address_id' => $booking->address_id,
+            'child_ids' => [$child->id],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -273,6 +282,7 @@ describe('Booking - Admin', function () {
         $booking = Booking::factory()->create([
             'location_type' => 'vacation_rental',
         ]);
+        $child = ClientChild::factory()->create(['client_id' => $booking->client_id]);
 
         $response = $this->patch(route('bookings.update', $booking), [
             'client_id' => $booking->client_id,
@@ -283,6 +293,7 @@ describe('Booking - Admin', function () {
             'total_amount' => '200',
             'status' => 'confirmed',
             'payment_status' => 'paid',
+            'child_ids' => [$child->id],
             'rental_platform' => 'vrbo',
             'address_line1' => '456 Mountain Cabin',
             'address_line2' => '',
@@ -375,6 +386,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => $children->pluck('id')->toArray(),
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -738,6 +750,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking without adding new children and retain existing children when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing children but not saving to profile
         $booking = Booking::factory()->create([
@@ -780,6 +793,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -797,6 +811,7 @@ describe('Booking - Admin', function () {
 
     test('admin can create a booking with new pets and save to profile', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $newPetsData = [
             [
@@ -822,6 +837,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '123 Pet Owner Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -851,6 +867,7 @@ describe('Booking - Admin', function () {
 
     test('admin can create a booking with new pets but NOT save to profile if requested', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $newPetsData = [
             [
@@ -870,6 +887,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '456 Pet Ave',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -894,6 +912,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking to add new pets and save to profile', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking without pets
         $booking = Booking::factory()->create([
@@ -930,6 +949,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -959,6 +979,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking to add new pets but NOT save to profile if requested', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking without pets
         $booking = Booking::factory()->create([
@@ -989,6 +1010,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1013,6 +1035,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking without adding new pets and retain existing pets when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing pets but not saving to profile
         $booking = Booking::factory()->create([
@@ -1054,6 +1077,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1073,6 +1097,7 @@ describe('Booking - Admin', function () {
 
     test('admin cannot create a booking with a past start datetime', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $response = $this->post(route('bookings.store'), [
             'client_id' => $this->client->id,
@@ -1084,6 +1109,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1095,6 +1121,7 @@ describe('Booking - Admin', function () {
 
     test('admin cannot create a booking with a past end datetime', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $response = $this->post(route('bookings.store'), [
             'client_id' => $this->client->id,
@@ -1106,6 +1133,7 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'child_ids' => [$child->id],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1117,6 +1145,7 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking with a past start datetime', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $booking = Booking::factory()->create([
             'client_id' => $this->client->id,
@@ -1134,6 +1163,7 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->start_datetime->toISOString(),
             'end_datetime' => $booking->end_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
+            'child_ids' => [$child->id],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1143,6 +1173,7 @@ describe('Booking - Admin', function () {
 
     test('admin cannot update a booking where end datetime is before start datetime', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $booking = Booking::factory()->create([
             'client_id' => $this->client->id,
@@ -1160,6 +1191,7 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->end_datetime->toISOString(),
             'end_datetime' => $booking->start_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
+            'child_ids' => [$child->id],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1169,6 +1201,7 @@ describe('Booking - Admin', function () {
 
     test('admin cannot update a booking with less than 4 hours duration', function () {
         $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         $booking = Booking::factory()->create([
             'client_id' => $this->client->id,
@@ -1186,6 +1219,7 @@ describe('Booking - Admin', function () {
             'start_datetime' => now()->subHours(3)->toISOString(),
             'end_datetime' => now()->subHour()->toISOString(),
             'hotel_id' => $booking->hotel_id,
+            'child_ids' => [$child->id],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1193,4 +1227,141 @@ describe('Booking - Admin', function () {
         $response->assertSessionHasErrors('end_datetime');
     });
 
+    it('can create a group childcare booking with children notes', function () {
+        $this->actingAs($this->user);
+
+        $start = now()->addDays(1)->setHour(9);
+        $end = now()->addDays(1)->setHour(17);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'group_childcare_invoiced',
+            'location_type' => 'private_home',
+            'start_datetime' => $start->toISOString(),
+            'end_datetime' => $end->toISOString(),
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Main St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'children_notes' => '10 children, ages 3-7',
+            'new_children' => [],
+            'new_pets' => [],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $booking = Booking::where('client_id', $this->client->id)->first();
+
+        expect($booking)->not->toBeNull();
+        expect($booking->children)->toBeNull();
+        expect($booking->children_notes)->toBe('10 children, ages 3-7');
+        expect($booking->service_type)->toBe('group_childcare_invoiced');
+    });
+
+    it('can create a corporate invoiced booking with child_ids (children_notes ignored)', function () {
+        $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $start = now()->addDays(1)->setHour(10);
+        $end = now()->addDays(1)->setHour(14);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'corporate_invoiced',
+            'location_type' => 'private_home',
+            'start_datetime' => $start->toISOString(),
+            'end_datetime' => $end->toISOString(),
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '456 Oak Ave',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92102',
+            'child_ids' => [$child->id],
+            'children_notes' => 'should be ignored',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::where('client_id', $this->client->id)
+            ->where('service_type', 'corporate_invoiced')
+            ->first();
+
+        expect($booking)->not->toBeNull();
+        expect($booking->children)->not->toBeNull();
+        expect($booking->children)->toHaveCount(1);
+        expect($booking->children_notes)->toBeNull();
+    });
+
+    it('stores children normally for non-group bookings', function () {
+        $this->actingAs($this->user);
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+        $start = now()->addDays(1)->setHour(14);
+        $end = now()->addDays(1)->setHour(18);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $start->toISOString(),
+            'end_datetime' => $end->toISOString(),
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '789 Pine St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92103',
+            'child_ids' => [$child->id],
+            'children_notes' => 'should be ignored',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking = Booking::where('client_id', $this->client->id)
+            ->where('service_type', 'babysitter')
+            ->first();
+
+        expect($booking)->not->toBeNull();
+        expect($booking->children)->not->toBeNull();
+        expect($booking->children)->toHaveCount(1);
+        expect($booking->children_notes)->toBeNull();
+    });
+
+    it('can update a group booking children notes', function () {
+        $this->actingAs($this->user);
+
+        $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
+        $booking = Booking::factory()->create([
+            'client_id' => $this->client->id,
+            'booking_group_id' => $group->id,
+            'service_type' => 'group_childcare_invoiced',
+            'status' => 'received',
+        ]);
+
+        $start = now()->addDays(2)->setHour(8);
+        $end = now()->addDays(2)->setHour(16);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $this->client->id,
+            'service_type' => 'group_childcare_invoiced',
+            'location_type' => $booking->location_type,
+            'start_datetime' => $start->toISOString(),
+            'end_datetime' => $end->toISOString(),
+            'hotel_id' => $booking->hotel_id,
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'children_notes' => '12 children, ages 5-12',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $booking->refresh();
+
+        expect($booking->children_notes)->toBe('12 children, ages 5-12');
+        expect($booking->children)->toBeNull();
+    });
 });

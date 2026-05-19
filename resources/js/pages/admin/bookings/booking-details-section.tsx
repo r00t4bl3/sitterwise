@@ -128,6 +128,25 @@ export function BookingDetailsSection({
                     </div>
                 )}
 
+                {form.data.service_type === 'group_childcare_invoiced' && (
+                    <div className="grid gap-2">
+                        <Label htmlFor="children_notes">Children</Label>
+                        <Textarea
+                            id="children_notes"
+                            value={form.data.children_notes}
+                            onChange={(e) =>
+                                form.setData('children_notes', e.target.value)
+                            }
+                            placeholder="How many children and age range?"
+                            rows={2}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            This will ignore the client's stored children data
+                            for this booking.
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
                         <Label

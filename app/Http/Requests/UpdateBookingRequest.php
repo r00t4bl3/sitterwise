@@ -4,12 +4,40 @@ namespace App\Http\Requests;
 
 use App\Rules\MinimumBookingDuration;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateBookingRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $user = $this->user();
+
+                if (! in_array($user?->role, ['admin', 'client'], true)) {
+                    return;
+                }
+
+                $serviceType = $this->input('service_type');
+
+                if ($serviceType !== 'group_childcare_invoiced') {
+                    $childIds = $this->input('child_ids', []);
+                    $newChildren = $this->input('new_children', []);
+
+                    if (empty($childIds) && empty($newChildren)) {
+                        $validator->errors()->add(
+                            'child_ids',
+                            'At least one child is required.',
+                        );
+                    }
+                }
+            },
+        ];
     }
 
     public function rules(): array
@@ -57,6 +85,7 @@ class UpdateBookingRequest extends FormRequest
             'new_children' => ['nullable', 'array'],
             'new_pets' => ['nullable', 'array'],
             'save_children_pets_to_profile' => ['nullable', 'boolean'],
+            'children_notes' => ['nullable', 'string'],
         ];
     }
 
@@ -95,6 +124,7 @@ class UpdateBookingRequest extends FormRequest
             'new_children' => ['nullable', 'array'],
             'new_pets' => ['nullable', 'array'],
             'save_children_pets_to_profile' => ['nullable', 'boolean'],
+            'children_notes' => ['nullable', 'string'],
         ];
     }
 }

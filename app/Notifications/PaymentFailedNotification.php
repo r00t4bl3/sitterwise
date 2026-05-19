@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Mail\AdminPaymentFailedMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,7 +20,16 @@ class PaymentFailedNotification extends BaseNotification implements ShouldQueue
 
     protected function channels(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): AdminPaymentFailedMail
+    {
+        return new AdminPaymentFailedMail(
+            $this->booking,
+            $this->attemptCount,
+            $this->errorMessage,
+        );
     }
 
     public function toArray(object $notifiable): array

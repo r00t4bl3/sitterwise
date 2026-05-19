@@ -234,29 +234,36 @@ class AdminBookingService implements BookingServiceInterface
         // Get client data for snapshot
         $client = Client::with(['children', 'pets', 'user'])->find($clientId);
 
+        $isGroupBooking = $validated['service_type'] === 'group_childcare_invoiced';
+        $hasChildrenNotes = ! empty($validated['children_notes']);
+
         // Prepare children snapshot (filter profile by child_ids + add new_children)
-        $childrenQuery = $client?->children ?? collect();
-        if (array_key_exists('child_ids', $validated)) {
-            $selectedChildIds = $validated['child_ids'] ?? [];
-            $childrenQuery = $childrenQuery->filter(fn ($child) => in_array($child->id, $selectedChildIds));
-        }
+        if ($isGroupBooking && $hasChildrenNotes) {
+            $childrenSnapshot = null;
+        } else {
+            $childrenQuery = $client?->children ?? collect();
+            if (array_key_exists('child_ids', $validated)) {
+                $selectedChildIds = $validated['child_ids'] ?? [];
+                $childrenQuery = $childrenQuery->filter(fn ($child) => in_array($child->id, $selectedChildIds));
+            }
 
-        $childrenSnapshot = $childrenQuery->map(fn ($child) => [
-            'name' => $child->name,
-            'gender' => $child->gender,
-            'birth_month' => $child->birth_month,
-            'birth_year' => $child->birth_year,
-        ])->values()->toArray();
+            $childrenSnapshot = $childrenQuery->map(fn ($child) => [
+                'name' => $child->name,
+                'gender' => $child->gender,
+                'birth_month' => $child->birth_month,
+                'birth_year' => $child->birth_year,
+            ])->values()->toArray();
 
-        if (! empty($validated['new_children'])) {
-            foreach ($validated['new_children'] as $childData) {
-                if (! empty($childData['name'])) {
-                    $childrenSnapshot[] = [
-                        'name' => $childData['name'],
-                        'gender' => $childData['gender'] ?? null,
-                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
-                    ];
+            if (! empty($validated['new_children'])) {
+                foreach ($validated['new_children'] as $childData) {
+                    if (! empty($childData['name'])) {
+                        $childrenSnapshot[] = [
+                            'name' => $childData['name'],
+                            'gender' => $childData['gender'] ?? null,
+                            'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                            'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                        ];
+                    }
                 }
             }
         }
@@ -289,7 +296,7 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         // Handle saving new children/pets to client profile if requested
-        if (! empty($validated['new_children']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
+        if (! $isGroupBooking && ! empty($validated['new_children']) && ($validated['save_children_pets_to_profile'] ?? true) && $clientId) {
             $this->saveNewChildren($clientId, $validated['new_children']);
         }
 
@@ -325,6 +332,7 @@ class AdminBookingService implements BookingServiceInterface
             'client_phone' => $client?->phone,
             'client_email' => $client?->user?->email,
             'children' => $childrenSnapshot,
+            'children_notes' => $isGroupBooking ? ($validated['children_notes'] ?? null) : null,
             'pets' => $petsSnapshot,
             'service_type' => $validated['service_type'],
             'location_type' => $validated['location_type'],
@@ -426,6 +434,7 @@ class AdminBookingService implements BookingServiceInterface
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
                 'children' => $booking->children,
+                'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
             ],
         ]);
@@ -466,9 +475,15 @@ class AdminBookingService implements BookingServiceInterface
         // Update client snapshot data
         $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
 
+        $isGroupBooking = ($validated['service_type'] ?? $booking->service_type) === 'group_childcare_invoiced';
+        $hasChildrenNotes = ! empty($validated['children_notes']);
+
         // Build children snapshot directly from new_children input
-        $childrenSnapshot = [];
-        if ($request->has('new_children')) {
+        $childrenSnapshot = null;
+        if ($isGroupBooking && $hasChildrenNotes) {
+            $childrenSnapshot = null;
+        } elseif ($request->has('new_children')) {
+            $childrenSnapshot = [];
             // Only process if new_children is explicitly provided
             if (! empty($validated['new_children'])) {
                 foreach ($validated['new_children'] as $childData) {
@@ -509,7 +524,7 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         // Sync to client profile when checkbox is checked
-        if (($validated['save_children_pets_to_profile'] ?? false) && $booking->client_id) {
+        if (! $isGroupBooking && ($validated['save_children_pets_to_profile'] ?? false) && $booking->client_id) {
             // Use childrenSnapshot (which may be existing or new)
             $this->syncClientChildren($booking->client_id, $childrenSnapshot);
             $this->syncClientPets($booking->client_id, $petsSnapshot);
@@ -517,7 +532,7 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         $updateData = [
-            ...collect($validated)->except(['special_considerations', 'hotel_id'])->toArray(),
+            ...collect($validated)->except(['special_considerations', 'hotel_id', 'children_notes'])->toArray(),
             'hotel_id' => $validated['hotel_id'] ?? $booking->hotel_id,
             'address_id' => $addressId,
             'client_first_name' => $client?->first_name,
@@ -525,6 +540,7 @@ class AdminBookingService implements BookingServiceInterface
             'client_phone' => $client?->phone,
             'client_email' => $client?->user?->email,
             'children' => $childrenSnapshot,
+            'children_notes' => $isGroupBooking ? ($validated['children_notes'] ?? null) : null,
             'pets' => $petsSnapshot,
         ];
 

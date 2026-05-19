@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ClientType;
 use App\Models\Client as ClientModel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -264,7 +265,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
         $client = ClientModel::whereHas('user', fn ($q) => $q->where('email', $email))->first();
 
-        if (! $client) {
+        if (! $client || $client->client_type === ClientType::Invoiced->value) {
             return null;
         }
 

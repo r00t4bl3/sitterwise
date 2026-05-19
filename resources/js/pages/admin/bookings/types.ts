@@ -77,6 +77,7 @@ export interface Booking {
         birth_month: number | null;
         birth_year: number | null;
     }> | null;
+    children_notes: string | null;
     pets: Array<{
         name: string;
         type: string | null;

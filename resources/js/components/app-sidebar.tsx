@@ -6,6 +6,7 @@ import {
     Home,
     LayoutGrid,
     MapPin,
+    MessageCircle,
     Shield,
     Star,
     Users,
@@ -97,6 +98,11 @@ const adminNavItems: NavItem[] = [
 ];
 
 const superAdminNavItems: NavItem[] = [
+    {
+        title: 'SMS Broadcast',
+        href: '/broadcast-sms',
+        icon: MessageCircle,
+    },
     {
         title: 'Certifications',
         href: '/certifications',

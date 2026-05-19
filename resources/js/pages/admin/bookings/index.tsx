@@ -948,7 +948,7 @@ export default function Bookings() {
                                                         booking.end_datetime,
                                                     )}
                                                 </div>
-                                                <div className="font-semibold truncate whitespace-nowrap">
+                                                <div className="truncate font-semibold whitespace-nowrap">
                                                     {booking.client?.user
                                                         ?.name ||
                                                         `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||

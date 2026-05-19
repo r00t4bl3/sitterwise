@@ -268,28 +268,31 @@ export function PersonalInfoSection({
                             })()}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            {editingBooking.children &&
-                            editingBooking.children.length > 0
-                                ? editingBooking.children.map(
-                                      (child, index) => (
-                                          <span key={`child-${index}`}>
-                                              {child.name}
-                                              {child.birth_month &&
-                                              child.birth_year
-                                                  ? ` (${calculateAge(
-                                                        child.birth_year,
-                                                        child.birth_month,
-                                                    )})`
-                                                  : ''}
-                                              {index <
-                                              editingBooking.children!.length -
-                                                  1
-                                                  ? ', '
-                                                  : ''}
-                                          </span>
-                                      ),
-                                  )
-                                : '(No children)'}
+                            {editingBooking.children_notes
+                                ? editingBooking.children_notes
+                                : editingBooking.children &&
+                                    editingBooking.children.length > 0
+                                  ? editingBooking.children.map(
+                                        (child, index) => (
+                                            <span key={`child-${index}`}>
+                                                {child.name}
+                                                {child.birth_month &&
+                                                child.birth_year
+                                                    ? ` (${calculateAge(
+                                                          child.birth_year,
+                                                          child.birth_month,
+                                                      )})`
+                                                    : ''}
+                                                {index <
+                                                editingBooking.children!
+                                                    .length -
+                                                    1
+                                                    ? ', '
+                                                    : ''}
+                                            </span>
+                                        ),
+                                    )
+                                  : '(No children)'}
                             {editingBooking.pets &&
                                 editingBooking.pets.length > 0 &&
                                 ` • ${editingBooking.pets.length} pet${editingBooking.pets.length > 1 ? 's' : ''}`}
@@ -1172,11 +1175,13 @@ export function PersonalInfoSection({
                                 </div>
                             )}
                         </div>
-                        {bookingChildren.length === 0 && (
-                            <p className="text-sm text-destructive">
-                                At least one child is required.
-                            </p>
-                        )}
+                        {bookingChildren.length === 0 &&
+                            form.data.service_type !==
+                                'group_childcare_invoiced' && (
+                                <p className="text-sm text-destructive">
+                                    At least one child is required.
+                                </p>
+                            )}
                     </div>
 
                     <div>

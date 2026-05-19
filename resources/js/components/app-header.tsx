@@ -215,8 +215,12 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     className="size-10 rounded-full p-1"
                                 >
                                     <UserAvatar
-                                        profile_photo_url={auth.user.profile_photo_url}
-                                        profile_photo_path={auth.user.profile_photo_path}
+                                        profile_photo_url={
+                                            auth.user.profile_photo_url
+                                        }
+                                        profile_photo_path={
+                                            auth.user.profile_photo_path
+                                        }
                                         name={auth.user.name}
                                         size="sm"
                                     />

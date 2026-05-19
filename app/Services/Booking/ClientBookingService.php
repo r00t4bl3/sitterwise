@@ -314,6 +314,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
                 'children' => $booking->children,
+                'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
             ],
         ]);

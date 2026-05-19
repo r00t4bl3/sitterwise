@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\Client;
+use App\Models\ClientChild;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use Database\Seeders\AttributeDefinitionSeeder;
@@ -64,6 +65,8 @@ describe('Booking Workflow', function () {
         $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
         $end = (clone $start)->addHours(4);
 
+        $child = ClientChild::factory()->create(['client_id' => $client->id]);
+
         $bookingData = [
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
@@ -73,6 +76,7 @@ describe('Booking Workflow', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
+            'child_ids' => [$child->id],
         ];
 
         actingAs($clientUser)

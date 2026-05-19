@@ -57,6 +57,7 @@ interface Booking {
         birth_year: number | null;
         birth_month: number | null;
     }> | null;
+    children_notes: string | null;
     pets: Array<{
         name: string;
         type: string | null;
@@ -308,28 +309,35 @@ export default function BookingDetail({
                                 )}
                             </div>
 
-                            {booking.children &&
-                                booking.children.length > 0 && (
-                                    <div className="mt-6">
-                                        <h2 className="text-md mb-2 font-semibold text-foreground">
-                                            Children ({booking.children.length})
-                                        </h2>
-                                        <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                                            {booking.children.map(
-                                                (child, i) => (
-                                                    <li key={i}>
-                                                        {child.name} (
-                                                        {calculateAge(
-                                                            child.birth_year,
-                                                            child.birth_month,
-                                                        )}
-                                                        )
-                                                    </li>
-                                                ),
-                                            )}
-                                        </ul>
-                                    </div>
-                                )}
+                            {booking.children_notes ? (
+                                <div className="mt-6">
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Children
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        {booking.children_notes}
+                                    </p>
+                                </div>
+                            ) : booking.children &&
+                              booking.children.length > 0 ? (
+                                <div className="mt-6">
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Children ({booking.children.length})
+                                    </h2>
+                                    <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                                        {booking.children.map((child, i) => (
+                                            <li key={i}>
+                                                {child.name} (
+                                                {calculateAge(
+                                                    child.birth_year,
+                                                    child.birth_month,
+                                                )}
+                                                )
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
 
                             {booking.pets && booking.pets.length > 0 && (
                                 <div className="mt-6">

@@ -142,6 +142,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 'notified_at' => $notification->notified_at,
                 'viewed_at' => $notification->viewed_at,
                 'children' => $booking->children,
+                'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
             ],
         ]);

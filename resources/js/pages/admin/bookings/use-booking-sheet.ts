@@ -97,6 +97,7 @@ interface FormData {
     deleted_child_ids: number[];
     deleted_pet_ids: number[];
     save_children_pets_to_profile: boolean;
+    children_notes: string;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -218,6 +219,7 @@ export function useBookingSheet({
         deleted_child_ids: [],
         deleted_pet_ids: [],
         save_children_pets_to_profile: true,
+        children_notes: '',
     });
 
     const populateCaregiverSuggestions = async () => {
@@ -511,6 +513,7 @@ export function useBookingSheet({
             new_children: [],
             new_pets: [],
             save_children_pets_to_profile: true,
+            children_notes: '',
         });
         setClientAddresses([]);
         setBookingChildren([]);
@@ -637,6 +640,7 @@ export function useBookingSheet({
                 new_children: [],
                 new_pets: [],
                 save_children_pets_to_profile: true,
+                children_notes: fullBooking.children_notes || '',
             });
 
             setEditingBooking(fullBooking);
@@ -784,6 +788,7 @@ export function useBookingSheet({
                 deleted_child_ids: [],
                 deleted_pet_ids: [],
                 save_children_pets_to_profile: true,
+                children_notes: fullBooking.children_notes || '',
             };
 
             form.setData(formData);

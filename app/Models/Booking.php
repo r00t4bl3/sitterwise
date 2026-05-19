@@ -158,6 +158,7 @@ class Booking extends Model
             'sitter_preferences' => 'array',
             'children' => 'array',
             'pets' => 'array',
+            'children_notes' => 'string',
             'total_amount' => 'decimal:2',
             'caregiver_amount' => 'decimal:2',
             'reimbursement' => 'decimal:2',

@@ -28,16 +28,14 @@ class TwilioService
         return $this->client;
     }
 
-    public function send(string $to, string $message): array
+    public function send(string $to, string $message, array $options = []): array
     {
-        $result = $this->client()->messages->create(
-            $to,
-            [
-                // 'from' => $this->fromNumber,
-                'messagingServiceSid' => $this->messagingServiceSid,
-                'body' => $message,
-            ]
-        );
+        $payload = array_merge([
+            'messagingServiceSid' => $this->messagingServiceSid,
+            'body' => $message,
+        ], $options);
+
+        $result = $this->client()->messages->create($to, $payload);
 
         return [
             'success' => true,

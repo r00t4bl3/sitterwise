@@ -88,7 +88,7 @@ class Caregiver extends Model
         'education_level',
         'languages',
         'metadata',
-        'bubble_id',
+        'sms_opted_out',
     ];
 
     protected $casts = [
@@ -97,6 +97,7 @@ class Caregiver extends Model
         'admin_rating' => 'decimal:2',
         'languages' => 'array',
         'metadata' => 'array',
+        'sms_opted_out' => 'boolean',
     ];
 
     public function ratings(): MorphMany
@@ -242,5 +243,15 @@ class Caregiver extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function scopeActiveForSms($query)
+    {
+        return $query->whereHas('status', function ($query) {
+            $query->where('name', 'Active');
+        })
+            ->whereNotNull('phone')
+            ->where('phone', '<>', '')
+            ->where('sms_opted_out', false);
     }
 }

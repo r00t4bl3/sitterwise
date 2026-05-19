@@ -1331,7 +1331,7 @@ class ImportBubbleDatabase extends Command
             'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
             'end_datetime' => $this->timestampToDateTime($source['end_date_date'] ?? null),
             'status' => $status->value,
-            'service_type' => $this->mapServiceType($source['service1_option_services'] ?? 'babysitting'),
+            'service_type' => $serviceType = $this->mapServiceType($source['service1_option_services'] ?? 'babysitting'),
             'location_type' => $this->mapLocationType($source['address_is_hotel__option_list_of_hotels'] ?? ''),
             'address_line1' => trim(($components['street number'] ?? '').' '.($components['street'] ?? '')),
             'address_city' => $components['city'] ?? null,
@@ -1361,7 +1361,12 @@ class ImportBubbleDatabase extends Command
             'stripe_payment_intent_id' => $source['payment_intent_id_text'] ?? null,
             'cancelled_at' => $this->timestampToDateTime($source['cancellation_date_date'] ?? null),
             'cancellation_reason' => $source['cancellation_reason_text'] ?? null,
-            'children' => $this->parseChildren($source['names_and_ages_of_children_text'] ?? null, $source['__of_children_option_number_of_kids'] ?? null),
+            'children' => $serviceType === ServiceType::GroupChildcareInvoiced->value
+                ? null
+                : $this->parseChildren($source['names_and_ages_of_children_text'] ?? null, $source['__of_children_option_number_of_kids'] ?? null),
+            'children_notes' => $serviceType === ServiceType::GroupChildcareInvoiced->value
+                ? ($source['names_and_ages_of_children_text'] ?? null)
+                : null,
             'pets' => $this->parsePets($source['pets_text'] ?? null),
             'special_considerations' => $this->mapSpecialConsiderations($source),
             'paid_to_caregiver_total' => ($source['caregiver_total_number'] ?? 0)

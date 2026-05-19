@@ -4,6 +4,7 @@ use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingReviewController;
+use App\Http\Controllers\BroadcastSmsController;
 use App\Http\Controllers\CaregiverApplicationController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\CaregiverPayoutController;
@@ -34,6 +35,11 @@ Route::get('/bio/{slug}', [CaregiverController::class, 'publicBio'])->name('care
 
 // Stripe webhook endpoint
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
+
+// Twilio status callback webhook
+Route::post('webhooks/twilio/status', [BroadcastSmsController::class, 'statusCallback'])->name('webhooks.twilio.status');
+
+Route::post('webhooks/twilio/inbound', [BroadcastSmsController::class, 'inboundSms'])->name('webhooks.twilio.inbound');
 
 // Guest booking routes (public, no auth required)
 Route::get('/book', [GuestBookingController::class, 'create'])->name('guest.bookings.create');
@@ -125,6 +131,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::put('caregivers/{caregiver}/admin-rating', [CaregiverController::class, 'updateAdminRating'])->name('caregivers.updateAdminRating');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
+    });
+
+    Route::middleware('super_admin')->group(function () {
+        Route::get('broadcast-sms', [BroadcastSmsController::class, 'index'])->name('broadcast-sms.index');
+        Route::post('broadcast-sms', [BroadcastSmsController::class, 'store'])->name('broadcast-sms.store');
     });
 
     // Route::middleware('super_admin')->group(function () {
