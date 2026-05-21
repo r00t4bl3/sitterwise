@@ -114,9 +114,8 @@ class Client extends Model
             ->select('caregivers.*')
             ->whereNotNull('bookings.caregiver_id')
             ->whereIn('bookings.status', ['completed', 'confirmed', 'paid'])
-            ->withPivot('start_datetime')
-            ->orderByPivot('start_datetime', 'desc')
-            ->groupBy('caregivers.id');
+            ->groupBy('caregivers.id', 'bookings.client_id', 'bookings.caregiver_id')
+            ->orderByRaw('MAX(bookings.start_datetime) DESC');
     }
 
     public function typeChanges(): HasMany
