@@ -215,6 +215,12 @@ class ImportBubbleProfilePictures extends Command
 
             Storage::disk($disk)->put($path, (string) $encoded);
 
+            if (! Storage::disk($disk)->exists($path)) {
+                $this->error("\nFile was not written to disk for User ID: {$user->id}");
+
+                return false;
+            }
+
             $localUrl = Storage::disk($disk)->url($path);
 
             $user->update([
