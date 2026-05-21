@@ -12,6 +12,7 @@ import {
     CreditCard,
     Grid3X3,
     List,
+    Download,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { StatusBadge } from '@/components/status-badge';
@@ -25,6 +26,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ExportSheet } from './export-sheet';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayTime, parseAsLocal } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -151,6 +153,8 @@ export default function Bookings() {
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+    const [exportSheetOpen, setExportSheetOpen] = useState(false);
 
     const [isTableView, setIsTableView] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -352,6 +356,13 @@ export default function Bookings() {
                                 <List className="h-4 w-4" />
                             </Button>
                         </ButtonGroup>
+                        <Button
+                            variant="outline"
+                            onClick={() => setExportSheetOpen(true)}
+                        >
+                            <Download className="h-4 w-4" />
+                            Export
+                        </Button>
                         <Button onClick={() => sheet.openCreateSheet()}>
                             Create Booking
                         </Button>
@@ -887,6 +898,13 @@ export default function Bookings() {
                 </div>
 
                 <BookingSheet {...sheet} />
+
+                <ExportSheet
+                    open={exportSheetOpen}
+                    onOpenChange={setExportSheetOpen}
+                    defaultMonth={filters.month}
+                    defaultYear={filters.year}
+                />
 
                 <Dialog
                     open={!!selectedDay}

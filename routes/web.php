@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ReferenceController;
 use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +70,11 @@ Route::middleware(VerifyEmail::class)->group(function () {
 
 Route::get('/caregiver/apply/thank-you', [CaregiverApplicationController::class, 'thankYou'])->name('caregiver.apply.thank-you');
 
+// Reference portal routes (public, no auth — references receive tokenized links via email)
+
+Route::get('/references/{token}', [ReferenceController::class, 'show'])->name('references.show');
+Route::post('/references/{token}', [ReferenceController::class, 'store'])->name('references.store');
+
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -96,6 +103,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
     Route::post('bookings/{booking}/release', [BookingController::class, 'release'])->name('bookings.release');
     Route::get('bookings/recommended-caregivers', [BookingController::class, 'recommendedCaregivers'])->name('bookings.recommendedCaregivers');
+    Route::get('bookings/export', [BookingController::class, 'export'])->name('bookings.export')->middleware('admin');
     Route::resource('bookings', BookingController::class)->only(['index', 'create', 'show', 'store', 'update', 'destroy']);
     Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::get('jobs/{booking}', [JobController::class, 'show'])->name('jobs.show');
@@ -114,7 +122,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
         Route::post('bookings/{booking}/process-payment', [BookingController::class, 'processPayment'])->name('bookings.processPayment');
         Route::post('bookings/{booking}/notify', [BookingController::class, 'notify'])->name('bookings.notify');
-
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
         Route::get('clients/{client}/data', [ClientController::class, 'getClientData'])->name('clients.getClientData');
         Route::post('clients/{client}/profile-photo', [ClientController::class, 'updateProfilePhoto'])->name('clients.updateProfilePhoto');
@@ -131,6 +138,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::put('caregivers/{caregiver}/admin-rating', [CaregiverController::class, 'updateAdminRating'])->name('caregivers.updateAdminRating');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
+
+        // Caregiver Applications & References management
+        Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');
+        Route::get('applications/{application}', [ApplicationController::class, 'show'])->name('applications.show');
+        Route::post('applications/{application}/references/{referenceRequest}/resend', [ApplicationController::class, 'resendReference'])->name('applications.references.resend');
     });
 
     Route::middleware('super_admin')->group(function () {
@@ -160,11 +172,3 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
-
-// // Caregiver API routes (no CSRF)
-// Route::middleware(['auth'])->prefix('api/caregiver')->group(function () {
-//     Route::get('/bookings', [CaregiverBookingController::class, 'index']);
-//     Route::post('/bookings/{booking}/reserve', [CaregiverBookingController::class, 'reserve']);
-//     Route::post('/bookings/{booking}/confirm', [CaregiverBookingController::class, 'confirm']);
-//     Route::post('/bookings/{booking}/release', [CaregiverBookingController::class, 'release']);
-// });

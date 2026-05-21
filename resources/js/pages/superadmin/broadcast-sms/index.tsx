@@ -1,6 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, MessageCircle, Send } from 'lucide-react';
 import { useState } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -11,7 +12,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -24,9 +24,11 @@ const COMPLIANCE_FOOTER = '\n\nReply STOP to opt out.';
 function getSmsSegments(text: string): { chars: number; segments: number } {
     const chars = text.length;
     let segments = 1;
+
     if (chars > 160) {
         segments = Math.ceil(chars / 153);
     }
+
     return { chars, segments };
 }
 
@@ -46,7 +48,10 @@ export default function BroadcastSms({ recipientCount }: Props) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     function handleReviewAndSend() {
-        if (!data.message_body.trim()) return;
+        if (!data.message_body.trim()) {
+return;
+}
+
         setShowConfirmModal(true);
     }
 

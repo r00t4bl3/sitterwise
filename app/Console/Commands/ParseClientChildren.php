@@ -3,96 +3,112 @@
 namespace App\Console\Commands;
 
 use App\Enums\ClientType;
+use App\Models\Booking;
 use App\Models\Client as ClientModel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
 class ParseClientChildren extends Command
 {
-    protected $signature = 'app:parse-client-children
+    protected $signature = 'app:parse-children
+        {--type=all : Types to process (user, jobs, or all)}
         {--batch=15 : Records per API call}
         {--limit=0 : Max records to process (0 = all)}
         {--timeout=120 : API timeout in seconds}
         {--force : Re-parse even if cached}';
 
-    protected $description = 'Parse client children from Bubble staging using AI';
+    protected $description = 'Parse children from Bubble staging using AI';
 
     private ?\PDO $db = null;
 
     public function handle(): int
     {
-        $this->db = $this->initDb();
-        $records = $this->getRecords();
+        $type = $this->option('type');
 
-        if (empty($records)) {
-            $this->info('No uncached records with children data found.');
-            $this->line('   → Run with --force to re-parse cached records.');
+        if (! in_array($type, ['user', 'jobs', 'all'], true)) {
+            $this->error('Invalid type. Must be user, jobs, or all.');
 
-            return Command::SUCCESS;
+            return Command::INVALID;
         }
 
-        $total = count($records);
+        $this->db = $this->initDb();
+        $types = $type === 'all' ? ['user', 'jobs'] : [$type];
 
-        $this->line("Found {$total} records to process.");
-        $this->line('');
+        foreach ($types as $currentType) {
+            $records = $this->getRecords($currentType);
 
-        $processed = 0;
-
-        foreach (array_chunk($records, (int) $this->option('batch')) as $batch) {
-            $batchNum = (int) ($processed / (int) $this->option('batch')) + 1;
-            $this->line("── Batch {$batchNum} ──────────────────────────────");
-            $this->line('Sending '.count($batch).' records to AI...');
-
-            foreach ($batch as $item) {
-                $this->line("  → {$item['external_id']}: \"{$item['text']}\"");
-            }
-
-            $start = microtime(true);
-            $results = $this->callAI($batch);
-            $elapsed = round(microtime(true) - $start, 1);
-
-            if ($results === null) {
-                $this->warn("  API call failed after {$elapsed}s, skipping batch.");
+            if (empty($records)) {
+                $this->info("No uncached {$currentType} records with children data found.");
+                $this->line('   → Run with --force to re-parse cached records.');
 
                 continue;
             }
 
-            $this->line('  Raw AI response:');
-            foreach ($results as $eid => $children) {
-                foreach ($children as $c) {
-                    $name = $c['name'] ?? '?';
-                    $y = $c['age_years'] ?? '-';
-                    $m = $c['age_months'] ?? '-';
-                    $gender = $c['gender'] ?? '?';
-                    $this->line("    {$eid}: {$name}, {$y}y {$m}m, {$gender}");
+            $total = count($records);
+            $entityLabel = $currentType === 'user' ? 'clients' : 'bookings';
+
+            $this->line("Found {$total} {$currentType} records to process.");
+            $this->line('');
+
+            $processed = 0;
+
+            foreach (array_chunk($records, (int) $this->option('batch')) as $batch) {
+                $batchNum = (int) ($processed / (int) $this->option('batch')) + 1;
+                $this->line("── Batch {$batchNum} ──────────────────────────────");
+                $this->line('Sending '.count($batch).' records to AI...');
+
+                foreach ($batch as $item) {
+                    $this->line("  → {$item['external_id']}: \"{$item['text']}\"");
                 }
-            }
 
-            $saved = 0;
+                $start = microtime(true);
+                $results = $this->callAI($batch);
+                $elapsed = round(microtime(true) - $start, 1);
 
-            foreach ($results as $eid => $children) {
-                if (! $eid) {
+                if ($results === null) {
+                    $this->warn("  API call failed after {$elapsed}s, skipping batch.");
+
                     continue;
                 }
 
-                $clientName = $this->saveToApp($eid, $children);
-
-                if ($clientName) {
-                    $this->line("  ✓ {$clientName}: ".count($children).' child'.(count($children) !== 1 ? 'ren' : '').' saved');
-                    $this->cacheResult($eid, $children);
-                    $saved++;
-                } else {
-                    $this->line("  ✗ {$eid}: client not found in app DB, skipped");
+                $this->line('  Raw AI response:');
+                foreach ($results as $eid => $children) {
+                    foreach ($children as $c) {
+                        $name = $c['name'] ?? '?';
+                        $y = $c['age_years'] ?? '-';
+                        $m = $c['age_months'] ?? '-';
+                        $gender = $c['gender'] ?? '?';
+                        $this->line("    {$eid}: {$name}, {$y}y {$m}m, {$gender}");
+                    }
                 }
+
+                $saved = 0;
+
+                foreach ($results as $eid => $children) {
+                    if (! $eid) {
+                        continue;
+                    }
+
+                    $entityName = $this->saveToApp($eid, $children, $currentType);
+
+                    if ($entityName) {
+                        $this->line('  ✓ '.$entityName.': '.count($children).' child'.(count($children) !== 1 ? 'ren' : '').' saved');
+                        $cacheKey = $currentType === 'jobs' ? "jobs_{$eid}" : $eid;
+                        $this->cacheResult($cacheKey, $eid, $children);
+                        $saved++;
+                    } else {
+                        $this->line("  ✗ {$eid}: {$currentType} record not found in app DB, skipped");
+                    }
+                }
+
+                $processed += count($batch);
+                $this->line("  Batch done: {$saved}/".count($results)." {$entityLabel} updated.");
+                $this->line("  Progress: {$processed}/{$total}");
+                $this->line('');
             }
 
-            $processed += count($batch);
-            $this->line("  Batch done: {$saved}/".count($results).' clients updated.');
-            $this->line("  Progress: {$processed}/{$total}");
-            $this->line('');
+            $this->info("Done. Processed {$processed} {$currentType} records.");
         }
-
-        $this->info("Done. Processed {$processed} records.");
 
         return Command::SUCCESS;
     }
@@ -113,19 +129,26 @@ class ParseClientChildren extends Command
         return $db;
     }
 
-    private function getRecords(): array
+    private function getRecords(string $type): array
     {
         $limit = (int) $this->option('limit');
         $force = $this->option('force');
 
-        $sql = "SELECT s.external_id, s.modified_at, s.raw_json
+        $textField = $type === 'user' ? 'names_and_ages_of_kids_text' : 'names_and_ages_of_children_text';
+
+        $sql = 'SELECT s.external_id, s.modified_at, s.raw_json
                 FROM staged_records s
-                WHERE s.type = 'user'
-                  AND s.raw_json LIKE '%names_and_ages_of_kids_text%'";
+                WHERE s.type = ?
+                  AND s.raw_json LIKE ?';
 
         if (! $force) {
-            $sql .= ' AND (s.external_id NOT IN (SELECT external_id FROM ai_caches)
-                       OR s.modified_at > (SELECT COALESCE(MAX(modified_at), 0) FROM ai_caches WHERE external_id = s.external_id))';
+            if ($type === 'jobs') {
+                $sql .= " AND (('jobs_' || s.external_id) NOT IN (SELECT external_id FROM ai_caches)
+                           OR s.modified_at > (SELECT COALESCE(MAX(modified_at), 0) FROM ai_caches WHERE external_id = 'jobs_' || s.external_id))";
+            } else {
+                $sql .= ' AND (s.external_id NOT IN (SELECT external_id FROM ai_caches)
+                           OR s.modified_at > (SELECT COALESCE(MAX(modified_at), 0) FROM ai_caches WHERE external_id = s.external_id))';
+            }
         }
 
         $sql .= ' ORDER BY s.modified_at DESC';
@@ -134,23 +157,29 @@ class ParseClientChildren extends Command
             $sql .= " LIMIT {$limit}";
         }
 
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$type, "%{$textField}%"]);
         $records = [];
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $data = json_decode($row['raw_json'], true);
-            $text = $data['names_and_ages_of_kids_text'] ?? '';
+            $text = $data[$textField] ?? '';
 
             if (! trim($text)) {
                 continue;
             }
 
-            $records[] = [
+            $record = [
                 'external_id' => $row['external_id'],
                 'modified_at' => $row['modified_at'],
                 'text' => $text,
-                'email' => $data['authentication']['email']['email'] ?? null,
             ];
+
+            if ($type === 'user') {
+                $record['email'] = $data['authentication']['email']['email'] ?? null;
+            }
+
+            $records[] = $record;
         }
 
         return $records;
@@ -246,8 +275,49 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
         return $decoded;
     }
 
-    private function saveToApp(string $externalId, array $children): ?string
+    private function saveToApp(string $externalId, array $children, string $type): ?string
     {
+        if ($type === 'jobs') {
+            $booking = Booking::where('bubble_id', $externalId)->first();
+
+            if (! $booking) {
+                return null;
+            }
+
+            $formattedChildren = [];
+
+            foreach ($children as $child) {
+                $name = $child['name'] ?? '';
+
+                if (! $name) {
+                    continue;
+                }
+
+                $birthMonth = null;
+                $birthYear = null;
+
+                if (isset($child['age_months']) && $child['age_months'] !== null) {
+                    $birthDate = now()->subMonths((int) $child['age_months']);
+                    $birthMonth = (int) $birthDate->format('n');
+                    $birthYear = (int) $birthDate->format('Y');
+                } elseif (isset($child['age_years']) && $child['age_years'] !== null) {
+                    $birthYear = (int) now()->subYears((int) $child['age_years'])->format('Y');
+                }
+
+                $formattedChildren[] = [
+                    'name' => $name,
+                    'gender' => $child['gender'] ?? null,
+                    'birth_month' => $birthMonth,
+                    'birth_year' => $birthYear,
+                ];
+            }
+
+            $booking->children = $formattedChildren;
+            Booking::withoutEvents(fn () => $booking->save());
+
+            return "booking {$externalId}";
+        }
+
         $stmt = $this->db->prepare('SELECT raw_json FROM staged_records WHERE external_id = ?');
         $stmt->execute([$externalId]);
         $raw = $stmt->fetchColumn();
@@ -298,13 +368,13 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
         return $clientName;
     }
 
-    private function cacheResult(string $externalId, array $children): void
+    private function cacheResult(string $cacheKey, string $originalExternalId, array $children): void
     {
         $stmt = $this->db->prepare('SELECT modified_at FROM staged_records WHERE external_id = ?');
-        $stmt->execute([$externalId]);
+        $stmt->execute([$originalExternalId]);
         $modifiedAt = (int) $stmt->fetchColumn();
 
         $stmt = $this->db->prepare('INSERT OR REPLACE INTO ai_caches (external_id, modified_at, children_json, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)');
-        $stmt->execute([$externalId, $modifiedAt, json_encode($children)]);
+        $stmt->execute([$cacheKey, $modifiedAt, json_encode($children)]);
     }
 }

@@ -32,6 +32,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Writer\XLSX\Writer;
 
 class AdminBookingService implements BookingServiceInterface
 {
@@ -819,6 +821,110 @@ class AdminBookingService implements BookingServiceInterface
     public function release(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot release bookings');
+    }
+
+    public function export(Request $request)
+    {
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
+
+        $startDate = now()->year($year)->month($month)->startOfMonth();
+        $endDate = $startDate->endOfMonth();
+
+        $bookings = Booking::with([
+            'client.user',
+            'client.children',
+            'client.pets',
+            'hotel',
+            'address',
+            'caregiver.user',
+            'caregiverNotifications',
+        ])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_datetime', [$startDate, $endDate])
+                    ->orWhereBetween('end_datetime', [$startDate, $endDate]);
+            })
+            ->orderBy('start_datetime', 'asc')
+            ->get();
+
+        $monthName = now()->month($month)->format('F');
+
+        $hotels = Hotel::where('is_active', true)->get()->keyBy('id');
+
+        return response()->streamDownload(function () use ($bookings, $hotels) {
+            $writer = new Writer;
+            $writer->openToFile('php://output');
+
+            $headerRow = Row::fromValues([
+                'Booking ID',
+                'ULID',
+                'Client Name',
+                'Client Email',
+                'Client Phone',
+                'Service Type',
+                'Location Type',
+                'Hotel',
+                'Address',
+                'Start Date',
+                'Start Time',
+                'End Date',
+                'End Time',
+                'Total Hours',
+                'Caregiver Name',
+                'Status',
+                'Payment Status',
+                'Charge to Client',
+                'Paid to Caregiver',
+                'Sitterwise Cut',
+                'Reimbursement',
+                'Tip',
+                'Bonus',
+                'Total Amount',
+                'Created At',
+            ]);
+
+            $writer->addRow($headerRow);
+
+            foreach ($bookings as $booking) {
+                $hotel = $booking->hotel_id ? ($hotels[$booking->hotel_id] ?? null) : null;
+
+                $writer->addRow(Row::fromValues([
+                    $booking->id,
+                    $booking->ulid,
+                    $booking->client?->first_name.' '.$booking->client?->last_name,
+                    $booking->client?->user?->email,
+                    $booking->client?->phone,
+                    ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                    LocationType::tryFrom($booking->location_type)?->label() ?? $booking->location_type,
+                    $hotel?->name,
+                    collect([
+                        $booking->address_line1,
+                        $booking->address_line2,
+                        $booking->address_city,
+                        $booking->address_state,
+                        $booking->address_zip,
+                    ])->filter()->implode(', '),
+                    $booking->start_datetime?->format('Y-m-d'),
+                    $booking->start_datetime?->format('H:i'),
+                    $booking->end_datetime?->format('Y-m-d'),
+                    $booking->end_datetime?->format('H:i'),
+                    $booking->total_working_hour,
+                    $booking->caregiver?->first_name.' '.$booking->caregiver?->last_name,
+                    $booking->status,
+                    $booking->payment_status,
+                    $booking->charge_to_client,
+                    $booking->paid_to_caregiver,
+                    $booking->sitterwise_cut,
+                    $booking->reimbursement,
+                    $booking->tip,
+                    $booking->bonus,
+                    $booking->total_amount,
+                    $booking->created_at?->format('Y-m-d H:i'),
+                ]));
+            }
+
+            $writer->close();
+        }, "bookings-{$monthName}-{$year}.xlsx");
     }
 
     public function processPayment(Request $request, Booking $booking)

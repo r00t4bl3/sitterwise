@@ -76,4 +76,9 @@ class BookingController extends Controller
     {
         return $this->service->processPayment($request, $booking);
     }
+
+    public function export(Request $request)
+    {
+        return $this->service->export($request);
+    }
 }
