@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 interface SearchResult {
     id: number;
     name: string;
+    subtitle?: string;
     type: 'booking' | 'caregiver' | 'client';
     url: string;
     ulid?: string;
@@ -249,16 +250,14 @@ export function GlobalSearch() {
                                         <span className="font-medium">
                                             {highlightText(item.name, query)}
                                         </span>
-                                        {item.type === 'booking' &&
-                                            item.ulid && (
-                                                <span className="text-xs text-muted-foreground">
-                                                    Booking ID:{' '}
-                                                    {highlightText(
-                                                        item.ulid,
-                                                        query,
-                                                    )}
-                                                </span>
-                                            )}
+                                        {item.subtitle && (
+                                            <span className="text-xs text-muted-foreground">
+                                                {highlightText(
+                                                    item.subtitle,
+                                                    query,
+                                                )}
+                                            </span>
+                                        )}
                                     </div>
                                     <Badge variant={getTypeVariant(item.type)}>
                                         {getTypeLabel(item.type)}
