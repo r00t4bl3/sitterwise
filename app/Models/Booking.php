@@ -135,9 +135,11 @@ class Booking extends Model
 
     public function resolveRouteBinding($value, $field = null)
     {
-        return $this->where('id', $value)
-            ->orWhere('ulid', $value)
-            ->firstOrFail();
+        if (is_numeric($value)) {
+            return $this->where('id', $value)->firstOrFail();
+        }
+
+        return $this->where('ulid', $value)->firstOrFail();
     }
 
     protected $guarded = ['id'];

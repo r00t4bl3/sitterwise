@@ -1,5 +1,5 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { Calendar, Clock, MapPin, Building, Star } from 'lucide-react';
+import { MapPin, Building, Star } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import {
-    formatDisplayDateTime,
+    formatDisplayDate,
+    formatDisplayTime,
     parseAsLocal,
     autoSetEndDateTime,
 } from '@/lib/datetime';
@@ -27,6 +28,7 @@ interface Booking {
     id: number;
     ulid: string;
     service_type: string;
+    service_type_label: string;
     location_type: string;
     start_datetime: string;
     end_datetime: string;
@@ -240,16 +242,13 @@ export default function CaregiverJobsIndex() {
                             <thead>
                                 <tr className="bg-foreground text-white">
                                     <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
+                                        Date & Time
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
                                         Client
                                     </th>
                                     <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
                                         Service
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Date & Time
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Location
                                     </th>
                                     <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
                                         Status
@@ -266,206 +265,229 @@ export default function CaregiverJobsIndex() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {jobs.data.map((job) => (
-                                    <tr
-                                        key={job.id}
-                                        className="transition-colors hover:bg-muted/50"
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="font-medium text-foreground">
-                                                {job.client?.user.name}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                ID: #{job.id}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="text-sm text-foreground capitalize">
-                                                {job.service_type.replace(
-                                                    '_',
-                                                    ' ',
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                {jobs.data.map((job) => {
+                                    const startDate = parseAsLocal(
+                                        job.start_datetime,
+                                    ) as Date;
+                                    const endDate = parseAsLocal(
+                                        job.end_datetime,
+                                    ) as Date;
+                                    const isSameDay =
+                                        startDate.getFullYear() ===
+                                            endDate.getFullYear() &&
+                                        startDate.getMonth() ===
+                                            endDate.getMonth() &&
+                                        startDate.getDate() ===
+                                            endDate.getDate();
+
+                                    return (
+                                        <tr
+                                            key={job.id}
+                                            className="transition-colors hover:bg-muted/50"
+                                        >
+                                            <td className="px-4 py-3">
                                                 <div className="text-sm text-foreground">
-                                                    {formatDisplayDateTime(
-                                                        job.start_datetime,
+                                                    {isSameDay ? (
+                                                        <>
+                                                            {formatDisplayDate(
+                                                                job.start_datetime,
+                                                            )}{' '}
+                                                            from{' '}
+                                                            {formatDisplayTime(
+                                                                job.start_datetime,
+                                                            )}{' '}
+                                                            to{' '}
+                                                            {formatDisplayTime(
+                                                                job.end_datetime,
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {formatDisplayDate(
+                                                                job.start_datetime,
+                                                            )}{' '}
+                                                            from{' '}
+                                                            {formatDisplayTime(
+                                                                job.start_datetime,
+                                                            )}{' '}
+                                                            to{' '}
+                                                            {formatDisplayDate(
+                                                                job.end_datetime,
+                                                            )}{' '}
+                                                            at{' '}
+                                                            {formatDisplayTime(
+                                                                job.end_datetime,
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Clock className="h-3 w-3" />
-                                                Ends:{' '}
-                                                {formatDisplayDateTime(
-                                                    job.end_datetime,
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-start gap-2">
-                                                {job.location_type ===
-                                                'hotel' ? (
-                                                    <Building className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                                ) : (
-                                                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                                )}
-                                                <div className="text-sm text-foreground">
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-foreground">
+                                                    {job.client?.user.name}
+                                                </div>
+                                                <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
                                                     {job.location_type ===
                                                     'hotel' ? (
-                                                        <div>
-                                                            {job.hotel?.name}
-                                                        </div>
+                                                        <Building className="mt-0.5 h-3 w-3 shrink-0" />
                                                     ) : (
-                                                        <div>
-                                                            {job.address_line1}
+                                                        <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                                                    )}
+                                                    <span>
+                                                        {job.location_type ===
+                                                        'hotel'
+                                                            ? `${job.hotel?.name}, ${job.address_city}, ${job.address_state}`
+                                                            : `${job.address_line1}, ${job.address_city}, ${job.address_state}`}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="text-sm text-foreground">
+                                                    {job.service_type_label}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {getStatusBadge(
+                                                    job.status,
+                                                    job.start_datetime,
+                                                    job.end_datetime,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {job.client_rating ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-1">
+                                                            {[1, 2, 3, 4, 5].map(
+                                                                (star) => (
+                                                                    <Star
+                                                                        key={
+                                                                            star
+                                                                        }
+                                                                        className={`h-4 w-4 ${
+                                                                            star <=
+                                                                            job
+                                                                                .client_rating!
+                                                                                .rating
+                                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                                : 'text-gray-300'
+                                                                        }`}
+                                                                    />
+                                                                ),
+                                                            )}
+                                                            <span className="ml-1 text-xs text-muted-foreground">
+                                                                (
+                                                                {
+                                                                    job
+                                                                        .client_rating!
+                                                                        .rating
+                                                                }
+                                                                /5)
+                                                            </span>
                                                         </div>
-                                                    )}
-                                                    <div className="text-xs text-muted-foreground">
-                                                        {job.address_city},{' '}
-                                                        {job.address_state}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {getStatusBadge(
-                                                job.status,
-                                                job.start_datetime,
-                                                job.end_datetime,
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {job.client_rating ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-1">
-                                                        {[1, 2, 3, 4, 5].map(
-                                                            (star) => (
-                                                                <Star
-                                                                    key={star}
-                                                                    className={`h-4 w-4 ${
-                                                                        star <=
-                                                                        job
-                                                                            .client_rating!
-                                                                            .rating
-                                                                            ? 'fill-yellow-400 text-yellow-400'
-                                                                            : 'text-gray-300'
-                                                                    }`}
-                                                                />
-                                                            ),
+                                                        {job.client_rating
+                                                            .comment && (
+                                                            <p className="text-xs text-muted-foreground italic">
+                                                                "
+                                                                {
+                                                                    job
+                                                                        .client_rating
+                                                                        .comment
+                                                                }
+                                                                "
+                                                            </p>
                                                         )}
-                                                        <span className="ml-1 text-xs text-muted-foreground">
-                                                            (
-                                                            {
-                                                                job
-                                                                    .client_rating!
-                                                                    .rating
-                                                            }
-                                                            /5)
-                                                        </span>
                                                     </div>
-                                                    {job.client_rating
-                                                        .comment && (
-                                                        <p className="text-xs text-muted-foreground italic">
-                                                            "
-                                                            {
-                                                                job
-                                                                    .client_rating
-                                                                    .comment
-                                                            }
-                                                            "
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground italic">
-                                                    Not rated
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {job.caregiver_rating ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-1">
-                                                        {[1, 2, 3, 4, 5].map(
-                                                            (star) => (
-                                                                <Star
-                                                                    key={star}
-                                                                    className={`h-4 w-4 ${
-                                                                        star <=
-                                                                        job
-                                                                            .caregiver_rating!
-                                                                            .rating
-                                                                            ? 'fill-yellow-400 text-yellow-400'
-                                                                            : 'text-gray-300'
-                                                                    }`}
-                                                                />
-                                                            ),
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">
+                                                        Not rated
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {job.caregiver_rating ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-1">
+                                                            {[1, 2, 3, 4, 5].map(
+                                                                (star) => (
+                                                                    <Star
+                                                                        key={
+                                                                            star
+                                                                        }
+                                                                        className={`h-4 w-4 ${
+                                                                            star <=
+                                                                            job
+                                                                                .caregiver_rating!
+                                                                                .rating
+                                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                                : 'text-gray-300'
+                                                                        }`}
+                                                                    />
+                                                                ),
+                                                            )}
+                                                            <span className="ml-1 text-xs text-muted-foreground">
+                                                                (
+                                                                {
+                                                                    job
+                                                                        .caregiver_rating!
+                                                                        .rating
+                                                                }
+                                                                /5)
+                                                            </span>
+                                                        </div>
+                                                        {job.caregiver_rating
+                                                            .comment && (
+                                                            <p className="text-xs text-muted-foreground italic">
+                                                                "
+                                                                {
+                                                                    job
+                                                                        .caregiver_rating
+                                                                        .comment
+                                                                }
+                                                                "
+                                                            </p>
                                                         )}
-                                                        <span className="ml-1 text-xs text-muted-foreground">
-                                                            (
-                                                            {
-                                                                job
-                                                                    .caregiver_rating!
-                                                                    .rating
-                                                            }
-                                                            /5)
-                                                        </span>
                                                     </div>
-                                                    {job.caregiver_rating
-                                                        .comment && (
-                                                        <p className="text-xs text-muted-foreground italic">
-                                                            "
-                                                            {
-                                                                job
-                                                                    .caregiver_rating
-                                                                    .comment
-                                                            }
-                                                            "
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground italic">
-                                                    Not rated
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/jobs/${job.ulid}`}
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">
+                                                        Not rated
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        asChild
                                                     >
-                                                        Details
-                                                    </Link>
-                                                </Button>
-
-                                                {job.status.toLowerCase() ===
-                                                    'confirmed' &&
-                                                    new Date(job.end_datetime) <
-                                                        new Date() && (
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                openCheckoutSheet(
-                                                                    job,
-                                                                )
-                                                            }
+                                                        <Link
+                                                            href={`/jobs/${job.ulid}`}
                                                         >
-                                                            Checkout
-                                                        </Button>
-                                                    )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                            Details
+                                                        </Link>
+                                                    </Button>
+
+                                                    {job.status.toLowerCase() ===
+                                                        'confirmed' &&
+                                                        new Date(
+                                                            job.end_datetime,
+                                                        ) < new Date() && (
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    openCheckoutSheet(
+                                                                        job,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Checkout
+                                                            </Button>
+                                                        )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
 
                                 {jobs.data.length === 0 && (
                                     <tr>
