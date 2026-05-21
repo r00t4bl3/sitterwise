@@ -447,23 +447,41 @@ export default function BookingDetail({
                                         {booking.client_rating ? (
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex items-center gap-1">
-                                                    {[1, 2, 3, 4, 5].map((star) => (
-                                                        <Star
-                                                            key={star}
-                                                            className={`h-5 w-5 ${
-                                                                star <= booking.client_rating!.rating
-                                                                    ? 'fill-yellow-400 text-yellow-400'
-                                                                    : 'text-gray-300'
-                                                            }`}
-                                                        />
-                                                    ))}
+                                                    {[1, 2, 3, 4, 5].map(
+                                                        (star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`h-5 w-5 ${
+                                                                    star <=
+                                                                    booking
+                                                                        .client_rating!
+                                                                        .rating
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ),
+                                                    )}
                                                     <span className="ml-2 text-sm text-muted-foreground">
-                                                        ({booking.client_rating.rating}/5)
+                                                        (
+                                                        {
+                                                            booking
+                                                                .client_rating
+                                                                .rating
+                                                        }
+                                                        /5)
                                                     </span>
                                                 </div>
-                                                {booking.client_rating.comment && (
+                                                {booking.client_rating
+                                                    .comment && (
                                                     <p className="text-sm text-muted-foreground italic">
-                                                        &quot;{booking.client_rating.comment}&quot;
+                                                        &quot;
+                                                        {
+                                                            booking
+                                                                .client_rating
+                                                                .comment
+                                                        }
+                                                        &quot;
                                                     </p>
                                                 )}
                                             </div>
@@ -481,23 +499,41 @@ export default function BookingDetail({
                                         {booking.caregiver_rating ? (
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex items-center gap-1">
-                                                    {[1, 2, 3, 4, 5].map((star) => (
-                                                        <Star
-                                                            key={star}
-                                                            className={`h-5 w-5 ${
-                                                                star <= booking.caregiver_rating!.rating
-                                                                    ? 'fill-yellow-400 text-yellow-400'
-                                                                    : 'text-gray-300'
-                                                            }`}
-                                                        />
-                                                    ))}
+                                                    {[1, 2, 3, 4, 5].map(
+                                                        (star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`h-5 w-5 ${
+                                                                    star <=
+                                                                    booking
+                                                                        .caregiver_rating!
+                                                                        .rating
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ),
+                                                    )}
                                                     <span className="ml-2 text-sm text-muted-foreground">
-                                                        ({booking.caregiver_rating.rating}/5)
+                                                        (
+                                                        {
+                                                            booking
+                                                                .caregiver_rating
+                                                                .rating
+                                                        }
+                                                        /5)
                                                     </span>
                                                 </div>
-                                                {booking.caregiver_rating.comment && (
+                                                {booking.caregiver_rating
+                                                    .comment && (
                                                     <p className="text-sm text-muted-foreground italic">
-                                                        &quot;{booking.caregiver_rating.comment}&quot;
+                                                        &quot;
+                                                        {
+                                                            booking
+                                                                .caregiver_rating
+                                                                .comment
+                                                        }
+                                                        &quot;
                                                     </p>
                                                 )}
                                             </div>

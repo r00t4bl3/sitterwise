@@ -34,6 +34,10 @@ Three entry points: **guest** (unauthenticated with Stripe checkout), **client**
 ### Caregiver Application
 Public multi-step wizard with email OTP verification. Collects personal info, experience, education, references, certifications. Generates PDF agreements on submission.
 
+**Reference Workflow:** On submission, reference request emails are queued to each reference with a unique token link. References submit feedback via a public portal (no auth required) — rating, relationship, years known, and written feedback. Admins receive notifications on each completed reference. A sponsor reference is also collected and displayed separately.
+
+**Admin Management:** Dedicated `/applications` page lists all applications with reference completion progress. Detail view shows full application data plus a reference grid with resend capability. Dashboard includes pending applications and stuck references (>7 days without response) counts.
+
 ### Service Types
 Babysitter, Petsitter, Companion Care, Group Childcare (Invoiced), Corporate (Invoiced), Comped
 
@@ -66,7 +70,7 @@ Event-driven architecture with email (SendGrid), SMS (Twilio), and database noti
 
 Core: `User`, `Caregiver`, `Client`, `Booking`, `BookingGroup`, `BookingRating`
 
-Supporting: `CaregiverStatus`, `SpecialtyType`, `CertificationType`, `Location`, `Hotel`, `Availability`, `PricingRule`, `AttributeDefinition`, `ClientChild`, `ClientPet`, `ClientAddress`, `ClientPaymentMethod`, `CaregiverPayout`, `BookingCaregiverNotification`, `QuickLink`
+Supporting: `CaregiverStatus`, `SpecialtyType`, `CertificationType`, `Location`, `Hotel`, `Availability`, `PricingRule`, `AttributeDefinition`, `ClientChild`, `ClientPet`, `ClientAddress`, `ClientPaymentMethod`, `CaregiverPayout`, `BookingCaregiverNotification`, `QuickLink`, `ReferenceRequest`
 
 ### Frontend Structure
 
@@ -79,7 +83,8 @@ resources/js/
     superadmin/     — Master data management
     auth/           — Login, register, password reset, 2FA
     guest/          — Guest booking flow
-    public/         — Caregiver bio, application wizard
+    public/         — Caregiver bio, application wizard, reference portal
+    applications/   — Admin application list and detail views
     settings/       — Profile, security, appearance
   components/
     ui/             — Radix UI primitives (shadcn-style)
@@ -153,18 +158,18 @@ Replace `{BASE_URL}` with the application's production domain (e.g. `https://sit
 app/
   Enums/           — 11 PHP enums (BookingStatus, ServiceType, etc.)
   Http/
-    Controllers/   — 25 controllers
-    Middleware/     — 7 middleware classes (role gates)
-    Requests/      — 31 Form Request validation classes
-  Models/          — 30 Eloquent models
+  Controllers/   — 27 controllers
+  Middleware/     — 7 middleware classes (role gates)
+  Requests/      — 31 Form Request validation classes
+  Models/          — 33 Eloquent models
   Services/        — Booking, Billing, Payments, Webhooks
   Events/          — Booking lifecycle events (8)
   Listeners/       — Notification handlers (6)
-  Mail/            — Mailable classes (8)
+  Mail/            — Mailable classes (13)
   Notifications/   — Notification classes (7)
 database/
   factories/       — Model factories
-  migrations/      — 46 migration files
+  migrations/      — 51 migration files
   seeders/         — Database seeders
 tests/
   Feature/         — Auth, Admin, Client, Caregiver, Guest, Settings

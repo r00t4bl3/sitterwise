@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCaregiverApplicationRequest;
+use App\Mail\AdminNewApplicationMail;
+use App\Mail\ApplicantConfirmationMail;
+use App\Mail\ReferenceRequestMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverAgreement;
 use App\Models\CaregiverApplication;
 use App\Models\CaregiverStatus;
+use App\Models\ReferenceRequest;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -14,6 +18,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class CaregiverApplicationController extends Controller
 {
@@ -93,6 +99,31 @@ class CaregiverApplicationController extends Controller
     {
         $validated = $request->validated();
 
+        // Store uploaded files — replace UploadedFile objects with path strings
+        if ($photo = $request->file('personal.photo')) {
+            try {
+                $manager = new ImageManager(new Driver);
+                $manager->read($photo->getRealPath())->scale(width: 1200)->save($photo->getRealPath());
+            } catch (\Exception $e) {
+                // Degrade gracefully if image processing fails
+            }
+            $validated['personal']['photo'] = $photo->store('photos', 'public');
+        } else {
+            unset($validated['personal']['photo']);
+        }
+
+        if ($cprCard = $request->file('cpr_card')) {
+            $validated['cpr_card'] = $cprCard->store('cpr-cards', 'public');
+        } else {
+            unset($validated['cpr_card']);
+        }
+
+        if ($trustlineUpload = $request->file('trustline_upload')) {
+            $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'public');
+        } else {
+            unset($validated['trustline_upload']);
+        }
+
         // Get email from session or use test email in non-production
         $email = Session::get('verified_email');
         if (! $email && app()->environment() !== 'production') {
@@ -137,6 +168,53 @@ class CaregiverApplicationController extends Controller
 
         // Generate generic PDFs (placeholder for now)
         $this->generateAgreements($caregiver, $validated);
+
+        $applicantName = $validated['personal']['first_name'].' '.$validated['personal']['last_name'];
+
+        // Send applicant confirmation email
+        Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName));
+
+        // Send admin notification
+        $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
+        foreach ($adminEmails as $adminEmail) {
+            Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email));
+        }
+
+        // Send reference request emails and persist records
+        foreach ($validated['references'] as $reference) {
+            $token = Str::random(32);
+            ReferenceRequest::create([
+                'token' => $token,
+                'caregiver_id' => $caregiver->id,
+                'reference_name' => $reference['first_name'].' '.$reference['last_name'],
+                'reference_email' => $reference['email'],
+                'relationship' => $reference['relationship'],
+                'years_known' => $reference['years_known'],
+                'is_sponsor' => false,
+            ]);
+            Mail::to($reference['email'])->queue(new ReferenceRequestMail(
+                $reference['first_name'].' '.$reference['last_name'],
+                $applicantName,
+                $token,
+            ));
+        }
+
+        // Send reference request to sponsor
+        $sponsorToken = Str::random(32);
+        ReferenceRequest::create([
+            'token' => $sponsorToken,
+            'caregiver_id' => $caregiver->id,
+            'reference_name' => $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
+            'reference_email' => $validated['sponsor']['email'],
+            'relationship' => $validated['sponsor']['relationship'] ?? null,
+            'years_known' => null,
+            'is_sponsor' => true,
+        ]);
+        Mail::to($validated['sponsor']['email'])->queue(new ReferenceRequestMail(
+            $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
+            $applicantName,
+            $sponsorToken,
+        ));
 
         // Clear session
         Session::forget(['verified_email', 'verified_at']);

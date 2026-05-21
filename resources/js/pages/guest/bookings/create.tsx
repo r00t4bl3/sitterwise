@@ -339,7 +339,7 @@ export default function GuestBookingCreate() {
                         Tell us about your family, your plans, and what you need
                         — we'll handle the rest.
                     </p>
-                    <p className="text-[13px] italic text-sittergray">
+                    <p className="text-[13px] text-sittergray italic">
                         Matching San Diego families with trusted caregivers
                         since 1981.
                     </p>
@@ -356,7 +356,7 @@ export default function GuestBookingCreate() {
                             <h2 className="m-0 font-serif text-base font-semibold text-navy">
                                 About You
                             </h2>
-                            <p className="mt-[3px] text-xs italic text-sittergray">
+                            <p className="mt-[3px] text-xs text-sittergray italic">
                                 So we know who to send the confirmation to.
                             </p>
                         </div>
@@ -501,7 +501,7 @@ export default function GuestBookingCreate() {
                             <h2 className="m-0 font-serif text-base font-semibold text-navy">
                                 About Your Booking
                             </h2>
-                            <p className="mt-[3px] text-xs italic text-sittergray">
+                            <p className="mt-[3px] text-xs text-sittergray italic">
                                 The more you share, the better we can match.
                             </p>
                         </div>
@@ -514,7 +514,7 @@ export default function GuestBookingCreate() {
                         <div className="space-y-[26px] p-6">
                             {/* 3.1 WHEN & WHERE */}
                             <div className="border-l-[3px] border-logo-teal pl-[18px]">
-                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                <h3 className="mb-[14px] text-xs font-semibold tracking-[0.8px] text-navy uppercase">
                                     When &amp; Where
                                 </h3>
 
@@ -695,7 +695,7 @@ export default function GuestBookingCreate() {
                                         className="mb-[10px] rounded-[4px] border border-border-teal bg-[#FDFCFA] p-[14px]"
                                     >
                                         <div className="mb-[10px] flex items-center justify-between">
-                                            <span className="text-xs font-semibold uppercase tracking-[0.5px] text-navy">
+                                            <span className="text-xs font-semibold tracking-[0.5px] text-navy uppercase">
                                                 Date {index + 1}
                                             </span>
                                             {index > 0 && (
@@ -809,7 +809,7 @@ export default function GuestBookingCreate() {
                                 </div>
 
                                 {/* Complex booking note */}
-                                <div className="mt-4 rounded-[4px] border border-[#F0C5BA] bg-blush p-[14px_16px] text-xs italic leading-relaxed text-navy">
+                                <div className="mt-4 rounded-[4px] border border-[#F0C5BA] bg-blush p-[14px_16px] text-xs leading-relaxed text-navy italic">
                                     <strong className="font-medium not-italic">
                                         Need different locations or a more
                                         complex schedule?
@@ -823,7 +823,7 @@ export default function GuestBookingCreate() {
 
                             {/* 3.2 WHO'S BEING CARED FOR */}
                             <div className="border-l-[3px] border-logo-teal pl-[18px]">
-                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                <h3 className="mb-[14px] text-xs font-semibold tracking-[0.8px] text-navy uppercase">
                                     Who's Being Cared For
                                 </h3>
 
@@ -866,13 +866,13 @@ export default function GuestBookingCreate() {
                                                 × Remove
                                             </button>
                                         </div>
-                                        <p className="mb-[14px] text-xs italic text-sittergray">
+                                        <p className="mb-[14px] text-xs text-sittergray italic">
                                             Birth month and year — we'll keep
                                             their age up to date as they grow.
                                         </p>
                                         <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] sm:items-end">
                                             <div>
-                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                <Label className="text-[11px] font-semibold tracking-[0.4px] text-sittergray uppercase">
                                                     Name
                                                 </Label>
                                                 <Input
@@ -888,7 +888,7 @@ export default function GuestBookingCreate() {
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                <Label className="text-[11px] font-semibold tracking-[0.4px] text-sittergray uppercase">
                                                     Gender
                                                 </Label>
                                                 <Select
@@ -915,7 +915,7 @@ export default function GuestBookingCreate() {
                                                 </Select>
                                             </div>
                                             <div>
-                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                <Label className="text-[11px] font-semibold tracking-[0.4px] text-sittergray uppercase">
                                                     Month
                                                 </Label>
                                                 <Select
@@ -959,7 +959,7 @@ export default function GuestBookingCreate() {
                                                 </Select>
                                             </div>
                                             <div>
-                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                <Label className="text-[11px] font-semibold tracking-[0.4px] text-sittergray uppercase">
                                                     Year
                                                 </Label>
                                                 <Select
@@ -996,10 +996,10 @@ export default function GuestBookingCreate() {
                                             {child.birth_month &&
                                                 child.birth_year && (
                                                     <div>
-                                                        <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                        <Label className="text-[11px] font-semibold tracking-[0.4px] text-sittergray uppercase">
                                                             Age
                                                         </Label>
-                                                        <div className="pb-[11px] text-sm italic text-sittergray">
+                                                        <div className="pb-[11px] text-sm text-sittergray italic">
                                                             {calculateAge(
                                                                 parseInt(
                                                                     child.birth_year,
@@ -1017,7 +1017,7 @@ export default function GuestBookingCreate() {
 
                                 {!hasNewChildren && (
                                     <div className="rounded-[4px] border border-dashed border-border-teal bg-blush p-6 text-center">
-                                        <p className="text-xs italic text-sittergray">
+                                        <p className="text-xs text-sittergray italic">
                                             Add each child so we can match the
                                             right caregiver
                                         </p>
@@ -1032,9 +1032,7 @@ export default function GuestBookingCreate() {
 
                                 {/* Special Needs */}
                                 <div className="mt-4">
-                                    <Label>
-                                        Special Needs / Allergies
-                                    </Label>
+                                    <Label>Special Needs / Allergies</Label>
                                     <Textarea
                                         value={
                                             form.data.special_needs_notes || ''
@@ -1050,11 +1048,10 @@ export default function GuestBookingCreate() {
                                 </div>
 
                                 {/* Hidden emergency instructions */}
+                                {/* eslint-disable-next-line no-constant-binary-expression */}
                                 {false && form.data.special_needs_notes && (
                                     <div className="mt-4">
-                                        <Label>
-                                            Emergency Instructions
-                                        </Label>
+                                        <Label>Emergency Instructions</Label>
                                         <Textarea
                                             value={
                                                 form.data
@@ -1075,7 +1072,7 @@ export default function GuestBookingCreate() {
 
                             {/* 3.3 YOUR HOUSEHOLD */}
                             <div className="border-l-[3px] border-logo-teal pl-[18px]">
-                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                <h3 className="mb-[14px] text-xs font-semibold tracking-[0.8px] text-navy uppercase">
                                     Your Household
                                 </h3>
 
@@ -1114,7 +1111,7 @@ export default function GuestBookingCreate() {
                                         </div>
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                             <div>
-                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                     Name
                                                 </Label>
                                                 <Input
@@ -1130,7 +1127,7 @@ export default function GuestBookingCreate() {
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                     Type
                                                 </Label>
                                                 <Select
@@ -1166,7 +1163,7 @@ export default function GuestBookingCreate() {
                                             </div>
                                             {pet.type === 'dog' && (
                                                 <div>
-                                                    <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                         Breed
                                                     </Label>
                                                     <Input
@@ -1183,7 +1180,7 @@ export default function GuestBookingCreate() {
                                                 </div>
                                             )}
                                             <div>
-                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
                                                     Notes
                                                 </Label>
                                                 <Input
@@ -1204,7 +1201,7 @@ export default function GuestBookingCreate() {
 
                                 {!hasNewPets && (
                                     <div className="mb-4 rounded-[4px] border border-dashed border-border-teal bg-blush p-6 text-center">
-                                        <p className="text-xs italic text-sittergray">
+                                        <p className="text-xs text-sittergray italic">
                                             Add any pets your caregiver should
                                             know about
                                         </p>
@@ -1217,8 +1214,7 @@ export default function GuestBookingCreate() {
                                         <Checkbox
                                             id="other_adults_present"
                                             checked={
-                                                !!form.data
-                                                    .other_adults_present
+                                                !!form.data.other_adults_present
                                             }
                                             onCheckedChange={(checked) =>
                                                 form.setData(
@@ -1235,15 +1231,14 @@ export default function GuestBookingCreate() {
                                         </Label>
                                     </div>
                                     {form.data.other_adults_present === '1' && (
-                                        <div className="ml-[26px] mt-[10px] rounded-r-[4px] border-l-[3px] border-logo-teal bg-teal-bg p-[12px_14px] text-xs italic leading-relaxed text-navy">
+                                        <div className="mt-[10px] ml-[26px] rounded-r-[4px] border-l-[3px] border-logo-teal bg-teal-bg p-[12px_14px] text-xs leading-relaxed text-navy italic">
                                             <strong className="font-medium not-italic">
                                                 Please add a quick note below
                                             </strong>{' '}
-                                            in{' '}
-                                            <em>Notes for Caregiver</em>{' '}
-                                            letting your caregiver know who
-                                            else will be home (a spouse working
-                                            from home, an older sibling, a
+                                            in <em>Notes for Caregiver</em>{' '}
+                                            letting your caregiver know who else
+                                            will be home (a spouse working from
+                                            home, an older sibling, a
                                             grandparent, etc.).
                                         </div>
                                     )}
@@ -1252,12 +1247,12 @@ export default function GuestBookingCreate() {
 
                             {/* 3.4 SITTER PREFERENCES */}
                             <div className="border-l-[3px] border-logo-teal pl-[18px]">
-                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                <h3 className="mb-[14px] text-xs font-semibold tracking-[0.8px] text-navy uppercase">
                                     Sitter Preferences
                                 </h3>
-                                <p className="mb-3 text-xs italic text-sittergray">
-                                    Any of these apply? Check what fits —
-                                    we'll factor it into the match.
+                                <p className="mb-3 text-xs text-sittergray italic">
+                                    Any of these apply? Check what fits — we'll
+                                    factor it into the match.
                                 </p>
                                 <div className="grid grid-cols-1 gap-[12px_18px] sm:grid-cols-2">
                                     {sitter_preferences.map((option) => (
@@ -1296,15 +1291,13 @@ export default function GuestBookingCreate() {
 
                             {/* 3.5 NOTES */}
                             <div className="border-l-[3px] border-logo-teal pl-[18px]">
-                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                <h3 className="mb-[14px] text-xs font-semibold tracking-[0.8px] text-navy uppercase">
                                     Notes
                                 </h3>
                                 <div>
                                     <Label>Notes for Caregiver</Label>
                                     <Textarea
-                                        value={
-                                            form.data.caregiver_notes || ''
-                                        }
+                                        value={form.data.caregiver_notes || ''}
                                         onChange={(e) =>
                                             form.setData(
                                                 'caregiver_notes',
@@ -1336,7 +1329,7 @@ export default function GuestBookingCreate() {
 
                 {/* SUBMIT */}
                 <div className="mt-6 flex flex-col items-end gap-3">
-                    <p className="max-w-[480px] text-right text-xs italic text-sittergray">
+                    <p className="max-w-[480px] text-right text-xs text-sittergray italic">
                         Next, you'll add a payment method to confirm your
                         reservation. We'll begin matching as soon as it's on
                         file.

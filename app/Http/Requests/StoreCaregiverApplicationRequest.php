@@ -50,7 +50,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
 
             // Step 3: Employment & Experience
             'employment_status' => 'nullable|in:full_time,part_time,no,student',
-            'experiences' => 'required|array|min:1',
+            'current_employer' => 'nullable|string|max:255',
+            'experiences' => 'required|array|min:1|max:3',
             'experiences.*.start_date' => 'required|date_format:Y-m',
             'experiences.*.end_date' => 'nullable|date_format:Y-m',
             'experiences.*.present' => 'boolean',
@@ -71,9 +72,9 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'reliable_vehicle' => 'required|in:yes,no',
             'cpr_certified' => 'required|in:yes,no',
             'cpr_expiration' => 'nullable|date',
-            'cpr_card' => 'nullable|file|mimes:pdf,jpeg,png|max:10240',
+            'cpr_card' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'trustline_certified' => 'required|in:yes,no',
-            'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,png|max:10240',
+            'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'languages' => 'nullable|string|max:500',
             'has_children' => 'nullable|in:no,yes_at_home,yes_grown',
             'skills.special_needs' => 'boolean',
@@ -84,7 +85,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
 
             // Step 5: References
             'references' => 'required|array|min:3',
-            'references.*.name' => 'required|string|max:255',
+            'references.*.first_name' => 'required|string|max:255',
+            'references.*.last_name' => 'required|string|max:255',
             'references.*.email' => 'required|email',
             'references.*.phone' => 'required|string|max:20',
             'references.*.relationship' => 'required|string|max:255',
@@ -145,6 +147,39 @@ class StoreCaregiverApplicationRequest extends FormRequest
                 if (isset($reference['email']) && $reference['email'] === $applicantEmail) {
                     $validator->errors()->add("references.{$index}.email", 'Reference email cannot match your email address.');
                 }
+
+                if (isset($reference['email']) && $sponsorEmail && $reference['email'] === $sponsorEmail) {
+                    $validator->errors()->add("references.{$index}.email", 'This person is already listed as your sponsor and will receive a reference request.');
+                }
+            }
+
+            // Gap 2: At least one position required
+            $positions = $this->input('position', []);
+            $selectedPositions = array_filter($positions);
+            if (count($selectedPositions) === 0) {
+                $validator->errors()->add('position', 'Please select at least one position.');
+            }
+
+            // Gap 2: Work authorization hard gate
+            if ($this->input('authorized_to_work') === 'no') {
+                $validator->errors()->add('authorized_to_work', 'You must be authorized to work in the United States to proceed with your application.');
+            }
+
+            // Gap 3: Signature must match full name
+            $fullName = trim(
+                ($this->input('personal.first_name') ?? '')
+                .' '
+                .($this->input('personal.last_name') ?? '')
+            );
+
+            $verificationSig = $this->input('verification.signature');
+            if ($verificationSig && $verificationSig !== $fullName) {
+                $validator->errors()->add('verification.signature', 'Signature must match your full name.');
+            }
+
+            $agreementSig = $this->input('agreement.signature');
+            if ($agreementSig && $agreementSig !== $fullName) {
+                $validator->errors()->add('agreement.signature', 'Signature must match your full name.');
             }
         });
     }

@@ -1,13 +1,20 @@
 <?php
 
+use App\Mail\AdminNewApplicationMail;
+use App\Mail\ApplicantConfirmationMail;
+use App\Mail\ReferenceRequestMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
 use App\Models\CaregiverStatus;
+use App\Models\ReferenceRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -98,21 +105,24 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
         ],
         'references' => [
             [
-                'name' => 'Reference One',
+                'first_name' => 'Reference',
+                'last_name' => 'One',
                 'email' => 'ref1@example.com',
                 'phone' => '555-0001',
                 'relationship' => 'Former Employer',
                 'years_known' => '3-5',
             ],
             [
-                'name' => 'Reference Two',
+                'first_name' => 'Reference',
+                'last_name' => 'Two',
                 'email' => 'ref2@example.com',
                 'phone' => '555-0002',
                 'relationship' => 'Friend',
                 'years_known' => '5-10',
             ],
             [
-                'name' => 'Reference Three',
+                'first_name' => 'Reference',
+                'last_name' => 'Three',
                 'email' => 'ref3@example.com',
                 'phone' => '555-0003',
                 'relationship' => 'Co-worker',
@@ -360,6 +370,39 @@ describe('Caregiver Application - Submission', function () {
         $response->assertRedirect('/caregiver/apply/thank-you');
     });
 
+    it('sends notification emails on submission', function () {
+        Mail::fake();
+
+        // Create admin users for notification assertions
+        User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
+        User::factory()->create(['role' => 'super_admin', 'email' => 'superadmin@example.test']);
+
+        caregiverApplicationEnsureApplicantStatus();
+        Session::put('verified_email', 'emails@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('emails@example.com');
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        // Applicant confirmation
+        Mail::assertQueued(ApplicantConfirmationMail::class, function ($mail) {
+            return $mail->applicantName === 'John Doe';
+        });
+
+        // Reference requests (3 references + 1 sponsor = 4 total)
+        Mail::assertQueued(ReferenceRequestMail::class, 4);
+
+        // ReferenceRequest records created
+        expect(ReferenceRequest::count())->toBe(4);
+        expect(ReferenceRequest::pending()->count())->toBe(4);
+
+        // Admin notification
+        Mail::assertQueued(AdminNewApplicationMail::class, function ($mail) {
+            return $mail->applicantName === 'John Doe' && $mail->applicantEmail === 'emails@example.com';
+        });
+    });
+
     it('thank you page loads after submission', function () {
         $response = $this->get('/caregiver/apply/thank-you');
 
@@ -429,7 +472,7 @@ describe('Caregiver Application - Validation Rules', function () {
 
         $data = caregiverApplicationGetValidApplicationData('few-references@example.com');
         $data['references'] = [
-            ['name' => 'Ref1', 'email' => 'ref1@example.com', 'relationship' => 'Friend', 'years_known' => '1-3'],
+            ['first_name' => 'Ref', 'last_name' => 'One', 'email' => 'ref1@example.com', 'phone' => '555-0001', 'relationship' => 'Friend', 'years_known' => '1-3'],
         ];
 
         $response = $this->post('/caregiver/apply/submit', $data);
@@ -543,6 +586,30 @@ describe('Caregiver Application - Validation Rules', function () {
         $response = $this->post('/caregiver/apply/submit', $data);
 
         $response->assertSessionHasErrors('agreement.agree');
+    });
+
+    it('rejects submission when verification signature does not match full name', function () {
+        Session::put('verified_email', 'bad-verification-sig@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-verification-sig@example.com');
+        $data['verification']['signature'] = 'Wrong Name';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('verification.signature');
+    });
+
+    it('rejects submission when agreement signature does not match full name', function () {
+        Session::put('verified_email', 'bad-agreement-sig@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('bad-agreement-sig@example.com');
+        $data['agreement']['signature'] = 'Wrong Name';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('agreement.signature');
     });
 });
 
@@ -769,6 +836,18 @@ describe('Caregiver Application - Step 4 Validation', function () {
         $response->assertSessionHasErrors('authorized_to_work');
     });
 
+    it('rejects submission when authorized_to_work is no', function () {
+        Session::put('verified_email', 'not-authorized@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('not-authorized@example.com');
+        $data['authorized_to_work'] = 'no';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('authorized_to_work');
+    });
+
     it('validates reliable_vehicle is required', function () {
         Session::put('verified_email', 'no-vehicle@example.com');
         Session::put('verified_at', now());
@@ -846,16 +925,28 @@ describe('Caregiver Application - Step 4 Validation', function () {
 });
 
 describe('Caregiver Application - Step 5 Validation', function () {
-    it('validates reference name is required', function () {
-        Session::put('verified_email', 'no-ref-name@example.com');
+    it('validates reference first name is required', function () {
+        Session::put('verified_email', 'no-ref-first-name@example.com');
         Session::put('verified_at', now());
 
-        $data = caregiverApplicationGetValidApplicationData('no-ref-name@example.com');
-        unset($data['references'][0]['name']);
+        $data = caregiverApplicationGetValidApplicationData('no-ref-first-name@example.com');
+        unset($data['references'][0]['first_name']);
 
         $response = $this->post('/caregiver/apply/submit', $data);
 
-        $response->assertSessionHasErrors('references.0.name');
+        $response->assertSessionHasErrors('references.0.first_name');
+    });
+
+    it('validates reference last name is required', function () {
+        Session::put('verified_email', 'no-ref-last-name@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-ref-last-name@example.com');
+        unset($data['references'][0]['last_name']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.last_name');
     });
 
     it('validates reference email is required', function () {
@@ -1013,6 +1104,30 @@ describe('Caregiver Application - Submission Edge Cases', function () {
 
         $response->assertRedirect('/caregiver/apply/verify-email');
     });
+
+    it('stores uploaded cpr and trustline files', function () {
+        caregiverApplicationEnsureApplicantStatus();
+        Storage::fake('public');
+        Session::put('verified_email', 'file-cpr@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('file-cpr@example.com');
+        $data['cpr_card'] = UploadedFile::fake()->image('cpr.jpeg');
+        $data['trustline_upload'] = UploadedFile::fake()->image('trustline.jpeg');
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $user = User::where('email', 'file-cpr@example.com')->first();
+        $this->assertNotNull($user);
+        $application = CaregiverApplication::where('caregiver_id', $user->caregiver->id)->first();
+
+        expect($application->data['cpr_card'])->toStartWith('cpr-cards/');
+        expect($application->data['trustline_upload'])->toStartWith('trustline-uploads/');
+
+        Storage::disk('public')->assertExists($application->data['cpr_card']);
+        Storage::disk('public')->assertExists($application->data['trustline_upload']);
+    });
+
 });
 
 describe('Caregiver Application - Form Request Authorization', function () {

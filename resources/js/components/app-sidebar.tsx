@@ -76,6 +76,11 @@ const adminNavItems: NavItem[] = [
         icon: Users,
     },
     {
+        title: 'Caregiver Applications',
+        href: '/applications',
+        icon: ClipboardList,
+    },
+    {
         title: 'Clients',
         href: '/clients',
         icon: User,
@@ -98,6 +103,11 @@ const adminNavItems: NavItem[] = [
 ];
 
 const superAdminNavItems: NavItem[] = [
+    {
+        title: 'Caregiver Applications',
+        href: '/applications',
+        icon: ClipboardList,
+    },
     {
         title: 'SMS Broadcast',
         href: '/broadcast-sms',

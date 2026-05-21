@@ -98,6 +98,21 @@ class CaregiverResource extends JsonResource
                     'signed_at' => $agreement->signed_at?->format('Y-m-d H:i:s'),
                 ]);
             }),
+            'reference_requests' => $this->whenLoaded('referenceRequests', function () {
+                return $this->referenceRequests->map(fn ($ref) => [
+                    'id' => $ref->id,
+                    'token' => $ref->token,
+                    'reference_name' => $ref->reference_name,
+                    'reference_email' => $ref->reference_email,
+                    'relationship' => $ref->relationship,
+                    'years_known' => $ref->years_known,
+                    'is_sponsor' => $ref->is_sponsor,
+                    'rating' => $ref->rating,
+                    'feedback' => $ref->feedback,
+                    'submitted_at' => $ref->submitted_at?->format('Y-m-d H:i:s'),
+                    'created_at' => $ref->created_at?->format('Y-m-d H:i:s'),
+                ]);
+            }),
         ];
     }
 }

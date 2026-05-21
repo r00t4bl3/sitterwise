@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitterwise Booking Page — Wireframe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Poppins', sans-serif; background: #FDF5F2; color: #1B3A5C; line-height: 1.5; min-height: 100vh; }
+
+  .nav { background: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #C6E7E7; }
+  .nav img { height: 40px; width: auto; }
+  .nav .sign-in { background: #F48A91; color: white; padding: 10px 28px; font-size: 14px; border: none; cursor: pointer; border-radius: 4px; font-weight: 500; font-family: inherit; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 36px 24px 48px; }
+
+  .hero { text-align: center; padding: 12px 0 20px; }
+  .hero h1 { font-family: 'Playfair Display', serif; color: #1B3A5C; font-size: 32px; font-weight: 500; margin-bottom: 16px; }
+  .hero .heart { color: #F48A91; font-size: 26px; line-height: 1; display: block; margin-bottom: 16px; }
+  .hero .sub { color: #5A6B73; font-size: 15px; margin-bottom: 8px; }
+  .hero .legacy { color: #5A6B73; font-size: 13px; font-style: italic; }
+
+  .card { background: white; border-radius: 6px; margin-top: 24px; overflow: hidden; box-shadow: 0 1px 3px rgba(27,58,92,0.04); }
+  .card-head { background: #E8F5F5; padding: 16px 22px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .card-head h2 { color: #1B3A5C; font-size: 16px; font-weight: 600; margin: 0; }
+  .card-head .head-helper { color: #5A6B73; font-size: 12px; font-style: italic; margin-top: 3px; }
+  .card-head .chev { color: #1B3A5C; font-size: 12px; padding-top: 4px; }
+  .card-body { padding: 24px; }
+
+  .subsection { border-left: 3px solid #84D0D2; padding: 6px 0 6px 18px; margin-bottom: 26px; }
+  .subsection:last-child { margin-bottom: 0; }
+  .sub-title { color: #1B3A5C; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  .field { display: flex; flex-direction: column; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { color: #1B3A5C; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .field label .req { color: #F48A91; }
+  .field input, .field select, .field textarea {
+    border: 1px solid #C6E7E7; padding: 10px 12px; font-size: 13px;
+    color: #1B3A5C; background: white; font-family: inherit; border-radius: 4px;
+    width: 100%;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: #9CA3AF; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .date-group { display: flex; gap: 8px; }
+  .date-group input { flex: 2; }
+  .date-group select { flex: 1; }
+
+  .empty-state {
+    border: 1px dashed #C6E7E7; padding: 24px; text-align: center;
+    color: #5A6B73; font-size: 13px; border-radius: 4px; background: #FDF5F2;
+  }
+  .add-btn {
+    background: #F48A91; color: white; font-size: 12px; padding: 7px 14px;
+    border: none; cursor: pointer; border-radius: 4px; font-weight: 500; font-family: inherit;
+  }
+  .row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .row-header label { color: #1B3A5C; font-size: 13px; font-weight: 500; }
+
+  .child-row {
+    display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+    background: white; border: 1px solid #C6E7E7; border-radius: 4px; margin-bottom: 8px;
+  }
+  .child-heart { color: #F48A91; font-size: 17px; flex-shrink: 0; }
+  .child-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .child-name { color: #1B3A5C; font-size: 14px; font-weight: 500; }
+  .child-detail { color: #5A6B73; font-size: 12px; }
+  .child-remove {
+    background: none; border: none; color: #5A6B73; font-size: 16px;
+    cursor: pointer; padding: 4px 10px; font-family: inherit;
+  }
+
+  .new-child-form {
+    border: 1px solid #C6E7E7; border-radius: 4px; padding: 16px; margin-bottom: 10px;
+  }
+  .new-child-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .new-child-header strong { color: #1B3A5C; font-size: 14px; font-weight: 500; }
+  .new-child-helper { color: #5A6B73; font-size: 12px; font-style: italic; margin-bottom: 14px; }
+  .new-child-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: end; }
+  .new-child-grid .field-mini label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #5A6B73; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .age-display { color: #5A6B73; font-size: 13px; font-style: italic; padding-bottom: 11px; }
+  .trash-btn {
+    background: #F48A91; color: white; border: none; padding: 6px 10px;
+    border-radius: 4px; cursor: pointer; font-size: 14px; font-family: inherit;
+  }
+
+  .checkbox-block { margin-top: 0; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; }
+  .checkbox-row input { margin-top: 3px; }
+  .checkbox-row label { color: #1B3A5C; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+  .nudge {
+    background: #E8F5F5; border-left: 3px solid #84D0D2; padding: 12px 14px;
+    margin: 10px 0 0 26px; font-size: 12px; color: #1B3A5C; border-radius: 0 4px 4px 0;
+    line-height: 1.5;
+  }
+  .nudge strong { font-weight: 500; }
+
+  .section-intro { color: #5A6B73; font-size: 12px; font-style: italic; margin: 0 0 12px; }
+  .prefs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+  .prefs label { color: #1B3A5C; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+  .date-block {
+    background: #FDFCFA; border: 1px solid #C6E7E7; border-radius: 4px;
+    padding: 14px; margin-bottom: 10px;
+  }
+  .date-block-header {
+    color: #1B3A5C; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .date-remove {
+    background: none; border: none; color: #F48A91; font-size: 12px;
+    cursor: pointer; font-family: inherit; padding: 0;
+  }
+  .add-date-btn {
+    background: white; color: #1B3A5C; border: 1px dashed #84D0D2;
+    padding: 12px; font-size: 13px; cursor: pointer; border-radius: 4px;
+    font-family: inherit; width: 100%; font-weight: 500; margin-top: 4px;
+    transition: background 0.15s;
+  }
+  .add-date-btn:hover { background: #E8F5F5; }
+
+  .complex-note {
+    background: #FDF5F2; border: 1px solid #F0C5BA; border-radius: 4px;
+    padding: 14px 16px; margin-top: 16px; font-size: 12px; color: #1B3A5C;
+    font-style: italic; line-height: 1.5;
+  }
+  .complex-note strong { font-weight: 500; font-style: normal; }
+
+  .submit-row {
+    display: flex; flex-direction: column; align-items: flex-end;
+    margin-top: 24px; gap: 12px;
+  }
+  .reassure { color: #5A6B73; font-size: 12px; font-style: italic; text-align: right; max-width: 480px; }
+  .submit-btn {
+    background: #F48A91; color: white; padding: 12px 32px; font-size: 14px;
+    border: none; cursor: pointer; border-radius: 4px; font-weight: 500; font-family: inherit;
+  }
+
+  /* Annotation labels for the wireframe */
+  .annotation {
+    background: #FFFBEB; border: 1px dashed #F0C24B; padding: 8px 12px;
+    margin-bottom: 12px; font-size: 11px; color: #856404; border-radius: 3px;
+    font-family: 'Poppins', sans-serif;
+  }
+  .annotation strong { font-weight: 600; }
+
+  @media (max-width: 640px) {
+    .row, .prefs, .new-child-grid { grid-template-columns: 1fr; }
+    .container { padding: 20px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <img src="https://sitterwise.com/wp-content/uploads/2026/02/sitterwise.png" alt="Sitterwise">
+  <button class="sign-in">Sign In</button>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>It's you! We're so happy you're here.</h1>
+    <span class="heart">♥</span>
+    <p class="sub">Tell us about your family, your plans, and what you need — we'll handle the rest.</p>
+    <p class="legacy">Matching San Diego families with trusted caregivers since 1981.</p>
+  </div>
+
+  <!-- ABOUT YOU CARD -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>About You</h2>
+        <div class="head-helper">So we know who to send the confirmation to.</div>
+      </div>
+      <span class="chev">▲</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>First Name <span class="req">*</span></label>
+          <input placeholder="First name">
+        </div>
+        <div class="field">
+          <label>Last Name <span class="req">*</span></label>
+          <input placeholder="Last name">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Email <span class="req">*</span></label>
+          <input placeholder="your@email.com">
+        </div>
+        <div class="field">
+          <label>Phone <span class="req">*</span></label>
+          <input placeholder="(555) 123-4567">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field full">
+          <label>How did you find us?</label>
+          <select><option>Select...</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT YOUR BOOKING CARD -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>About Your Booking</h2>
+        <div class="head-helper">The more you share, the better we can match.</div>
+      </div>
+      <span class="chev">▲</span>
+    </div>
+    <div class="card-body">
+
+      <!-- SUBSECTION: WHEN & WHERE -->
+      <div class="subsection">
+        <div class="sub-title">When &amp; Where</div>
+
+        <div class="row">
+          <div class="field">
+            <label>Service Type <span class="req">*</span></label>
+            <select><option>Babysitter</option></select>
+          </div>
+          <div class="field">
+            <label>Location Type <span class="req">*</span></label>
+            <select><option>Private Home</option></select>
+          </div>
+        </div>
+
+        <!-- DATE BLOCK 1 -->
+        <div class="date-block">
+          <div class="date-block-header">
+            <span>Date 1</span>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Start Date/Time <span class="req">*</span></label>
+              <div class="date-group">
+                <input placeholder="Date">
+                <select><option>Time</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label>End Date/Time <span class="req">*</span></label>
+              <div class="date-group">
+                <input placeholder="Date">
+                <select><option>Time</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATE BLOCK 2 (example of additional date) -->
+        <div class="date-block">
+          <div class="date-block-header">
+            <span>Date 2</span>
+            <button class="date-remove">× Remove</button>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Start Date/Time <span class="req">*</span></label>
+              <div class="date-group">
+                <input placeholder="Date">
+                <select><option>Time</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label>End Date/Time <span class="req">*</span></label>
+              <div class="date-group">
+                <input placeholder="Date">
+                <select><option>Time</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="add-date-btn">+ Add another date</button>
+
+        <div style="margin-top: 16px;">
+          <div class="field full">
+            <label>Address <span class="req">*</span></label>
+            <input placeholder="Where will the caregiver meet you?">
+          </div>
+        </div>
+
+        <div class="complex-note">
+          <strong>Need different locations or a more complex schedule?</strong> Add the details in <em>Notes to Sitterwise</em> at the bottom of the form, and our Care Team will take it from there.
+        </div>
+      </div>
+
+      <!-- SUBSECTION: WHO'S BEING CARED FOR -->
+      <div class="subsection">
+        <div class="sub-title">Who's Being Cared For</div>
+
+        <div class="row-header">
+          <label>Children</label>
+          <button class="add-btn">+ Add Child</button>
+        </div>
+
+        <!-- Example added child rows -->
+        <div class="child-row">
+          <span class="child-heart">♥</span>
+          <div class="child-info">
+            <span class="child-name">Emma</span>
+            <span class="child-detail">4 years old</span>
+          </div>
+          <button class="child-remove" aria-label="Remove">×</button>
+        </div>
+
+        <div class="child-row">
+          <span class="child-heart">♥</span>
+          <div class="child-info">
+            <span class="child-name">Liam</span>
+            <span class="child-detail">7 years old</span>
+          </div>
+          <button class="child-remove" aria-label="Remove">×</button>
+        </div>
+
+        <!-- New child entry form (shows when + Add Child is clicked) -->
+        <div class="new-child-form">
+          <div class="new-child-header">
+            <strong>Add New Child</strong>
+            <button class="trash-btn" aria-label="Cancel">🗑</button>
+          </div>
+          <div class="new-child-helper">Birth month and year — we'll keep their age up to date as they grow.</div>
+          <div class="new-child-grid">
+            <div class="field-mini">
+              <label>Name</label>
+              <input placeholder="Name">
+            </div>
+            <div class="field-mini">
+              <label>Gender</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="field-mini">
+              <label>Month</label>
+              <select><option>Month</option></select>
+            </div>
+            <div class="field-mini">
+              <label>Year</label>
+              <select><option>Year</option></select>
+            </div>
+            <div class="age-display">— Age fills in automatically once month + year are picked</div>
+          </div>
+        </div>
+
+        <div class="field full" style="margin-top: 16px;">
+          <label>Special Needs / Allergies</label>
+          <textarea placeholder="Allergies, medications, anything we should know..."></textarea>
+        </div>
+      </div>
+
+      <!-- SUBSECTION: YOUR HOUSEHOLD -->
+      <div class="subsection">
+        <div class="sub-title">Your Household</div>
+
+        <div class="row-header">
+          <label>Pets</label>
+          <button class="add-btn">+ Add Pet</button>
+        </div>
+        <div class="empty-state">Add any pets your caregiver should know about</div>
+
+        <div class="checkbox-block" style="margin-top: 18px;">
+          <div class="checkbox-row">
+            <input type="checkbox" id="anyone-home" checked>
+            <label for="anyone-home">Will anyone else be home?</label>
+          </div>
+          <div class="nudge">
+            <strong>Please add a quick note below</strong> in <em>Notes for Caregiver</em> letting your caregiver know who else will be home (a spouse working from home, an older sibling, a grandparent, etc.).
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBSECTION: SITTER PREFERENCES -->
+      <div class="subsection">
+        <div class="sub-title">Sitter Preferences</div>
+        <div class="section-intro">Any of these apply? Check what fits — we'll factor it into the match.</div>
+        <div class="prefs">
+          <label><input type="checkbox"> Baby Specialist</label>
+          <label><input type="checkbox"> Special Needs Care</label>
+          <label><input type="checkbox"> Willing to Swim</label>
+          <label><input type="checkbox"> Sick Day Care</label>
+        </div>
+      </div>
+
+      <!-- SUBSECTION: NOTES -->
+      <div class="subsection">
+        <div class="sub-title">Notes</div>
+        <div class="field full">
+          <label>Notes for Caregiver</label>
+          <textarea placeholder="Plans for the day, dress code, what to bring, anything to expect — pool time, a movie night, attending an event together..."></textarea>
+        </div>
+        <div class="field full" style="margin-top: 14px;">
+          <label>Notes to Sitterwise</label>
+          <textarea placeholder="Anything you'd like our Care Team to know — including extra dates or different locations"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="submit-row">
+    <div class="reassure">Next, you'll add a payment method to confirm your reservation. We'll begin matching as soon as it's on file.</div>
+    <button class="submit-btn">Continue to Payment</button>
+  </div>
+
+</div>
+
+</body>
+</html>

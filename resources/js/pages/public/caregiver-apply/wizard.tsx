@@ -1,10 +1,11 @@
 import { useForm } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -14,7 +15,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2 } from 'lucide-react';
 
 interface Experience {
     start_date: string;
@@ -27,7 +27,8 @@ interface Experience {
 }
 
 interface Reference {
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     phone: string;
     relationship: string;
@@ -114,6 +115,9 @@ export default function Wizard() {
         year: 'numeric',
     });
 
+    const expectedSignature =
+        `${form.data.personal.first_name} ${form.data.personal.last_name}`.trim();
+
     const defaultFormData = {
         sponsor: {
             first_name: '',
@@ -157,6 +161,7 @@ export default function Wizard() {
             high_school_graduation_year: '',
         },
         employment_status: '',
+        current_employer: '',
         experiences: [
             {
                 start_date: '',
@@ -207,21 +212,24 @@ export default function Wizard() {
         },
         references: [
             {
-                name: '',
+                first_name: '',
+                last_name: '',
                 email: '',
                 phone: '',
                 relationship: '',
                 years_known: '',
             },
             {
-                name: '',
+                first_name: '',
+                last_name: '',
                 email: '',
                 phone: '',
                 relationship: '',
                 years_known: '',
             },
             {
-                name: '',
+                first_name: '',
+                last_name: '',
                 email: '',
                 phone: '',
                 relationship: '',
@@ -252,6 +260,7 @@ export default function Wizard() {
         source: Record<string, unknown>,
     ): Record<string, unknown> => {
         const result = { ...target };
+
         for (const key of Object.keys(result)) {
             if (key in source && source[key] != null) {
                 if (
@@ -269,6 +278,7 @@ export default function Wizard() {
                 }
             }
         }
+
         return result;
     };
 
@@ -981,6 +991,29 @@ export default function Wizard() {
                                 </Select>
                             </div>
 
+                            {(form.data.employment_status === 'full_time' ||
+                                form.data.employment_status ===
+                                    'part_time') && (
+                                <div className="mb-6 space-y-2">
+                                    <Label htmlFor="current-employer">
+                                        Current Employer{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="current-employer"
+                                        type="text"
+                                        placeholder="Your current employer"
+                                        value={form.data.current_employer}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'current_employer',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
+
                             {form.data.experiences.map((exp, index) => (
                                 <div
                                     key={index}
@@ -1167,8 +1200,10 @@ export default function Wizard() {
                                                                         (m) => {
                                                                             if (
                                                                                 !exp.start_date
-                                                                            )
+                                                                            ) {
                                                                                 return true;
+                                                                            }
+
                                                                             const startYear =
                                                                                 exp.start_date.slice(
                                                                                     0,
@@ -1190,18 +1225,23 @@ export default function Wizard() {
                                                                                           4,
                                                                                       )
                                                                                     : '';
+
                                                                             if (
                                                                                 !endYear
-                                                                            )
+                                                                            ) {
                                                                                 return true;
+                                                                            }
+
                                                                             if (
                                                                                 endYear ===
                                                                                 startYear
-                                                                            )
+                                                                            ) {
                                                                                 return (
                                                                                     m.value >
                                                                                     startMonth
                                                                                 );
+                                                                            }
+
                                                                             return true;
                                                                         },
                                                                     )
@@ -1251,6 +1291,7 @@ export default function Wizard() {
                                                                               7,
                                                                           )
                                                                         : '';
+
                                                                 if (
                                                                     month &&
                                                                     exp.start_date
@@ -1265,6 +1306,7 @@ export default function Wizard() {
                                                                             5,
                                                                             7,
                                                                         );
+
                                                                     if (
                                                                         year ===
                                                                             startYear &&
@@ -1279,9 +1321,11 @@ export default function Wizard() {
                                                                             'experiences',
                                                                             newExp,
                                                                         );
+
                                                                         return;
                                                                     }
                                                                 }
+
                                                                 newExp[
                                                                     index
                                                                 ].end_date =
@@ -1303,13 +1347,16 @@ export default function Wizard() {
                                                                         (y) => {
                                                                             if (
                                                                                 !exp.start_date
-                                                                            )
+                                                                            ) {
                                                                                 return true;
+                                                                            }
+
                                                                             const startYear =
                                                                                 exp.start_date.slice(
                                                                                     0,
                                                                                     4,
                                                                                 );
+
                                                                             return (
                                                                                 y >=
                                                                                 startYear
@@ -1534,7 +1581,12 @@ export default function Wizard() {
                                 </div>
                             ))}
 
-                            <Button type="button" onClick={addExperience}>
+                            <Button
+                                type="button"
+                                onClick={addExperience}
+                                disabled={form.data.experiences.length >= 3}
+                                className="disabled:opacity-50"
+                            >
                                 + Add Another Experience
                             </Button>
                         </div>
@@ -2029,23 +2081,50 @@ export default function Wizard() {
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label
-                                                htmlFor={`ref-name-${index}`}
+                                                htmlFor={`ref-first-name-${index}`}
                                             >
-                                                Full Name{' '}
+                                                First Name{' '}
                                                 <span className="text-red-500">
                                                     *
                                                 </span>
                                             </Label>
                                             <Input
-                                                id={`ref-name-${index}`}
+                                                id={`ref-first-name-${index}`}
                                                 type="text"
-                                                placeholder="Reference's full name"
-                                                value={ref.name}
+                                                placeholder="Reference's first name"
+                                                value={ref.first_name}
                                                 onChange={(e) => {
                                                     const newRefs = [
                                                         ...form.data.references,
                                                     ];
-                                                    newRefs[index].name =
+                                                    newRefs[index].first_name =
+                                                        e.target.value;
+                                                    form.setData(
+                                                        'references',
+                                                        newRefs,
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label
+                                                htmlFor={`ref-last-name-${index}`}
+                                            >
+                                                Last Name{' '}
+                                                <span className="text-red-500">
+                                                    *
+                                                </span>
+                                            </Label>
+                                            <Input
+                                                id={`ref-last-name-${index}`}
+                                                type="text"
+                                                placeholder="Reference's last name"
+                                                value={ref.last_name}
+                                                onChange={(e) => {
+                                                    const newRefs = [
+                                                        ...form.data.references,
+                                                    ];
+                                                    newRefs[index].last_name =
                                                         e.target.value;
                                                     form.setData(
                                                         'references',
@@ -2498,6 +2577,15 @@ export default function Wizard() {
                                                 })
                                             }
                                         />
+                                        {form.data.verification.signature &&
+                                            form.data.verification.signature !==
+                                                expectedSignature && (
+                                                <p className="text-xs text-amber-600">
+                                                    Signature must match your
+                                                    full name (
+                                                    {expectedSignature})
+                                                </p>
+                                            )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="verification-date">
@@ -2573,6 +2661,15 @@ export default function Wizard() {
                                                 })
                                             }
                                         />
+                                        {form.data.agreement.signature &&
+                                            form.data.agreement.signature !==
+                                                expectedSignature && (
+                                                <p className="text-xs text-amber-600">
+                                                    Signature must match your
+                                                    full name (
+                                                    {expectedSignature})
+                                                </p>
+                                            )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="agreement-date">
@@ -2625,14 +2722,21 @@ export default function Wizard() {
                             <Button
                                 type="button"
                                 onClick={nextStep}
-                                className="hover:bg-coral-dark rounded bg-coral px-4 py-2 text-white"
+                                disabled={
+                                    currentStep === 4 &&
+                                    form.data.authorized_to_work === 'no'
+                                }
+                                className="hover:bg-coral-dark rounded bg-coral px-4 py-2 text-white disabled:opacity-50"
                             >
                                 Next →
                             </Button>
                         ) : (
                             <Button
                                 type="submit"
-                                disabled={form.processing}
+                                disabled={
+                                    form.processing ||
+                                    form.data.authorized_to_work === 'no'
+                                }
                                 className="hover:bg-coral-dark rounded bg-coral px-6 py-2 text-white disabled:opacity-50"
                             >
                                 {form.processing

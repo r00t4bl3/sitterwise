@@ -1,3 +1,5 @@
+import { Download } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -13,8 +15,6 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { useState } from 'react';
-import { Download } from 'lucide-react';
 
 type ExportSheetProps = {
     open: boolean;
@@ -45,7 +45,9 @@ export function ExportSheet({
     defaultYear,
 }: ExportSheetProps) {
     const currentYear = new Date().getFullYear();
-    const [month, setMonth] = useState(defaultMonth ?? new Date().getMonth() + 1);
+    const [month, setMonth] = useState(
+        defaultMonth ?? new Date().getMonth() + 1,
+    );
     const [year, setYear] = useState(defaultYear ?? currentYear);
 
     return (

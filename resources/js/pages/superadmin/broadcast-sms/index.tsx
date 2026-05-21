@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertCircle, MessageCircle, Send } from 'lucide-react';
+import { AlertCircle, Send } from 'lucide-react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,8 @@ export default function BroadcastSms({ recipientCount }: Props) {
         message_body: '',
     });
 
-    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>()
+        .props;
     const showFlashSuccess = flash?.success;
 
     const { chars, segments } = getSmsSegments(data.message_body);
@@ -49,8 +50,8 @@ export default function BroadcastSms({ recipientCount }: Props) {
 
     function handleReviewAndSend() {
         if (!data.message_body.trim()) {
-return;
-}
+            return;
+        }
 
         setShowConfirmModal(true);
     }
@@ -96,12 +97,15 @@ return;
 
                 {Object.keys(errors).length > 0 && (
                     <div className="rounded-lg border border-red-500/30 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-                        <p className="font-medium">{Object.values(errors).join(', ')}</p>
+                        <p className="font-medium">
+                            {Object.values(errors).join(', ')}
+                        </p>
                     </div>
                 )}
 
                 <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-                    This message will be sent to <strong>{recipientCount} active caregivers</strong>.
+                    This message will be sent to{' '}
+                    <strong>{recipientCount} active caregivers</strong>.
                 </div>
 
                 <div className="space-y-2">
@@ -113,12 +117,15 @@ return;
                         placeholder="Type your broadcast message here..."
                         className="min-h-32"
                         value={data.message_body}
-                        onChange={(e) => setData('message_body', e.target.value)}
+                        onChange={(e) =>
+                            setData('message_body', e.target.value)
+                        }
                         maxLength={918}
                     />
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>
-                            {chars} characters / {segments} SMS segment{segments !== 1 ? 's' : ''}
+                            {chars} characters / {segments} SMS segment
+                            {segments !== 1 ? 's' : ''}
                         </span>
                         {showSegmentWarning && (
                             <span className="flex items-center gap-1 text-amber-600">
@@ -130,8 +137,12 @@ return;
                 </div>
 
                 <div className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Compliance footer (auto-appended):</span>
-                    <pre className="mt-1 whitespace-pre-wrap font-sans">{COMPLIANCE_FOOTER}</pre>
+                    <span className="font-medium text-foreground">
+                        Compliance footer (auto-appended):
+                    </span>
+                    <pre className="mt-1 font-sans whitespace-pre-wrap">
+                        {COMPLIANCE_FOOTER}
+                    </pre>
                 </div>
 
                 <div>
@@ -145,7 +156,10 @@ return;
                     </Button>
                 </div>
 
-                <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+                <Dialog
+                    open={showConfirmModal}
+                    onOpenChange={setShowConfirmModal}
+                >
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Confirm Broadcast</DialogTitle>
@@ -156,21 +170,30 @@ return;
 
                         <div className="space-y-4">
                             <div>
-                                <span className="text-sm font-medium">Message:</span>
-                                <pre className="mt-1 whitespace-pre-wrap rounded-lg border bg-muted/50 p-3 text-sm">
+                                <span className="text-sm font-medium">
+                                    Message:
+                                </span>
+                                <pre className="mt-1 rounded-lg border bg-muted/50 p-3 text-sm whitespace-pre-wrap">
                                     {fullMessage}
                                 </pre>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Send to <strong>{recipientCount} caregivers</strong>?
+                                Send to{' '}
+                                <strong>{recipientCount} caregivers</strong>?
                             </p>
                         </div>
 
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowConfirmModal(false)}
+                            >
                                 Cancel
                             </Button>
-                            <Button onClick={handleConfirmSend} disabled={processing}>
+                            <Button
+                                onClick={handleConfirmSend}
+                                disabled={processing}
+                            >
                                 Send Now
                             </Button>
                         </DialogFooter>

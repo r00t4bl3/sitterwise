@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitterwise Caregiver Platform — Updated Wireframe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #F48A91;
+    --navy: #1B3A5C;
+    --gray: #5A6B73;
+    --teal-bg: #E8F5F5;
+    --blush: #FDF5F2;
+    --teal-border: #C6E7E7;
+    --teal-logo: #84D0D2;
+    --white: #ffffff;
+    --light-gray: #f7f8f9;
+    --border: #e2e6ea;
+    --text: #2d3748;
+    --text-light: #718096;
+    --danger: #e53e3e;
+    --success: #38a169;
+    --warning: #d69e2e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--light-gray);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* WIREFRAME NAVIGATION                        */
+  /* ═══════════════════════════════════════════ */
+  .wf-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    box-shadow: 0 2px 20px rgba(27,58,92,0.3);
+  }
+  .wf-nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .wf-nav-brand {
+    padding: 16px 24px;
+    font-family: 'Playfair Display', serif;
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .wf-nav-brand span { color: var(--coral); font-size: 12px; font-family: 'Poppins'; font-weight: 400; letter-spacing: 0; }
+  .wf-nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .wf-nav-tab {
+    padding: 16px 18px;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .wf-nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .wf-nav-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--coral);
+    background: rgba(255,255,255,0.05);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* SCREEN PANELS                               */
+  /* ═══════════════════════════════════════════ */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .screen-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #244b6e 100%);
+    padding: 40px 0 32px;
+    color: var(--white);
+  }
+  .screen-header-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .screen-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .screen-header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    max-width: 600px;
+  }
+  .screen-header .spec-ref {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 10px;
+    background: rgba(244,138,145,0.2);
+    border: 1px solid rgba(244,138,145,0.4);
+    color: var(--coral);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .canvas {
+    max-width: 800px;
+    margin: -20px auto 60px;
+    padding: 0 24px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* CARDS                                       */
+  /* ═══════════════════════════════════════════ */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+  }
+  .card.highlight { border-left: 4px solid var(--coral); }
+  .card.urgent { border-left: 4px solid var(--coral); background: var(--blush); }
+  .card.success { border-left: 4px solid var(--success); background: #f0fdf4; }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .card-subtitle {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* CAREGIVER PORTAL HEADER                     */
+  /* ═══════════════════════════════════════════ */
+  .portal-greeting {
+    background: var(--white);
+    padding: 24px 28px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .portal-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--teal-logo), var(--teal-border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .portal-greeting-text h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--navy);
+    margin-bottom: 2px;
+  }
+  .portal-greeting-text p {
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* CHECKLIST                                   */
+  /* ═══════════════════════════════════════════ */
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: var(--white);
+  }
+  .checklist-item.done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  .checklist-item.in-progress {
+    background: var(--blush);
+    border-left: 4px solid var(--coral);
+  }
+
+  .checklist-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--light-gray);
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: transparent;
+  }
+  .checklist-item.done .checklist-check {
+    background: var(--success);
+    border-color: var(--success);
+    color: var(--white);
+  }
+  .checklist-item.in-progress .checklist-check {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: var(--white);
+    font-size: 11px;
+  }
+
+  .checklist-content { flex: 1; }
+  .checklist-title {
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 3px;
+    font-size: 15px;
+  }
+  .checklist-desc {
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.5;
+  }
+  .checklist-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--teal-bg);
+    color: var(--navy);
+    border: 1px solid var(--teal-border);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  .pill.urgent {
+    background: var(--coral);
+    color: var(--white);
+    border-color: var(--coral);
+  }
+  .pill.warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fcd34d;
+  }
+  .pill.success {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #6ee7b7;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* TRUSTLINE COUNTDOWN                         */
+  /* ═══════════════════════════════════════════ */
+  .countdown-banner {
+    background: var(--blush);
+    border: 1px solid var(--coral);
+    border-left: 4px solid var(--coral);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .countdown-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--coral);
+    line-height: 1;
+  }
+  .countdown-text { flex: 1; }
+  .countdown-text strong {
+    color: var(--navy);
+    font-size: 15px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .countdown-text p {
+    font-size: 12px;
+    color: var(--gray);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* BUTTONS                                     */
+  /* ═══════════════════════════════════════════ */
+  .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--coral);
+    color: var(--white);
+    border-color: var(--coral);
+  }
+  .btn-primary:hover { background: #e57680; border-color: #e57680; }
+  .btn-secondary {
+    background: var(--white);
+    color: var(--navy);
+    border-color: var(--navy);
+  }
+  .btn-secondary:hover { background: var(--navy); color: var(--white); }
+  .btn-danger {
+    background: var(--white);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  .btn-danger:hover { background: var(--danger); color: var(--white); }
+  .btn-small { padding: 6px 14px; font-size: 11px; }
+  .btn-block { display: block; width: 100%; }
+
+  /* ═══════════════════════════════════════════ */
+  /* MILESTONE STATS GRID                        */
+  /* ═══════════════════════════════════════════ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--white);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-card.big {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, var(--navy) 0%, #244b6e 100%);
+    color: var(--white);
+    border: none;
+  }
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-card.big .stat-number {
+    color: var(--white);
+    font-size: 56px;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-light);
+    font-weight: 600;
+  }
+  .stat-card.big .stat-label {
+    color: rgba(255,255,255,0.7);
+  }
+  .stat-sublabel {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 6px;
+  }
+  .stat-card.big .stat-sublabel {
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* Star rating */
+  .stars {
+    color: var(--warning);
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 8px;
+    background: var(--light-gray);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal-logo), var(--coral));
+    border-radius: 4px;
+  }
+
+  /* Streak fire icon */
+  .streak-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* CANCELLATION FLOW                           */
+  /* ═══════════════════════════════════════════ */
+  .modal-mock {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--blush);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--coral);
+    font-size: 28px;
+  }
+  .modal-mock h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .modal-mock .job-summary {
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-border);
+    padding: 14px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 16px 0;
+    font-size: 14px;
+    color: var(--navy);
+  }
+  .modal-mock .job-summary strong { display: block; margin-bottom: 4px; }
+  .modal-mock .warning-text {
+    background: var(--blush);
+    border: 1px solid var(--coral);
+    padding: 14px 16px;
+    border-radius: 8px;
+    color: var(--navy);
+    font-size: 13px;
+    margin: 16px 0;
+  }
+  .modal-mock label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 6px;
+    margin-top: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .modal-mock label .req { color: var(--coral); }
+  .modal-mock textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    background: var(--light-gray);
+    min-height: 80px;
+    resize: vertical;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .modal-actions .btn { flex: 1; }
+
+  /* ═══════════════════════════════════════════ */
+  /* PAUSE / HOLD                                */
+  /* ═══════════════════════════════════════════ */
+  .hold-card {
+    background: linear-gradient(135deg, var(--teal-bg), var(--white));
+    border: 1px solid var(--teal-border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .hold-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .hold-card p {
+    font-size: 14px;
+    color: var(--gray);
+    max-width: 420px;
+    margin: 0 auto 20px;
+  }
+  .hold-form {
+    background: var(--white);
+    padding: 24px;
+    border-radius: 8px;
+    margin-top: 16px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  .hold-form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 6px;
+    margin-top: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .hold-form label:first-child { margin-top: 0; }
+  .hold-form input,
+  .hold-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    background: var(--light-gray);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* ADMIN DASHBOARD                             */
+  /* ═══════════════════════════════════════════ */
+  .admin-bg {
+    background: var(--light-gray);
+    padding-bottom: 60px;
+  }
+  .admin-greeting {
+    background: var(--white);
+    padding: 24px 28px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .admin-greeting h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+  }
+  .admin-greeting p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  .attention-widget {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .attention-widget-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .attention-widget-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+  }
+  .attention-widget-header .pill {
+    background: var(--coral);
+    color: var(--white);
+    border: none;
+  }
+  .attention-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .attention-item:hover { background: var(--light-gray); }
+  .attention-item:last-child { border-bottom: none; }
+  .attention-item.urgent { background: var(--blush); }
+  .attention-item.urgent:hover { background: #fce8e9; }
+  .attention-label {
+    font-size: 14px;
+    color: var(--navy);
+    font-weight: 500;
+  }
+  .attention-count {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .count-badge {
+    background: var(--coral);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    min-width: 28px;
+    text-align: center;
+  }
+  .count-badge.zero {
+    background: var(--light-gray);
+    color: var(--text-light);
+  }
+  .count-badge.warning {
+    background: var(--warning);
+  }
+  .count-arrow {
+    color: var(--text-light);
+    font-size: 16px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* ASSIGNMENTS TABLE                           */
+  /* ═══════════════════════════════════════════ */
+  .profile-header {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .profile-header .portal-avatar { width: 64px; height: 64px; font-size: 24px; }
+  .profile-header-info { flex: 1; }
+  .profile-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .profile-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .tabs-row {
+    background: var(--white);
+    border-radius: 12px 12px 0 0;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text-light);
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .tab.active {
+    color: var(--navy);
+    border-bottom-color: var(--coral);
+    font-weight: 600;
+  }
+  .tab-content {
+    background: var(--white);
+    border-radius: 0 0 12px 12px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-top: none;
+  }
+
+  .assignment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .assignment-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--navy);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .assignment-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .assignment-table tbody tr:hover { background: var(--light-gray); }
+  .assignment-table .resolution {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 0;
+  }
+  .resolution.completed { background: #d1fae5; color: #065f46; }
+  .resolution.backed-out { background: #fee2e2; color: #991b1b; }
+  .resolution.excused { background: #fef3c7; color: #92400e; }
+  .resolution.reassigned { background: var(--teal-bg); color: var(--navy); }
+  .resolution.no-show { background: var(--danger); color: var(--white); }
+
+  .callout-explain {
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--navy);
+    line-height: 1.5;
+  }
+  .callout-explain strong {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* INTRO PANEL                                 */
+  /* ═══════════════════════════════════════════ */
+  .intro-screen {
+    background: linear-gradient(135deg, var(--navy) 0%, #244b6e 50%, var(--navy) 100%);
+    min-height: calc(100vh - 56px);
+    padding: 60px 24px;
+    color: var(--white);
+  }
+  .intro-inner {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .intro-tagline {
+    color: var(--coral);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .intro-inner h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .intro-inner > p {
+    font-size: 17px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.65;
+    margin-bottom: 32px;
+    max-width: 620px;
+  }
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .intro-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .intro-card:hover {
+    background: rgba(244,138,145,0.1);
+    border-color: var(--coral);
+    transform: translateY(-2px);
+  }
+  .intro-card-tag {
+    color: var(--coral);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .intro-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .intro-card p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 720px) {
+    .intro-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .intro-inner h1 { font-size: 32px; }
+    .countdown-banner { flex-direction: column; align-items: flex-start; }
+    .interview-rating-row { grid-template-columns: 1fr; gap: 4px; }
+    .interview-rating-row .rating-hearts { justify-self: start; }
+    .yes-no-row { grid-template-columns: 1fr; }
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* INTERVIEW EVALUATION                        */
+  /* ═══════════════════════════════════════════ */
+  .interview-context {
+    background: var(--white);
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .interview-context-info { flex: 1; }
+  .interview-context-info h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--navy);
+  }
+  .interview-context-info .meta {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+  .interview-context-info .meta span { color: var(--navy); font-weight: 500; }
+
+  .rating-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: var(--navy);
+  }
+  .rating-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rating-legend-hearts {
+    color: var(--coral);
+    letter-spacing: 1px;
+  }
+  .legend-strong { font-size: 13px; }
+  .legend-good { font-size: 13px; }
+  .legend-pot { font-size: 13px; }
+  .legend-concern { font-size: 13px; }
+  .legend-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray);
+  }
+
+  .section-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 24px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .interview-rating-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .interview-rating-row:last-child { border-bottom: none; }
+  .rating-dimension h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: underline;
+    text-decoration-color: var(--coral);
+    text-underline-offset: 4px;
+    text-decoration-thickness: 2px;
+    margin-bottom: 4px;
+    display: inline-block;
+  }
+  .rating-dimension p {
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.5;
+  }
+
+  .rating-hearts {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    cursor: pointer;
+  }
+  .heart {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--teal-border);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--teal-border);
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .heart.filled {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: var(--white);
+  }
+  .heart:hover {
+    border-color: var(--coral);
+  }
+
+  .yes-no-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .yes-no-row:last-child { border-bottom: none; }
+  .yes-no-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .yes-no-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .yes-no-btn {
+    padding: 6px 18px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--gray);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .yes-no-btn.selected.yes {
+    background: var(--success);
+    border-color: var(--success);
+    color: var(--white);
+  }
+  .yes-no-btn.selected.no {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--white);
+  }
+
+  .interview-notes {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    background: var(--light-gray);
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .interview-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .composite-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    padding: 14px 18px;
+    background: var(--blush);
+    border: 1px solid var(--coral);
+    border-radius: 8px;
+  }
+  .composite-row-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .composite-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .composite-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .composite-number .denom {
+    color: var(--text-light);
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .composite-pct {
+    font-size: 13px;
+    color: var(--gray);
+    font-weight: 500;
+  }
+  .composite-note {
+    font-size: 11px;
+    color: var(--text-light);
+    max-width: 280px;
+    line-height: 1.5;
+    text-align: right;
+  }
+  @media (max-width: 720px) {
+    .composite-row { flex-direction: column; align-items: flex-start; }
+    .composite-note { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- NAVIGATION                                  -->
+<!-- ═══════════════════════════════════════════ -->
+<nav class="wf-nav">
+  <div class="wf-nav-inner">
+    <div class="wf-nav-brand">SITTERWISE <span>wireframe v2</span></div>
+    <div class="wf-nav-tabs">
+      <div class="wf-nav-tab active" onclick="showScreen('intro')">Overview</div>
+      <div class="wf-nav-tab" onclick="showScreen('onboarding')">Onboarding</div>
+      <div class="wf-nav-tab" onclick="showScreen('cancel')">Cancellation</div>
+      <div class="wf-nav-tab" onclick="showScreen('milestones')">Milestones</div>
+      <div class="wf-nav-tab" onclick="showScreen('pause')">Pause Account</div>
+      <div class="wf-nav-tab" onclick="showScreen('admin-dash')">Admin Dashboard</div>
+      <div class="wf-nav-tab" onclick="showScreen('interview')">Interview Eval</div>
+      <div class="wf-nav-tab" onclick="showScreen('assignments')">Assignments View</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- INTRO / OVERVIEW                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="intro" class="screen active">
+  <div class="intro-screen">
+    <div class="intro-inner">
+      <div class="intro-tagline">Sitterwise · Updated Spec</div>
+      <h1>Caregiver Platform Wireframes</h1>
+      <p>Six screens reflecting what's new in the updated spec. Each one is a representative view of how the design supports the workflow — these are working sketches, not pixel-perfect mockups.</p>
+
+      <div class="intro-grid">
+        <div class="intro-card" onclick="showScreen('onboarding')">
+          <div class="intro-card-tag">Caregiver portal</div>
+          <h3>Onboarding Checklist</h3>
+          <p>The consolidated checklist with OnPay as a single item and the Trustline 7-day countdown.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('cancel')">
+          <div class="intro-card-tag">Caregiver portal</div>
+          <h3>Cancellation Flow</h3>
+          <p>The honest "this will count as a back-out" screen when a caregiver cancels an accepted job.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('milestones')">
+          <div class="intro-card-tag">Caregiver portal</div>
+          <h3>Milestone View</h3>
+          <p>Caregiver-facing stats: total jobs, rating, reliability with peer comparison, streak, Trustline progress.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('pause')">
+          <div class="intro-card-tag">Caregiver portal</div>
+          <h3>Pause My Account</h3>
+          <p>Self-service hold/resume — the SitterTree-inspired feature for life happening.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('admin-dash')">
+          <div class="intro-card-tag">Admin</div>
+          <h3>Needs Attention Widget</h3>
+          <p>The single dashboard widget that surfaces what admin needs to handle today.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('interview')">
+          <div class="intro-card-tag">Admin</div>
+          <h3>Interview Evaluation</h3>
+          <p>Structured candidate evaluation with soft skills ratings, quick yes/no checks, and overall notes.</p>
+        </div>
+        <div class="intro-card" onclick="showScreen('assignments')">
+          <div class="intro-card-tag">Admin</div>
+          <h3>Caregiver Assignments View</h3>
+          <p>The new assignment-based job history showing one job with two caregivers (Ashlyn backed out, Ann completed).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- ONBOARDING CHECKLIST                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="onboarding" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Welcome, Maria — let's get you set up</h1>
+      <p>You're 4 of 6 steps to your first job. Take care of these in order, and the team will check in along the way.</p>
+      <span class="spec-ref">Spec § 4 · Caregiver Portal</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <!-- Trustline countdown banner -->
+    <div class="countdown-banner">
+      <div class="countdown-number">5</div>
+      <div class="countdown-text">
+        <strong>days left to submit your Trustline application</strong>
+        <p>Trustline is required by California for all caregivers. You'll pay $140 to TrustLine directly. Once you complete 10 jobs within 6 months, Sitterwise reimburses you the full amount through your paycheck.</p>
+      </div>
+      <a class="btn btn-primary">Start Trustline →</a>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Your Onboarding Checklist</h3>
+      <p class="card-subtitle">Complete every item to start receiving job offers.</p>
+
+      <ul class="checklist">
+        <li class="checklist-item done">
+          <div class="checklist-check">✓</div>
+          <div class="checklist-content">
+            <div class="checklist-title">OnPay setup complete</div>
+            <div class="checklist-desc">Offer letter signed, I-9 and W-4 complete, identity documents uploaded, direct deposit confirmed.</div>
+            <div class="checklist-meta">
+              <span class="pill success">Done · May 12</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="checklist-item done">
+          <div class="checklist-check">✓</div>
+          <div class="checklist-content">
+            <div class="checklist-title">Background check cleared</div>
+            <div class="checklist-desc">S2Verify completed. You're good to go.</div>
+            <div class="checklist-meta">
+              <span class="pill success">Done · May 13</span>
+              <span class="pill">Renews May 13, 2028</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="checklist-item done">
+          <div class="checklist-check">✓</div>
+          <div class="checklist-content">
+            <div class="checklist-title">CPR &amp; First Aid certificate uploaded</div>
+            <div class="checklist-desc">Certificate expires June 15, 2027. We'll remind you 90 days before renewal.</div>
+            <div class="checklist-meta">
+              <span class="pill success">Done · May 13</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="checklist-item in-progress">
+          <div class="checklist-check">!</div>
+          <div class="checklist-content">
+            <div class="checklist-title">Trustline application submitted</div>
+            <div class="checklist-desc">Submit your Trustline application within 7 days of activation. You can work during the state's processing period — submission is what's required.</div>
+            <div class="checklist-meta">
+              <span class="pill urgent">5 days remaining</span>
+              <span class="pill">$140 · Reimbursed after 10 jobs</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="checklist-item">
+          <div class="checklist-check"></div>
+          <div class="checklist-content">
+            <div class="checklist-title">Dress code acknowledgment</div>
+            <div class="checklist-desc">Review the Sitterwise dress code and confirm you've read it.</div>
+          </div>
+        </li>
+
+        <li class="checklist-item">
+          <div class="checklist-check"></div>
+          <div class="checklist-content">
+            <div class="checklist-title">Training quiz</div>
+            <div class="checklist-desc">10-minute quiz covering Sitterwise policies and best practices.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="callout-explain">
+      <strong>Need help?</strong>
+      Reach out to <a href="#" style="color:var(--coral);font-weight:600">hello@sitterwise.com</a> or text us at 619-663-4379 if anything's blocking you.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CANCELLATION FLOW                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="cancel" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Cancellation confirmation</h1>
+      <p>The honest message a caregiver sees when she tries to cancel a job she's accepted. The goal: discourage casual cancellations without being deceptive about what happens next.</p>
+      <span class="spec-ref">Spec § 5.3 · Caregiver Portal</span>
+    </div>
+  </div>
+  <div class="canvas" style="padding-top: 20px;">
+
+    <div class="modal-mock">
+      <div class="modal-icon">⚠</div>
+      <h3>You're about to cancel this job</h3>
+
+      <div class="job-summary">
+        <strong>Smith Family · 2 children (4 &amp; 6)</strong>
+        Saturday, May 23 · 6:00 PM – 10:00 PM<br>
+        La Jolla
+      </div>
+
+      <div class="warning-text">
+        <strong style="display:block;margin-bottom:6px;color:var(--navy)">Heads up:</strong>
+        This will count as a back-out on your reliability record. If something has come up that we can help with, text us at 619-663-4379 before canceling.
+      </div>
+
+      <label>Reason for cancellation <span class="req">*</span></label>
+      <textarea placeholder="Briefly tell us what's going on. The team will see this."></textarea>
+      <p style="font-size: 11px; color: var(--text-light); margin-top: 4px;">Required. This helps us understand whether there's something we should know about.</p>
+
+      <div class="modal-actions">
+        <a class="btn btn-secondary">Never mind, go back</a>
+        <a class="btn btn-danger">Cancel this job</a>
+      </div>
+    </div>
+
+    <div class="callout-explain" style="margin-top: 32px;">
+      <strong>What happens after she cancels:</strong>
+      The cancellation is logged on her assignment with timestamp and reason. Admin gets a notification and can leave it as Backed Out, mark it Excused with a note (genuine emergency), or reassign her to a different job (which converts the assignment to Reassigned, no back-out recorded).
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MILESTONE VIEW                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="milestones" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Your Sitterwise stats</h1>
+      <p>Caregiver-facing milestone view. Designed to motivate without shaming — back-outs are conveyed via reliability percentage with peer comparison, not as a raw count.</p>
+      <span class="spec-ref">Spec § 9 · Caregiver Portal · Phase 4</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <div class="portal-greeting">
+      <div class="portal-avatar">MR</div>
+      <div class="portal-greeting-text">
+        <h2>Looking great, Maria.</h2>
+        <p>Here's how you've been doing.</p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+
+      <!-- Big number: Total jobs -->
+      <div class="stat-card big">
+        <div class="stat-number">47</div>
+        <div class="stat-label">Jobs completed</div>
+        <div class="stat-sublabel">Since you joined in February</div>
+      </div>
+
+      <!-- Client rating -->
+      <div class="stat-card">
+        <div class="stars">★★★★★</div>
+        <div class="stat-number" style="font-size: 36px; margin-top: 4px;">4.8</div>
+        <div class="stat-label">Client rating</div>
+        <div class="stat-sublabel">from 31 reviews</div>
+      </div>
+
+      <!-- Reliability -->
+      <div class="stat-card">
+        <div class="stat-number" style="font-size: 36px; color: var(--success);">96%</div>
+        <div class="stat-label">Reliability</div>
+        <div class="stat-sublabel">Team average: 94%</div>
+      </div>
+
+      <!-- Streak -->
+      <div class="stat-card">
+        <div class="streak-icon">🔥</div>
+        <div class="stat-number" style="font-size: 36px;">12</div>
+        <div class="stat-label">Job streak</div>
+        <div class="stat-sublabel">jobs in a row, no back-outs</div>
+      </div>
+
+      <!-- Trustline progress -->
+      <div class="stat-card">
+        <div class="stat-number" style="font-size: 36px;">7 / 10</div>
+        <div class="stat-label">Trustline reimbursement</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 70%;"></div>
+        </div>
+        <div class="stat-sublabel">3 more jobs until $140 reimbursement</div>
+      </div>
+
+    </div>
+
+    <div class="callout-explain" style="margin-top: 20px;">
+      <strong>Why we don't show back-out count directly:</strong>
+      Showing "3 back-outs this year" feels punitive even when accurate. A reliability percentage with peer comparison conveys the same information in a way most caregivers will receive as feedback, not shame. The internal admin view keeps the raw counts for performance management.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAUSE / HOLD                                -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="pause" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Need a break? Pause your account.</h1>
+      <p>Self-service hold/resume. When life happens, caregivers can pause themselves instead of ignoring job offers and accumulating back-outs.</p>
+      <span class="spec-ref">Spec § 7.3 · Caregiver Portal · Phase 1</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <div class="hold-card">
+      <h3>Take the time you need.</h3>
+      <p>Pausing your account stops new job offers from coming through. Your profile, ratings, history, and Trustline progress are all preserved. Resume whenever you're ready — usually with one tap.</p>
+
+      <div class="hold-form">
+        <label>When do you expect to be back? <span style="color:var(--text-light);font-weight:400;text-transform:none">(optional)</span></label>
+        <input type="date" value="2026-06-15">
+
+        <label>Anything you want to share? <span style="color:var(--text-light);font-weight:400;text-transform:none">(optional)</span></label>
+        <textarea placeholder="Vacation, family stuff, school, just need a breather — totally up to you whether to say." style="min-height: 80px;"></textarea>
+
+        <div style="display:flex; gap:12px; margin-top: 20px;">
+          <a class="btn btn-secondary" style="flex:1;">Cancel</a>
+          <a class="btn btn-primary" style="flex:1;">Pause my account</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout-explain">
+      <strong>What happens when you resume:</strong>
+      Just tap "Resume" on this same screen. Your status changes back to Active and job offers start coming through again. No admin intervention required for the routine case.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- ADMIN DASHBOARD                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="admin-dash" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Admin Dashboard</h1>
+      <p>The "Needs Attention" widget is the entry point. Each count is a link to the filtered list. Start the day by working through these queues.</p>
+      <span class="spec-ref">Spec § 8.2 · Admin</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <div class="admin-greeting">
+      <h2>Good morning, Sitterwise team.</h2>
+      <p>You have 18 items needing attention today.</p>
+    </div>
+
+    <div class="attention-widget">
+      <div class="attention-widget-header">
+        <h3>Needs Attention</h3>
+        <span class="pill">18 total</span>
+      </div>
+
+      <div class="attention-item urgent">
+        <div class="attention-label">⚡ No-shows logged today</div>
+        <div class="attention-count">
+          <span class="count-badge">1</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Applications ready to review</div>
+        <div class="attention-count">
+          <span class="count-badge">4</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Onboarding stalled &gt; 7 days</div>
+        <div class="attention-count">
+          <span class="count-badge warning">2</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Suspended for missed Trustline submission</div>
+        <div class="attention-count">
+          <span class="count-badge warning">1</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Compliance currently expired (blocked)</div>
+        <div class="attention-count">
+          <span class="count-badge">3</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Compliance expiring this month</div>
+        <div class="attention-count">
+          <span class="count-badge warning">5</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">Caregivers inactive 45+ days</div>
+        <div class="attention-count">
+          <span class="count-badge">2</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+      <div class="attention-item">
+        <div class="attention-label">References stuck (Day 7+ no response)</div>
+        <div class="attention-count">
+          <span class="count-badge">0</span>
+          <span class="count-arrow">→</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout-explain">
+      <strong>How to use this:</strong>
+      Click any row to see the filtered list. Work your way down the list to clear each queue. The widget refreshes in real-time as you complete actions.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- INTERVIEW EVALUATION                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="interview" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Candidate Evaluation</h1>
+      <p>Structured interview form for evaluating new caregiver candidates. Rate soft skills on a 4-point heart scale, mark quick yes/no checks, capture overall notes. Saves to the candidate's profile and feeds the internal rating system.</p>
+      <span class="spec-ref">Spec § (new section) · Admin</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <div class="interview-context">
+      <div class="portal-avatar">JM</div>
+      <div class="interview-context-info">
+        <h3>Jessica Morales</h3>
+        <div class="meta">Interview scheduled <span>today, 2:00 PM</span> · Interviewer: <span>Robyann</span> · Sponsor: <span>Carol H. (current caregiver)</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <div class="rating-legend">
+        <span class="legend-label">Rating scale:</span>
+        <div class="rating-legend-item">
+          <span class="rating-legend-hearts legend-strong">♥♥♥♥</span>
+          <span>Strong</span>
+        </div>
+        <div class="rating-legend-item">
+          <span class="rating-legend-hearts legend-good">♥♥♥</span>
+          <span>Good fit</span>
+        </div>
+        <div class="rating-legend-item">
+          <span class="rating-legend-hearts legend-pot">♥♥</span>
+          <span>Has potential</span>
+        </div>
+        <div class="rating-legend-item">
+          <span class="rating-legend-hearts legend-concern">♥</span>
+          <span>Concern</span>
+        </div>
+      </div>
+
+      <div class="section-label">Soft skills</div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Confidence / presence</h4>
+          <p>How she carries herself in the room, eye contact</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Warmth / smiles</h4>
+          <p>Does she light up? Would kids feel at ease?</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Experience level</h4>
+          <p>Depth and relevance of childcare background</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Communicativeness</h4>
+          <p>Clear, responsive, easy to talk to</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Sense of humor</h4>
+          <p>Relaxed, relatable, good energy</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Preparedness</h4>
+          <p>Came informed, thoughtful, and engaged</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+        </div>
+      </div>
+
+      <div class="section-label">Professionalism</div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>On time</h4>
+          <p>Punctual and respectful of the schedule</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>Prepared with ID</h4>
+          <p>Brought required identity documents</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart">♥</div>
+        </div>
+      </div>
+
+      <div class="interview-rating-row">
+        <div class="rating-dimension">
+          <h4>In dress code</h4>
+          <p>Presented professionally for the interview</p>
+        </div>
+        <div class="rating-hearts">
+          <div class="heart filled">♥</div>
+          <div class="heart filled">♥</div>
+          <div class="heart">♥</div>
+          <div class="heart">♥</div>
+        </div>
+      </div>
+
+      <div class="composite-row">
+        <div class="composite-row-left">
+          <span class="composite-label">Interview score</span>
+          <span class="composite-number">31 <span class="denom">/ 36</span></span>
+          <span class="composite-pct">· 86%</span>
+        </div>
+        <div class="composite-note">Auto-calculated from all 9 ratings above. Used for internal sorting. Doesn't replace your notes.</div>
+      </div>
+
+      <div class="section-label">Notes / overall impressions</div>
+
+      <textarea class="interview-notes" placeholder="Capture the things a rating can't. Strengths, concerns, anything specific you noticed.">Wore jeans and a t-shirt — addressed this gently and she was receptive. Otherwise a really strong candidate. Carol's recommendation is solid; experience is mostly informal (younger siblings, neighborhood babysitting) but the warmth and presence are very real. Would feel comfortable placing her with families.</textarea>
+
+      <div class="interview-actions">
+        <a class="btn btn-secondary">Save draft</a>
+        <a class="btn btn-danger">Decline candidate</a>
+        <a class="btn btn-primary">Save &amp; advance to background check</a>
+      </div>
+
+    </div>
+
+    <div class="callout-explain">
+      <strong>How this fits into the internal rating system:</strong>
+      This form replaces the original spec's single "Interview Rating" with a structured evaluation across 9 dimensions — 6 soft skills and 3 professionalism. The composite score auto-calculates from all 9 and feeds the candidate's Internal Rating tab (spec § D1). The composite is secondary visual information — the notes field is what hiring decisions should anchor on.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- ASSIGNMENTS VIEW                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="assignments" class="screen">
+  <div class="screen-header">
+    <div class="screen-header-inner">
+      <h1>Caregiver Profile · Job History</h1>
+      <p>The new assignment-based job history. Each row is one caregiver's relationship to one job, with its own resolution. Notice job #2847 appears for Ashlyn (Backed Out) but the same job appears as Completed in Ann's history.</p>
+      <span class="spec-ref">Spec § 5 · Admin</span>
+    </div>
+  </div>
+  <div class="canvas">
+
+    <div class="profile-header">
+      <div class="portal-avatar">AT</div>
+      <div class="profile-header-info">
+        <h2>Ashlyn Tran</h2>
+        <div style="font-size: 13px; color: var(--text-light);">619-555-0142 · ashlyn.tran@email.com</div>
+        <div class="profile-header-meta">
+          <span class="pill success">Active</span>
+          <span class="pill">42 jobs completed</span>
+          <span class="pill warning">3 back-outs in 60 days</span>
+          <span class="pill">Reliability: 87%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-row">
+      <div class="tab">Application</div>
+      <div class="tab">References</div>
+      <div class="tab">Reviews</div>
+      <div class="tab">Internal Rating</div>
+      <div class="tab active">Job History</div>
+      <div class="tab">Compliance</div>
+      <div class="tab">Notes</div>
+    </div>
+
+    <div class="tab-content">
+
+      <div class="callout-explain">
+        <strong>How this view works:</strong>
+        Each row is one assignment — Ashlyn's relationship to one job. A back-out logged here doesn't change the job's status (the job may still have been completed by another caregiver). This is what lets us track "Ashlyn backed out" and "the job got done" as separate facts.
+      </div>
+
+      <table class="assignment-table">
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Resolution</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#2851</td>
+            <td>May 14</td>
+            <td>Patel family</td>
+            <td><span class="resolution completed">Completed</span></td>
+            <td>—</td>
+          </tr>
+          <tr style="background: var(--blush);">
+            <td>#2847</td>
+            <td>May 10</td>
+            <td>Smith family</td>
+            <td><span class="resolution backed-out">Backed Out</span></td>
+            <td>"Sick, can't make it." → Reassigned to Ann Chen, who completed.</td>
+          </tr>
+          <tr>
+            <td>#2842</td>
+            <td>May 8</td>
+            <td>Marriott Marquis</td>
+            <td><span class="resolution completed">Completed</span></td>
+            <td>Group event · 3 kids</td>
+          </tr>
+          <tr>
+            <td>#2838</td>
+            <td>May 5</td>
+            <td>Williams family</td>
+            <td><span class="resolution excused">Backed Out (Excused)</span></td>
+            <td>Family emergency — excused by Robyann on May 5.</td>
+          </tr>
+          <tr>
+            <td>#2829</td>
+            <td>May 1</td>
+            <td>Hilton La Jolla Torrey Pines</td>
+            <td><span class="resolution completed">Completed</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>#2820</td>
+            <td>Apr 27</td>
+            <td>Chen family</td>
+            <td><span class="resolution reassigned">Reassigned</span></td>
+            <td>Admin moved her to job #2825 (scheduling conflict). Not a back-out.</td>
+          </tr>
+          <tr>
+            <td>#2825</td>
+            <td>Apr 28</td>
+            <td>Garcia family</td>
+            <td><span class="resolution completed">Completed</span></td>
+            <td>Replacement for #2820 reassignment.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; flex-wrap: wrap;">
+        <a class="btn btn-secondary btn-small">Mark a back-out as Excused</a>
+        <a class="btn btn-secondary btn-small">Log a no-show</a>
+        <a class="btn btn-secondary btn-small">Log a late arrival</a>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.wf-nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    // Find the tab that matches and activate it
+    document.querySelectorAll('.wf-nav-tab').forEach(t => {
+      if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + id + "'")) {
+        t.classList.add('active');
+      }
+    });
+    window.scrollTo(0, 0);
+  }
+</script>
+
+</body>
+</html>

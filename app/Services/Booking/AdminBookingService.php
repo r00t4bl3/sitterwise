@@ -851,80 +851,81 @@ class AdminBookingService implements BookingServiceInterface
 
         $hotels = Hotel::where('is_active', true)->get()->keyBy('id');
 
-        return response()->streamDownload(function () use ($bookings, $hotels) {
-            $writer = new Writer;
-            $writer->openToFile('php://output');
+        $filename = "bookings-{$monthName}-{$year}.xlsx";
+        $tempPath = tempnam(sys_get_temp_dir(), 'export_');
 
-            $headerRow = Row::fromValues([
-                'Booking ID',
-                'ULID',
-                'Client Name',
-                'Client Email',
-                'Client Phone',
-                'Service Type',
-                'Location Type',
-                'Hotel',
-                'Address',
-                'Start Date',
-                'Start Time',
-                'End Date',
-                'End Time',
-                'Total Hours',
-                'Caregiver Name',
-                'Status',
-                'Payment Status',
-                'Charge to Client',
-                'Paid to Caregiver',
-                'Sitterwise Cut',
-                'Reimbursement',
-                'Tip',
-                'Bonus',
-                'Total Amount',
-                'Created At',
-            ]);
+        $writer = new Writer;
+        $writer->openToFile($tempPath);
 
-            $writer->addRow($headerRow);
+        $writer->addRow(Row::fromValues([
+            'Booking ID',
+            'ULID',
+            'Client Name',
+            'Client Email',
+            'Client Phone',
+            'Service Type',
+            'Location Type',
+            'Hotel',
+            'Address',
+            'Start Date',
+            'Start Time',
+            'End Date',
+            'End Time',
+            'Total Hours',
+            'Caregiver Name',
+            'Status',
+            'Payment Status',
+            'Charge to Client',
+            'Paid to Caregiver',
+            'Sitterwise Cut',
+            'Reimbursement',
+            'Tip',
+            'Bonus',
+            'Total Amount',
+            'Created At',
+        ]));
 
-            foreach ($bookings as $booking) {
-                $hotel = $booking->hotel_id ? ($hotels[$booking->hotel_id] ?? null) : null;
+        foreach ($bookings as $booking) {
+            $hotel = $booking->hotel_id ? ($hotels[$booking->hotel_id] ?? null) : null;
 
-                $writer->addRow(Row::fromValues([
-                    $booking->id,
-                    $booking->ulid,
-                    $booking->client?->first_name.' '.$booking->client?->last_name,
-                    $booking->client?->user?->email,
-                    $booking->client?->phone,
-                    ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
-                    LocationType::tryFrom($booking->location_type)?->label() ?? $booking->location_type,
-                    $hotel?->name,
-                    collect([
-                        $booking->address_line1,
-                        $booking->address_line2,
-                        $booking->address_city,
-                        $booking->address_state,
-                        $booking->address_zip,
-                    ])->filter()->implode(', '),
-                    $booking->start_datetime?->format('Y-m-d'),
-                    $booking->start_datetime?->format('H:i'),
-                    $booking->end_datetime?->format('Y-m-d'),
-                    $booking->end_datetime?->format('H:i'),
-                    $booking->total_working_hour,
-                    $booking->caregiver?->first_name.' '.$booking->caregiver?->last_name,
-                    $booking->status,
-                    $booking->payment_status,
-                    $booking->charge_to_client,
-                    $booking->paid_to_caregiver,
-                    $booking->sitterwise_cut,
-                    $booking->reimbursement,
-                    $booking->tip,
-                    $booking->bonus,
-                    $booking->total_amount,
-                    $booking->created_at?->format('Y-m-d H:i'),
-                ]));
-            }
+            $writer->addRow(Row::fromValues([
+                $booking->id,
+                $booking->ulid,
+                $booking->client?->first_name.' '.$booking->client?->last_name,
+                $booking->client?->user?->email,
+                $booking->client?->phone,
+                ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                LocationType::tryFrom($booking->location_type)?->label() ?? $booking->location_type,
+                $hotel?->name,
+                collect([
+                    $booking->address_line1,
+                    $booking->address_line2,
+                    $booking->address_city,
+                    $booking->address_state,
+                    $booking->address_zip,
+                ])->filter()->implode(', '),
+                $booking->start_datetime?->format('Y-m-d'),
+                $booking->start_datetime?->format('H:i'),
+                $booking->end_datetime?->format('Y-m-d'),
+                $booking->end_datetime?->format('H:i'),
+                $booking->total_working_hour,
+                $booking->caregiver?->first_name.' '.$booking->caregiver?->last_name,
+                $booking->status,
+                $booking->payment_status,
+                $booking->charge_to_client,
+                $booking->paid_to_caregiver,
+                $booking->sitterwise_cut,
+                $booking->reimbursement,
+                $booking->tip,
+                $booking->bonus,
+                $booking->total_amount,
+                $booking->created_at?->format('Y-m-d H:i'),
+            ]));
+        }
 
-            $writer->close();
-        }, "bookings-{$monthName}-{$year}.xlsx");
+        $writer->close();
+
+        return response()->download($tempPath, $filename)->deleteFileAfterSend(true);
     }
 
     public function processPayment(Request $request, Booking $booking)

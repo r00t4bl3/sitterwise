@@ -21,11 +21,11 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PricingRuleController;
 use App\Http\Controllers\QuickLinkController;
+use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\ReferenceController;
 use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
 

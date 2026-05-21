@@ -1364,4 +1364,46 @@ describe('Booking - Admin', function () {
         expect($booking->children_notes)->toBe('12 children, ages 5-12');
         expect($booking->children)->toBeNull();
     });
+
+    describe('export', function () {
+        test('guests cannot export bookings', function () {
+            $response = $this->get(route('bookings.export'));
+
+            $response->assertRedirect(route('login'));
+        });
+
+        test('caregivers cannot export bookings', function () {
+            $caregiverUser = User::factory()->create(['role' => 'caregiver']);
+            $this->actingAs($caregiverUser);
+
+            $response = $this->get(route('bookings.export'));
+
+            $response->assertForbidden();
+        });
+
+        test('admin can export bookings as xlsx', function () {
+            $this->actingAs($this->user);
+
+            $response = $this->get(route('bookings.export'));
+
+            $response->assertSuccessful();
+            $response->assertHeader('Content-Disposition', 'attachment; filename=bookings-'.now()->format('F').'-'.now()->year.'.xlsx');
+        });
+
+        test('export respects month and year parameters', function () {
+            $this->actingAs($this->user);
+
+            Booking::factory()->create([
+                'client_id' => $this->client->id,
+                'start_datetime' => now()->year(2025)->month(3)->day(15)->setHour(10),
+                'end_datetime' => now()->year(2025)->month(3)->day(15)->setHour(14),
+            ]);
+
+            $response = $this->get(route('bookings.export', ['month' => 3, 'year' => 2025]));
+
+            $response->assertSuccessful();
+            $response->assertHeader('Content-Disposition', 'attachment; filename=bookings-March-2025.xlsx');
+        });
+
+    });
 });

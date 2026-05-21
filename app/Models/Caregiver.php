@@ -235,6 +235,11 @@ class Caregiver extends Model
         return $this->hasMany(CaregiverApplication::class);
     }
 
+    public function referenceRequests(): HasMany
+    {
+        return $this->hasMany(ReferenceRequest::class);
+    }
+
     public function agreements(): HasMany
     {
         return $this->hasMany(CaregiverAgreement::class);

@@ -6,6 +6,7 @@ import {
     MinusCircle,
     MoreVertical,
     Shield,
+    Users,
     Eye,
     EyeOff,
 } from 'lucide-react';
@@ -132,6 +133,20 @@ interface Agreement {
     type: string;
 }
 
+interface ReferenceRequest {
+    id: number;
+    token: string;
+    reference_name: string;
+    reference_email: string;
+    relationship: string | null;
+    years_known: string | null;
+    is_sponsor: boolean;
+    rating: number | null;
+    feedback: string | null;
+    submitted_at: string | null;
+    created_at: string;
+}
+
 interface Caregiver {
     id: number;
     first_name: string;
@@ -164,6 +179,7 @@ interface Caregiver {
     educations: Education[];
     applications: CaregiverApplication[];
     agreements: Agreement[];
+    reference_requests: ReferenceRequest[];
 }
 
 interface Props {
@@ -891,6 +907,66 @@ export default function CaregiverShow() {
                                     </p>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="border border-border bg-card p-6">
+                            <h2 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
+                                <Users className="h-5 w-5" />
+                                References (
+                                {caregiver.reference_requests.length})
+                            </h2>
+                            {caregiver.reference_requests.length > 0 ? (
+                                <div className="space-y-3">
+                                    {caregiver.reference_requests.map((ref) => (
+                                        <div
+                                            key={ref.id}
+                                            className="rounded-lg border border-border p-3"
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {ref.reference_name}
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {ref.reference_email}
+                                                    </p>
+                                                </div>
+                                                {ref.is_sponsor && (
+                                                    <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                                                        Sponsor
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="mt-2 flex items-center gap-2">
+                                                {ref.submitted_at ? (
+                                                    <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                                        <Check className="h-3 w-3" />
+                                                        {ref.rating}/5
+                                                    </span>
+                                                ) : (
+                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                                        Pending
+                                                    </span>
+                                                )}
+                                                {ref.relationship && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {ref.relationship}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {ref.submitted_at && (
+                                                <p className="mt-1 text-[10px] text-muted-foreground">
+                                                    Submitted {ref.submitted_at}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    No reference requests
+                                </p>
+                            )}
                         </div>
 
                         {/* Application Section */}

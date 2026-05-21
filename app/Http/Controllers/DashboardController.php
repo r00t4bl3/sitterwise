@@ -15,9 +15,11 @@ use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
+use App\Models\CaregiverApplication;
 use App\Models\Client;
 use App\Models\Hotel;
 use App\Models\QuickLink;
+use App\Models\ReferenceRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -162,6 +164,12 @@ class DashboardController extends Controller
                 'quickLinks' => QuickLink::where('is_active', true)
                     ->orderBy('sort_order')
                     ->get(),
+                'pendingApplicationsCount' => CaregiverApplication::whereHas('caregiver.referenceRequests', function ($q) {
+                    $q->pending();
+                })->count(),
+                'stuckReferencesCount' => ReferenceRequest::pending()
+                    ->where('created_at', '<', now()->subDays(7))
+                    ->count(),
             ];
         }
 

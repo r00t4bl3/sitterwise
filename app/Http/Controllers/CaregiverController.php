@@ -111,7 +111,7 @@ class CaregiverController extends Controller
 
     public function show(Caregiver $caregiver)
     {
-        $caregiver->load(['status', 'specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'applications', 'agreements']);
+        $caregiver->load(['status', 'specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'applications', 'agreements', 'referenceRequests']);
 
         $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
 
