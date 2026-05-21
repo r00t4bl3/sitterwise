@@ -3,6 +3,7 @@ import {
     Calendar,
     ExternalLink,
     MapPin,
+    Star,
     User,
     Phone,
     Mail,
@@ -62,6 +63,16 @@ interface Booking {
         breed: string | null;
         notes: string | null;
     }> | null;
+    client_rating: {
+        id: number;
+        rating: number;
+        comment: string | null;
+    } | null;
+    caregiver_rating: {
+        id: number;
+        rating: number;
+        comment: string | null;
+    } | null;
 }
 
 interface BookingStatus {
@@ -423,6 +434,81 @@ export default function BookingDetail({
                                     </div>
                                 </div>
                             )}
+
+                            <div className="mt-6">
+                                <h2 className="mb-4 text-lg font-semibold text-foreground">
+                                    Reviews & Feedback
+                                </h2>
+                                <div className="space-y-4">
+                                    <div className="rounded-lg border border-border bg-card p-4">
+                                        <h3 className="mb-2 text-sm font-medium text-foreground">
+                                            Feedback from Client
+                                        </h3>
+                                        {booking.client_rating ? (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <Star
+                                                            key={star}
+                                                            className={`h-5 w-5 ${
+                                                                star <= booking.client_rating!.rating
+                                                                    ? 'fill-yellow-400 text-yellow-400'
+                                                                    : 'text-gray-300'
+                                                            }`}
+                                                        />
+                                                    ))}
+                                                    <span className="ml-2 text-sm text-muted-foreground">
+                                                        ({booking.client_rating.rating}/5)
+                                                    </span>
+                                                </div>
+                                                {booking.client_rating.comment && (
+                                                    <p className="text-sm text-muted-foreground italic">
+                                                        &quot;{booking.client_rating.comment}&quot;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">
+                                                No feedback from client yet.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-card p-4">
+                                        <h3 className="mb-2 text-sm font-medium text-foreground">
+                                            Review from Caregiver
+                                        </h3>
+                                        {booking.caregiver_rating ? (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <Star
+                                                            key={star}
+                                                            className={`h-5 w-5 ${
+                                                                star <= booking.caregiver_rating!.rating
+                                                                    ? 'fill-yellow-400 text-yellow-400'
+                                                                    : 'text-gray-300'
+                                                            }`}
+                                                        />
+                                                    ))}
+                                                    <span className="ml-2 text-sm text-muted-foreground">
+                                                        ({booking.caregiver_rating.rating}/5)
+                                                    </span>
+                                                </div>
+                                                {booking.caregiver_rating.comment && (
+                                                    <p className="text-sm text-muted-foreground italic">
+                                                        &quot;{booking.caregiver_rating.comment}&quot;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">
+                                                No review from caregiver yet.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

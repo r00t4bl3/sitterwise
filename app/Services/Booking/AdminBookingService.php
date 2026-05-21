@@ -395,7 +395,7 @@ class AdminBookingService implements BookingServiceInterface
             BookingStatus::cases()
         );
 
-        $booking->load('caregiver.user');
+        $booking->load('caregiver.user', 'clientRating', 'caregiverRating');
 
         return Inertia::render('admin/bookings/show', [
             'booking_statuses' => $bookingStatuses,
@@ -436,6 +436,8 @@ class AdminBookingService implements BookingServiceInterface
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
+                'client_rating' => $booking->client_rating,
+                'caregiver_rating' => $booking->caregiver_rating,
             ],
         ]);
     }
