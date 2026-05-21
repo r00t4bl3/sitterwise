@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import InputError from '@/components/input-error';
@@ -37,6 +37,12 @@ interface NewPet {
     type: string;
     breed: string;
     notes: string;
+}
+
+interface DateEntry {
+    id: string;
+    start_datetime: string;
+    end_datetime: string;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -81,6 +87,19 @@ interface ClientDetailsFormData {
     email: string;
     phone: string;
 }
+
+function generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+}
+
+function getPreferenceLabel(option: { value: string; label: string }): string {
+    if (option.value === 'child_is_sick') {
+        return 'Sick Day Care';
+    }
+
+    return option.label;
+}
+
 export default function GuestBookingCreate() {
     const {
         service_types,
@@ -120,6 +139,8 @@ export default function GuestBookingCreate() {
     tomorrow.setHours(9, 0, 0, 0);
 
     const defaultEnd = new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000);
+    const defaultStartStr = formatDateTimeLocal(tomorrow);
+    const defaultEndStr = formatDateTimeLocal(defaultEnd);
 
     const form = useForm({
         client_first_name: '',
@@ -128,8 +149,8 @@ export default function GuestBookingCreate() {
         client_phone: '',
         service_type: 'babysitter',
         location_type: 'private_home',
-        start_datetime: formatDateTimeLocal(tomorrow),
-        end_datetime: formatDateTimeLocal(defaultEnd),
+        start_datetime: defaultStartStr,
+        end_datetime: defaultEndStr,
         hotel_id: null as number | null,
         rental_platform: '',
         address_line1: '',
@@ -148,8 +169,16 @@ export default function GuestBookingCreate() {
         new_pets: [] as NewPet[],
     });
 
-    const [isClientDetailsOpen, setIsClientDetailsOpen] = useState(true);
-    const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(true);
+    const [dates, setDates] = useState<DateEntry[]>([
+        {
+            id: 'date-1',
+            start_datetime: defaultStartStr,
+            end_datetime: defaultEndStr,
+        },
+    ]);
+
+    const [isAboutYouOpen, setIsAboutYouOpen] = useState(true);
+    const [isBookingOpen, setIsBookingOpen] = useState(true);
 
     const [isAddressLocked, setIsAddressLocked] = useState(false);
     const [addressValue, setAddressValue] = useState('');
@@ -174,9 +203,59 @@ export default function GuestBookingCreate() {
     const selectedHotelName =
         hotels.find((h) => h.id === form.data.hotel_id)?.name || '';
 
+    const syncDate1ToForm = (allDates: DateEntry[]) => {
+        if (allDates.length > 0) {
+            form.setData('start_datetime', allDates[0].start_datetime);
+            form.setData('end_datetime', allDates[0].end_datetime);
+        }
+    };
+
+    const handleAddDate = () => {
+        const nextDate = new Date(
+            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+        );
+        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const newEntry: DateEntry = {
+            id: generateId(),
+            start_datetime: formatDateTimeLocal(nextDate),
+            end_datetime: formatDateTimeLocal(endDate),
+        };
+        const updated = [...dates, newEntry];
+        setDates(updated);
+        syncDate1ToForm(updated);
+    };
+
+    const handleRemoveDate = (id: string) => {
+        const updated = dates.filter((d) => d.id !== id);
+        setDates(updated);
+        syncDate1ToForm(updated);
+    };
+
+    const handleUpdateDate = (
+        id: string,
+        field: 'start_datetime' | 'end_datetime',
+        value: string,
+    ) => {
+        const updated = dates.map((d) => {
+            if (d.id !== id) {
+                return d;
+            }
+
+            const next = { ...d, [field]: value };
+
+            if (field === 'start_datetime' && id === dates[0]?.id) {
+                next.end_datetime = autoSetEndDateTime(value);
+            }
+
+            return next;
+        });
+        setDates(updated);
+        syncDate1ToForm(updated);
+    };
+
     const handleAddChild = () => {
         const newChild: NewChild = {
-            tempId: Math.random().toString(36).substr(2, 9),
+            tempId: generateId(),
             name: '',
             gender: '',
             birth_month: '',
@@ -205,7 +284,7 @@ export default function GuestBookingCreate() {
 
     const handleAddPet = () => {
         const newPet: NewPet = {
-            tempId: Math.random().toString(36).substr(2, 9),
+            tempId: generateId(),
             name: '',
             type: '',
             breed: '',
@@ -248,38 +327,51 @@ export default function GuestBookingCreate() {
             <Head title="Book a Caregiver" />
             <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <div className="mb-4">
-                    <h1 className="text-2xl font-semibold text-foreground">
-                        Book a Caregiver
+                {/* HERO */}
+                <div className="py-3 pb-5 text-center">
+                    <h1 className="mb-4 font-serif text-[32px] font-medium text-navy">
+                        It's you! We're so happy you're here.
                     </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Find the perfect caregiver for your needs
+                    <span className="mb-4 block text-[26px] leading-none text-coral">
+                        ♥
+                    </span>
+                    <p className="mb-2 text-[15px] text-sittergray">
+                        Tell us about your family, your plans, and what you need
+                        — we'll handle the rest.
+                    </p>
+                    <p className="text-[13px] italic text-sittergray">
+                        Matching San Diego families with trusted caregivers
+                        since 1981.
                     </p>
                 </div>
 
-                <div className="space-y-6">
-                    {/* Client Details Panel */}
-                    <details
-                        className="rounded-[3px] border border-border bg-card"
-                        open={isClientDetailsOpen}
-                        onToggle={(e) =>
-                            setIsClientDetailsOpen(e.currentTarget.open)
-                        }
+                {/* CARD 1: ABOUT YOU */}
+                <div className="overflow-hidden rounded-[3px] border border-border bg-card">
+                    <button
+                        type="button"
+                        onClick={() => setIsAboutYouOpen(!isAboutYouOpen)}
+                        className="flex w-full cursor-pointer items-center justify-between bg-teal-bg px-[22px] py-4 text-left"
                     >
-                        <summary className="flex cursor-pointer items-center justify-between bg-muted px-4 py-3 font-medium text-foreground">
-                            <span>Your Details</span>
-                            {isClientDetailsOpen ? (
-                                <ChevronUp className="h-4 w-4" />
-                            ) : (
-                                <ChevronDown className="h-4 w-4" />
-                            )}
-                        </summary>
-                        <div className="space-y-4 p-4">
+                        <div>
+                            <h2 className="m-0 font-serif text-base font-semibold text-navy">
+                                About You
+                            </h2>
+                            <p className="mt-[3px] text-xs italic text-sittergray">
+                                So we know who to send the confirmation to.
+                            </p>
+                        </div>
+                        <ChevronDown
+                            className={`h-4 w-4 text-navy transition-transform duration-200 ${isAboutYouOpen ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+
+                    {isAboutYouOpen && (
+                        <div className="space-y-4 p-6">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <Label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         First Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-coral">*</span>
                                     </Label>
                                     <Input
                                         value={form.data.client_first_name}
@@ -300,9 +392,9 @@ export default function GuestBookingCreate() {
                                     )}
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         Last Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-coral">*</span>
                                     </Label>
                                     <Input
                                         value={form.data.client_last_name}
@@ -326,9 +418,9 @@ export default function GuestBookingCreate() {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <Label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         Email{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-coral">*</span>
                                     </Label>
                                     <Input
                                         type="email"
@@ -348,9 +440,9 @@ export default function GuestBookingCreate() {
                                     )}
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium text-foreground">
+                                    <Label>
                                         Phone{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-coral">*</span>
                                     </Label>
                                     <Input
                                         type="tel"
@@ -370,145 +462,189 @@ export default function GuestBookingCreate() {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </details>
 
-                    {/* Booking Details Panel */}
-                    <details
-                        className="rounded-[3px] border border-border bg-card"
-                        open={isBookingDetailsOpen}
-                        onToggle={(e) =>
-                            setIsBookingDetailsOpen(e.currentTarget.open)
-                        }
-                    >
-                        <summary className="flex cursor-pointer items-center justify-between bg-muted px-4 py-3 font-medium text-foreground">
-                            <span>Booking Details</span>
-                            {isBookingDetailsOpen ? (
-                                <ChevronUp className="h-4 w-4" />
-                            ) : (
-                                <ChevronDown className="h-4 w-4" />
-                            )}
-                        </summary>
-                        <div className="space-y-4 p-4">
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Service Type{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={form.data.service_type}
-                                        onValueChange={(value) =>
-                                            form.setData('service_type', value)
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select service type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {service_types.map((type) => (
-                                                <SelectItem
-                                                    key={type.value}
-                                                    value={type.value}
-                                                >
-                                                    {type.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Location Type{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={form.data.location_type}
-                                        onValueChange={(value) => {
-                                            form.setData(
-                                                'location_type',
-                                                value,
-                                            );
-
-                                            if (value !== 'hotel') {
-                                                form.setData('hotel_id', null);
-                                            }
-
-                                            if (value !== 'vacation_rental') {
-                                                form.setData(
-                                                    'rental_platform',
-                                                    '',
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select location type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {location_types.map((type) => (
-                                                <SelectItem
-                                                    key={type.value}
-                                                    value={type.value}
-                                                >
-                                                    {type.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <div>
+                                <Label>How did you find us?</Label>
+                                <Select
+                                    value={form.data.how_did_you_hear || ''}
+                                    onValueChange={(value) =>
+                                        form.setData('how_did_you_hear', value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {discovery_sources.map((source) => (
+                                            <SelectItem
+                                                key={source.value}
+                                                value={source.value}
+                                            >
+                                                {source.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
+                        </div>
+                    )}
+                </div>
 
-                            {form.data.location_type === 'vacation_rental' && (
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Rental Platform
-                                    </Label>
-                                    <Select
-                                        value={form.data.rental_platform}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'rental_platform',
-                                                value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select platform..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {booking_attributes
-                                                .filter(
-                                                    (attr) =>
-                                                        attr.slug ===
-                                                        'vacation_rental_platform',
+                {/* CARD 2: ABOUT YOUR BOOKING */}
+                <div className="overflow-hidden rounded-[3px] border border-border bg-card">
+                    <button
+                        type="button"
+                        onClick={() => setIsBookingOpen(!isBookingOpen)}
+                        className="flex w-full cursor-pointer items-center justify-between bg-teal-bg px-[22px] py-4 text-left"
+                    >
+                        <div>
+                            <h2 className="m-0 font-serif text-base font-semibold text-navy">
+                                About Your Booking
+                            </h2>
+                            <p className="mt-[3px] text-xs italic text-sittergray">
+                                The more you share, the better we can match.
+                            </p>
+                        </div>
+                        <ChevronDown
+                            className={`h-4 w-4 text-navy transition-transform duration-200 ${isBookingOpen ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+
+                    {isBookingOpen && (
+                        <div className="space-y-[26px] p-6">
+                            {/* 3.1 WHEN & WHERE */}
+                            <div className="border-l-[3px] border-logo-teal pl-[18px]">
+                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                    When &amp; Where
+                                </h3>
+
+                                <div className="mb-[14px] grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <Label>
+                                            Service Type{' '}
+                                            <span className="text-coral">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Select
+                                            value={form.data.service_type}
+                                            onValueChange={(value) =>
+                                                form.setData(
+                                                    'service_type',
+                                                    value,
                                                 )
-                                                .flatMap(
-                                                    (attr) =>
-                                                        attr.options || [],
-                                                )
-                                                .map((option) => (
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select service type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {service_types.map((type) => (
                                                     <SelectItem
-                                                        key={option}
-                                                        value={option}
+                                                        key={type.value}
+                                                        value={type.value}
                                                     >
-                                                        {option
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                            option.slice(1)}
+                                                        {type.label}
                                                     </SelectItem>
                                                 ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label>
+                                            Location Type{' '}
+                                            <span className="text-coral">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Select
+                                            value={form.data.location_type}
+                                            onValueChange={(value) => {
+                                                form.setData(
+                                                    'location_type',
+                                                    value,
+                                                );
 
-                            {form.data.location_type === 'hotel' && (
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Hotel
-                                    </Label>
-                                    <div className="mt-1">
+                                                if (value !== 'hotel') {
+                                                    form.setData(
+                                                        'hotel_id',
+                                                        null,
+                                                    );
+                                                }
+
+                                                if (
+                                                    value !== 'vacation_rental'
+                                                ) {
+                                                    form.setData(
+                                                        'rental_platform',
+                                                        '',
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select location type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {location_types.map((type) => (
+                                                    <SelectItem
+                                                        key={type.value}
+                                                        value={type.value}
+                                                    >
+                                                        {type.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                {form.data.location_type ===
+                                    'vacation_rental' && (
+                                    <div className="mb-[14px]">
+                                        <Label>Rental Platform</Label>
+                                        <Select
+                                            value={form.data.rental_platform}
+                                            onValueChange={(value) =>
+                                                form.setData(
+                                                    'rental_platform',
+                                                    value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select platform..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {booking_attributes
+                                                    .filter(
+                                                        (attr) =>
+                                                            attr.slug ===
+                                                            'vacation_rental_platform',
+                                                    )
+                                                    .flatMap(
+                                                        (attr) =>
+                                                            attr.options || [],
+                                                    )
+                                                    .map((option) => (
+                                                        <SelectItem
+                                                            key={option}
+                                                            value={option}
+                                                        >
+                                                            {option
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                option.slice(1)}
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                {form.data.location_type === 'hotel' && (
+                                    <div className="mb-[14px]">
+                                        <Label>Hotel</Label>
                                         <Autocomplete
                                             value={form.data.hotel_id}
                                             onChange={(id) => {
@@ -539,13 +675,7 @@ export default function GuestBookingCreate() {
                                                         hotel.zip || '',
                                                     );
                                                     setAddressValue(
-                                                        `${hotel.line1 || ''}${
-                                                            hotel.line2
-                                                                ? `, ${hotel.line2}`
-                                                                : ''
-                                                        }, ${hotel.city || ''}, ${hotel.state || ''} ${
-                                                            hotel.zip || ''
-                                                        }`.trim(),
+                                                        `${hotel.line1 || ''}${hotel.line2 ? `, ${hotel.line2}` : ''}, ${hotel.city || ''}, ${hotel.state || ''} ${hotel.zip || ''}`.trim(),
                                                     );
                                                     setIsAddressLocked(true);
                                                 }
@@ -556,326 +686,401 @@ export default function GuestBookingCreate() {
                                             displayValue={selectedHotelName}
                                         />
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Start Date/Time{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <DateTimePicker
-                                        value={form.data.start_datetime}
-                                        onChange={(value) => {
-                                            form.setData(
-                                                'start_datetime',
-                                                value,
-                                            );
+                                {/* Date blocks */}
+                                {dates.map((dateEntry, index) => (
+                                    <div
+                                        key={dateEntry.id}
+                                        className="mb-[10px] rounded-[4px] border border-border-teal bg-[#FDFCFA] p-[14px]"
+                                    >
+                                        <div className="mb-[10px] flex items-center justify-between">
+                                            <span className="text-xs font-semibold uppercase tracking-[0.5px] text-navy">
+                                                Date {index + 1}
+                                            </span>
+                                            {index > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemoveDate(
+                                                            dateEntry.id,
+                                                        )
+                                                    }
+                                                    className="cursor-pointer border-none bg-none p-0 text-xs text-coral"
+                                                >
+                                                    × Remove
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <Label>
+                                                    Start Date/Time{' '}
+                                                    <span className="text-coral">
+                                                        *
+                                                    </span>
+                                                </Label>
+                                                <DateTimePicker
+                                                    value={
+                                                        dateEntry.start_datetime
+                                                    }
+                                                    onChange={(value) => {
+                                                        if (value) {
+                                                            handleUpdateDate(
+                                                                dateEntry.id,
+                                                                'start_datetime',
+                                                                value,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>
+                                                    End Date/Time{' '}
+                                                    <span className="text-coral">
+                                                        *
+                                                    </span>
+                                                </Label>
+                                                <DateTimePicker
+                                                    value={
+                                                        dateEntry.end_datetime
+                                                    }
+                                                    startTime={
+                                                        dateEntry.start_datetime
+                                                    }
+                                                    onChange={(value) => {
+                                                        if (value) {
+                                                            handleUpdateDate(
+                                                                dateEntry.id,
+                                                                'end_datetime',
+                                                                value,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
 
-                                            if (value) {
-                                                form.setData(
-                                                    'end_datetime',
-                                                    autoSetEndDateTime(value),
+                                <button
+                                    type="button"
+                                    onClick={handleAddDate}
+                                    className="mt-1 w-full cursor-pointer rounded-[4px] border border-dashed border-logo-teal bg-white py-3 text-sm font-medium text-navy transition-[background] duration-150 hover:bg-teal-bg"
+                                >
+                                    + Add another date
+                                </button>
+
+                                {datetimeError && (
+                                    <p className="mt-2 text-sm text-destructive">
+                                        {datetimeError}
+                                    </p>
+                                )}
+                                {form.errors.end_datetime && (
+                                    <InputError
+                                        message={form.errors.end_datetime}
+                                    />
+                                )}
+
+                                {/* Address */}
+                                <div className="mt-4">
+                                    <BookingAddressFields
+                                        form={form}
+                                        isAddressLocked={isAddressLocked}
+                                        addressValue={addressValue}
+                                        onAddressLock={(
+                                            locked,
+                                            newAddressValue,
+                                        ) => {
+                                            setIsAddressLocked(locked);
+
+                                            if (locked && newAddressValue) {
+                                                setAddressValue(
+                                                    newAddressValue,
                                                 );
+                                            }
+
+                                            if (!locked) {
+                                                setAddressValue('');
                                             }
                                         }}
                                     />
                                 </div>
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        End Date/Time{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <DateTimePicker
-                                        value={form.data.end_datetime}
-                                        startTime={form.data.start_datetime}
-                                        onChange={(value) =>
-                                            form.setData('end_datetime', value)
-                                        }
-                                    />
+
+                                {/* Complex booking note */}
+                                <div className="mt-4 rounded-[4px] border border-[#F0C5BA] bg-blush p-[14px_16px] text-xs italic leading-relaxed text-navy">
+                                    <strong className="font-medium not-italic">
+                                        Need different locations or a more
+                                        complex schedule?
+                                    </strong>{' '}
+                                    Add the details in{' '}
+                                    <em>Notes to Sitterwise</em> at the bottom
+                                    of the form, and our Care Team will take it
+                                    from there.
                                 </div>
                             </div>
 
-                            {datetimeError && (
-                                <p className="text-sm text-destructive">
-                                    {datetimeError}
-                                </p>
-                            )}
-                            {form.errors.end_datetime && (
-                                <InputError
-                                    message={form.errors.end_datetime}
-                                />
-                            )}
+                            {/* 3.2 WHO'S BEING CARED FOR */}
+                            <div className="border-l-[3px] border-logo-teal pl-[18px]">
+                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                    Who's Being Cared For
+                                </h3>
 
-                            <BookingAddressFields
-                                form={form}
-                                isAddressLocked={isAddressLocked}
-                                addressValue={addressValue}
-                                onAddressLock={(locked, newAddressValue) => {
-                                    setIsAddressLocked(locked);
-
-                                    if (locked && newAddressValue) {
-                                        setAddressValue(newAddressValue);
-                                    }
-
-                                    if (!locked) {
-                                        setAddressValue('');
-                                    }
-                                }}
-                            />
-
-                            {/* Children Section */}
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-foreground">
+                                <div className="mb-[10px] flex items-center justify-between">
+                                    <Label className="text-sm font-medium text-navy">
                                         Children
                                     </Label>
                                     <Button
-                                        size="xs"
                                         type="button"
                                         onClick={handleAddChild}
+                                        size="xs"
                                     >
                                         <Plus className="h-3 w-3" />
                                         Add Child
                                     </Button>
                                 </div>
-                                <div className="mt-1 grid gap-4">
-                                    {form.data.new_children.map((child) => (
-                                        <div
-                                            key={child.tempId}
-                                            className="rounded-lg border bg-card p-4"
-                                        >
-                                            <div className="mb-3 flex items-start justify-between">
-                                                <p className="text-sm font-medium text-foreground">
-                                                    Add New Child
-                                                </p>
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRemoveChild(
+
+                                {/* Child forms */}
+                                {form.data.new_children.map((child) => (
+                                    <div
+                                        key={child.tempId}
+                                        className="mb-[10px] rounded-[4px] border border-border-teal p-4"
+                                    >
+                                        <div className="mb-2 flex items-start justify-between">
+                                            <strong className="flex items-center gap-2 text-[14px] font-medium text-navy">
+                                                <span className="text-coral">
+                                                    ♥
+                                                </span>
+                                                Add New Child
+                                            </strong>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemoveChild(
+                                                        child.tempId,
+                                                    )
+                                                }
+                                                className="cursor-pointer border-none bg-none p-0 text-xs text-coral"
+                                            >
+                                                × Remove
+                                            </button>
+                                        </div>
+                                        <p className="mb-[14px] text-xs italic text-sittergray">
+                                            Birth month and year — we'll keep
+                                            their age up to date as they grow.
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] sm:items-end">
+                                            <div>
+                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                    Name
+                                                </Label>
+                                                <Input
+                                                    value={child.name}
+                                                    onChange={(e) =>
+                                                        handleUpdateChild(
                                                             child.tempId,
+                                                            'name',
+                                                            e.target.value,
                                                         )
                                                     }
-                                                    size="sm"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                    placeholder="Name"
+                                                />
                                             </div>
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                                                <div className="sm:col-span-1">
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Name
-                                                    </Label>
-                                                    <Input
-                                                        value={child.name}
-                                                        onChange={(e) =>
-                                                            handleUpdateChild(
-                                                                child.tempId,
-                                                                'name',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Name"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Gender
-                                                    </Label>
-                                                    <Select
-                                                        value={child.gender}
-                                                        onValueChange={(
+                                            <div>
+                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                    Gender
+                                                </Label>
+                                                <Select
+                                                    value={child.gender}
+                                                    onValueChange={(value) =>
+                                                        handleUpdateChild(
+                                                            child.tempId,
+                                                            'gender',
                                                             value,
-                                                        ) =>
-                                                            handleUpdateChild(
-                                                                child.tempId,
-                                                                'gender',
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="male">
-                                                                Male
-                                                            </SelectItem>
-                                                            <SelectItem value="female">
-                                                                Female
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Month
-                                                    </Label>
-                                                    <Select
-                                                        value={
-                                                            child.birth_month
-                                                        }
-                                                        onValueChange={(
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="male">
+                                                            Male
+                                                        </SelectItem>
+                                                        <SelectItem value="female">
+                                                            Female
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                    Month
+                                                </Label>
+                                                <Select
+                                                    value={child.birth_month}
+                                                    onValueChange={(value) =>
+                                                        handleUpdateChild(
+                                                            child.tempId,
+                                                            'birth_month',
                                                             value,
-                                                        ) =>
-                                                            handleUpdateChild(
-                                                                child.tempId,
-                                                                'birth_month',
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Month" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {[
-                                                                'Jan',
-                                                                'Feb',
-                                                                'Mar',
-                                                                'Apr',
-                                                                'May',
-                                                                'Jun',
-                                                                'Jul',
-                                                                'Aug',
-                                                                'Sep',
-                                                                'Oct',
-                                                                'Nov',
-                                                                'Dec',
-                                                            ].map((m, i) => (
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Month" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {[
+                                                            'Jan',
+                                                            'Feb',
+                                                            'Mar',
+                                                            'Apr',
+                                                            'May',
+                                                            'Jun',
+                                                            'Jul',
+                                                            'Aug',
+                                                            'Sep',
+                                                            'Oct',
+                                                            'Nov',
+                                                            'Dec',
+                                                        ].map((m, i) => (
+                                                            <SelectItem
+                                                                key={m}
+                                                                value={String(
+                                                                    i + 1,
+                                                                )}
+                                                            >
+                                                                {m}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                    Year
+                                                </Label>
+                                                <Select
+                                                    value={
+                                                        child.birth_year || ''
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        handleUpdateChild(
+                                                            child.tempId,
+                                                            'birth_year',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Year" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {getChildBirthYearOptions().map(
+                                                            (year) => (
                                                                 <SelectItem
-                                                                    key={m}
+                                                                    key={year}
                                                                     value={String(
-                                                                        i + 1,
+                                                                        year,
                                                                     )}
                                                                 >
-                                                                    {m}
+                                                                    {year}
                                                                 </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Year
-                                                    </Label>
-                                                    <Select
-                                                        value={
-                                                            child.birth_year ||
-                                                            ''
-                                                        }
-                                                        onValueChange={(
-                                                            value,
-                                                        ) =>
-                                                            handleUpdateChild(
-                                                                child.tempId,
-                                                                'birth_year',
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Year" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {getChildBirthYearOptions().map(
-                                                                (year) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            year
-                                                                        }
-                                                                        value={String(
-                                                                            year,
-                                                                        )}
-                                                                    >
-                                                                        {year}
-                                                                    </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {child.birth_month &&
+                                                child.birth_year && (
+                                                    <div>
+                                                        <Label className="text-[11px] font-semibold uppercase tracking-[0.4px] text-sittergray">
+                                                            Age
+                                                        </Label>
+                                                        <div className="pb-[11px] text-sm italic text-sittergray">
+                                                            {calculateAge(
+                                                                parseInt(
+                                                                    child.birth_year,
+                                                                ),
+                                                                parseInt(
+                                                                    child.birth_month,
                                                                 ),
                                                             )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Age
-                                                    </Label>
-                                                    <div className="mt-3 text-sm text-foreground">
-                                                        {calculateAge(
-                                                            child.birth_year
-                                                                ? parseInt(
-                                                                      child.birth_year,
-                                                                  )
-                                                                : null,
-                                                            child.birth_month
-                                                                ? parseInt(
-                                                                      child.birth_month,
-                                                                  )
-                                                                : null,
-                                                        )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
+                                                )}
                                         </div>
-                                    ))}
-                                    {!hasNewChildren && (
-                                        <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                            <p className="text-sm text-muted-foreground">
-                                                No children added
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ))}
+
+                                {!hasNewChildren && (
+                                    <div className="rounded-[4px] border border-dashed border-border-teal bg-blush p-6 text-center">
+                                        <p className="text-xs italic text-sittergray">
+                                            Add each child so we can match the
+                                            right caregiver
+                                        </p>
+                                    </div>
+                                )}
+
                                 {!hasNewChildren && (
                                     <p className="mt-2 text-sm text-destructive">
-                                        At least one child is required.
+                                        Please add at least one child
                                     </p>
                                 )}
-                            </div>
 
-                            {/* Special Needs */}
-                            <div>
-                                <Label className="text-sm font-medium text-foreground">
-                                    Special Needs / Allergies
-                                </Label>
-                                <Textarea
-                                    value={form.data.special_needs_notes || ''}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'special_needs_notes',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="Special needs notes"
-                                />
-                            </div>
-
-                            {/* eslint-disable-next-line no-constant-binary-expression */}
-                            {false && form.data.special_needs_notes && (
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Emergency Instructions
+                                {/* Special Needs */}
+                                <div className="mt-4">
+                                    <Label>
+                                        Special Needs / Allergies
                                     </Label>
                                     <Textarea
                                         value={
-                                            form.data.emergency_instructions ||
-                                            ''
+                                            form.data.special_needs_notes || ''
                                         }
                                         onChange={(e) =>
                                             form.setData(
-                                                'emergency_instructions',
+                                                'special_needs_notes',
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="What should your caregiver do in an emergency?"
+                                        placeholder="Allergies, medications, anything we should know..."
                                     />
                                 </div>
-                            )}
 
-                            {/* Pets Section */}
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-foreground">
+                                {/* Hidden emergency instructions */}
+                                {false && form.data.special_needs_notes && (
+                                    <div className="mt-4">
+                                        <Label>
+                                            Emergency Instructions
+                                        </Label>
+                                        <Textarea
+                                            value={
+                                                form.data
+                                                    .emergency_instructions ||
+                                                ''
+                                            }
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'emergency_instructions',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="What should your caregiver do in an emergency?"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 3.3 YOUR HOUSEHOLD */}
+                            <div className="border-l-[3px] border-logo-teal pl-[18px]">
+                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                    Your Household
+                                </h3>
+
+                                <div className="mb-[10px] flex items-center justify-between">
+                                    <Label className="text-sm font-medium text-navy">
                                         Pets
                                     </Label>
                                     <Button
@@ -887,280 +1092,268 @@ export default function GuestBookingCreate() {
                                         Add Pet
                                     </Button>
                                 </div>
-                                <div className="mt-1 grid gap-4">
-                                    {form.data.new_pets.map((pet) => (
-                                        <div
-                                            key={pet.tempId}
-                                            className="rounded-lg border bg-card p-4"
-                                        >
-                                            <div className="mb-3 flex items-start justify-between">
-                                                <p className="text-sm font-medium text-foreground">
-                                                    Add New Pet
-                                                </p>
-                                                <Button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRemovePet(
+
+                                {form.data.new_pets.map((pet) => (
+                                    <div
+                                        key={pet.tempId}
+                                        className="mb-4 rounded-lg border bg-card p-4"
+                                    >
+                                        <div className="mb-3 flex items-start justify-between">
+                                            <p className="text-sm font-medium text-foreground">
+                                                Add New Pet
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemovePet(pet.tempId)
+                                                }
+                                                className="cursor-pointer border-none bg-none text-xs text-coral"
+                                            >
+                                                × Remove
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                            <div>
+                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                    Name
+                                                </Label>
+                                                <Input
+                                                    value={pet.name}
+                                                    onChange={(e) =>
+                                                        handleUpdatePet(
                                                             pet.tempId,
+                                                            'name',
+                                                            e.target.value,
                                                         )
                                                     }
-                                                    size="sm"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                    placeholder="Name"
+                                                />
                                             </div>
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                                <div className="sm:col-span-1">
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Name
-                                                    </Label>
-                                                    <Input
-                                                        value={pet.name}
-                                                        onChange={(e) =>
-                                                            handleUpdatePet(
-                                                                pet.tempId,
-                                                                'name',
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Name"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Type
-                                                    </Label>
-                                                    <Select
-                                                        value={pet.type}
-                                                        onValueChange={(
+                                            <div>
+                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                    Type
+                                                </Label>
+                                                <Select
+                                                    value={pet.type}
+                                                    onValueChange={(value) =>
+                                                        handleUpdatePet(
+                                                            pet.tempId,
+                                                            'type',
                                                             value,
-                                                        ) =>
-                                                            handleUpdatePet(
-                                                                pet.tempId,
-                                                                'type',
-                                                                value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select type" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {pet_types.map(
-                                                                (type) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            type.value
-                                                                        }
-                                                                        value={
-                                                                            type.value
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            type.label
-                                                                        }
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                {pet.type === 'dog' && (
-                                                    <div>
-                                                        <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                            Breed
-                                                        </Label>
-                                                        <Input
-                                                            value={pet.breed}
-                                                            onChange={(e) =>
-                                                                handleUpdatePet(
-                                                                    pet.tempId,
-                                                                    'breed',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Breed"
-                                                        />
-                                                    </div>
-                                                )}
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {pet_types.map(
+                                                            (type) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        type.value
+                                                                    }
+                                                                    value={
+                                                                        type.value
+                                                                    }
+                                                                >
+                                                                    {type.label}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {pet.type === 'dog' && (
                                                 <div>
-                                                    <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                        Notes
+                                                    <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                        Breed
                                                     </Label>
                                                     <Input
-                                                        value={pet.notes}
+                                                        value={pet.breed}
                                                         onChange={(e) =>
                                                             handleUpdatePet(
                                                                 pet.tempId,
-                                                                'notes',
+                                                                'breed',
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="Notes"
+                                                        placeholder="Breed"
                                                     />
                                                 </div>
+                                            )}
+                                            <div>
+                                                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                                                    Notes
+                                                </Label>
+                                                <Input
+                                                    value={pet.notes}
+                                                    onChange={(e) =>
+                                                        handleUpdatePet(
+                                                            pet.tempId,
+                                                            'notes',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Notes"
+                                                />
                                             </div>
                                         </div>
-                                    ))}
-                                    {!hasNewPets && (
-                                        <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                            <p className="text-sm text-muted-foreground">
-                                                No pets added
-                                            </p>
+                                    </div>
+                                ))}
+
+                                {!hasNewPets && (
+                                    <div className="mb-4 rounded-[4px] border border-dashed border-border-teal bg-blush p-6 text-center">
+                                        <p className="text-xs italic text-sittergray">
+                                            Add any pets your caregiver should
+                                            know about
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Other adults present */}
+                                <div className="mt-[18px]">
+                                    <div className="flex items-start gap-[10px]">
+                                        <Checkbox
+                                            id="other_adults_present"
+                                            checked={
+                                                !!form.data
+                                                    .other_adults_present
+                                            }
+                                            onCheckedChange={(checked) =>
+                                                form.setData(
+                                                    'other_adults_present',
+                                                    checked ? '1' : '',
+                                                )
+                                            }
+                                        />
+                                        <Label
+                                            htmlFor="other_adults_present"
+                                            className="cursor-pointer text-sm font-medium"
+                                        >
+                                            Will anyone else be home?
+                                        </Label>
+                                    </div>
+                                    {form.data.other_adults_present === '1' && (
+                                        <div className="ml-[26px] mt-[10px] rounded-r-[4px] border-l-[3px] border-logo-teal bg-teal-bg p-[12px_14px] text-xs italic leading-relaxed text-navy">
+                                            <strong className="font-medium not-italic">
+                                                Please add a quick note below
+                                            </strong>{' '}
+                                            in{' '}
+                                            <em>Notes for Caregiver</em>{' '}
+                                            letting your caregiver know who
+                                            else will be home (a spouse working
+                                            from home, an older sibling, a
+                                            grandparent, etc.).
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Other Adults Present */}
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="other_adults_present"
-                                    checked={!!form.data.other_adults_present}
-                                    onCheckedChange={(checked) =>
-                                        form.setData(
-                                            'other_adults_present',
-                                            checked ? '1' : '',
-                                        )
-                                    }
-                                />
-                                <Label
-                                    htmlFor="other_adults_present"
-                                    className="text-sm font-medium"
-                                >
-                                    Other Adults Present
-                                </Label>
-                            </div>
-
-                            {/* Sitter Preferences */}
-                            <div className="grid gap-2">
-                                <Label>Sitter Preferences</Label>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                                        {sitter_preferences.map((option) => (
-                                            <div
-                                                key={option.value}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <Checkbox
-                                                    id={`pref-${option.value}`}
-                                                    checked={form.data.sitter_preferences.includes(
-                                                        option.value,
-                                                    )}
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) => {
-                                                        const newPrefs = checked
-                                                            ? [
-                                                                  ...form.data
-                                                                      .sitter_preferences,
+                            {/* 3.4 SITTER PREFERENCES */}
+                            <div className="border-l-[3px] border-logo-teal pl-[18px]">
+                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                    Sitter Preferences
+                                </h3>
+                                <p className="mb-3 text-xs italic text-sittergray">
+                                    Any of these apply? Check what fits —
+                                    we'll factor it into the match.
+                                </p>
+                                <div className="grid grid-cols-1 gap-[12px_18px] sm:grid-cols-2">
+                                    {sitter_preferences.map((option) => (
+                                        <label
+                                            key={option.value}
+                                            className="flex cursor-pointer items-center gap-2 text-sm text-navy"
+                                        >
+                                            <Checkbox
+                                                id={`pref-${option.value}`}
+                                                checked={form.data.sitter_preferences.includes(
+                                                    option.value,
+                                                )}
+                                                onCheckedChange={(checked) => {
+                                                    const newPrefs = checked
+                                                        ? [
+                                                              ...form.data
+                                                                  .sitter_preferences,
+                                                              option.value,
+                                                          ]
+                                                        : form.data.sitter_preferences.filter(
+                                                              (pref) =>
+                                                                  pref !==
                                                                   option.value,
-                                                              ]
-                                                            : form.data.sitter_preferences.filter(
-                                                                  (
-                                                                      pref: string,
-                                                                  ) =>
-                                                                      pref !==
-                                                                      option.value,
-                                                              );
-                                                        form.setData(
-                                                            'sitter_preferences',
-                                                            newPrefs,
-                                                        );
-                                                    }}
-                                                />
-                                                <Label
-                                                    htmlFor={`pref-${option.value}`}
-                                                    className="text-sm font-normal"
-                                                >
-                                                    {option.label}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </div>
+                                                          );
+                                                    form.setData(
+                                                        'sitter_preferences',
+                                                        newPrefs,
+                                                    );
+                                                }}
+                                            />
+                                            {getPreferenceLabel(option)}
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* How Did You Hear */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="how_did_you_hear">
-                                    How Did You Hear
-                                </Label>
-                                <Select
-                                    value={form.data.how_did_you_hear || ''}
-                                    onValueChange={(value) =>
-                                        form.setData('how_did_you_hear', value)
-                                    }
-                                >
-                                    <SelectTrigger id="how_did_you_hear">
-                                        <SelectValue placeholder="Select..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {discovery_sources.map((source) => (
-                                            <SelectItem
-                                                key={source.value}
-                                                value={source.value}
-                                            >
-                                                {source.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Caregiver Notes */}
-                            <div>
-                                <Label className="text-sm font-medium text-foreground">
-                                    Notes for Caregiver
-                                </Label>
-                                <Textarea
-                                    value={form.data.caregiver_notes || ''}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'caregiver_notes',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="Any additional notes for the caregiver..."
-                                />
-                            </div>
-
-                            {/* Notes to Sitterwise */}
-                            <div>
-                                <Label className="text-sm font-medium text-foreground">
-                                    Notes to Sitterwise
-                                </Label>
-                                <Textarea
-                                    value={form.data.notes_to_sitterwise || ''}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'notes_to_sitterwise',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="Any notes for Sitterwise..."
-                                />
+                            {/* 3.5 NOTES */}
+                            <div className="border-l-[3px] border-logo-teal pl-[18px]">
+                                <h3 className="mb-[14px] text-xs font-semibold uppercase tracking-[0.8px] text-navy">
+                                    Notes
+                                </h3>
+                                <div>
+                                    <Label>Notes for Caregiver</Label>
+                                    <Textarea
+                                        value={
+                                            form.data.caregiver_notes || ''
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'caregiver_notes',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Plans for the day, dress code, what to bring, anything to expect — pool time, a movie night, attending an event together..."
+                                    />
+                                </div>
+                                <div className="mt-[14px]">
+                                    <Label>Notes to Sitterwise</Label>
+                                    <Textarea
+                                        value={
+                                            form.data.notes_to_sitterwise || ''
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'notes_to_sitterwise',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Anything you'd like our Care Team to know — including extra dates or different locations"
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </details>
+                    )}
+                </div>
 
-                    {/* Submit Button */}
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={
-                                !hasNewChildren ||
-                                !!clientDetailsError ||
-                                !!datetimeError
-                            }
-                        >
-                            {isFormSubmitting ? <Spinner /> : null}
-                            {isFormSubmitting
-                                ? 'Submitting...'
-                                : 'Submit Booking Request'}
-                        </Button>
-                    </div>
+                {/* SUBMIT */}
+                <div className="mt-6 flex flex-col items-end gap-3">
+                    <p className="max-w-[480px] text-right text-xs italic text-sittergray">
+                        Next, you'll add a payment method to confirm your
+                        reservation. We'll begin matching as soon as it's on
+                        file.
+                    </p>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={
+                            !hasNewChildren ||
+                            !!clientDetailsError ||
+                            !!datetimeError
+                        }
+                    >
+                        {isFormSubmitting ? <Spinner /> : null}
+                        {isFormSubmitting
+                            ? 'Submitting...'
+                            : 'Continue to Payment'}
+                    </Button>
                 </div>
             </div>
         </GuestLayout>

@@ -23,7 +23,7 @@ export default function GuestLayout({ children }: GuestLayoutProps) {
                     </div>
                 </div>
             </header>
-            <main className="flex-1">
+            <main className="flex-1 bg-blush">
                 <div className="container mx-auto py-6">{children}</div>
             </main>
         </div>
