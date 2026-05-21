@@ -196,7 +196,18 @@ class ImportBubbleProfilePictures extends Command
                 return false;
             }
 
-            $img = Image::decode($response->body());
+            try {
+                $img = Image::decode($response->body());
+            } catch (\Exception $e) {
+                $img = $this->decodeWithImageMagick($response->body());
+            }
+
+            if (! $img) {
+                $this->error("\nCould not decode image for User ID: {$user->id}. Unsupported format.");
+
+                return false;
+            }
+
             $img->scale(width: 1200, height: 1200);
 
             $filename = 'user-'.$user->id.'-'.time().'.jpg';
@@ -233,6 +244,27 @@ class ImportBubbleProfilePictures extends Command
             $this->error("\nError downloading photo for User ID: {$user->id}: ".$e->getMessage());
 
             return false;
+        }
+    }
+
+    protected function decodeWithImageMagick(string $imageData): ?\Intervention\Image\Image
+    {
+        $tempInput = tempnam(sys_get_temp_dir(), 'heic_');
+        $tempOutput = $tempInput.'.jpg';
+
+        try {
+            file_put_contents($tempInput, $imageData);
+
+            exec('convert "'.addslashes($tempInput).'" "'.addslashes($tempOutput).'" 2>&1', $output, $exitCode);
+
+            if ($exitCode !== 0 || ! file_exists($tempOutput) || filesize($tempOutput) === 0) {
+                return null;
+            }
+
+            return Image::decode(file_get_contents($tempOutput));
+        } finally {
+            @unlink($tempInput);
+            @unlink($tempOutput);
         }
     }
 
