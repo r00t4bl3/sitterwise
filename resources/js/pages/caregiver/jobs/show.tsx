@@ -356,7 +356,7 @@ export default function JobDetail({ booking }: PageProps) {
                             <div className="space-y-4">
                                 <div className="rounded-lg border border-border bg-card p-4">
                                     <h3 className="mb-2 text-sm font-medium text-foreground">
-                                        Feedback from Client
+                                        Review from Caregiver
                                     </h3>
                                     {booking.client_rating ? (
                                         <div className="flex flex-col gap-2">
@@ -396,14 +396,14 @@ export default function JobDetail({ booking }: PageProps) {
                                         </div>
                                     ) : (
                                         <p className="text-sm text-muted-foreground italic">
-                                            No feedback from client yet.
+                                            No review from caregiver yet.
                                         </p>
                                     )}
                                 </div>
 
                                 <div className="rounded-lg border border-border bg-card p-4">
                                     <h3 className="mb-2 text-sm font-medium text-foreground">
-                                        Review from Caregiver
+                                        Feedback from Client
                                     </h3>
                                     {booking.caregiver_rating ? (
                                         <div className="flex flex-col gap-2">
@@ -424,8 +424,7 @@ export default function JobDetail({ booking }: PageProps) {
                                                 <span className="ml-2 text-sm text-muted-foreground">
                                                     (
                                                     {
-                                                        booking
-                                                            .caregiver_rating!
+                                                        booking.caregiver_rating!
                                                             .rating
                                                     }
                                                     /5)
@@ -445,7 +444,7 @@ export default function JobDetail({ booking }: PageProps) {
                                         </div>
                                     ) : (
                                         <p className="text-sm text-muted-foreground italic">
-                                            No review from caregiver yet.
+                                            No feedback from client yet.
                                         </p>
                                     )}
                                 </div>

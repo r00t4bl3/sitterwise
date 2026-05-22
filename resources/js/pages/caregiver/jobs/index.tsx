@@ -1,8 +1,15 @@
-import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { MapPin, Building, Star } from 'lucide-react';
-import { useState } from 'react';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, MapPin, Building, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,10 +26,22 @@ import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import {
     formatDisplayDate,
+    formatDisplayDateTime,
     formatDisplayTime,
     parseAsLocal,
     autoSetEndDateTime,
 } from '@/lib/datetime';
+import type { BreadcrumbItem } from '@/types';
+
+interface BookingStatus {
+    value: string;
+    label: string;
+    colors: {
+        bg: string;
+        text: string;
+        border: string;
+    };
+}
 
 interface Booking {
     id: number;
@@ -71,25 +90,43 @@ interface Booking {
     } | null;
 }
 
+interface BreadcrumbLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: BreadcrumbLink[];
+}
+
+interface Filters {
+    search: string | null;
+    status: string | null;
+}
+
+interface ServiceType {
+    value: string;
+    label: string;
+}
+
+interface LocationType {
+    value: string;
+    label: string;
+}
+
 interface Props {
     [key: string]: unknown;
-    jobs: {
-        data: Booking[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        links: Array<{
-            url: string | null;
-            label: string;
-            active: boolean;
-        }>;
-    };
-    booking_statuses: Array<{
-        value: string;
-        label: string;
-        colors: { bg: string; text: string; border: string };
-    }>;
+    jobs: PaginatedData<Booking>;
+    booking_statuses: BookingStatus[];
+    service_types: ServiceType[];
+    location_types: LocationType[];
+    filters: Filters;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -103,7 +140,50 @@ function formatDateTimeLocal(date: Date): string {
 }
 
 export default function CaregiverJobsIndex() {
-    const { jobs, booking_statuses } = usePage<Props>().props;
+    const { jobs, booking_statuses, service_types, location_types, filters } =
+        usePage<Props>().props;
+
+    const [statusFilter, setStatusFilter] = useState<string | null>(
+        filters.status ?? null,
+    );
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined,
+    );
+
+    const applyFilters = (search: string, status: string | null) => {
+        const params: Record<string, string> = {};
+
+        if (search.trim()) {
+            params.search = search.trim();
+        }
+
+        if (status) {
+            params.status = status;
+        }
+
+        router.get('/jobs', params, {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            applyFilters(value, statusFilter);
+        }, 300);
+    };
+
+    const handleStatusChange = (status: string | null) => {
+        setStatusFilter(status);
+        applyFilters(searchQuery, status);
+    };
+
+    useEffect(() => {
+        return () => clearTimeout(debounceTimer.current);
+    }, []);
 
     const getStatusBadge = (
         status: string,
@@ -112,7 +192,6 @@ export default function CaregiverJobsIndex() {
     ) => {
         const statusKey = status.toLowerCase();
 
-        // Special handling for confirmed jobs - check if they can be checked out
         if (statusKey === 'confirmed' && start_datetime && end_datetime) {
             const now = new Date();
             const start = parseAsLocal(start_datetime) as Date;
@@ -160,7 +239,7 @@ export default function CaregiverJobsIndex() {
         const diffMs = endDate.getTime() - startDate.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
 
-        return Math.max(diffHours, 4); // Minimum 4 hours
+        return Math.max(diffHours, 4);
     };
 
     const openCheckoutSheet = (job: Booking) => {
@@ -198,12 +277,10 @@ export default function CaregiverJobsIndex() {
     const handleStartDateTimeChange = (value: string) => {
         checkoutForm.setData('start_datetime', value);
 
-        // Auto-set end time to 4 hours after start
         if (value) {
             checkoutForm.setData('end_datetime', autoSetEndDateTime(value));
         }
 
-        // Recalculate total hours
         const hours = calculateTotalHours(
             value,
             checkoutForm.data.end_datetime,
@@ -213,7 +290,6 @@ export default function CaregiverJobsIndex() {
 
     const handleEndDateTimeChange = (value: string) => {
         checkoutForm.setData('end_datetime', value);
-        // Recalculate total hours
         const hours = calculateTotalHours(
             checkoutForm.data.start_datetime,
             value,
@@ -221,9 +297,15 @@ export default function CaregiverJobsIndex() {
         checkoutForm.setData('total_working_hour', hours.toFixed(2));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'My Jobs', href: '#' },
+    ];
+
     return (
-        <AppLayout breadcrumbs={[{ title: 'My Jobs', href: '/jobs' }]}>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Jobs" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
@@ -231,300 +313,345 @@ export default function CaregiverJobsIndex() {
                             My Jobs
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            View and manage your assigned jobs
+                            {jobs.total} job
+                            {jobs.total !== 1 ? 's' : ''}
+                            {statusFilter && (
+                                <span className="ml-1">
+                                    (
+                                    {booking_statuses.find(
+                                        (s) => s.value === statusFilter,
+                                    )?.label || statusFilter}
+                                    )
+                                </span>
+                            )}
+                            {searchQuery && (
+                                <span className="ml-1">
+                                    (search: &quot;{searchQuery}&quot;)
+                                </span>
+                            )}
                         </p>
                     </div>
                 </div>
 
-                <div className="border border-border bg-card">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-foreground text-white">
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Date & Time
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Client
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Service
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Status
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Review from Caregiver
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Feedback from Client
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider uppercase">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {jobs.data.map((job) => {
-                                    const startDate = parseAsLocal(
-                                        job.start_datetime,
-                                    ) as Date;
-                                    const endDate = parseAsLocal(
-                                        job.end_datetime,
-                                    ) as Date;
-                                    const isSameDay =
-                                        startDate.getFullYear() ===
-                                            endDate.getFullYear() &&
-                                        startDate.getMonth() ===
-                                            endDate.getMonth() &&
-                                        startDate.getDate() ===
-                                            endDate.getDate();
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Search by client or hotel..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="h-8"
+                        />
+                        {searchQuery && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSearchChange('')}
+                                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                type="button"
+                            >
+                                ×
+                            </Button>
+                        )}
+                    </div>
 
-                                    return (
-                                        <tr
-                                            key={job.id}
-                                            className="transition-colors hover:bg-muted/50"
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="text-sm text-foreground">
-                                                    {isSameDay ? (
-                                                        <>
-                                                            {formatDisplayDate(
-                                                                job.start_datetime,
-                                                            )}{' '}
-                                                            from{' '}
-                                                            {formatDisplayTime(
-                                                                job.start_datetime,
-                                                            )}{' '}
-                                                            to{' '}
-                                                            {formatDisplayTime(
-                                                                job.end_datetime,
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            {formatDisplayDate(
-                                                                job.start_datetime,
-                                                            )}{' '}
-                                                            from{' '}
-                                                            {formatDisplayTime(
-                                                                job.start_datetime,
-                                                            )}{' '}
-                                                            to{' '}
-                                                            {formatDisplayDate(
-                                                                job.end_datetime,
-                                                            )}{' '}
-                                                            at{' '}
-                                                            {formatDisplayTime(
-                                                                job.end_datetime,
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="font-medium text-foreground">
-                                                    {job.client?.user.name}
-                                                </div>
-                                                <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
-                                                    {job.location_type ===
-                                                    'hotel' ? (
-                                                        <Building className="mt-0.5 h-3 w-3 shrink-0" />
-                                                    ) : (
-                                                        <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                                                    )}
-                                                    <span>
-                                                        {job.location_type ===
-                                                        'hotel'
-                                                            ? `${job.hotel?.name}, ${job.address_city}, ${job.address_state}`
-                                                            : `${job.address_line1}, ${job.address_city}, ${job.address_state}`}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="text-sm text-foreground">
-                                                    {job.service_type_label}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {getStatusBadge(
-                                                    job.status,
-                                                    job.start_datetime,
-                                                    job.end_datetime,
+                    <Button
+                        variant={!statusFilter ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleStatusChange(null)}
+                    >
+                        All
+                    </Button>
+                    {booking_statuses.map((s) => (
+                        <Button
+                            key={s.value}
+                            variant={
+                                statusFilter === s.value ? 'default' : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                                handleStatusChange(
+                                    statusFilter === s.value ? null : s.value,
+                                )
+                            }
+                            className={
+                                statusFilter === s.value
+                                    ? `${s.colors.bg} ${s.colors.text} ${s.colors.border}`
+                                    : ''
+                            }
+                        >
+                            {s.label}
+                        </Button>
+                    ))}
+                </div>
+
+                <div className="overflow-x-auto border border-border bg-card">
+                    <table className="w-full min-w-[900px]">
+                        <thead>
+                            <tr className="bg-foreground">
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Date
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Service
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Status
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Client
+                                </th>
+                                <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Earnings
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Review from Caregiver
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Feedback from Client
+                                </th>
+                                <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {jobs.data.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={8}
+                                        className="px-4 py-8 text-center text-sm text-muted-foreground"
+                                    >
+                                        No jobs found
+                                    </td>
+                                </tr>
+                            ) : (
+                                jobs.data.map((job) => (
+                                    <tr
+                                        key={job.id}
+                                        className="border-b border-border transition hover:bg-blush"
+                                    >
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                            {formatDisplayDateTime(
+                                                job.start_datetime,
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                            {service_types.find(
+                                                (s) =>
+                                                    s.value ===
+                                                    job.service_type,
+                                            )?.label ?? job.service_type}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {getStatusBadge(
+                                                job.status,
+                                                job.start_datetime,
+                                                job.end_datetime,
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="text-sm text-foreground">
+                                                {job.client?.user.name ?? '—'}
+                                            </div>
+                                            <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
+                                                {job.location_type ===
+                                                'hotel' ? (
+                                                    <Building className="mt-0.5 h-3 w-3 shrink-0" />
+                                                ) : (
+                                                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
                                                 )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {job.client_rating ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-1">
-                                                            {[
-                                                                1, 2, 3, 4, 5,
-                                                            ].map((star) => (
-                                                                <Star
-                                                                    key={star}
-                                                                    className={`h-4 w-4 ${
-                                                                        star <=
+                                                <span>
+                                                    {job.hotel?.name ??
+                                                        location_types.find(
+                                                            (l) =>
+                                                                l.value ===
+                                                                job.location_type,
+                                                        )?.label ??
+                                                        job.location_type}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-sm whitespace-nowrap text-foreground">
+                                            {job.paid_to_caregiver_total
+                                                ? `$${Number(job.paid_to_caregiver_total).toFixed(2)}`
+                                                : '—'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {job.client_rating ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex cursor-default items-center gap-1">
+                                                                {[
+                                                                    1, 2, 3, 4, 5,
+                                                                ].map((star) => (
+                                                                    <Star
+                                                                        key={star}
+                                                                        className={`h-4 w-4 ${
+                                                                            star <=
+                                                                            job
+                                                                                .client_rating!
+                                                                                .rating
+                                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                                : 'text-gray-300'
+                                                                        }`}
+                                                                    />
+                                                                ))}
+                                                                <span className="ml-1 text-xs text-muted-foreground">
+                                                                    (
+                                                                    {
                                                                         job
                                                                             .client_rating!
                                                                             .rating
-                                                                            ? 'fill-yellow-400 text-yellow-400'
-                                                                            : 'text-gray-300'
-                                                                    }`}
-                                                                />
-                                                            ))}
-                                                            <span className="ml-1 text-xs text-muted-foreground">
-                                                                (
-                                                                {
-                                                                    job
-                                                                        .client_rating!
-                                                                        .rating
-                                                                }
-                                                                /5)
-                                                            </span>
-                                                        </div>
+                                                                    }
+                                                                    /5)
+                                                                </span>
+                                                            </div>
+                                                        </TooltipTrigger>
                                                         {job.client_rating
                                                             .comment && (
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                "
+                                                            <TooltipContent>
+                                                                &quot;
                                                                 {
                                                                     job
                                                                         .client_rating
                                                                         .comment
                                                                 }
-                                                                "
-                                                            </p>
+                                                                &quot;
+                                                            </TooltipContent>
                                                         )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground italic">
-                                                        Not rated
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {job.caregiver_rating ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-1">
-                                                            {[
-                                                                1, 2, 3, 4, 5,
-                                                            ].map((star) => (
-                                                                <Star
-                                                                    key={star}
-                                                                    className={`h-4 w-4 ${
-                                                                        star <=
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    Not rated
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {job.caregiver_rating ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex cursor-default items-center gap-1">
+                                                                {[
+                                                                    1, 2, 3, 4, 5,
+                                                                ].map((star) => (
+                                                                    <Star
+                                                                        key={star}
+                                                                        className={`h-4 w-4 ${
+                                                                            star <=
+                                                                            job
+                                                                                .caregiver_rating!
+                                                                                .rating
+                                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                                : 'text-gray-300'
+                                                                        }`}
+                                                                    />
+                                                                ))}
+                                                                <span className="ml-1 text-xs text-muted-foreground">
+                                                                    (
+                                                                    {
                                                                         job
                                                                             .caregiver_rating!
                                                                             .rating
-                                                                            ? 'fill-yellow-400 text-yellow-400'
-                                                                            : 'text-gray-300'
-                                                                    }`}
-                                                                />
-                                                            ))}
-                                                            <span className="ml-1 text-xs text-muted-foreground">
-                                                                (
-                                                                {
-                                                                    job
-                                                                        .caregiver_rating!
-                                                                        .rating
-                                                                }
-                                                                /5)
-                                                            </span>
-                                                        </div>
+                                                                    }
+                                                                    /5)
+                                                                </span>
+                                                            </div>
+                                                        </TooltipTrigger>
                                                         {job.caregiver_rating
                                                             .comment && (
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                "
+                                                            <TooltipContent>
+                                                                &quot;
                                                                 {
                                                                     job
                                                                         .caregiver_rating
                                                                         .comment
                                                                 }
-                                                                "
-                                                            </p>
+                                                                &quot;
+                                                            </TooltipContent>
                                                         )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground italic">
-                                                        Not rated
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex flex-wrap gap-2">
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    Not rated
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="flex justify-end gap-x-2 px-4 py-3 whitespace-nowrap">
+                                            <Button asChild className="h-8">
+                                                <Link
+                                                    href={`/jobs/${job.ulid}`}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+
+                                            {job.status.toLowerCase() ===
+                                                'confirmed' &&
+                                                new Date(
+                                                    job.end_datetime,
+                                                ) < new Date() && (
                                                     <Button
-                                                        variant="outline"
                                                         size="sm"
-                                                        asChild
+                                                        onClick={() =>
+                                                            openCheckoutSheet(
+                                                                job,
+                                                            )
+                                                        }
                                                     >
-                                                        <Link
-                                                            href={`/jobs/${job.ulid}`}
-                                                        >
-                                                            Details
-                                                        </Link>
+                                                        Checkout
                                                     </Button>
-
-                                                    {job.status.toLowerCase() ===
-                                                        'confirmed' &&
-                                                        new Date(
-                                                            job.end_datetime,
-                                                        ) < new Date() && (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    openCheckoutSheet(
-                                                                        job,
-                                                                    )
-                                                                }
-                                                            >
-                                                                Checkout
-                                                            </Button>
-                                                        )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-
-                                {jobs.data.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={7}
-                                            className="px-4 py-12 text-center text-muted-foreground"
-                                        >
-                                            No jobs found.
+                                                )}
                                         </td>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
 
                 {jobs.last_page > 1 && (
-                    <div className="mt-4 flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
-                            Showing page {jobs.current_page} of {jobs.last_page}
-                        </div>
-                        <div className="flex gap-2">
-                            {jobs.links.map((link, i) => (
-                                <Button
-                                    key={i}
-                                    variant={
-                                        link.active ? 'default' : 'outline'
-                                    }
-                                    size="sm"
-                                    asChild
-                                    disabled={!link.url}
-                                >
-                                    <Link href={link.url || '#'}>
-                                        <span
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
-                                            }}
-                                        />
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Page {jobs.current_page} of {jobs.last_page}
+                        </p>
+                        <div className="flex gap-1">
+                            {jobs.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-foreground text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
                                     </Link>
-                                </Button>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -629,7 +756,9 @@ export default function CaregiverJobsIndex() {
                                             value={
                                                 checkoutForm.data.start_datetime
                                             }
-                                            onChange={handleStartDateTimeChange}
+                                            onChange={
+                                                handleStartDateTimeChange
+                                            }
                                             placeholder="Select start date and time"
                                         />
                                     </div>

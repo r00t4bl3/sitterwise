@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Enums\SpecialConsideration;
 use App\Http\Requests\RateBookingRequest;
@@ -23,11 +24,26 @@ class JobController extends Controller
             abort(403, 'Caregiver profile not found');
         }
 
-        $bookings = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating'])
+        $query = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating'])
             ->where('caregiver_id', $caregiver->id)
-            ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Completed->value])
-            ->orderBy('start_datetime', 'desc')
-            ->paginate(10);
+            ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Completed->value, BookingStatus::Paid->value]);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('client.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhere('location_type', 'like', "%{$search}%");
+            });
+        }
+
+        $bookings = $query->orderBy('start_datetime', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -38,9 +54,25 @@ class JobController extends Controller
             BookingStatus::cases()
         );
 
+        $serviceTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ServiceType::cases()
+        );
+
+        $locationTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            LocationType::cases()
+        );
+
         return Inertia::render('caregiver/jobs/index', [
             'jobs' => $bookings,
             'booking_statuses' => $bookingStatuses,
+            'service_types' => $serviceTypes,
+            'location_types' => $locationTypes,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
         ]);
     }
 

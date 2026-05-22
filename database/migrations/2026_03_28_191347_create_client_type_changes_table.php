@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->foreignId('changed_by_admin_id')->constrained('users')->onDelete('cascade');
-            $table->enum('previous_type', ['sd_resident', 'vacationer', 'invoiced']);
-            $table->enum('new_type', ['sd_resident', 'vacationer', 'invoiced']);
+            $table->string('previous_type');
+            $table->string('new_type');
             $table->text('reason')->nullable();
             $table->timestamp('changed_at');
             $table->timestamps();

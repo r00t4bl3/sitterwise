@@ -1337,16 +1337,18 @@ class ImportBubbleDatabase extends Command
             'address_city' => $components['city'] ?? null,
             'address_state' => $components['state code'] ?? null,
             'address_zip' => $components['zip code'] ?? null,
-            'total_working_hour' => $source['total_hours_number'] ?? 0,
-            'charge_to_client_hourly' => $source['client_job_hourly_rate_number'] ?? 0,
-            'paid_to_caregiver_hourly' => $source['job_cg_hourly_rate_number'] ?? 0,
-            'sitterwise_cut_hourly' => $source['job_agency_hourly_rate_number'] ?? 0,
-            'charge_to_client' => $source['client_total_number'] ?? 0,
-            'paid_to_caregiver' => $source['caregiver_total_number'] ?? 0,
-            'sitterwise_cut' => $source['sw_total_number'] ?? 0,
-            'tip' => $source['cg_tip_number'] ?? 0,
-            'bonus' => $source['bonus_number'] ?? 0,
-            'reimbursement' => $source['check_out_reimbursement_number'] ?? 0,
+            'total_working_hour' => $hours = $source['total_hours_number'] ?? 0,
+            'charge_to_client_hourly' => $clientHourly = $source['client_job_hourly_rate_number'] ?? 0,
+            'paid_to_caregiver_hourly' => $cgHourly = $source['job_cg_hourly_rate_number'] ?? 0,
+            'sitterwise_cut_hourly' => $swHourly = $source['job_agency_hourly_rate_number'] ?? 0,
+            'charge_to_client' => round($clientHourly * $hours, 2),
+            'paid_to_caregiver' => $serviceType === ServiceType::CorporateInvoiced->value || $serviceType === ServiceType::GroupChildcareInvoiced->value
+                ? 0
+                : round($cgHourly * $hours, 2),
+            'sitterwise_cut' => round($swHourly * $hours, 2),
+            'tip' => $tip = $source['cg_tip_number'] ?? 0,
+            'bonus' => $bonus = $source['bonus_number'] ?? 0,
+            'reimbursement' => $reimbursement = $source['check_out_reimbursement_number'] ?? 0,
             'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
             'hotel_fee' => $source['job_hotel_booking_fee_number'] ?? 0,
             'hotel_id' => $this->findHotelId($source['hotel_name_text'] ?? null, $source['address_is_hotel__option_list_of_hotels'] ?? null),
@@ -1369,17 +1371,17 @@ class ImportBubbleDatabase extends Command
                 : null,
             'pets' => $this->parsePets($source['pets_text'] ?? null),
             'special_considerations' => $this->mapSpecialConsiderations($source),
-            'paid_to_caregiver_total' => ($source['caregiver_total_number'] ?? 0)
-                + ($source['check_out_reimbursement_number'] ?? 0)
-                + ($source['bonus_number'] ?? 0)
-                + ($source['cg_tip_number'] ?? 0),
-            'total_service_amount' => ($source['client_total_number'] ?? 0)
-                + ($source['check_out_reimbursement_number'] ?? 0)
-                + ($source['bonus_number'] ?? 0),
-            'total_amount' => ($source['client_total_number'] ?? 0)
-                + ($source['check_out_reimbursement_number'] ?? 0)
-                + ($source['bonus_number'] ?? 0)
-                + ($source['cg_tip_number'] ?? 0),
+            'paid_to_caregiver_total' => round($cgHourly * $hours, 2)
+                + $reimbursement
+                + $bonus
+                + $tip,
+            'total_service_amount' => round($clientHourly * $hours, 2)
+                + $reimbursement
+                + $bonus,
+            'total_amount' => round($clientHourly * $hours, 2)
+                + $reimbursement
+                + $bonus
+                + $tip,
         ];
 
         // 1. Update Client Bio with House Notes

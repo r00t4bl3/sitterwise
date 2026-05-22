@@ -134,12 +134,9 @@ export default function GuestBookingConfirmation() {
                     </div>
 
                     <div className="mt-6 flex justify-center">
-                        <Link
-                            href="/login"
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            Sign in to track your booking
-                        </Link>
+                        Track this booking anytime — we'll email you a link to set up 
+                        your account so you can check status, view past bookings, and 
+                        book again with one click.
                     </div>
                 </div>
             </div>
