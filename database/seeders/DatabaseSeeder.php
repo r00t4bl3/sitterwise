@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             QuickLinkSeeder::class,
-            CaregiverStatusSeeder::class,
             CertificationTypeSeeder::class,
             SpecialtyTypeSeeder::class,
             LocationSeeder::class,

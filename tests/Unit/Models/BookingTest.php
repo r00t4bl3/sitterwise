@@ -75,7 +75,6 @@ test('defines client relationship', function () {
 
 test('defines caregiver relationship', function () {
     // Seed required lookup tables for CaregiverFactory's configure() method
-    $this->seed(CaregiverStatusSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);
     $this->seed(LocationSeeder::class);
     $this->seed(AttributeDefinitionSeeder::class);
@@ -93,7 +92,6 @@ test('defines caregiver relationship', function () {
 
 test('defines availability relationship', function () {
     // Seed required lookup tables for CaregiverFactory's configure() method
-    $this->seed(CaregiverStatusSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);
     $this->seed(LocationSeeder::class);
     $this->seed(AttributeDefinitionSeeder::class);

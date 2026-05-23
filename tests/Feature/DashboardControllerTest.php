@@ -1,10 +1,10 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,7 +13,6 @@ uses(RefreshDatabase::class);
 
 test('admin sees dashboard with stats', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    CaregiverStatus::factory()->create(['name' => 'Active']);
 
     $response = $this->actingAs($admin)->get('/dashboard');
 
@@ -29,12 +28,11 @@ test('admin sees dashboard with stats', function () {
 });
 
 test('caregiver sees dashboard with caregiver data', function () {
-    $status = CaregiverStatus::factory()->create(['name' => 'Active']);
     $user = User::factory()->create(['role' => 'caregiver', 'name' => 'Jane Smith']);
 
     $caregiver = new Caregiver([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'Jane',
         'last_name' => 'Smith',
         'rating' => 4.5,
@@ -68,7 +66,7 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->component('dashboard')
         ->where('caregiver.firstName', 'Jane')
         ->where('caregiver.lastName', 'Smith')
-        ->where('caregiver.status.name', 'Active')
+        ->where('caregiver.status.value', CaregiverStatus::Active->value)
         ->where('stats.total_earned', 100)
         ->where('stats.completed_jobs', 1)
         ->has('caregiver.nextJob')
@@ -116,12 +114,11 @@ test('unauthenticated user is redirected to login', function () {
 });
 
 test('caregiver sees future availabilities', function () {
-    $status = CaregiverStatus::factory()->create(['name' => 'Active']);
     $user = User::factory()->create(['role' => 'caregiver', 'name' => 'Jane Smith']);
 
     $caregiver = new Caregiver([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'Jane',
         'last_name' => 'Smith',
         'phone' => '1234567890',

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Enums\ClientType;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
@@ -13,7 +14,6 @@ use App\Models\BookingGroup;
 use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\CaregiverPayout;
-use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
@@ -915,7 +915,7 @@ class ImportBubbleDatabase extends Command
     protected function syncCaregiver(User $user, array $source, bool $force): void
     {
         $statusName = $source['cg_status_option_cg_status_options'] ?? 'inactive';
-        $status = CaregiverStatus::firstOrCreate(['name' => $statusName]);
+        $statusEnum = CaregiverStatus::tryFrom($statusName) ?? CaregiverStatus::Inactive;
 
         $names = $this->parseSourceNames($source, $user->email);
 
@@ -951,7 +951,7 @@ class ImportBubbleDatabase extends Command
         $caregiverData = [
             'user_id' => $user->id,
             'bubble_id' => $user->bubble_id,
-            'status_id' => $status->id,
+            'status' => $statusEnum->value,
             'first_name' => $names['first'],
             'last_name' => $names['last'],
             'slug' => $slug,

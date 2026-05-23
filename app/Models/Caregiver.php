@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CaregiverStatus;
 use Database\Factories\CaregiverFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -68,7 +69,7 @@ class Caregiver extends Model
 
     protected $fillable = [
         'user_id',
-        'status_id',
+        'status',
         'first_name',
         'last_name',
         'slug',
@@ -98,6 +99,7 @@ class Caregiver extends Model
         'languages' => 'array',
         'metadata' => 'array',
         'sms_opted_out' => 'boolean',
+        'status' => CaregiverStatus::class,
     ];
 
     public function ratings(): MorphMany
@@ -142,11 +144,6 @@ class Caregiver extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function status(): BelongsTo
-    {
-        return $this->belongsTo(CaregiverStatus::class, 'status_id');
     }
 
     public function certifications(): BelongsToMany
@@ -252,9 +249,8 @@ class Caregiver extends Model
 
     public function scopeActiveForSms($query)
     {
-        return $query->whereHas('status', function ($query) {
-            $query->where('name', 'Active');
-        })
+        return $query
+            ->where('status', CaregiverStatus::Active)
             ->whereNotNull('phone')
             ->where('phone', '<>', '')
             ->where('sms_opted_out', false);

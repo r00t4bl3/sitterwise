@@ -1,8 +1,8 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Models\Availability;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\User;
 use App\Policies\AvailabilityPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,11 +46,10 @@ test('view allows admin', function () {
 });
 
 test('view allows caregiver who owns availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
     $policy = new AvailabilityPolicy;
@@ -59,11 +58,10 @@ test('view allows caregiver who owns availability', function () {
 });
 
 test('view denies caregiver who does not own availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $otherAvailability = Availability::factory()->make(['caregiver_id' => 999]);
     $policy = new AvailabilityPolicy;
@@ -109,11 +107,10 @@ test('update allows admin', function () {
 });
 
 test('update allows caregiver who owns availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
     $policy = new AvailabilityPolicy;
@@ -122,11 +119,10 @@ test('update allows caregiver who owns availability', function () {
 });
 
 test('update denies caregiver who does not own availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $otherAvailability = Availability::factory()->make(['caregiver_id' => 999]);
     $policy = new AvailabilityPolicy;
@@ -143,11 +139,10 @@ test('delete allows admin', function () {
 });
 
 test('delete allows caregiver who owns availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
     $policy = new AvailabilityPolicy;
@@ -156,11 +151,10 @@ test('delete allows caregiver who owns availability', function () {
 });
 
 test('delete denies caregiver who does not own availability', function () {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::factory()->make([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
     $otherAvailability = Availability::factory()->make(['caregiver_id' => 999]);
     $policy = new AvailabilityPolicy;

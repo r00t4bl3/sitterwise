@@ -5,7 +5,6 @@ use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingRating;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Client;
 use App\Models\Location;
@@ -18,7 +17,6 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->withoutMiddleware(PreventRequestForgery::class);
 
-    CaregiverStatus::factory()->create(['is_active' => true]);
     SpecialtyType::factory()->count(5)->create(['is_active' => true]);
     Location::factory()->count(5)->create(['is_active' => true]);
     AttributeDefinition::factory()->count(5)->create(['is_active' => true, 'entity_type' => 'caregiver']);

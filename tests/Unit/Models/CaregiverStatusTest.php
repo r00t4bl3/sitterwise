@@ -1,56 +1,39 @@
 <?php
 
-use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Enums\CaregiverStatus;
 
-uses(RefreshDatabase::class);
+test('has all expected cases', function () {
+    $cases = CaregiverStatus::cases();
 
-test('can be instantiated', function () {
-    $status = CaregiverStatus::factory()->make();
-
-    $this->assertInstanceOf(CaregiverStatus::class, $status);
+    expect($cases)->toHaveCount(8);
+    expect(CaregiverStatus::Applicant->value)->toBe('applicant');
+    expect(CaregiverStatus::Active->value)->toBe('active');
+    expect(CaregiverStatus::Inactive->value)->toBe('inactive');
+    expect(CaregiverStatus::InProcess->value)->toBe('in_process');
+    expect(CaregiverStatus::NonStarter->value)->toBe('non_starter');
+    expect(CaregiverStatus::Fired->value)->toBe('fired');
+    expect(CaregiverStatus::Ineligible->value)->toBe('ineligible');
+    expect(CaregiverStatus::OnHold->value)->toBe('on_hold');
 });
 
-test('has correct fillable fields', function () {
-    $status = CaregiverStatus::factory()->create([
-        'name' => 'Test Status',
-        'description' => 'A test status',
-        'color' => '#FF0000',
-        'is_active' => true,
-        'sort_order' => 5,
-    ]);
-
-    $this->assertEquals('Test Status', $status->name);
-    $this->assertEquals('A test status', $status->description);
-    $this->assertEquals('#FF0000', $status->color);
-    $this->assertTrue($status->is_active);
-    $this->assertEquals(5, $status->sort_order);
+test('returns correct labels', function () {
+    expect(CaregiverStatus::Applicant->label())->toBe('Applicant');
+    expect(CaregiverStatus::Active->label())->toBe('Active');
+    expect(CaregiverStatus::Inactive->label())->toBe('Inactive');
+    expect(CaregiverStatus::InProcess->label())->toBe('In Process');
+    expect(CaregiverStatus::NonStarter->label())->toBe('Non Starter');
+    expect(CaregiverStatus::Fired->label())->toBe('Fired');
+    expect(CaregiverStatus::Ineligible->label())->toBe('Ineligible');
+    expect(CaregiverStatus::OnHold->label())->toBe('On Hold');
 });
 
-test('casts is active as boolean', function () {
-    $status = CaregiverStatus::factory()->create(['is_active' => false]);
-
-    $this->assertFalse($status->is_active);
-    $this->assertIsBool($status->is_active);
-});
-
-test('defines caregivers relationship', function () {
-    $status = CaregiverStatus::factory()->create();
-
-    $relation = $status->caregivers();
-
-    $this->assertInstanceOf(HasMany::class, $relation);
-    $this->assertInstanceOf(Caregiver::class, $relation->getRelated());
-});
-
-test('active scope returns only active statuses', function () {
-    CaregiverStatus::factory()->create(['name' => 'Active', 'is_active' => true]);
-    CaregiverStatus::factory()->create(['name' => 'Inactive', 'is_active' => false]);
-
-    $activeStatuses = CaregiverStatus::active()->get();
-
-    $this->assertCount(1, $activeStatuses);
-    $this->assertEquals('Active', $activeStatuses->first()->name);
+test('returns hex colors', function () {
+    expect(CaregiverStatus::Applicant->color())->toBe('#F48A91');
+    expect(CaregiverStatus::Active->color())->toBe('#22C55E');
+    expect(CaregiverStatus::Inactive->color())->toBe('#6B7280');
+    expect(CaregiverStatus::InProcess->color())->toBe('#F59E0B');
+    expect(CaregiverStatus::NonStarter->color())->toBe('#EF4444');
+    expect(CaregiverStatus::Fired->color())->toBe('#DC2626');
+    expect(CaregiverStatus::Ineligible->color())->toBe('#991B1B');
+    expect(CaregiverStatus::OnHold->color())->toBe('#8B5CF6');
 });

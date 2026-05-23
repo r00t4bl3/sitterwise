@@ -11,7 +11,6 @@ use App\Models\ClientChild;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\PricingRulesTableSeeder;
@@ -24,7 +23,6 @@ use function Pest\Laravel\mock;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(CaregiverStatusSeeder::class);
     $this->seed(AttributeDefinitionSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);
     $this->seed(LocationSeeder::class);

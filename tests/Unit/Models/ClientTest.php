@@ -7,7 +7,6 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
@@ -138,7 +137,6 @@ test('defines previous caregivers relationship', function () {
 
 test('favorite caregivers syncs correctly', function () {
     $this->seed([
-        CaregiverStatusSeeder::class,
         CertificationTypeSeeder::class,
         SpecialtyTypeSeeder::class,
         LocationSeeder::class,
@@ -155,7 +153,6 @@ test('favorite caregivers syncs correctly', function () {
 
 test('blocked caregivers syncs correctly', function () {
     $this->seed([
-        CaregiverStatusSeeder::class,
         CertificationTypeSeeder::class,
         SpecialtyTypeSeeder::class,
         LocationSeeder::class,

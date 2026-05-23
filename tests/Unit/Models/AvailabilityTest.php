@@ -1,8 +1,8 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Models\Availability;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,16 +10,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('can be instantiated', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
 
     $this->assertInstanceOf(Availability::class, $availability);
 });
 
 test('has correct fillable fields', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
 
     $this->assertNotNull($availability->date);
@@ -27,8 +25,7 @@ test('has correct fillable fields', function () {
 });
 
 test('casts date as date', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $availability = Availability::factory()->make([
         'caregiver_id' => $caregiver->id,
         'date' => '2026-12-25',
@@ -40,8 +37,7 @@ test('casts date as date', function () {
 });
 
 test('casts time slots as array', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $availability = Availability::factory()->make([
         'caregiver_id' => $caregiver->id,
         'time_slots' => ['morning', 'afternoon'],
@@ -53,8 +49,7 @@ test('casts time slots as array', function () {
 });
 
 test('defines caregiver relationship', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $availability = Availability::factory()->make(['caregiver_id' => $caregiver->id]);
 
     $relation = $availability->caregiver();
@@ -64,8 +59,7 @@ test('defines caregiver relationship', function () {
 });
 
 test('in the future scope returns future dates', function () {
-    $status = CaregiverStatus::factory()->create();
-    $caregiver = Caregiver::factory()->make(['status_id' => $status->id]);
+    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
     $future = Availability::factory()->make([
         'caregiver_id' => $caregiver->id,
         'date' => now()->addDays(5)->toDateString(),

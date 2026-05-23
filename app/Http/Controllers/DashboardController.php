@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Enums\ClientType;
 use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
@@ -47,9 +48,7 @@ class DashboardController extends Controller
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             $stats = [
                 'totalCaregivers' => Caregiver::count(),
-                'activeCaregivers' => Caregiver::whereHas('status', function ($query) {
-                    $query->where('name', 'Active');
-                })->count(),
+                'activeCaregivers' => Caregiver::where('status', CaregiverStatus::Active)->count(),
                 'totalClients' => User::where('role', 'client')->count(),
                 'totalBookings' => Booking::count(),
             ];
@@ -175,7 +174,7 @@ class DashboardController extends Controller
 
         if ($user->isCaregiver()) {
             $caregiver = $user->caregiver;
-            $user->load(['caregiver.status']);
+            $user->load(['caregiver']);
 
             if ($caregiver) {
                 $availabilities = $caregiver->availabilities()
@@ -230,7 +229,7 @@ class DashboardController extends Controller
                     'lastName' => $caregiver->last_name,
                     'rating' => $caregiver->rating,
                     'status' => $caregiver->status ? [
-                        'name' => $caregiver->status->name,
+                        'value' => $caregiver->status->value,
                     ] : null,
                     'availabilities' => $availabilities,
                     'bookingStatuses' => $bookingStatuses,

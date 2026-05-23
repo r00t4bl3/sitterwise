@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
@@ -13,7 +14,6 @@ use App\Http\Resources\CaregiverResource;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Location;
 use App\Models\SpecialtyType;
@@ -29,7 +29,7 @@ class CaregiverController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Caregiver::with(['user', 'status', 'specialtyTypes', 'locations', 'certifications']);
+        $query = Caregiver::with(['user', 'specialtyTypes', 'locations', 'certifications']);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -40,11 +40,15 @@ class CaregiverController extends Controller
         }
 
         if ($request->has('status') && $request->status && $request->status !== 'all') {
-            $query->where('status_id', $request->status);
+            $query->where('status', $request->status);
         }
 
         $caregivers = $query->orderBy('id')->paginate(20)->appends($request->query());
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses = array_map(fn ($case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+            'color' => $case->color(),
+        ], CaregiverStatus::cases());
 
         return Inertia::render('admin/caregivers/index', [
             'caregivers' => $caregivers,
@@ -58,7 +62,11 @@ class CaregiverController extends Controller
 
     public function create()
     {
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses = array_map(fn ($case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+            'color' => $case->color(),
+        ], CaregiverStatus::cases());
 
         return Inertia::render('admin/caregivers/create', [
             'statuses' => $statuses,
@@ -78,7 +86,7 @@ class CaregiverController extends Controller
 
         $caregiver = Caregiver::create([
             'user_id' => $user->id,
-            'status_id' => $validated['status_id'],
+            'status' => $validated['status'],
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'phone' => $validated['phone'] ?? null,
@@ -94,7 +102,7 @@ class CaregiverController extends Controller
 
     public function searchSuggestions(Request $request)
     {
-        $query = Caregiver::with(['user', 'status']);
+        $query = Caregiver::with(['user']);
 
         if ($request->has('q') && $request->q) {
             $search = $request->q;
@@ -104,16 +112,20 @@ class CaregiverController extends Controller
             });
         }
 
-        $caregivers = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'rating', 'status_id']);
+        $caregivers = $query->orderBy('last_name')->limit(6)->get(['id', 'first_name', 'last_name', 'rating', 'status']);
 
         return response()->json($caregivers);
     }
 
     public function show(Caregiver $caregiver)
     {
-        $caregiver->load(['status', 'specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'applications', 'agreements', 'referenceRequests']);
+        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'applications', 'agreements', 'referenceRequests']);
 
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses = array_map(fn ($case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+            'color' => $case->color(),
+        ], CaregiverStatus::cases());
 
         return Inertia::render('admin/caregivers/show', [
             'caregiver' => (new CaregiverResource($caregiver))->resolve(),
@@ -218,7 +230,7 @@ class CaregiverController extends Controller
                 'rating' => $validated['rating'] ?? null,
                 'biography' => $validated['biography'] ?? null,
                 'notes' => $validated['notes'] ?? null,
-                'status_id' => $validated['status_id'],
+                'status' => $validated['status'],
             ];
 
             if ($request->hasFile('profile_photo')) {
@@ -294,7 +306,7 @@ class CaregiverController extends Controller
                 }
             }
         } else {
-            $caregiver->update(['status_id' => $validated['status_id']]);
+            $caregiver->update(['status' => $validated['status']]);
         }
 
         return redirect()->route('caregivers.show', $caregiver->id)
@@ -303,9 +315,13 @@ class CaregiverController extends Controller
 
     public function edit(Caregiver $caregiver)
     {
-        $caregiver->load(['status', 'specialtyTypes', 'locations', 'user', 'certifications', 'attributes', 'educations']);
+        $caregiver->load(['specialtyTypes', 'locations', 'user', 'certifications', 'attributes', 'educations']);
 
-        $statuses = CaregiverStatus::active()->orderBy('sort_order')->get();
+        $statuses = array_map(fn ($case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+            'color' => $case->color(),
+        ], CaregiverStatus::cases());
         $specialtyTypes = SpecialtyType::active()->get();
         $locations = Location::active()->get();
         $attributeDefinitions = AttributeDefinition::active()->forCaregivers()->get();

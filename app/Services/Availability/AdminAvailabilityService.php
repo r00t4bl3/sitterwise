@@ -90,7 +90,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             });
 
         return Inertia::render('admin/availabilities/show', [
-            'caregiver' => $caregiver->load(['user', 'status', 'locations', 'specialtyTypes']),
+            'caregiver' => $caregiver->load(['user', 'locations', 'specialtyTypes']),
             'availabilities' => $availabilities,
             'timeSlots' => array_map(
                 fn ($case) => ['value' => $case->value, 'label' => $case->label()],

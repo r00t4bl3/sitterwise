@@ -1,24 +1,19 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Jobs\SendBroadcastMessage;
 use App\Models\BroadcastMessage;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\SmsBroadcast;
 use App\Models\User;
-use Database\Seeders\CaregiverStatusSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    $this->seed(CaregiverStatusSeeder::class);
-});
-
 function createCaregiver(array $overrides = []): Caregiver
 {
-    $status = CaregiverStatus::where('name', $overrides['status'] ?? 'Active')->firstOrFail();
+    $status = CaregiverStatus::tryFrom($overrides['status'] ?? 'active') ?? CaregiverStatus::Active;
     $user = User::factory()->create(['role' => 'caregiver']);
 
     return Caregiver::create([
@@ -26,7 +21,7 @@ function createCaregiver(array $overrides = []): Caregiver
         'first_name' => fake()->firstName(),
         'last_name' => fake()->lastName(),
         'phone' => $overrides['phone'] ?? fake()->phoneNumber(),
-        'status_id' => $status->id,
+        'status' => $status->value,
         'sms_opted_out' => $overrides['sms_opted_out'] ?? false,
     ]);
 }
@@ -77,8 +72,8 @@ it('excludes opted-out caregivers from recipient count', function () {
 });
 
 it('excludes inactive caregivers from recipient count', function () {
-    createCaregiver(['status' => 'Active']);
-    createCaregiver(['status' => 'Inactive']);
+    createCaregiver(['status' => 'active']);
+    createCaregiver(['status' => 'inactive']);
 
     $this->actingAs(superAdmin())
         ->get(route('broadcast-sms.index'))
@@ -149,7 +144,7 @@ it('validates message body does not exceed max length', function () {
 });
 
 it('returns error when no eligible caregivers exist', function () {
-    createCaregiver(['status' => 'Inactive']);
+    createCaregiver(['status' => 'inactive']);
 
     $this->actingAs(superAdmin())
         ->post(route('broadcast-sms.store'), [
@@ -288,7 +283,7 @@ it('updates broadcast message status via callback', function () {
         'first_name' => 'Test',
         'last_name' => 'User',
         'phone' => '+1234567890',
-        'status_id' => CaregiverStatus::where('name', 'Active')->first()->id,
+        'status' => CaregiverStatus::Active->value,
     ]);
 
     $broadcastMessage = BroadcastMessage::create([

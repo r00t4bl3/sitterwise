@@ -4,7 +4,6 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
@@ -17,7 +16,6 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Notification::fake();
     $this->seed([
-        CaregiverStatusSeeder::class,
         CertificationTypeSeeder::class,
         SpecialtyTypeSeeder::class,
         LocationSeeder::class,

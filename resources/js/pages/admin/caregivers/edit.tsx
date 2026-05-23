@@ -43,8 +43,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Status {
-    id: number;
-    name: string;
+    value: string;
     label: string;
     color: string;
 }
@@ -118,7 +117,11 @@ interface Caregiver {
     rating: number | null;
     biography: string | null;
     notes: string | null;
-    status_id: number;
+    status: {
+        value: string;
+        label: string;
+        color: string;
+    } | null;
     specialty_type_ids: number[];
     location_ids: number[];
     preferred_location_id: number | null;
@@ -256,7 +259,7 @@ export default function CaregiverEdit() {
         rating: caregiver.rating?.toString() || '',
         biography: caregiver.biography || '',
         notes: caregiver.notes || '',
-        status_id: caregiver.status_id.toString(),
+        status: caregiver.status?.value || '',
         profile_photo: null as File | null,
         specialty_type_ids: caregiver.specialty_type_ids,
         location_ids: caregiver.location_ids,
@@ -613,30 +616,30 @@ export default function CaregiverEdit() {
                             <div className="space-y-2">
                                 <Label>Status</Label>
                                 <Select
-                                    value={form.data.status_id}
+                                    value={form.data.status}
                                     onValueChange={(value) =>
-                                        form.setData('status_id', value)
+                                        form.setData('status', value)
                                     }
                                 >
                                     <SelectTrigger
-                                        aria-invalid={!!form.errors.status_id}
+                                        aria-invalid={!!form.errors.status}
                                     >
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statuses.map((status) => (
                                             <SelectItem
-                                                key={status.id}
-                                                value={status.id.toString()}
+                                                key={status.value}
+                                                value={status.value}
                                             >
                                                 {status.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {form.errors.status_id && (
+                                {form.errors.status && (
                                     <p className="text-sm text-destructive">
-                                        {form.errors.status_id}
+                                        {form.errors.status}
                                     </p>
                                 )}
                             </div>

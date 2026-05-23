@@ -2,6 +2,7 @@
 
 namespace App\Services\CaregiverRecommendation;
 
+use App\Enums\CaregiverStatus;
 use App\Enums\ServiceType;
 use App\Models\Booking;
 use App\Models\Caregiver;
@@ -26,12 +27,11 @@ class CaregiverRecommendationService
 
         // Get all active caregivers, excluding blocked ones
         $caregivers = Caregiver::with([
-            'status',
             'certifications',
             'specialtyTypes',
             'availabilities',
         ])
-            ->whereHas('status', fn ($q) => $q->where('is_active', true))
+            ->where('status', CaregiverStatus::Active->value)
             ->whereDoesntHave('blockedClients', fn ($q) => $q->where('client_id', $client->id))
             ->get();
 

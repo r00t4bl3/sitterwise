@@ -1,8 +1,8 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Http\Resources\CaregiverResource;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -10,12 +10,11 @@ uses(RefreshDatabase::class);
 
 function caregiverResourceCreateCaregiver(array $overrides = []): Caregiver
 {
-    $status = CaregiverStatus::factory()->create();
     $user = User::factory()->create();
 
     return Caregiver::create(array_merge([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
     ], $overrides));

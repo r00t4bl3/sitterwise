@@ -1,7 +1,7 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Http\Requests\UpdateCaregiverRequest;
-use App\Models\CaregiverStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\Validator;
 
@@ -12,21 +12,20 @@ function updateCaregiverRequestRules(): array
     return (new UpdateCaregiverRequest)->rules();
 }
 
-test('requires status id', function () {
-    $data = ['status_id' => null];
+test('requires status', function () {
+    $data = ['status' => null];
     $validator = updateCaregiverRequestValidate($data);
     $this->assertFalse($validator->passes());
 });
 
-test('requires valid status id', function () {
-    $data = ['status_id' => 999];
+test('requires valid status', function () {
+    $data = ['status' => 'invalid_status'];
     $validator = updateCaregiverRequestValidate($data);
     $this->assertFalse($validator->passes());
 });
 
-test('valid status id passes', function () {
-    $status = CaregiverStatus::factory()->create();
-    $data = ['status_id' => $status->id];
+test('valid status passes', function () {
+    $data = ['status' => CaregiverStatus::Active->value];
     $validator = updateCaregiverRequestValidate($data);
     $this->assertTrue($validator->passes());
 });
@@ -41,9 +40,8 @@ test('first name requires last name when present', function () {
 });
 
 test('phone is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
         'phone' => null,
@@ -53,9 +51,8 @@ test('phone is nullable', function () {
 });
 
 test('rating within range', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
         'rating' => 5,
@@ -65,9 +62,8 @@ test('rating within range', function () {
 });
 
 test('rating out of range fails', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
         'rating' => 6,
@@ -77,9 +73,8 @@ test('rating out of range fails', function () {
 });
 
 test('profile photo must be image', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
         'profile_photo' => 'not-an-image',

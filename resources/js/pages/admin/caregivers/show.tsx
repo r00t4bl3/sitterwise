@@ -73,8 +73,7 @@ interface Certification {
 }
 
 interface Status {
-    id: number;
-    name: string;
+    value: string;
     label: string;
     color: string;
 }
@@ -272,8 +271,8 @@ export default function CaregiverShow() {
         admin_rating: caregiver.admin_rating || 0,
     });
 
-    const statusForm = useForm<{ status_id: number }>({
-        status_id: caregiver.status.id,
+    const statusForm = useForm<{ status: string }>({
+        status: caregiver.status.value,
     });
 
     const passwordForm = useForm<{
@@ -792,34 +791,31 @@ export default function CaregiverShow() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="status_id">Change Status</Label>
+                                <Label htmlFor="status">Change Status</Label>
                                 <Select
-                                    value={statusForm.data.status_id.toString()}
+                                    value={statusForm.data.status}
                                     onValueChange={(value) =>
-                                        statusForm.setData(
-                                            'status_id',
-                                            Number(value),
-                                        )
+                                        statusForm.setData('status', value)
                                     }
                                     disabled={statusForm.processing}
                                 >
-                                    <SelectTrigger id="status_id">
+                                    <SelectTrigger id="status">
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statuses.map((status) => (
                                             <SelectItem
-                                                key={status.id}
-                                                value={status.id.toString()}
+                                                key={status.value}
+                                                value={status.value}
                                             >
                                                 {status.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {statusForm.errors.status_id && (
+                                {statusForm.errors.status && (
                                     <p className="mt-1 text-xs text-red-500">
-                                        {statusForm.errors.status_id}
+                                        {statusForm.errors.status}
                                     </p>
                                 )}
                                 <Button

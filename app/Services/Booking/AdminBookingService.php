@@ -4,6 +4,7 @@ namespace App\Services\Booking;
 
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Enums\ClientType;
 use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
@@ -137,7 +138,7 @@ class AdminBookingService implements BookingServiceInterface
         ]);
 
         $caregivers = Caregiver::with('user')
-            ->whereHas('status', fn ($q) => $q->where('is_active', true))
+            ->where('status', CaregiverStatus::Active->value)
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,

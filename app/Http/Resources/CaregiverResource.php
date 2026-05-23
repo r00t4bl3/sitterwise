@@ -43,8 +43,11 @@ class CaregiverResource extends JsonResource
             'admin_rating' => $this->admin_rating,
             'biography' => $this->biography,
             'notes' => $this->notes,
-            'status' => $isEdit ? null : $this->status,
-            'status_id' => $this->status_id,
+            'status' => $this->status ? [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ] : null,
             'specialty_type_ids' => $this->specialtyTypes->pluck('id')->toArray(),
             'specialty_types' => $isEdit ? null : $this->specialtyTypes,
             'location_ids' => $this->locations->pluck('id')->toArray(),

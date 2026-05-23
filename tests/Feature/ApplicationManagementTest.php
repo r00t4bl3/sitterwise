@@ -1,9 +1,9 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Mail\ReferenceRequestMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
-use App\Models\CaregiverStatus;
 use App\Models\ReferenceRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,23 +12,12 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    CaregiverStatus::create([
-        'name' => 'applicant',
-        'color' => '#F48A91',
-        'is_active' => true,
-        'sort_order' => 1,
-    ]);
-});
-
 function applicationManagementCreateApplication(array $overrides = []): array
 {
-    $status = CaregiverStatus::where('name', 'applicant')->first();
-
     $user = User::factory()->create(['role' => 'caregiver', 'email' => $overrides['applicant_email'] ?? 'applicant@example.com']);
     $caregiver = Caregiver::create([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Applicant->value,
         'first_name' => 'Jane',
         'last_name' => 'Smith',
         'slug' => 'jane-smith-'.Str::random(4),

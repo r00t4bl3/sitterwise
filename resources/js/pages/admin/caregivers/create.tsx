@@ -33,8 +33,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Status {
-    id: number;
-    name: string;
+    value: string;
+    label: string;
     color: string;
 }
 
@@ -53,7 +53,7 @@ export default function CaregiverCreate() {
         phone: '',
         address: '',
         date_of_birth: '',
-        status_id: '',
+        status: '',
         password: '',
         password_confirmation: '',
         biography: '',
@@ -184,34 +184,34 @@ export default function CaregiverCreate() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="status_id">
+                                <Label htmlFor="status">
                                     Status{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
-                                    value={form.data.status_id}
+                                    value={form.data.status}
                                     onValueChange={(value) =>
-                                        form.setData('status_id', value)
+                                        form.setData('status', value)
                                     }
                                     required
                                 >
-                                    <SelectTrigger id="status_id">
+                                    <SelectTrigger id="status">
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statuses.map((status) => (
                                             <SelectItem
-                                                key={status.id}
-                                                value={status.id.toString()}
+                                                key={status.value}
+                                                value={status.value}
                                             >
-                                                {status.name}
+                                                {status.label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {form.errors.status_id && (
+                                {form.errors.status && (
                                     <p className="text-sm text-destructive">
-                                        {form.errors.status_id}
+                                        {form.errors.status}
                                     </p>
                                 )}
                             </div>

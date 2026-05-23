@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\CaregiverStatus;
 use App\Models\AttributeDefinition;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Location;
 use App\Models\SpecialtyType;
@@ -53,7 +53,7 @@ class CaregiverFactory extends Factory
             'Vista', 'San Marcos', 'Solana Beach', 'Del Mar',
         ];
 
-        $statusIds = CaregiverStatus::pluck('id')->toArray();
+        $statusValues = array_column(CaregiverStatus::cases(), 'value');
 
         $firstName = $this->faker->randomElement($firstNames);
         $lastName = $this->faker->randomElement($lastNames);
@@ -74,16 +74,13 @@ class CaregiverFactory extends Factory
             'biography' => $this->faker->optional()->paragraph(),
             'notes' => $this->faker->optional()->sentence(),
             'stripe_account_id' => null,
-            'status_id' => $this->faker->randomElement($statusIds),
+            'status' => $this->faker->randomElement($statusValues),
         ];
     }
 
     public function configure(): static
     {
         return $this->afterCreating(function (Caregiver $caregiver) {
-            $statusIds = CaregiverStatus::pluck('id')->toArray();
-            $caregiver->update(['status_id' => $this->faker->randomElement($statusIds)]);
-
             $specialtyIds = SpecialtyType::pluck('id')->toArray();
             $selectedSpecialties = $this->faker->randomElements($specialtyIds, $this->faker->numberBetween(1, 3));
             $caregiver->specialtyTypes()->sync($selectedSpecialties);

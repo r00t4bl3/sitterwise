@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
@@ -10,7 +11,6 @@ use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
@@ -22,7 +22,6 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Notification::fake();
     $this->seed(AttributeDefinitionSeeder::class);
-    $this->seed(CaregiverStatusSeeder::class);
     $this->seed(CertificationTypeSeeder::class);
     $this->seed(LocationSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);
@@ -448,7 +447,7 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
 
         $client = Client::factory()->create();
-        Caregiver::factory()->count(3)->create();
+        Caregiver::factory()->count(3)->create(['status' => CaregiverStatus::Active->value]);
 
         $response = $this->get(route('bookings.recommendedCaregivers', [
             'client_id' => $client->id,

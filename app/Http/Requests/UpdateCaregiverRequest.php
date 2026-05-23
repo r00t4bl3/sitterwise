@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CaregiverStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateCaregiverRequest extends FormRequest
 {
@@ -23,7 +25,7 @@ class UpdateCaregiverRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'status_id' => 'required|exists:caregiver_statuses,id',
+            'status' => ['required', new Enum(CaregiverStatus::class)],
             'first_name' => 'sometimes|required|string|max:255',
             'last_name' => 'sometimes|required|string|max:255',
             'phone' => 'nullable|string|max:255',

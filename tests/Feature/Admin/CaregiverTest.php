@@ -1,10 +1,9 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
@@ -16,7 +15,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Notification::fake();
-    $this->seed(CaregiverStatusSeeder::class);
     $this->seed(CertificationTypeSeeder::class);
     $this->seed(SpecialtyTypeSeeder::class);
     $this->seed(LocationSeeder::class);
@@ -48,15 +46,13 @@ describe('Caregiver - Admin', function () {
     });
 
     test('guests cannot store a new caregiver', function () {
-        $status = CaregiverStatus::first();
-
         $response = $this->post(route('caregivers.store'), [
             'first_name' => 'Test',
             'last_name' => 'Caregiver',
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'status_id' => $status->id,
+            'status' => CaregiverStatus::Active->value,
         ]);
 
         $response->assertRedirect(route('login'));
@@ -116,15 +112,13 @@ describe('Caregiver - Admin', function () {
         $user = User::factory()->create(['role' => 'client']);
         $this->actingAs($user);
 
-        $status = CaregiverStatus::first();
-
         $response = $this->post(route('caregivers.store'), [
             'first_name' => 'Test',
             'last_name' => 'Caregiver',
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'status_id' => $status->id,
+            'status' => CaregiverStatus::Active->value,
         ]);
 
         $response->assertForbidden();
@@ -190,15 +184,13 @@ describe('Caregiver - Admin', function () {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
 
-        $status = CaregiverStatus::first();
-
         $response = $this->post(route('caregivers.store'), [
             'first_name' => 'Test',
             'last_name' => 'Caregiver',
             'email' => 'testcaregiver@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'status_id' => $status->id,
+            'status' => CaregiverStatus::Active->value,
         ]);
 
         $response->assertRedirect();
@@ -223,7 +215,7 @@ describe('Caregiver - Admin', function () {
             'address_city' => $caregiver->address_city,
             'address_state' => $caregiver->address_state,
             'address_zip' => $caregiver->address_zip,
-            'status_id' => $caregiver->status_id,
+            'status' => $caregiver->status->value,
         ]);
 
         $response->assertRedirect();

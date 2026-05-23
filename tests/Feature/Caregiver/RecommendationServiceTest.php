@@ -1,16 +1,15 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\CertificationType;
 use App\Models\Client;
 use App\Models\SpecialtyType;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Database\Seeders\AttributeDefinitionSeeder;
-use Database\Seeders\CaregiverStatusSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
@@ -20,7 +19,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed([
-        CaregiverStatusSeeder::class,
         CertificationTypeSeeder::class,
         SpecialtyTypeSeeder::class,
         LocationSeeder::class,
@@ -29,30 +27,29 @@ beforeEach(function () {
     $this->service = app(CaregiverRecommendationService::class);
 
     // Get active status
-    $this->activeStatus = CaregiverStatus::where('is_active', true)->first();
-    $this->inactiveStatus = CaregiverStatus::where('is_active', false)->first();
+    $this->activeStatus = CaregiverStatus::Active;
+    $this->inactiveStatus = CaregiverStatus::Inactive;
 });
 
 describe('Recommendation Service - Caregiver', function () {
     test('returns only active caregivers', function () {
         $client = Client::factory()->create();
-        $caregiver1 = Caregiver::factory()->create(['status_id' => $this->activeStatus->id]);
-        $inactiveStatus = CaregiverStatus::create(['name' => 'Test Inactive', 'is_active' => false]);
-        $caregiver2 = Caregiver::factory()->create(['status_id' => $inactiveStatus->id]);
+        $caregiver1 = Caregiver::factory()->create(['status' => $this->activeStatus->value]);
+        $caregiver2 = Caregiver::factory()->create(['status' => CaregiverStatus::Inactive->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         // Caregiver1 should be in results (active)
         expect($recommended->pluck('caregiver.id')->contains($caregiver1->id))->toBeTrue();
 
-        // Caregiver2 might be in results since factory configure overrides status_id
+        // Caregiver2 might be in results since factory configure overrides status
         // Just verify the service doesn't crash
         expect($recommended->count())->toBeGreaterThanOrEqual(1);
     });
 
     test('returns match badge for each caregiver', function () {
         $client = Client::factory()->create();
-        Caregiver::factory()->create(['status_id' => $this->activeStatus->id]);
+        Caregiver::factory()->create(['status' => $this->activeStatus->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
@@ -63,7 +60,7 @@ describe('Recommendation Service - Caregiver', function () {
     test('favorite caregiver gets excellent match badge', function () {
         $client = Client::factory()->create();
         $favoriteCaregiver = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.5,
         ]);
 
@@ -79,7 +76,7 @@ describe('Recommendation Service - Caregiver', function () {
     test('blocked caregiver is excluded from recommendations', function () {
         $client = Client::factory()->create();
         $blockedCaregiver = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.5,
         ]);
 
@@ -94,12 +91,12 @@ describe('Recommendation Service - Caregiver', function () {
         $client = Client::factory()->create();
 
         $caregiver1 = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.0,
         ]);
 
         $caregiver2 = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.0,
         ]);
 
@@ -122,12 +119,12 @@ describe('Recommendation Service - Caregiver', function () {
         $client = Client::factory()->create();
 
         $caregiver1 = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.8,
         ]);
 
         $caregiver2 = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 3.5,
         ]);
 
@@ -160,7 +157,7 @@ describe('Recommendation Service - Caregiver', function () {
 
     test('respects limit parameter', function () {
         $client = Client::factory()->create();
-        Caregiver::factory()->count(5)->create(['status_id' => $this->activeStatus->id]);
+        Caregiver::factory()->count(5)->create(['status' => $this->activeStatus->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, limit: 3);
 
@@ -170,7 +167,7 @@ describe('Recommendation Service - Caregiver', function () {
     test('hasBeenNotified returns true when caregiver was notified for booking', function () {
         $client = Client::factory()->create();
         $caregiver = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.0,
         ]);
 
@@ -195,7 +192,7 @@ describe('Recommendation Service - Caregiver', function () {
     test('hasBeenNotified returns false when caregiver was not notified', function () {
         $client = Client::factory()->create();
         $caregiver = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.0,
         ]);
 
@@ -213,7 +210,7 @@ describe('Recommendation Service - Caregiver', function () {
     test('hasBeenNotified returns false when no booking provided', function () {
         $client = Client::factory()->create();
         $caregiver = Caregiver::factory()->create([
-            'status_id' => $this->activeStatus->id,
+            'status' => $this->activeStatus->value,
             'rating' => 4.0,
         ]);
 
@@ -227,11 +224,11 @@ describe('Recommendation Service - Caregiver', function () {
         $client = Client::factory()->create();
 
         $caregiver1 = Caregiver::factory()
-            ->state(['status_id' => $this->activeStatus->id, 'rating' => 4.0])
+            ->state(['status' => $this->activeStatus->value, 'rating' => 4.0])
             ->create();
 
         $caregiver2 = Caregiver::factory()
-            ->state(['status_id' => $this->activeStatus->id, 'rating' => 4.0])
+            ->state(['status' => $this->activeStatus->value, 'rating' => 4.0])
             ->create();
 
         // Ensure both have same certifications and specialties

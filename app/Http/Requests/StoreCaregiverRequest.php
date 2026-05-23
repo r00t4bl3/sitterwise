@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CaregiverStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreCaregiverRequest extends FormRequest
 {
@@ -20,7 +22,7 @@ class StoreCaregiverRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date'],
-            'status_id' => ['required', 'exists:caregiver_statuses,id'],
+            'status' => ['required', new Enum(CaregiverStatus::class)],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'biography' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],

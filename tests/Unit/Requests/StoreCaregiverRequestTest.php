@@ -1,15 +1,14 @@
 <?php
 
-use App\Models\CaregiverStatus;
+use App\Enums\CaregiverStatus;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 uses(RefreshDatabase::class);
 
 test('passes with valid data', function () {
-    $status = CaregiverStatus::factory()->create();
-
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
@@ -17,7 +16,7 @@ test('passes with valid data', function () {
         'phone' => '123-456-7890',
         'address' => '123 Test St',
         'date_of_birth' => '1990-01-01',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'biography' => 'Experienced caregiver',
@@ -55,16 +54,16 @@ test('requires unique email', function () {
     $this->assertArrayHasKey('email', $validator->errors()->toArray());
 });
 
-test('requires status id', function () {
-    $validator = Validator::make(['status_id' => null], storeCaregiverRequestRules());
+test('requires status', function () {
+    $validator = Validator::make(['status' => null], storeCaregiverRequestRules());
     $this->assertFalse($validator->passes());
-    $this->assertArrayHasKey('status_id', $validator->errors()->toArray());
+    $this->assertArrayHasKey('status', $validator->errors()->toArray());
 });
 
-test('requires status id to exist', function () {
-    $validator = Validator::make(['status_id' => 999], storeCaregiverRequestRules());
+test('requires status to be a valid enum value', function () {
+    $validator = Validator::make(['status' => 'invalid_status'], storeCaregiverRequestRules());
     $this->assertFalse($validator->passes());
-    $this->assertArrayHasKey('status_id', $validator->errors()->toArray());
+    $this->assertArrayHasKey('status', $validator->errors()->toArray());
 });
 
 test('requires password', function () {
@@ -86,12 +85,11 @@ test('requires password confirmation', function () {
 });
 
 test('phone is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
         'email' => 'john@example.com',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'phone' => null,
@@ -102,12 +100,11 @@ test('phone is nullable', function () {
 });
 
 test('address is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
         'email' => 'john@example.com',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'address' => null,
@@ -118,12 +115,11 @@ test('address is nullable', function () {
 });
 
 test('date of birth is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
         'email' => 'john@example.com',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'date_of_birth' => null,
@@ -134,12 +130,11 @@ test('date of birth is nullable', function () {
 });
 
 test('biography is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
         'email' => 'john@example.com',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'biography' => null,
@@ -150,12 +145,11 @@ test('biography is nullable', function () {
 });
 
 test('notes is nullable', function () {
-    $status = CaregiverStatus::factory()->create();
     $data = [
         'first_name' => 'John',
         'last_name' => 'Doe',
         'email' => 'john@example.com',
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Active->value,
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'notes' => null,
@@ -174,7 +168,7 @@ function storeCaregiverRequestRules(): array
         'phone' => ['nullable', 'string', 'max:20'],
         'address' => ['nullable', 'string', 'max:500'],
         'date_of_birth' => ['nullable', 'date'],
-        'status_id' => ['required', 'exists:caregiver_statuses,id'],
+        'status' => ['required', Rule::enum(CaregiverStatus::class)],
         'password' => ['required', 'string', 'min:8', 'confirmed'],
         'biography' => ['nullable', 'string'],
         'notes' => ['nullable', 'string'],
