@@ -39,8 +39,8 @@ class CaregiverResource extends JsonResource
                 'profile_photo_path' => $this->user->profile_photo_path ?? null,
                 'profile_photo_url' => $this->user->profile_photo_url ?? null,
             ],
-            'rating' => $this->rating,
-            'admin_rating' => $this->admin_rating,
+            'rating' => $this->rating ? (float) $this->rating : null,
+            'admin_rating' => $this->admin_rating ? (float) $this->admin_rating : null,
             'biography' => $this->biography,
             'notes' => $this->notes,
             'status' => $this->status ? [
@@ -55,6 +55,7 @@ class CaregiverResource extends JsonResource
             'locations' => $this->locations->map(fn ($l) => [
                 'id' => $l->id,
                 'name' => $l->name,
+                'svg_icon' => $l->svg_icon,
                 'is_preferred' => (bool) $l->pivot->is_preferred,
             ]),
             'certifications' => $this->certifications->map(fn ($c) => [

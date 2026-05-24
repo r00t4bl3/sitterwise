@@ -233,6 +233,11 @@ class Caregiver extends Model
         return $this->hasMany(CaregiverApplication::class);
     }
 
+    public function onboardingChecklistItems(): HasMany
+    {
+        return $this->hasMany(OnboardingChecklistItem::class);
+    }
+
     public function referenceRequests(): HasMany
     {
         return $this->hasMany(ReferenceRequest::class);

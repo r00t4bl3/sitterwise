@@ -22,7 +22,7 @@
         <p><strong>Email:</strong> {{ $applicantEmail }}</p>
         <p>Please log in to the admin dashboard to review the application and manage next steps.</p>
         <div style="text-align: center; margin: 24px 0;">
-            <a href="{{ route('applications.show', $applicationId) }}" style="display: inline-block; background: #3b82f6; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            <a href="{{ route('applications.show', $applicationId) }}" style="display: inline-block; background: #F48A91; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
                 Review Application
             </a>
         </div>

@@ -83,7 +83,7 @@ flowchart LR
 
 ## High (foundational — fix existing gaps, complete Phase 1-2 core)
 
-### 3. Stalled application nudges (§4.1) — ✅ Completed
+### High #1 — Stalled application nudges (§4.1) — ✅ Completed
 
 #### Implementation
 
@@ -128,7 +128,7 @@ flowchart LR
 
 ## Medium (complete the pipeline — reference lifecycle, admin workflow)
 
-### 4. Reference nudges (§5.5) — ✅ Completed
+### Medium #1 — Reference nudges (§5.5) — ✅ Completed
 
 #### Implementation
 
@@ -163,7 +163,7 @@ flowchart LR
 
 **Wireframe:** Not shown — backend scheduled commands.
 
-### 5. Application lifecycle workflow — ✅ Completed (needs Hired/Onboarding gap)
+### High #2 — Application lifecycle workflow — ✅ Completed
 
 #### Current Implementation
 
@@ -171,7 +171,8 @@ flowchart LR
 - `Applicant` → approve() → `UnderReview`
 - `UnderReview` → scheduleInterview() → `InterviewScheduled`
 - `InterviewScheduled` → startBackgroundCheck() → `BackgroundCheck`
-- `BackgroundCheck` → hire() → ~~`Active`~~ **BUG: should be `Hired/Onboarding`**
+- `BackgroundCheck` → hire() → `HiredOnboarding`
+- `HiredOnboarding` → completeOnboarding() → `Active`
 
 **New enum values added to `CaregiverStatus`:**
 - `UnderReview` ("Under Review", color `#F59E0B`)
@@ -219,75 +220,60 @@ flowchart LR
 
 **Wireframe:** Implied by interview eval "Save & advance to background check" button. No dedicated screen.
 
-#### Gap: `hire()` skips directly to Active
-
-Current code:
-```php
-$caregiver->update(['status' => CaregiverStatus::Active]);
-```
-
-Should be:
-```php
-$caregiver->update(['status' => CaregiverStatus::HiredOnboarding]);
-```
-
-Requires adding `HiredOnboarding` enum case + `completeOnboarding()` action for `HiredOnboarding → Active` transition (gated by onboarding checklist, see #10).
-
 #### Refactor: Drive status badge metadata from backend enum
 
 Removed duplicated status data (badge colors, labels, terminal list) from frontend components by sharing `CaregiverStatus::toArray()` globally via Inertia.
 
 **Changes:**
-- `app/Enums/CaregiverStatus.php` — Added `toArray()` returning all 11 cases with `value`, `label`, `color`, `is_terminal`
+- `app/Enums/CaregiverStatus.php` — Added `toArray()` returning all 12 cases with `value`, `label`, `color`, `is_terminal`
 - `app/Http/Middleware/HandleInertiaRequests.php` — Shared `caregiverStatuses` globally
 - `resources/js/types/global.d.ts` — Added `CaregiverStatusOption` type
 - `resources/js/pages/applications/index.tsx` — Removed hardcoded `statusBadgeColors` and `statusOptions`; filter dropdown and badge colors now driven from shared props with inline styles
 - `resources/js/pages/applications/show.tsx` — Removed hardcoded `TERMINAL_STATUSES` and `statusBadgeColors`; `getActions()` receives shared array and checks `is_terminal` instead; badges use inline styles from shared color
-- `tests/Unit/Models/CaregiverStatusTest.php` — Added test for `toArray()` structure (all 11 entries, terminal subset verified)
+- `tests/Unit/Models/CaregiverStatusTest.php` — Added test for `toArray()` structure (all 12 entries, terminal subset verified)
 
 **Impact:** Single source of truth for all status metadata on both backend and frontend.
 
-### 10. Onboarding checklist + Trustline/CPR tracking (§7, wireframe) — 🔜 Next (High)
+### High #3 — Onboarding checklist + Trustline/CPR tracking (§7, wireframe) — ✅ Completed (core pipeline)
 
-**Pipeline dependency:** `hire()` must transition to `Hired/Onboarding` (not `Active`). This checklist gates the `Hired/Onboarding → Active` transition. Without it, `hire()` is incomplete.
+**Pipeline fix:** `hire()` now transitions to `Hired/Onboarding` (not `Active`). Checklist gates `Hired/Onboarding → Active`.
 
 **Implementation:**
 
 **Enum:**
-- Add `CaregiverStatus::HiredOnboarding = 'hired_onboarding'` with label "Hired / Onboarding", color `#0EA5E9`
-- Add to `terminal()` helper
+- ✅ `CaregiverStatus::HiredOnboarding = 'hired_onboarding'` with label "Hired / Onboarding", color `#0EA5E9`
+- ✅ NOT added to `terminal()` (non-terminal — can still be declined)
 
 **Controller:**
-- `ApplicationController@hire()` transitions to `HiredOnboarding` instead of `Active`
-- New `ApplicationController@completeOnboarding()` validates all 6 checklist items complete, transitions to `Active`
-- New route: `POST /applications/{application}/complete-onboarding`
+- ✅ `ApplicationController@hire()` transitions to `HiredOnboarding` instead of `Active`, seeds 6 checklist items
+- ✅ `ApplicationController@completeOnboarding()` validates all 6 items completed, transitions to `Active`
+- ✅ `ApplicationController@toggleChecklistItem()` — toggles individual item's `completed_at`
+- ✅ Routes: `POST /applications/{application}/complete-onboarding`, `POST /applications/{application}/checklist/{checklistItem}/toggle`
 
 **Database:**
-- `onboarding_checklist_items` table: `id`, `caregiver_id`, `item_key` (string), `completed_at` (nullable timestamp), `created_at`, `updated_at`
-- Seed 6 items per caregiver on `HiredOnboarding` transition
+- ✅ `onboarding_checklist_items` table with `caregiver_id`, `item_key`, `label`, `description`, `completed_at`
+- ✅ 6 items seeded on hire via `OnboardingChecklistItem::seedForCaregiver()`
 
 **Frontend — Admin:**
-- Checklist UI matching wireframe: 6 items (OnPay, BG check, CPR, Trustline, Dress code, Training quiz)
-- Each row: checkbox (completed) / radio (in-progress) / pending
-- "Complete Onboarding" button (disabled until all 6 checked)
-- Trustline countdown banner: 7-day timer, $140 reimbursement after 10 jobs within 6 months
-- Trustline reimbursement tracking table
-- CPR expiration with renewal reminders (90/60/30/7 day cadence)
+- ✅ Checklist panel in sidebar (hired_onboarding status only): 6 toggleable items with checkmark/line-through
+- ✅ "Complete Onboarding" action button
+- ❌ Trustline countdown banner — deferred (separate item)
+- ❌ Trustline reimbursement tracking table — deferred
+- ❌ CPR expiration renewal reminders — deferred
 
-**Email:**
-- Onboarding nudges: 48h, 7d, 14d reminders
-- 30d auto-revert to Inactive
-- Admin alert when onboarding stalls
+**Email (deferred — separate items):**
+- ❌ Onboarding nudges: 48h, 7d, 14d
+- ❌ 30d auto-revert to Inactive
+- ❌ Admin alert when onboarding stalls
 
-**OnPay handoff (§7.2):**
-- No API — admin manually sends OnPay invite
-- Checklist item #1: "OnPay setup complete" — admin ticks after onboarding
+**OnPay handoff:**
+- ✅ Checklist item #1: "OnPay Setup" — admin ticks after sending invite
 
 **Edge cases:**
-- Rehire: already-onboarded caregiver goes to Active, not Hired/Onboarding
-- Certification expirations during onboarding: show warning but don't block
+- ❌ Rehire edge case — deferred (low volume, handle when needed)
+- ❌ Certification expirations during onboarding: show warning — deferred
 
-### 6. Needs Attention widget + Applications Ready queue (§15.1, wireframe) — ✅ Completed
+### Medium #2 — Needs Attention widget + Applications Ready queue (§15.1, wireframe) — ✅ Completed
 
 #### Implementation
 
@@ -298,7 +284,7 @@ Removed duplicated status data (badge colors, labels, terminal list) from fronte
 |-------|-------|--------|
 | No-shows today | Placeholder (needs cancellation flow) | 0 |
 | Applications ready | Caregiver `Applicant` + submitted app + (≥2 refs OR 14d) | Live |
-| Onboarding stalled >7d | Active caregivers without agreements, created 7d+ ago | Live |
+| Onboarding stalled >7d | Hired/Onboarding caregivers, created 7d+ ago | Live |
 | Trustline suspended | Placeholder (needs Trustline feature) | 0 |
 | Compliance expired | Certifications past expiration (expires_required) | Live |
 | Compliance expiring | Certifications expiring this month | Live |
@@ -315,7 +301,7 @@ Removed duplicated status data (badge colors, labels, terminal list) from fronte
 
 **Wireframe:** Full design in "Admin Dashboard" screen — 8-queue widget with count badges.
 
-### 7. Self-service reference status for applicants — ✅ Completed
+### Medium #3 — Self-service reference status for applicants — ✅ Completed
 
 #### Implementation
 
@@ -347,7 +333,7 @@ Removed duplicated status data (badge colors, labels, terminal list) from fronte
 
 **Wireframe:** Not shown — designed from spec requirements.
 
-### 8. Interview evaluation form (§11.2–11.4, wireframe) — ✅ Completed
+### Medium #4 — Interview evaluation form (§11.2–11.4, wireframe) — ✅ Completed
 
 #### Implementation
 
@@ -373,7 +359,7 @@ Removed duplicated status data (badge colors, labels, terminal list) from fronte
 
 ## Low (future phases — add after core flow is solid)
 
-### 9. Admin caregiver profile tabs (§16.2, wireframe)
+### Low #1 — Admin caregiver profile tabs (§16.2, wireframe)
 Tabbed profile layout: Application, References, Reviews, Internal Rating, Engagement (wireframe calls this Job History), Compliance, Notes.
 
 **What to do:**
@@ -383,7 +369,7 @@ Tabbed profile layout: Application, References, Reviews, Internal Rating, Engage
 
 **Wireframe:** Full design in "Caregiver Assignments View" screen — profile header, 7 tabs, Job History table with resolution badges.
 
-### 11. Self-service hold/resume + inactivity automation (§14, wireframe)
+### Low #2 — Self-service hold/resume + inactivity automation (§14, wireframe)
 Caregiver self-service pause with optional return date and reason. One-tap resume. Inactivity check-ins and archive.
 
 **What to do:**
@@ -394,7 +380,7 @@ Caregiver self-service pause with optional return date and reason. One-tap resum
 
 **Wireframe:** Full design in "Pause Account" screen — hold card with form, callout explaining resume.
 
-### 12. Caregiver cancellation flow (§9, wireframe)
+### Low #3 — Caregiver cancellation flow (§9, wireframe)
 Modal with back-out warning, required reason, admin actions (excuse, reassign).
 
 **What to do:**
@@ -406,7 +392,7 @@ Modal with back-out warning, required reason, admin actions (excuse, reassign).
 
 **Wireframe:** Full design in "Cancellation Flow" screen — modal with job summary, warning, reason field, two actions. Also "Assignments View" table with resolution badges.
 
-### 13. Internal rating system (§11.5–11.8)
+### Low #4 — Internal rating system (§11.5–11.8)
 Communication score, reliability score, composite.
 
 **What to do:**
@@ -417,12 +403,12 @@ Communication score, reliability score, composite.
 
 **Wireframe:** Not shown — backend system feeding profile display.
 
-### 14. Client reviews & ratings (§8)
+### Low #5 — Client reviews & ratings (§8)
 Post-booking review trigger (2h email, 48h SMS), 14-day link, detailed rating form, admin trend dashboard.
 
 **Wireframe:** Not shown.
 
-### 15. Milestone view (§12, wireframe)
+### Low #6 — Milestone view (§12, wireframe)
 Caregiver-facing stats: total jobs, client rating, reliability % + peer comparison, job streak, Trustline reimbursement progress.
 
 **What to do:**
@@ -432,7 +418,7 @@ Caregiver-facing stats: total jobs, client rating, reliability % + peer comparis
 
 **Wireframe:** Full design in "Milestone View" screen — greeting banner + 5 stat cards.
 
-### 16. Job engagement metrics (§10), S2Verify (§13)
+### Low #7 — Job engagement metrics (§10), S2Verify (§13)
 Admin metrics dashboard (acceptance rate, response time, etc.), background check integration with S2Verify webhook.
 
 **Wireframe:** Not shown.

@@ -5,11 +5,12 @@ use App\Enums\CaregiverStatus;
 test('has all expected cases', function () {
     $cases = CaregiverStatus::cases();
 
-    expect($cases)->toHaveCount(11);
+    expect($cases)->toHaveCount(12);
     expect(CaregiverStatus::Applicant->value)->toBe('applicant');
     expect(CaregiverStatus::UnderReview->value)->toBe('under_review');
     expect(CaregiverStatus::InterviewScheduled->value)->toBe('interview_scheduled');
     expect(CaregiverStatus::BackgroundCheck->value)->toBe('background_check');
+    expect(CaregiverStatus::HiredOnboarding->value)->toBe('hired_onboarding');
     expect(CaregiverStatus::Active->value)->toBe('active');
     expect(CaregiverStatus::Inactive->value)->toBe('inactive');
     expect(CaregiverStatus::InProcess->value)->toBe('in_process');
@@ -24,6 +25,7 @@ test('returns correct labels', function () {
     expect(CaregiverStatus::UnderReview->label())->toBe('Under Review');
     expect(CaregiverStatus::InterviewScheduled->label())->toBe('Interview Scheduled');
     expect(CaregiverStatus::BackgroundCheck->label())->toBe('Background Check');
+    expect(CaregiverStatus::HiredOnboarding->label())->toBe('Hired / Onboarding');
     expect(CaregiverStatus::Active->label())->toBe('Active');
     expect(CaregiverStatus::Inactive->label())->toBe('Inactive');
     expect(CaregiverStatus::InProcess->label())->toBe('In Process');
@@ -46,7 +48,7 @@ test('returns terminal statuses', function () {
 test('toArray returns all statuses with correct structure', function () {
     $statuses = CaregiverStatus::toArray();
 
-    expect($statuses)->toHaveCount(11);
+    expect($statuses)->toHaveCount(12);
 
     foreach ($statuses as $item) {
         expect($item)->toHaveKeys(['value', 'label', 'color', 'is_terminal']);
@@ -68,6 +70,7 @@ test('returns hex colors', function () {
     expect(CaregiverStatus::UnderReview->color())->toBe('#F59E0B');
     expect(CaregiverStatus::InterviewScheduled->color())->toBe('#8B5CF6');
     expect(CaregiverStatus::BackgroundCheck->color())->toBe('#3B82F6');
+    expect(CaregiverStatus::HiredOnboarding->color())->toBe('#0EA5E9');
     expect(CaregiverStatus::Active->color())->toBe('#22C55E');
     expect(CaregiverStatus::Inactive->color())->toBe('#6B7280');
     expect(CaregiverStatus::InProcess->color())->toBe('#F59E0B');

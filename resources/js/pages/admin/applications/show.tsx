@@ -1,10 +1,23 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { calculateAgeFromDate } from '@/lib/age';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -72,13 +85,24 @@ interface CertificationInfo {
     expires_required: boolean;
     expiration_date: string | null;
     verified_at: string | null;
+    file_path: string | null;
+    file_url: string | null;
     notes: string | null;
+}
+
+interface ChecklistItemInfo {
+    id: number;
+    item_key: string;
+    label: string;
+    description: string | null;
+    completed_at: string | null;
 }
 
 interface Props {
     application: ApplicationInfo;
     references: ReferenceInfo[];
     certifications: CertificationInfo[];
+    checklistItems: ChecklistItemInfo[];
     caregiverStatuses: Array<{ value: string; label: string; color: string; is_terminal: boolean }>;
     [key: string]: unknown;
 }
@@ -112,6 +136,9 @@ function getActions(status: string, caregiverStatuses: Array<{ value: string; la
         case 'background_check':
             actions.push({ label: 'Hire', route: 'hire', color: 'default', confirm: 'Hire this caregiver?' });
             break;
+        case 'hired_onboarding':
+            actions.push({ label: 'Complete Onboarding', route: 'complete-onboarding', color: 'default', confirm: 'Complete onboarding and activate this caregiver?' });
+            break;
     }
 
     if (!current?.is_terminal) {
@@ -122,11 +149,15 @@ function getActions(status: string, caregiverStatuses: Array<{ value: string; la
 }
 
 export default function ApplicationShow() {
-    const { application, references, certifications, caregiverStatuses } = usePage<Props>().props;
+    const { application, references, certifications, checklistItems, caregiverStatuses } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [togglingItem, setTogglingItem] = useState<number | null>(null);
     const [declineNote, setDeclineNote] = useState('');
     const [showDeclineNote, setShowDeclineNote] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+        open: false, title: '', message: '', onConfirm: () => {},
+    });
 
     const data = application.data;
     const personal = data.personal || {};
@@ -138,26 +169,52 @@ export default function ApplicationShow() {
     const actions = getActions(status, caregiverStatuses);
 
     function handleResend(refId: number) {
-        if (!confirm('Resend this reference request email?')) {
-            return;
-        }
+        setConfirmDialog({
+            open: true,
+            title: 'Resend Reference Request',
+            message: 'Resend this reference request email?',
+            onConfirm: () => {
+                setConfirmDialog((prev) => ({ ...prev, open: false }));
+                setResending(refId);
+                router.post(
+                    `/applications/${application.id}/references/${refId}/resend`,
+                    {},
+                    { preserveScroll: true, onFinish: () => setResending(null) },
+                );
+            },
+        });
+    }
 
-        setResending(refId);
+    function handleToggleChecklistItem(itemId: number) {
+        setTogglingItem(itemId);
         router.post(
-            `/applications/${application.id}/references/${refId}/resend`,
+            `/applications/${application.id}/checklist/${itemId}/toggle`,
             {},
             {
                 preserveScroll: true,
-                onFinish: () => setResending(null),
+                onFinish: () => setTogglingItem(null),
             },
         );
     }
 
     function handleAction(action: Action) {
-        if (action.confirm && !confirm(action.confirm)) {
+        if (action.confirm) {
+            setConfirmDialog({
+                open: true,
+                title: 'Confirm Action',
+                message: action.confirm,
+                onConfirm: () => {
+                    setConfirmDialog((prev) => ({ ...prev, open: false }));
+                    executeAction(action);
+                },
+            });
             return;
         }
 
+        executeAction(action);
+    }
+
+    function executeAction(action: Action) {
         if (action.route === 'decline' && showDeclineNote) {
             setActionLoading(action.route);
             router.post(
@@ -630,6 +687,70 @@ export default function ApplicationShow() {
                         </div>
 
 
+                        {status === 'hired_onboarding' && checklistItems.length > 0 && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Onboarding Checklist
+                                </h2>
+                                <div className="space-y-3">
+                                    {checklistItems.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => handleToggleChecklistItem(item.id)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleToggleChecklistItem(item.id); }}
+                                            className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50 ${
+                                                togglingItem === item.id ? 'pointer-events-none opacity-60' : ''
+                                            }`}
+                                        >
+                                            <div
+                                                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                                                    item.completed_at
+                                                        ? 'border-green-500 bg-green-500 text-white'
+                                                        : 'border-border'
+                                                }`}
+                                            >
+                                                {item.completed_at && (
+                                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className={`text-sm font-medium ${item.completed_at ? 'text-green-600 line-through' : 'text-foreground'}`}>
+                                                        {item.label}
+                                                    </p>
+                                                    {item.description && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground hover:bg-foreground hover:text-background"
+                                                                >
+                                                                    ?
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                {item.description}
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                </div>
+                                                {item.completed_at && (
+                                                    <Badge className="mt-1 bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                                        Done · {format(new Date(item.completed_at), 'MMM d')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Certifications
@@ -654,6 +775,16 @@ export default function ApplicationShow() {
                                                     Expires: {format(new Date(cert.expiration_date), 'MMMM d, yyyy')}
                                                 </p>
                                             )}
+                                            {cert.file_url && (
+                                                <a
+                                                    href={cert.file_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-0.5 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                                >
+                                                    View Attachment
+                                                </a>
+                                            )}
                                         </div>
                                         {cert.verified_at ? (
                                             <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
@@ -671,6 +802,29 @@ export default function ApplicationShow() {
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{confirmDialog.title}</DialogTitle>
+                        <DialogDescription>{confirmDialog.message}</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={confirmDialog.onConfirm}>
+                            Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

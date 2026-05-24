@@ -193,9 +193,8 @@ class DashboardController extends Controller
                     [
                         'key' => 'onboarding_stalled',
                         'label' => 'Onboarding stalled > 7 days',
-                        'count' => Caregiver::where('status', CaregiverStatus::Active)
+                        'count' => Caregiver::where('status', CaregiverStatus::HiredOnboarding)
                             ->where('created_at', '<', now()->subDays(7))
-                            ->whereDoesntHave('agreements')
                             ->count(),
                         'href' => '/caregivers?filter=onboarding_stalled',
                         'variant' => 'warning',

@@ -52,7 +52,7 @@
         }
         .cta-button {
             display: inline-block;
-            background: #3b82f6;
+            background: #F48A91;
             color: #fff !important;
             padding: 14px 32px;
             border-radius: 8px;

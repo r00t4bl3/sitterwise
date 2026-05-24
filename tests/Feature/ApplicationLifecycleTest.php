@@ -4,6 +4,7 @@ use App\Enums\CaregiverStatus;
 use App\Mail\ApplicantDeclinedMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
+use App\Models\OnboardingChecklistItem;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
@@ -78,7 +79,7 @@ describe('Application lifecycle - forward transitions', function () {
         expect($this->caregiver->status)->toBe(CaregiverStatus::BackgroundCheck);
     });
 
-    it('hire moves Background Check to Active', function () {
+    it('hire moves Background Check to Hired Onboarding', function () {
         $this->caregiver->update(['status' => CaregiverStatus::BackgroundCheck]);
 
         actingAs($this->admin)
@@ -86,7 +87,17 @@ describe('Application lifecycle - forward transitions', function () {
             ->assertSessionHas('success');
 
         $this->caregiver->refresh();
-        expect($this->caregiver->status)->toBe(CaregiverStatus::Active);
+        expect($this->caregiver->status)->toBe(CaregiverStatus::HiredOnboarding);
+    });
+
+    it('hire seeds onboarding checklist items', function () {
+        $this->caregiver->update(['status' => CaregiverStatus::BackgroundCheck]);
+
+        actingAs($this->admin)
+            ->post(statusRoute('hire', $this->application))
+            ->assertSessionHas('success');
+
+        expect($this->caregiver->onboardingChecklistItems()->count())->toBe(6);
     });
 
     it('approve rejects non-Applicant status', function () {
@@ -112,6 +123,38 @@ describe('Application lifecycle - forward transitions', function () {
     it('hire rejects non-BackgroundCheck status', function () {
         actingAs($this->admin)
             ->post(statusRoute('hire', $this->application))
+            ->assertStatus(422);
+    });
+});
+
+describe('Application lifecycle - complete onboarding', function () {
+    it('complete-onboarding moves Hired Onboarding to Active', function () {
+        $this->caregiver->update(['status' => CaregiverStatus::HiredOnboarding]);
+        OnboardingChecklistItem::seedForCaregiver($this->caregiver);
+
+        // Complete all 6 items
+        $this->caregiver->onboardingChecklistItems()->update(['completed_at' => now()]);
+
+        actingAs($this->admin)
+            ->post(statusRoute('complete-onboarding', $this->application))
+            ->assertSessionHas('success');
+
+        $this->caregiver->refresh();
+        expect($this->caregiver->status)->toBe(CaregiverStatus::Active);
+    });
+
+    it('complete-onboarding rejects when items are pending', function () {
+        $this->caregiver->update(['status' => CaregiverStatus::HiredOnboarding]);
+        OnboardingChecklistItem::seedForCaregiver($this->caregiver);
+
+        actingAs($this->admin)
+            ->post(statusRoute('complete-onboarding', $this->application))
+            ->assertSessionHas('error');
+    });
+
+    it('complete-onboarding rejects non-HiredOnboarding status', function () {
+        actingAs($this->admin)
+            ->post(statusRoute('complete-onboarding', $this->application))
             ->assertStatus(422);
     });
 });

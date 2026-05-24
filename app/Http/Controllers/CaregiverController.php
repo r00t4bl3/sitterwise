@@ -130,6 +130,37 @@ class CaregiverController extends Controller
         return Inertia::render('admin/caregivers/show', [
             'caregiver' => (new CaregiverResource($caregiver))->resolve(),
             'statuses' => $statuses,
+            'reviews' => Inertia::defer(fn () => $caregiver->receivedRatings()
+                ->with(['rater', 'booking.client.user'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(fn ($r) => [
+                    'id' => $r->id,
+                    'rating' => (float) $r->rating,
+                    'comment' => $r->comment,
+                    'rater_name' => $r->rater?->name,
+                    'booking_service' => $r->booking?->service_type,
+                    'client_name' => $r->booking?->client?->user?->name,
+                    'created_at' => $r->created_at?->format('Y-m-d'),
+                ]),
+            ),
+            'recentJobs' => Inertia::defer(fn () => Booking::with(['client.user', 'hotel'])
+                ->where('caregiver_id', $caregiver->id)
+                ->orderBy('start_datetime', 'desc')
+                ->take(5)
+                ->get()
+                ->map(fn ($b) => [
+                    'id' => $b->id,
+                    'service_type' => $b->service_type,
+                    'service_type_label' => ServiceType::tryFrom($b->service_type)?->label() ?? $b->service_type,
+                    'status' => $b->status,
+                    'start_datetime' => $b->start_datetime?->format('Y-m-d\TH:i:s'),
+                    'end_datetime' => $b->end_datetime?->format('Y-m-d\TH:i:s'),
+                    'client_name' => $b->client?->user?->name,
+                    'hotel_name' => $b->hotel?->name,
+                    'total' => (float) ($b->paid_to_caregiver_total ?? 0),
+                ]),
+            ),
         ]);
     }
 

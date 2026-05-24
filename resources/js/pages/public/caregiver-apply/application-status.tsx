@@ -1,4 +1,5 @@
 import { Head, usePage, router } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,16 +16,25 @@ interface ReferenceRequest {
     submitted_at: string | null;
 }
 
+interface ChecklistItem {
+    id: number;
+    label: string;
+    description: string | null;
+    completed: boolean;
+    completed_at: string | null;
+}
+
 interface Props {
     status: { value: string; label: string; color: string };
     caregiver_name: string;
     reference_requests: ReferenceRequest[];
+    checklist_items?: ChecklistItem[];
     token: string;
     [key: string]: unknown;
 }
 
 export default function ApplicationStatus() {
-    const { status, caregiver_name, reference_requests, token } = usePage<Props>().props;
+    const { status, caregiver_name, reference_requests, checklist_items, token } = usePage<Props>().props;
     const [replacing, setReplacing] = useState<number | null>(null);
     const [form, setForm] = useState({ reference_name: '', reference_email: '', relationship: '' });
     const [submitting, setSubmitting] = useState(false);
@@ -90,6 +100,62 @@ export default function ApplicationStatus() {
                         </div>
                     </div>
 
+                    {checklist_items && checklist_items.length > 0 && (
+                        <div className="rounded-lg bg-white p-6 shadow">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Onboarding Checklist
+                            </h2>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Your admin will guide you through each item.
+                            </p>
+                            <div className="mt-4 space-y-3">
+                                {checklist_items.map((item) => {
+                                    const isCompleted = item.completed;
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className={`flex items-start gap-4 rounded-lg border p-4 ${
+                                                isCompleted
+                                                    ? 'border-green-200 bg-green-50'
+                                                    : 'border-gray-200 bg-white'
+                                            }`}
+                                        >
+                                            <div
+                                                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                                                    isCompleted
+                                                        ? 'border-green-500 bg-green-500 text-white'
+                                                        : 'border-gray-300 bg-gray-100 text-transparent'
+                                                }`}
+                                            >
+                                                {isCompleted ? '✓' : ''}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                    {item.label}
+                                                </p>
+                                                {item.description && (
+                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                        {item.description}
+                                                    </p>
+                                                )}
+                                                {item.completed_at && (
+                                                    <Badge className="mt-1.5 bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                                                        Done · {format(new Date(item.completed_at), 'MMM d')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-4 border-t border-gray-200 pt-4">
+                                <p className="text-xs text-gray-400">
+                                    {checklist_items.filter((i) => i.completed).length}/{checklist_items.length} completed
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="rounded-lg bg-white p-6 shadow">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-gray-900">
@@ -113,7 +179,7 @@ export default function ApplicationStatus() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium text-gray-900">
+                                                <span className="font-semibold text-sm text-gray-900">
                                                     {ref.reference_name}
                                                 </span>
                                                 {ref.is_sponsor && (
@@ -132,7 +198,7 @@ export default function ApplicationStatus() {
                                                     {ref.is_completed ? 'Completed' : 'Pending'}
                                                 </Badge>
                                             </div>
-                                            <p className="mt-1 text-sm text-gray-500">
+                                            <p className="mt-1 text-xs text-gray-500">
                                                 {ref.reference_email}
                                                 {ref.relationship && ` · ${ref.relationship}`}
                                             </p>
@@ -208,6 +274,13 @@ export default function ApplicationStatus() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="rounded-lg bg-teal-50 border border-teal-200 p-4 text-sm text-[#1B3A5C] leading-relaxed">
+                        <strong className="mb-1 block font-semibold">
+                            Need help?
+                        </strong>
+                        Reach out to <a href="mailto:hello@sitterwise.com" className="font-semibold text-[#F48A91]">hello@sitterwise.com</a> or text us at 619-663-4379 if anything's blocking you.
                     </div>
                 </div>
             </div>

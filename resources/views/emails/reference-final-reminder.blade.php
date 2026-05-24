@@ -9,7 +9,7 @@
         .header h1 { margin: 0 0 8px 0; font-size: 24px; color: #991b1b; }
         .header p { margin: 0; color: #b91c1c; }
         .content { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-        .cta-button { display: inline-block; background: #3b82f6; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; text-align: center; margin: 24px 0; }
+        .cta-button { display: inline-block; background: #F48A91; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; text-align: center; margin: 24px 0; }
         .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #666; }
     </style>
 </head>

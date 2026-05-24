@@ -10,8 +10,8 @@ use App\Mail\ReferenceRequestMail;
 use App\Models\AttributeDefinition;
 use App\Models\Caregiver;
 use App\Models\CaregiverAgreement;
-use App\Models\CertificationType;
 use App\Models\CaregiverApplication;
+use App\Models\CertificationType;
 use App\Models\IncompleteApplication;
 use App\Models\Location;
 use App\Models\ReferenceRequest;
@@ -455,6 +455,17 @@ class CaregiverApplicationController extends Controller
                 'submitted_at' => $ref->submitted_at,
             ]);
 
+        $checklistItems = $caregiver->onboardingChecklistItems()
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'label' => $item->label,
+                'description' => $item->description,
+                'completed' => $item->completed_at !== null,
+                'completed_at' => $item->completed_at?->format('Y-m-d H:i:s'),
+            ]);
+
         return Inertia::render('public/caregiver-apply/application-status', [
             'status' => [
                 'value' => $caregiver->status->value,
@@ -463,6 +474,7 @@ class CaregiverApplicationController extends Controller
             ],
             'caregiver_name' => $caregiver->first_name.' '.$caregiver->last_name,
             'reference_requests' => $referenceRequests,
+            'checklist_items' => $checklistItems,
             'token' => $token,
         ]);
     }

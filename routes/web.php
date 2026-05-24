@@ -151,6 +151,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('applications/{application}/schedule-interview', [ApplicationController::class, 'scheduleInterview'])->name('applications.schedule-interview');
         Route::post('applications/{application}/background-check', [ApplicationController::class, 'startBackgroundCheck'])->name('applications.background-check');
         Route::post('applications/{application}/hire', [ApplicationController::class, 'hire'])->name('applications.hire');
+        Route::post('applications/{application}/complete-onboarding', [ApplicationController::class, 'completeOnboarding'])->name('applications.complete-onboarding');
+        Route::post('applications/{application}/checklist/{checklistItem}/toggle', [ApplicationController::class, 'toggleChecklistItem'])->name('applications.checklist.toggle');
         Route::post('applications/{application}/decline', [ApplicationController::class, 'decline'])->name('applications.decline');
 
         // Interview evaluation

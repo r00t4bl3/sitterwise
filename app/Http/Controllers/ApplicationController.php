@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Enums\CaregiverStatus;
 use App\Http\Requests\ApplicationActionRequest;
 use App\Mail\ApplicantDeclinedMail;
+use App\Mail\ApplicantHiredMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\CaregiverApplication;
+use App\Models\OnboardingChecklistItem;
 use App\Models\ReferenceRequest;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -55,9 +59,22 @@ class ApplicationController extends Controller
                 'id' => $cert->id,
                 'name' => $cert->name,
                 'expires_required' => $cert->expires_required,
-                'expiration_date' => $cert->pivot->expiration_date ? \Carbon\Carbon::parse($cert->pivot->expiration_date)->format('Y-m-d') : null,
-                'verified_at' => $cert->pivot->verified_at ? \Carbon\Carbon::parse($cert->pivot->verified_at)->format('Y-m-d') : null,
+                'expiration_date' => $cert->pivot->expiration_date ? Carbon::parse($cert->pivot->expiration_date)->format('Y-m-d') : null,
+                'verified_at' => $cert->pivot->verified_at ? Carbon::parse($cert->pivot->verified_at)->format('Y-m-d') : null,
+                'file_path' => $cert->pivot->file_path,
+                'file_url' => $cert->pivot->file_path ? Storage::url($cert->pivot->file_path) : null,
                 'notes' => $cert->pivot->notes,
+            ]);
+
+        $checklistItems = $caregiver->onboardingChecklistItems()
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'item_key' => $item->item_key,
+                'label' => $item->label,
+                'description' => $item->description,
+                'completed_at' => $item->completed_at?->format('Y-m-d H:i:s'),
             ]);
 
         $references = $caregiver->referenceRequests()
@@ -101,6 +118,7 @@ class ApplicationController extends Controller
             ],
             'references' => $references,
             'certifications' => $certifications,
+            'checklistItems' => $checklistItems,
         ]);
     }
 
@@ -167,9 +185,67 @@ class ApplicationController extends Controller
 
         abort_if($caregiver->status !== CaregiverStatus::BackgroundCheck, 422, 'Background check must be completed before hiring.');
 
+        $caregiver->update(['status' => CaregiverStatus::HiredOnboarding]);
+
+        OnboardingChecklistItem::seedForCaregiver($caregiver);
+
+        $applicantName = $caregiver->first_name.' '.$caregiver->last_name;
+        $statusUrl = url('/caregiver/apply/status/'.$caregiver->status_token);
+
+        if ($caregiver->user) {
+            Mail::to($caregiver->user->email)->queue(
+                new ApplicantHiredMail($applicantName, $statusUrl),
+            );
+        }
+
+        return back()->with('success', 'Applicant hired! Onboarding checklist created.');
+    }
+
+    public function toggleChecklistItem(CaregiverApplication $application, OnboardingChecklistItem $checklistItem, ApplicationActionRequest $request)
+    {
+        abort_if($checklistItem->caregiver_id !== $application->caregiver_id, 404);
+
+        $isBeingChecked = $checklistItem->completed_at === null;
+
+        if ($isBeingChecked) {
+            $checklistItem->update(['completed_at' => now()]);
+        } else {
+            $checklistItem->update(['completed_at' => null]);
+        }
+
+        $caregiver = $application->caregiver;
+
+        $certificationMap = [
+            'cpr_uploaded' => 1,        // CPR & First Aid
+            'trustline_submitted' => 3, // Trustline
+        ];
+
+        if (isset($certificationMap[$checklistItem->item_key])) {
+            $caregiver->certifications()->updateExistingPivot($certificationMap[$checklistItem->item_key], [
+                'verified_at' => $isBeingChecked ? now() : null,
+            ]);
+        }
+
+        return back();
+    }
+
+    public function completeOnboarding(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if($caregiver->status !== CaregiverStatus::HiredOnboarding, 422, 'Onboarding must be in progress before completing.');
+
+        $incomplete = $caregiver->onboardingChecklistItems()
+            ->whereNull('completed_at')
+            ->count();
+
+        if ($incomplete > 0) {
+            return back()->with('error', "Cannot complete onboarding — {$incomplete} checklist item(s) still pending.");
+        }
+
         $caregiver->update(['status' => CaregiverStatus::Active]);
 
-        return back()->with('success', 'Applicant hired!');
+        return back()->with('success', 'Onboarding complete! Caregiver is now Active.');
     }
 
     public function decline(CaregiverApplication $application, ApplicationActionRequest $request)

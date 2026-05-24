@@ -8,6 +8,7 @@ enum CaregiverStatus: string
     case UnderReview = 'under_review';
     case InterviewScheduled = 'interview_scheduled';
     case BackgroundCheck = 'background_check';
+    case HiredOnboarding = 'hired_onboarding';
     case Active = 'active';
     case Inactive = 'inactive';
     case InProcess = 'in_process';
@@ -23,6 +24,7 @@ enum CaregiverStatus: string
             self::UnderReview => 'Under Review',
             self::InterviewScheduled => 'Interview Scheduled',
             self::BackgroundCheck => 'Background Check',
+            self::HiredOnboarding => 'Hired / Onboarding',
             self::Active => 'Active',
             self::Inactive => 'Inactive',
             self::InProcess => 'In Process',
@@ -40,6 +42,7 @@ enum CaregiverStatus: string
             self::UnderReview => '#F59E0B',
             self::InterviewScheduled => '#8B5CF6',
             self::BackgroundCheck => '#3B82F6',
+            self::HiredOnboarding => '#0EA5E9',
             self::Active => '#22C55E',
             self::Inactive => '#6B7280',
             self::InProcess => '#F59E0B',

@@ -1,6 +1,14 @@
 import { Head, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -39,6 +47,19 @@ const PROFESSIONALISM: Array<{ key: string; label: string; description: string }
 ];
 
 function HeartRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+    const [hovered, setHovered] = useState<number | null>(null);
+
+    const activeValue = hovered ?? value;
+
+    function heartColor(): string {
+        if (activeValue === 4) return 'text-green-500';
+        if (activeValue === 3) return 'text-blue-500';
+        if (activeValue === 2) return 'text-amber-400';
+        if (activeValue === 1) return 'text-red-400';
+
+        return 'text-gray-200';
+    }
+
     return (
         <div className="flex gap-0.5">
             {[1, 2, 3, 4].map((heart) => (
@@ -46,16 +67,10 @@ function HeartRating({ value, onChange }: { value: number; onChange: (v: number)
                     key={heart}
                     type="button"
                     onClick={() => onChange(heart)}
-                    className={`text-2xl leading-none transition-colors ${
-                        heart <= value
-                            ? heart === 4
-                                ? 'text-green-500'
-                                : heart === 3
-                                  ? 'text-blue-500'
-                                  : heart === 2
-                                    ? 'text-amber-400'
-                                    : 'text-red-400'
-                            : 'text-gray-200 hover:text-gray-300'
+                    onMouseEnter={() => setHovered(heart)}
+                    onMouseLeave={() => setHovered(null)}
+                    className={`cursor-pointer text-2xl leading-none transition-colors ${
+                        heart <= activeValue ? heartColor() : 'text-gray-200 hover:text-gray-300'
                     }`}
                 >
                     ♥
@@ -76,6 +91,9 @@ export default function InterviewEvaluate() {
     );
     const [notes, setNotes] = useState(existing?.notes ?? '');
     const [submitting, setSubmitting] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+        open: false, title: '', message: '', onConfirm: () => {},
+    });
 
     const allScores = [
         ...Object.values(scores.soft_skills),
@@ -249,9 +267,15 @@ export default function InterviewEvaluate() {
                             <Button
                                 variant="destructive"
                                 onClick={() => {
-                                    if (confirm('Decline this candidate? Their status will be set to Inactive.')) {
-                                        handleSave('declined');
-                                    }
+                                    setConfirmDialog({
+                                        open: true,
+                                        title: 'Decline Candidate',
+                                        message: 'Decline this candidate? Their status will be set to Inactive.',
+                                        onConfirm: () => {
+                                            setConfirmDialog((prev) => ({ ...prev, open: false }));
+                                            handleSave('declined');
+                                        },
+                                    });
                                 }}
                                 disabled={submitting}
                             >
@@ -259,9 +283,15 @@ export default function InterviewEvaluate() {
                             </Button>
                             <Button
                                 onClick={() => {
-                                    if (confirm('Save and advance this candidate to background check?')) {
-                                        handleSave('completed');
-                                    }
+                                    setConfirmDialog({
+                                        open: true,
+                                        title: 'Advance to Background Check',
+                                        message: 'Save and advance this candidate to background check?',
+                                        onConfirm: () => {
+                                            setConfirmDialog((prev) => ({ ...prev, open: false }));
+                                            handleSave('completed');
+                                        },
+                                    });
                                 }}
                                 disabled={submitting}
                             >
@@ -271,6 +301,29 @@ export default function InterviewEvaluate() {
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{confirmDialog.title}</DialogTitle>
+                        <DialogDescription>{confirmDialog.message}</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={confirmDialog.onConfirm}>
+                            Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
