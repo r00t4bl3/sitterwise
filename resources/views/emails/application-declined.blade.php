@@ -14,21 +14,19 @@
 </head>
 <body>
     <div class="header">
-        <h1>New Caregiver Application</h1>
-        <p>A new application has been submitted</p>
+        <h1>Application Update</h1>
+        <p>Thank you for your interest in joining Sitterwise</p>
     </div>
     <div class="content">
-        <p><strong>{{ $applicantName }}</strong> has submitted a caregiver application.</p>
-        <p><strong>Email:</strong> {{ $applicantEmail }}</p>
-        <p>Please log in to the admin dashboard to review the application and manage next steps.</p>
-        <div style="text-align: center; margin: 24px 0;">
-            <a href="{{ route('applications.show', $applicationId) }}" style="display: inline-block; background: #3b82f6; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-                Review Application
-            </a>
-        </div>
+        <p>Dear {{ $applicantName }},</p>
+        <p>Thank you for taking the time to apply to join the Sitterwise team. After careful review, we have decided not to move forward with your application at this time.</p>
+@if ($reason)
+        <p><strong>Reason:</strong> {{ $reason }}</p>
+@endif
+        <p>We appreciate your interest and wish you the best in your future endeavors.</p>
     </div>
     <div class="footer">
-        <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>
 </html>

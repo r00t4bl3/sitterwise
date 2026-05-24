@@ -1,5 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function VerifyEmail() {
     const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -49,11 +51,11 @@ export default function VerifyEmail() {
                             >
                                 Email address
                             </label>
-                            <input
+                            <Input
                                 id="email"
                                 type="email"
                                 required
-                                className="relative mt-1 block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-coral focus:ring-coral focus:outline-none sm:text-sm"
+                                className="w-full"
                                 placeholder="you@example.com"
                                 value={emailForm.data.email}
                                 onChange={(e) =>
@@ -67,15 +69,15 @@ export default function VerifyEmail() {
                             )}
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
                             disabled={emailForm.processing}
-                            className="group hover:bg-coral-dark relative flex w-full justify-center rounded-md border border-transparent bg-coral px-4 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:outline-none"
+                            className="w-full"
                         >
                             {emailForm.processing
                                 ? 'Sending...'
                                 : 'Send Verification Code'}
-                        </button>
+                        </Button>
 
                         {emailForm.recentlySuccessful && (
                             <p className="text-center text-sm text-green-600">
@@ -92,12 +94,12 @@ export default function VerifyEmail() {
                             >
                                 Verification Code
                             </label>
-                            <input
+                            <Input
                                 id="otp"
                                 type="text"
                                 required
                                 maxLength={6}
-                                className="relative mt-1 block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-center text-2xl tracking-widest text-gray-900 placeholder-gray-500 focus:border-coral focus:ring-coral focus:outline-none sm:text-sm"
+                                className="w-full text-center tracking-widest text-lg"
                                 placeholder="000000"
                                 value={otpForm.data.otp}
                                 onChange={(e) =>
@@ -111,23 +113,24 @@ export default function VerifyEmail() {
                             )}
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
                             disabled={otpForm.processing}
-                            className="group hover:bg-coral-dark relative flex w-full justify-center rounded-md border border-transparent bg-coral px-4 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:outline-none"
+                            className="w-full"
                         >
                             {otpForm.processing
                                 ? 'Verifying...'
                                 : 'Verify & Continue'}
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                             type="button"
                             onClick={() => setStep('email')}
-                            className="hover:text-coral-dark w-full text-sm text-coral"
+                            variant="ghost"
+                            className="w-full"
                         >
                             ← Back to email
-                        </button>
+                        </Button>
                     </form>
                 )}
             </div>

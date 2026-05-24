@@ -3,35 +3,37 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ApplicantConfirmationMail extends Mailable
+class ApplicantResumeApplicationMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public string $applicantName,
-        public string $statusToken,
+        public string $email,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Your Sitterwise Application Has Been Received',
+            subject: 'Come back to your Sitterwise application',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.applicant-confirmation',
-            with: [
-                'statusUrl' => url('/caregiver/apply/status/'.$this->statusToken),
-            ],
+            view: 'emails.resume-application',
         );
+    }
+
+    public function attachments(): array
+    {
+        return [];
     }
 }

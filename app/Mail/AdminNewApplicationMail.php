@@ -15,6 +15,7 @@ class AdminNewApplicationMail extends Mailable
     public function __construct(
         public string $applicantName,
         public string $applicantEmail,
+        public int $applicationId,
     ) {}
 
     public function envelope(): Envelope

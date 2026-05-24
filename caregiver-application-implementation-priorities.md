@@ -31,6 +31,56 @@ Admin specialty/location/education/attribute sections now populate immediately o
 ### Wizard Steps 4 cleanup
 Removed `skills.*` fields (special_needs, swimming, driving, bilingual, other) from wizard — they overlapped with Step 7 qualifications. Validation rules and `defaultFormData` updated accordingly.
 
+## Caregiver Lifecycle Flow
+
+```mermaid
+flowchart LR
+    A[Applicant] -->|approve| B[Under Review]
+    B -->|scheduleInterview| C[Interview Scheduled]
+    C -->|startBackgroundCheck| D[Background Check]
+    D -->|hire| E[Hired / Onboarding]
+    E -->|completeOnboarding| F[Active]
+    A -->|decline| I[Inactive]
+    B -->|decline| I
+    C -->|decline| I
+    D -->|decline| I
+    E -->|decline| I
+
+    F -.->|inactivity 45d+| I
+    I -.->|admin re-activate| F
+    F -->|admin action| G[Fired]
+    F -->|admin action| H[On Hold]
+    H -->|self-service resume| F
+
+    style A fill:#F48A91,color:#fff
+    style B fill:#F59E0B,color:#fff
+    style C fill:#8B5CF6,color:#fff
+    style D fill:#3B82F6,color:#fff
+    style E fill:#0EA5E9,color:#fff
+    style F fill:#22C55E,color:#fff
+    style G fill:#DC2626,color:#fff
+    style H fill:#8B5CF6,color:#fff
+    style I fill:#6B7280,color:#fff
+```
+
+**Onboarding barrier** (blocks `Hired/Onboarding → Active`):
+
+```
+┌──────────────────────────────────────────────┐
+│          Onboarding Checklist                 │
+├──────────────────────────────────────────────┤
+│ ☐ OnPay setup complete (admin emails self)   │
+│ ☐ Background check clear                     │
+│ ☐ CPR uploaded and valid                     │
+│ ☐ Trustline submitted                        │
+│ ☐ Dress code acknowledged                    │
+│ ☐ Training quiz passed                       │
+├──────────────────────────────────────────────┤
+│ ➜ All 6 done → completeOnboarding → Active   │
+│ ➜ >30d stalled → auto-revert to Inactive     │
+└──────────────────────────────────────────────┘
+```
+
 ## High (foundational — fix existing gaps, complete Phase 1-2 core)
 
 ### 3. Stalled application nudges (§4.1) — ✅ Completed
@@ -44,12 +94,12 @@ Removed `skills.*` fields (special_needs, swimming, driving, bilingual, other) f
 - `CaregiverApplicationController@submit()` deletes tracking record on successful submission
 
 **Commands:**
-- `app:nudge-incomplete-applications` — sends `ResumeApplicationMail` at 48h (nudge_count 0→1), sends `FinalReminderMail` at 7d (nudge_count 1→2)
+- `app:nudge-incomplete-applications` — sends `ApplicantResumeApplicationMail` at 48h (nudge_count 0→1), sends `ApplicantFinalReminderMail` at 7d (nudge_count 1→2)
 - `app:archive-stalled-applications` — sets `archived_at` at 14d, hard-deletes at 90d
 
 **Mailables + Templates:**
-- `app/Mail/ResumeApplicationMail.php` → `resources/views/emails/resume-application.blade.php`
-- `app/Mail/FinalReminderMail.php` → `resources/views/emails/final-reminder.blade.php`
+- `app/Mail/ApplicantResumeApplicationMail.php` → `resources/views/emails/resume-application.blade.php`
+- `app/Mail/ApplicantFinalReminderMail.php` → `resources/views/emails/final-reminder.blade.php`
 - Both queued, following existing project email patterns
 
 **Scheduling:**
@@ -65,8 +115,8 @@ Removed `skills.*` fields (special_needs, swimming, driving, bilingual, other) f
 | `database/migrations/..._create_incomplete_applications_table.php` | Created |
 | `app/Console/Commands/NudgeIncompleteApplications.php` | Implemented handle() |
 | `app/Console/Commands/ArchiveStalledApplications.php` | Implemented handle() |
-| `app/Mail/ResumeApplicationMail.php` | Implemented |
-| `app/Mail/FinalReminderMail.php` | Implemented |
+| `app/Mail/ApplicantResumeApplicationMail.php` | Implemented |
+| `app/Mail/ApplicantFinalReminderMail.php` | Implemented |
 | `resources/views/emails/resume-application.blade.php` | Created |
 | `resources/views/emails/final-reminder.blade.php` | Created |
 | `routes/console.php` | Added scheduling |
@@ -78,56 +128,246 @@ Removed `skills.*` fields (special_needs, swimming, driving, bilingual, other) f
 
 ## Medium (complete the pipeline — reference lifecycle, admin workflow)
 
-### 4. Reference nudges (§5.5)
-Reminders boost completion rates. Currently no proactive follow-up.
+### 4. Reference nudges (§5.5) — ✅ Completed
 
-**What to do:**
-- Reference-side: Artisan command sends reminders at day 2 and day 5 after creation
-- Applicant-side: Artisan command sends prompts at day 3, 7, and auto-moves to "Stalled — references incomplete" at day 14
-- Existing `ReferenceRequest` already tracks `created_at` — no schema changes needed
+#### Implementation
+
+**Command:** `app:nudge-pending-references {--reference-side} {--applicant-side}`
+- No flag = runs both sides
+
+**Reference-side nudges:**
+- Day 2–4: sends `ReferenceReminderMail` to pending references
+- Day 5+: sends `ReferenceFinalReminderMail` to pending references
+- Uses `created_at` with date windows — no schema changes needed
+
+**Applicant-side nudges:**
+- Day 3–6: sends `ApplicantPendingReferencesMail` (similar tone to first reminder)
+- Day 7–13: sends same mail with stronger wording ("over a week")
+- Day 14+: sets caregiver status to `Inactive` (stalled)
+
+**Files created:**
+
+| File | Action |
+|------|--------|
+| `app/Console/Commands/NudgePendingReferences.php` | Created |
+| `app/Mail/ReferenceReminderMail.php` | Created |
+| `app/Mail/ReferenceFinalReminderMail.php` | Created |
+| `app/Mail/ApplicantPendingReferencesMail.php` | Created |
+| `resources/views/emails/reference-reminder.blade.php` | Created |
+| `resources/views/emails/reference-final-reminder.blade.php` | Created |
+| `resources/views/emails/applicant-pending-references.blade.php` | Created |
+| `routes/console.php` | Added scheduling (daily at 9am) |
+| `tests/Feature/ReferenceNudgeTest.php` | Created (12 tests) |
+
+**Tests:** 12 tests covering: first/final reminder delivery, skip completed/too-recent/archived, applicant prompts at day 3/7/14, cross-flag isolation, combined mode.
 
 **Wireframe:** Not shown — backend scheduled commands.
 
-### 5. Application lifecycle workflow
-Statuses exist as enums but admin cannot move caregivers through the pipeline.
+### 5. Application lifecycle workflow — ✅ Completed (needs Hired/Onboarding gap)
 
-**What to do:**
-- Add approve/decline/schedule-interview actions to `ApplicationController`
-- Status transitions: Applicant → Under Review → Interview Scheduled → Background Check → Hired
-- Inertia page updates to `applications/show.tsx` (action buttons)
-- Decline flow: notification to applicant, status → Inactive
+#### Current Implementation
+
+**Enum status transitions (as implemented):**
+- `Applicant` → approve() → `UnderReview`
+- `UnderReview` → scheduleInterview() → `InterviewScheduled`
+- `InterviewScheduled` → startBackgroundCheck() → `BackgroundCheck`
+- `BackgroundCheck` → hire() → ~~`Active`~~ **BUG: should be `Hired/Onboarding`**
+
+**New enum values added to `CaregiverStatus`:**
+- `UnderReview` ("Under Review", color `#F59E0B`)
+- `InterviewScheduled` ("Interview Scheduled", color `#8B5CF6`)
+- `BackgroundCheck` ("Background Check", color `#3B82F6`)
+- New `terminal()` helper returning [Active, Inactive, NonStarter, Fired, Ineligible, OnHold]
+- **Gap:** `Hired/Onboarding` status not yet added to enum. `hire()` currently jumps to `Active` — must transition to `Hired/Onboarding` instead. Onboarding checklist (#10) gates the `Hired/Onboarding → Active` transition.
+
+**Backend:**
+- `ApplicationController` gained 5 action methods: `approve()`, `scheduleInterview()`, `startBackgroundCheck()`, `hire()`, `decline()`
+- Each validates current status and rejects invalid transitions with 422
+- `ApplicationActionRequest` validates admin authorization and optional decline note
+- `ApplicantDeclinedMail` + template sends decline notification to applicant with optional reason
+- All routes added under admin middleware
+
+**Frontend — `applications/show.tsx`:**
+- New "Status" sidebar card with colored badge and pipeline action buttons
+- Buttons conditionally rendered per current status (only valid forward transitions shown)
+- "Decline" always available on non-terminal states
+- Optional "Add reason" textarea for decline (toggleable)
+- Confirmation dialog before each action
+- Loading/disabled state during requests
+
+**Frontend — `applications/index.tsx`:**
+- New "Status" column with colored badge per application
+- Status filter dropdown (`?status=` query param)
+- Controller reads filter and scopes query by caregiver status
+
+**Files created/modified:**
+
+| File | Action |
+|------|--------|
+| `app/Enums/CaregiverStatus.php` | Added UnderReview, InterviewScheduled, BackgroundCheck + terminal() |
+| `app/Http/Controllers/ApplicationController.php` | Added 5 action methods + status filter in index() |
+| `app/Http/Requests/ApplicationActionRequest.php` | Created |
+| `app/Mail/ApplicantDeclinedMail.php` | Created |
+| `resources/views/emails/application-declined.blade.php` | Created |
+| `routes/web.php` | Added 5 admin routes |
+| `resources/js/pages/applications/show.tsx` | Added pipeline action card + status badge |
+| `resources/js/pages/applications/index.tsx` | Added status column + filter |
+| `tests/Unit/Models/CaregiverStatusTest.php` | Updated for new cases + terminal() test |
+| `tests/Feature/ApplicationLifecycleTest.php` | Created (15 tests) |
+
+**Tests:** 15 tests covering all forward transitions, invalid transition rejections, decline from multiple statuses, decline email with note, terminal status rejection, admin authorization, and status filter.
 
 **Wireframe:** Implied by interview eval "Save & advance to background check" button. No dedicated screen.
 
-### 6. Needs Attention widget + Applications Ready queue (§15.1, wireframe)
-Single dashboard widget surfacing 8 queues: no-shows, apps ready, onboarding stalled, Trustline suspended, compliance expired/expiring, inactive 45d+, stuck references.
+#### Gap: `hire()` skips directly to Active
 
-**What to do:**
-- Backend: aggregate all 8 queue counts in `DashboardController@index`
-- Frontend: single card component with rows (icon + label + count + arrow link)
-- Each row links to a filtered list view (e.g., `/applications?filter=ready`)
-- Applications Ready row: app complete + (≥2 references complete OR 14 days passed) + no auto-disqualifiers
+Current code:
+```php
+$caregiver->update(['status' => CaregiverStatus::Active]);
+```
+
+Should be:
+```php
+$caregiver->update(['status' => CaregiverStatus::HiredOnboarding]);
+```
+
+Requires adding `HiredOnboarding` enum case + `completeOnboarding()` action for `HiredOnboarding → Active` transition (gated by onboarding checklist, see #10).
+
+#### Refactor: Drive status badge metadata from backend enum
+
+Removed duplicated status data (badge colors, labels, terminal list) from frontend components by sharing `CaregiverStatus::toArray()` globally via Inertia.
+
+**Changes:**
+- `app/Enums/CaregiverStatus.php` — Added `toArray()` returning all 11 cases with `value`, `label`, `color`, `is_terminal`
+- `app/Http/Middleware/HandleInertiaRequests.php` — Shared `caregiverStatuses` globally
+- `resources/js/types/global.d.ts` — Added `CaregiverStatusOption` type
+- `resources/js/pages/applications/index.tsx` — Removed hardcoded `statusBadgeColors` and `statusOptions`; filter dropdown and badge colors now driven from shared props with inline styles
+- `resources/js/pages/applications/show.tsx` — Removed hardcoded `TERMINAL_STATUSES` and `statusBadgeColors`; `getActions()` receives shared array and checks `is_terminal` instead; badges use inline styles from shared color
+- `tests/Unit/Models/CaregiverStatusTest.php` — Added test for `toArray()` structure (all 11 entries, terminal subset verified)
+
+**Impact:** Single source of truth for all status metadata on both backend and frontend.
+
+### 10. Onboarding checklist + Trustline/CPR tracking (§7, wireframe) — 🔜 Next (High)
+
+**Pipeline dependency:** `hire()` must transition to `Hired/Onboarding` (not `Active`). This checklist gates the `Hired/Onboarding → Active` transition. Without it, `hire()` is incomplete.
+
+**Implementation:**
+
+**Enum:**
+- Add `CaregiverStatus::HiredOnboarding = 'hired_onboarding'` with label "Hired / Onboarding", color `#0EA5E9`
+- Add to `terminal()` helper
+
+**Controller:**
+- `ApplicationController@hire()` transitions to `HiredOnboarding` instead of `Active`
+- New `ApplicationController@completeOnboarding()` validates all 6 checklist items complete, transitions to `Active`
+- New route: `POST /applications/{application}/complete-onboarding`
+
+**Database:**
+- `onboarding_checklist_items` table: `id`, `caregiver_id`, `item_key` (string), `completed_at` (nullable timestamp), `created_at`, `updated_at`
+- Seed 6 items per caregiver on `HiredOnboarding` transition
+
+**Frontend — Admin:**
+- Checklist UI matching wireframe: 6 items (OnPay, BG check, CPR, Trustline, Dress code, Training quiz)
+- Each row: checkbox (completed) / radio (in-progress) / pending
+- "Complete Onboarding" button (disabled until all 6 checked)
+- Trustline countdown banner: 7-day timer, $140 reimbursement after 10 jobs within 6 months
+- Trustline reimbursement tracking table
+- CPR expiration with renewal reminders (90/60/30/7 day cadence)
+
+**Email:**
+- Onboarding nudges: 48h, 7d, 14d reminders
+- 30d auto-revert to Inactive
+- Admin alert when onboarding stalls
+
+**OnPay handoff (§7.2):**
+- No API — admin manually sends OnPay invite
+- Checklist item #1: "OnPay setup complete" — admin ticks after onboarding
+
+**Edge cases:**
+- Rehire: already-onboarded caregiver goes to Active, not Hired/Onboarding
+- Certification expirations during onboarding: show warning but don't block
+
+### 6. Needs Attention widget + Applications Ready queue (§15.1, wireframe) — ✅ Completed
+
+#### Implementation
+
+**Backend — `DashboardController@index`:**
+- Added `needsAttention` array to `$adminData` with all 8 queue counts
+
+| Queue | Logic | Status |
+|-------|-------|--------|
+| No-shows today | Placeholder (needs cancellation flow) | 0 |
+| Applications ready | Caregiver `Applicant` + submitted app + (≥2 refs OR 14d) | Live |
+| Onboarding stalled >7d | Active caregivers without agreements, created 7d+ ago | Live |
+| Trustline suspended | Placeholder (needs Trustline feature) | 0 |
+| Compliance expired | Certifications past expiration (expires_required) | Live |
+| Compliance expiring | Certifications expiring this month | Live |
+| Inactive 45+ days | Inactive status + updated_at > 45d ago | Live |
+| Stuck references | Pending refs created 7d+ ago | Live |
+
+**Frontend — `dashboard/admin.tsx`:**
+- New "Needs Attention" card placed between summary panels and two-column layout
+- Each row: emoji icon + label + color-coded count badge (urgent/warning/default) + chevron
+- Zero-count queues shown muted as placeholders for future features
+- Total count pill in card header
+
+**Files modified:** `app/Http/Controllers/DashboardController.php`, `resources/js/pages/dashboard/admin.tsx`
 
 **Wireframe:** Full design in "Admin Dashboard" screen — 8-queue widget with count badges.
 
-### 7. Self-service reference status for applicants
-Applicant portal to track reference responses and replace non-responders.
+### 7. Self-service reference status for applicants — ✅ Completed
 
-**What to do:**
-- Applicant-facing API endpoint returning reference statuses
-- Inertia page showing who responded, who hasn't
-- Replace reference flow (delete old + re-send with new name/email)
+#### Implementation
 
-**Wireframe:** Not shown.
+**Token-based access:**
+- Migration: added `status_token` (nullable unique string) to `caregivers` table
+- `CaregiverApplicationController@submit()` generates a 32-char `status_token` on caregiver creation
+- Public route: `GET /caregiver/apply/status/{token}` — no auth required, token-based
+- Replace route: `POST /caregiver/apply/status/{token}/replace-reference/{referenceRequest}`
 
-### 8. Interview evaluation form (§11.2–11.4, wireframe)
-4-heart scale × 9 dimensions (6 soft skills + 3 professionalism), 36-point composite, required notes.
+**Frontend — `public/caregiver-apply/application-status.tsx`:**
+- Shows application status badge (color-coded from shared `caregiverStatuses`)
+- Lists all references with completed/pending badges
+- "Replace" button on pending references opens inline form (name, email, relationship)
+- "Save & Re-send" deletes old response data, resets token, and re-queues `ReferenceRequestMail`
 
-**What to do:**
-- Migration: `caregiver_interviews` table (caregiver_id, evaluator_id, scores JSON, notes, composite, evaluated_at)
-- Backend: `InterviewController`, `StoreInterviewEvaluationRequest`
-- Frontend: Inertia form matching wireframe exactly — heart selectors for each dimension, auto-calculated composite, required notes, Save draft / Decline / Save & advance buttons
-- Dashboard integration: needs to hook into Application lifecycle (status → Interview Scheduled)
+**Email integration:**
+- `ApplicantConfirmationMail` now accepts `$statusToken` and renders a "Track Your Application Status" button in the email body
+
+**Files created/modified:**
+| File | Action |
+|------|--------|
+| `database/migrations/2026_05_24_112710_add_status_token_to_caregivers.php` | Created |
+| `app/Models/Caregiver.php` | Added `status_token` to fillable |
+| `app/Http/Controllers/CaregiverApplicationController.php` | Added `showStatus()`, `replaceReference()`, token generation in `submit()` |
+| `app/Mail/ApplicantConfirmationMail.php` | Added `$statusToken` param, `$statusUrl` to view |
+| `resources/views/emails/applicant-confirmation.blade.php` | Added status tracking button + link |
+| `resources/js/pages/public/caregiver-apply/application-status.tsx` | Created |
+| `routes/web.php` | Added 2 public routes |
+
+**Wireframe:** Not shown — designed from spec requirements.
+
+### 8. Interview evaluation form (§11.2–11.4, wireframe) — ✅ Completed
+
+#### Implementation
+
+| Component | Details |
+|-----------|---------|
+| **Migration** | `caregiver_interviews` table — caregiver_id, evaluator_id, application_id, scores (JSON), composite (0-36), notes (text), status (draft/declined/completed), evaluated_at |
+| **Model** | `CaregiverInterview` with casts for scores/array and composite/int, relationships to caregiver/evaluator/application |
+| **Controller** | `InterviewController` with `create()` (shows form) and `store()` (saves evaluation) |
+| **Validation** | `StoreInterviewEvaluationRequest` — 9 dimension scores (1-4 each), required notes, status enforcement |
+| **Lifecycle hook** | `store()` transitions caregiver status: `completed` → `BackgroundCheck`, `declined` → `Inactive` |
+| **Frontend** | `admin/interviews/evaluate.tsx` — matches wireframe exactly: candidate header, 4-heart scale legend, 6 soft skills + 3 professionalism rows with heart selectors, auto-calculated composite (X/36 + %), required notes textarea, 3 action buttons (Save draft, Decline candidate, Save & advance) |
+| **Application show** | "Evaluate Interview" link appears in sidebar when status is `interview_scheduled` |
+| **Routes** | `GET/POST /applications/{application}/interview` (admin middleware) |
+
+**Files created:**
+- `database/migrations/2026_05_24_113004_create_caregiver_interviews_table.php`
+- `app/Models/CaregiverInterview.php`
+- `app/Http/Controllers/InterviewController.php`
+- `app/Http/Requests/StoreInterviewEvaluationRequest.php`
+- `resources/js/pages/admin/interviews/evaluate.tsx`
 
 **Wireframe:** Full design in "Interview Evaluation" screen — candidate context header, legend, 9 dimension rows, composite bar, notes, 3 action buttons.
 
@@ -142,18 +382,6 @@ Tabbed profile layout: Application, References, Reviews, Internal Rating, Engage
 - Job History tab shows assignment-based table (wireframe "Assignments View")
 
 **Wireframe:** Full design in "Caregiver Assignments View" screen — profile header, 7 tabs, Job History table with resolution badges.
-
-### 10. Onboarding checklist + Trustline/CPR tracking (§7, wireframe)
-Post-hire onboarding flow with 6-item checklist, Trustline 7-day countdown, CPR expiration.
-
-**What to do:**
-- Checklist UI matching wireframe: 6 items (OnPay, BG check, CPR, Trustline, Dress code, Training quiz) with done/in-progress/pending states
-- Trustline countdown banner: 7-day timer, $140 reimbursement after 10 jobs within 6 months
-- Trustline reimbursement tracking (jobs toward 10, days toward 6 months, forfeiture logic)
-- CPR expiration with renewal reminders (90/60/30/7 day cadence)
-- Onboarding nudges (48h, 7d, 14d, 30d auto-revert to Inactive)
-
-**Wireframe:** Full design in "Onboarding Checklist" screen — countdown banner + 6-item checklist with status indicators and meta pills.
 
 ### 11. Self-service hold/resume + inactivity automation (§14, wireframe)
 Caregiver self-service pause with optional return date and reason. One-tap resume. Inactivity check-ins and archive.

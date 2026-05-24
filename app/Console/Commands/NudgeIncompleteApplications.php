@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Mail\FinalReminderMail;
-use App\Mail\ResumeApplicationMail;
+use App\Mail\ApplicantFinalReminderMail;
+use App\Mail\ApplicantResumeApplicationMail;
 use App\Models\IncompleteApplication;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -23,7 +23,7 @@ class NudgeIncompleteApplications extends Command
 
         foreach ($resumeCandidates as $incomplete) {
             Mail::to($incomplete->email)->queue(
-                new ResumeApplicationMail($incomplete->email),
+                new ApplicantResumeApplicationMail($incomplete->email),
             );
 
             $incomplete->update([
@@ -42,7 +42,7 @@ class NudgeIncompleteApplications extends Command
 
         foreach ($finalCandidates as $incomplete) {
             Mail::to($incomplete->email)->queue(
-                new FinalReminderMail($incomplete->email),
+                new ApplicantFinalReminderMail($incomplete->email),
             );
 
             $incomplete->update([

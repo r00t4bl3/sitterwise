@@ -169,6 +169,84 @@ class DashboardController extends Controller
                 'stuckReferencesCount' => ReferenceRequest::pending()
                     ->where('created_at', '<', now()->subDays(7))
                     ->count(),
+                'needsAttention' => [
+                    [
+                        'key' => 'no_shows',
+                        'label' => 'No-shows logged today',
+                        'count' => 0,
+                        'href' => '/bookings?filter=no_show',
+                        'variant' => 'urgent',
+                    ],
+                    [
+                        'key' => 'applications_ready',
+                        'label' => 'Applications ready to review',
+                        'count' => Caregiver::where('status', CaregiverStatus::Applicant)
+                            ->whereHas('applications', fn ($q) => $q->whereNotNull('submitted_at'))
+                            ->where(function ($q) {
+                                $q->whereHas('referenceRequests', fn ($q) => $q->completed(), '>=', 2)
+                                    ->orWhereHas('applications', fn ($q) => $q->where('submitted_at', '<', now()->subDays(14)));
+                            })
+                            ->count(),
+                        'href' => '/applications',
+                        'variant' => 'default',
+                    ],
+                    [
+                        'key' => 'onboarding_stalled',
+                        'label' => 'Onboarding stalled > 7 days',
+                        'count' => Caregiver::where('status', CaregiverStatus::Active)
+                            ->where('created_at', '<', now()->subDays(7))
+                            ->whereDoesntHave('agreements')
+                            ->count(),
+                        'href' => '/caregivers?filter=onboarding_stalled',
+                        'variant' => 'warning',
+                    ],
+                    [
+                        'key' => 'trustline_suspended',
+                        'label' => 'Suspended for missed Trustline submission',
+                        'count' => 0,
+                        'href' => '/caregivers?filter=trustline_suspended',
+                        'variant' => 'warning',
+                    ],
+                    [
+                        'key' => 'compliance_expired',
+                        'label' => 'Compliance currently expired (blocked)',
+                        'count' => Caregiver::whereHas('certifications', function ($q) {
+                            $q->where('certification_types.expires_required', true)
+                                ->where('caregiver_certifications.expiration_date', '<', now());
+                        })->count(),
+                        'href' => '/caregivers?filter=compliance_expired',
+                        'variant' => 'default',
+                    ],
+                    [
+                        'key' => 'compliance_expiring',
+                        'label' => 'Compliance expiring this month',
+                        'count' => Caregiver::whereHas('certifications', function ($q) {
+                            $q->where('certification_types.expires_required', true)
+                                ->where('caregiver_certifications.expiration_date', '>=', now()->startOfMonth())
+                                ->where('caregiver_certifications.expiration_date', '<=', now()->endOfMonth());
+                        })->count(),
+                        'href' => '/caregivers?filter=compliance_expiring',
+                        'variant' => 'warning',
+                    ],
+                    [
+                        'key' => 'inactive_45',
+                        'label' => 'Caregivers inactive 45+ days',
+                        'count' => Caregiver::where('status', CaregiverStatus::Inactive)
+                            ->where('updated_at', '<', now()->subDays(45))
+                            ->count(),
+                        'href' => '/caregivers?filter=inactive_45',
+                        'variant' => 'default',
+                    ],
+                    [
+                        'key' => 'stuck_references',
+                        'label' => 'References stuck (Day 7+ no response)',
+                        'count' => ReferenceRequest::pending()
+                            ->where('created_at', '<', now()->subDays(7))
+                            ->count(),
+                        'href' => '/applications?filter=stuck_references',
+                        'variant' => 'default',
+                    ],
+                ],
             ];
         }
 

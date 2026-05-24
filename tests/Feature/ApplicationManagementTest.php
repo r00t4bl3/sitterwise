@@ -96,7 +96,7 @@ describe('Application Management - Index', function () {
         $response = $this->get('/applications');
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('applications/index')
+            ->component('admin/applications/index')
             ->has('applications.data', 1)
         );
     });
@@ -110,7 +110,7 @@ describe('Application Management - Index', function () {
         $response = $this->get('/applications');
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('applications/index')
+            ->component('admin/applications/index')
         );
     });
 
@@ -142,7 +142,7 @@ describe('Application Management - Show', function () {
         $response = $this->get("/applications/{$data['application']->id}");
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('applications/show')
+            ->component('admin/applications/show')
             ->has('references', 2)
         );
     });

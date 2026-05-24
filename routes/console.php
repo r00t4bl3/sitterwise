@@ -16,3 +16,6 @@ Schedule::command('app:nudge-incomplete-applications')->everySixHours();
 
 // Archive stalled applications daily
 Schedule::command('app:archive-stalled-applications')->daily();
+
+// Nudge pending references daily at 9am
+Schedule::command('app:nudge-pending-references')->dailyAt('09:00');

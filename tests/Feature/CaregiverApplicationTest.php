@@ -378,7 +378,9 @@ describe('Caregiver Application - Submission', function () {
 
         // Admin notification
         Mail::assertQueued(AdminNewApplicationMail::class, function ($mail) {
-            return $mail->applicantName === 'John Doe' && $mail->applicantEmail === 'emails@example.com';
+            return $mail->applicantName === 'John Doe'
+                && $mail->applicantEmail === 'emails@example.com'
+                && $mail->applicationId > 0;
         });
     });
 

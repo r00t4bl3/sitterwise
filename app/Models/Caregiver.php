@@ -90,6 +90,7 @@ class Caregiver extends Model
         'languages',
         'metadata',
         'sms_opted_out',
+        'status_token',
     ];
 
     protected $casts = [

@@ -17,6 +17,7 @@ use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestBookingController;
 use App\Http\Controllers\HotelController;
+use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PricingRuleController;
@@ -70,6 +71,8 @@ Route::middleware(VerifyEmail::class)->group(function () {
 });
 
 Route::get('/caregiver/apply/thank-you', [CaregiverApplicationController::class, 'thankYou'])->name('caregiver.apply.thank-you');
+Route::get('/caregiver/apply/status/{token}', [CaregiverApplicationController::class, 'showStatus'])->name('caregiver.apply.status');
+Route::post('/caregiver/apply/status/{token}/replace-reference/{referenceRequest}', [CaregiverApplicationController::class, 'replaceReference'])->name('caregiver.apply.replace-reference');
 
 // Reference portal routes (public, no auth — references receive tokenized links via email)
 
@@ -144,6 +147,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('applications', [ApplicationController::class, 'index'])->name('applications.index');
         Route::get('applications/{application}', [ApplicationController::class, 'show'])->name('applications.show');
         Route::post('applications/{application}/references/{referenceRequest}/resend', [ApplicationController::class, 'resendReference'])->name('applications.references.resend');
+        Route::post('applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
+        Route::post('applications/{application}/schedule-interview', [ApplicationController::class, 'scheduleInterview'])->name('applications.schedule-interview');
+        Route::post('applications/{application}/background-check', [ApplicationController::class, 'startBackgroundCheck'])->name('applications.background-check');
+        Route::post('applications/{application}/hire', [ApplicationController::class, 'hire'])->name('applications.hire');
+        Route::post('applications/{application}/decline', [ApplicationController::class, 'decline'])->name('applications.decline');
+
+        // Interview evaluation
+        Route::get('applications/{application}/interview', [InterviewController::class, 'create'])->name('applications.interview');
+        Route::post('applications/{application}/interview', [InterviewController::class, 'store'])->name('applications.interview.store');
     });
 
     Route::middleware('super_admin')->group(function () {

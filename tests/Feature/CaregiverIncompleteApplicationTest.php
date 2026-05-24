@@ -1,7 +1,7 @@
 <?php
 
-use App\Mail\FinalReminderMail;
-use App\Mail\ResumeApplicationMail;
+use App\Mail\ApplicantFinalReminderMail;
+use App\Mail\ApplicantResumeApplicationMail;
 use App\Models\IncompleteApplication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -145,7 +145,7 @@ describe('NudgeIncompleteApplications command', function () {
 
         artisan('app:nudge-incomplete-applications')->assertSuccessful();
 
-        Mail::assertQueued(ResumeApplicationMail::class, function ($mail) {
+        Mail::assertQueued(ApplicantResumeApplicationMail::class, function ($mail) {
             return $mail->email === 'nudge-me@example.com';
         });
     });
@@ -178,7 +178,7 @@ describe('NudgeIncompleteApplications command', function () {
 
         artisan('app:nudge-incomplete-applications')->assertSuccessful();
 
-        Mail::assertQueued(FinalReminderMail::class, function ($mail) {
+        Mail::assertQueued(ApplicantFinalReminderMail::class, function ($mail) {
             return $mail->email === 'final@example.com';
         });
     });
@@ -262,8 +262,8 @@ describe('NudgeIncompleteApplications command', function () {
 
         artisan('app:nudge-incomplete-applications')->assertSuccessful();
 
-        Mail::assertQueued(ResumeApplicationMail::class, 1);
-        Mail::assertQueued(FinalReminderMail::class, 1);
+        Mail::assertQueued(ApplicantResumeApplicationMail::class, 1);
+        Mail::assertQueued(ApplicantFinalReminderMail::class, 1);
     });
 });
 

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CaregiverStatus;
+use App\Http\Requests\ApplicationActionRequest;
+use App\Mail\ApplicantDeclinedMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\CaregiverApplication;
 use App\Models\ReferenceRequest;
@@ -13,7 +16,13 @@ class ApplicationController extends Controller
 {
     public function index()
     {
-        $applications = CaregiverApplication::with('caregiver.user', 'caregiver.referenceRequests')
+        $query = CaregiverApplication::with('caregiver.user', 'caregiver.referenceRequests');
+
+        if ($status = request('status')) {
+            $query->whereHas('caregiver', fn ($q) => $q->where('status', $status));
+        }
+
+        $applications = $query
             ->orderBy('submitted_at', 'desc')
             ->paginate(20)
             ->through(fn ($app) => [
@@ -21,13 +30,16 @@ class ApplicationController extends Controller
                 'caregiver_id' => $app->caregiver_id,
                 'applicant_name' => $app->data['personal']['first_name'].' '.$app->data['personal']['last_name'],
                 'applicant_email' => $app->caregiver->user->email,
+                'status' => $app->caregiver->status->value,
+                'status_label' => $app->caregiver->status->label(),
                 'submitted_at' => $app->submitted_at?->format('Y-m-d H:i:s'),
                 'reference_count' => $app->caregiver->referenceRequests->count(),
                 'completed_count' => $app->caregiver->referenceRequests->whereNotNull('submitted_at')->count(),
             ]);
 
-        return Inertia::render('applications/index', [
+        return Inertia::render('admin/applications/index', [
             'applications' => $applications,
+            'filters' => request()->only('status'),
         ]);
     }
 
@@ -35,7 +47,20 @@ class ApplicationController extends Controller
     {
         $application->load('caregiver.user');
 
-        $references = $application->caregiver->referenceRequests()
+        $caregiver = $application->caregiver;
+
+        $certifications = $caregiver->certifications()
+            ->get()
+            ->map(fn ($cert) => [
+                'id' => $cert->id,
+                'name' => $cert->name,
+                'expires_required' => $cert->expires_required,
+                'expiration_date' => $cert->pivot->expiration_date ? \Carbon\Carbon::parse($cert->pivot->expiration_date)->format('Y-m-d') : null,
+                'verified_at' => $cert->pivot->verified_at ? \Carbon\Carbon::parse($cert->pivot->verified_at)->format('Y-m-d') : null,
+                'notes' => $cert->pivot->notes,
+            ]);
+
+        $references = $caregiver->referenceRequests()
             ->orderBy('is_sponsor', 'desc')
             ->orderBy('created_at')
             ->get()
@@ -60,19 +85,22 @@ class ApplicationController extends Controller
                 'created_at' => $ref->created_at?->format('Y-m-d H:i:s'),
             ]);
 
-        return Inertia::render('applications/show', [
+        return Inertia::render('admin/applications/show', [
             'application' => [
                 'id' => $application->id,
                 'submitted_at' => $application->submitted_at?->format('Y-m-d H:i:s'),
                 'data' => $application->data,
                 'caregiver' => [
-                    'id' => $application->caregiver->id,
-                    'first_name' => $application->caregiver->first_name,
-                    'last_name' => $application->caregiver->last_name,
-                    'email' => $application->caregiver->user->email,
+                    'id' => $caregiver->id,
+                    'first_name' => $caregiver->first_name,
+                    'last_name' => $caregiver->last_name,
+                    'email' => $caregiver->user->email,
+                    'status' => $caregiver->status->value,
+                    'status_label' => $caregiver->status->label(),
                 ],
             ],
             'references' => $references,
+            'certifications' => $certifications,
         ]);
     }
 
@@ -98,5 +126,69 @@ class ApplicationController extends Controller
         ));
 
         return back()->with('success', 'Reference request resent to '.$referenceRequest->reference_email);
+    }
+
+    public function approve(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if($caregiver->status !== CaregiverStatus::Applicant, 422, 'Application must be in Applicant status to approve.');
+
+        $caregiver->update(['status' => CaregiverStatus::UnderReview]);
+
+        return back()->with('success', 'Application moved to Under Review.');
+    }
+
+    public function scheduleInterview(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if($caregiver->status !== CaregiverStatus::UnderReview, 422, 'Application must be Under Review to schedule an interview.');
+
+        $caregiver->update(['status' => CaregiverStatus::InterviewScheduled]);
+
+        return back()->with('success', 'Interview scheduled.');
+    }
+
+    public function startBackgroundCheck(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if($caregiver->status !== CaregiverStatus::InterviewScheduled, 422, 'Interview must be scheduled before starting a background check.');
+
+        $caregiver->update(['status' => CaregiverStatus::BackgroundCheck]);
+
+        return back()->with('success', 'Background check started.');
+    }
+
+    public function hire(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if($caregiver->status !== CaregiverStatus::BackgroundCheck, 422, 'Background check must be completed before hiring.');
+
+        $caregiver->update(['status' => CaregiverStatus::Active]);
+
+        return back()->with('success', 'Applicant hired!');
+    }
+
+    public function decline(CaregiverApplication $application, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        abort_if(in_array($caregiver->status, CaregiverStatus::terminal()), 422, 'Cannot decline a terminal status.');
+
+        $caregiver->update(['status' => CaregiverStatus::Inactive]);
+
+        $applicantName = $caregiver->first_name.' '.$caregiver->last_name;
+        $reason = $request->input('note');
+
+        if ($caregiver->user) {
+            Mail::to($caregiver->user->email)->queue(
+                new ApplicantDeclinedMail($applicantName, $reason),
+            );
+        }
+
+        return back()->with('success', 'Application declined. Applicant has been notified.');
     }
 }

@@ -9,31 +9,28 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class FinalReminderMail extends Mailable implements ShouldQueue
+class ReferenceReminderMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public string $email,
+        public string $referenceName,
+        public string $applicantName,
+        public string $token,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Last chance — finish your Sitterwise application',
+            subject: "Reminder: Reference request for {$this->applicantName}",
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.final-reminder',
+            view: 'emails.reference-reminder',
         );
-    }
-
-    public function attachments(): array
-    {
-        return [];
     }
 }

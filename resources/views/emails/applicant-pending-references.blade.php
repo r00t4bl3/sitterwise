@@ -14,21 +14,24 @@
 </head>
 <body>
     <div class="header">
-        <h1>New Caregiver Application</h1>
-        <p>A new application has been submitted</p>
+        <h1>References still pending</h1>
+        <p>Your Sitterwise application is on hold</p>
     </div>
     <div class="content">
-        <p><strong>{{ $applicantName }}</strong> has submitted a caregiver application.</p>
-        <p><strong>Email:</strong> {{ $applicantEmail }}</p>
-        <p>Please log in to the admin dashboard to review the application and manage next steps.</p>
-        <div style="text-align: center; margin: 24px 0;">
-            <a href="{{ route('applications.show', $applicationId) }}" style="display: inline-block; background: #3b82f6; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-                Review Application
-            </a>
-        </div>
+        <p>Hi {{ $applicantName }},</p>
+        <p>We're still waiting for your references to complete their forms. Your application can't move forward until we hear back from them.</p>
+
+@if ($daysSinceSubmission >= 7)
+        <p>It's been over a week since you applied. Please reach out to your references and ask them to check their email for the reference request link.</p>
+@else
+        <p>If your references haven't received the request email, ask them to check their spam folder, or contact us and we can resend it.</p>
+@endif
+
+        <p>Thank you for your patience as we complete the review process.</p>
     </div>
     <div class="footer">
-        <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
+        <p>Questions? Contact us at {{ config('mail.from.address', 'admin@sitterwise.io') }}.</p>
     </div>
 </body>
 </html>

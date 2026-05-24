@@ -10,6 +10,7 @@ use App\Mail\ReferenceRequestMail;
 use App\Models\AttributeDefinition;
 use App\Models\Caregiver;
 use App\Models\CaregiverAgreement;
+use App\Models\CertificationType;
 use App\Models\CaregiverApplication;
 use App\Models\IncompleteApplication;
 use App\Models\Location;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
@@ -148,6 +150,7 @@ class CaregiverApplicationController extends Controller
         $caregiver = Caregiver::create([
             'user_id' => $user->id,
             'status' => CaregiverStatus::Applicant->value,
+            'status_token' => Str::random(32),
             'first_name' => $validated['personal']['first_name'],
             'last_name' => $validated['personal']['last_name'],
             'phone' => $validated['personal']['phone'],
@@ -175,6 +178,30 @@ class CaregiverApplicationController extends Controller
                 'school_name' => $education['high_school_name'] ?? null,
                 'graduation_year' => $education['high_school_graduation_year'] ?? null,
             ]);
+        }
+
+        // Store certifications (caregiver_certifications pivot)
+        if (($validated['cpr_certified'] ?? '') === 'yes') {
+            $cprType = CertificationType::where('name', 'CPR & First Aid')->first();
+            if ($cprType) {
+                $caregiver->certifications()->syncWithoutDetaching([
+                    $cprType->id => [
+                        'expiration_date' => $validated['cpr_expiration'] ?? null,
+                        'file_path' => $validated['cpr_card'] ?? null,
+                    ],
+                ]);
+            }
+        }
+
+        if (($validated['trustline_certified'] ?? '') === 'yes') {
+            $trustlineType = CertificationType::where('name', 'Trustline')->first();
+            if ($trustlineType) {
+                $caregiver->certifications()->syncWithoutDetaching([
+                    $trustlineType->id => [
+                        'file_path' => $validated['trustline_upload'] ?? null,
+                    ],
+                ]);
+            }
         }
 
         // Update Caregiver model columns
@@ -294,12 +321,12 @@ class CaregiverApplicationController extends Controller
         $applicantName = $validated['personal']['first_name'].' '.$validated['personal']['last_name'];
 
         // Send applicant confirmation email
-        Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName));
+        Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName, $caregiver->status_token));
 
         // Send admin notification
         $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
         foreach ($adminEmails as $adminEmail) {
-            Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email));
+            Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email, $application->id));
         }
 
         // Send reference request emails and persist records
@@ -410,5 +437,74 @@ class CaregiverApplicationController extends Controller
             'pdf_path' => $agreementPath,
             'signed_at' => now(),
         ]);
+    }
+
+    public function showStatus(string $token)
+    {
+        $caregiver = Caregiver::where('status_token', $token)->firstOrFail();
+
+        $referenceRequests = $caregiver->referenceRequests()
+            ->get()
+            ->map(fn ($ref) => [
+                'id' => $ref->id,
+                'reference_name' => $ref->reference_name,
+                'reference_email' => $ref->reference_email,
+                'relationship' => $ref->relationship,
+                'is_sponsor' => $ref->is_sponsor,
+                'is_completed' => $ref->submitted_at !== null,
+                'submitted_at' => $ref->submitted_at,
+            ]);
+
+        return Inertia::render('public/caregiver-apply/application-status', [
+            'status' => [
+                'value' => $caregiver->status->value,
+                'label' => $caregiver->status->label(),
+                'color' => $caregiver->status->color(),
+            ],
+            'caregiver_name' => $caregiver->first_name.' '.$caregiver->last_name,
+            'reference_requests' => $referenceRequests,
+            'token' => $token,
+        ]);
+    }
+
+    public function replaceReference(Request $request, string $token, ReferenceRequest $referenceRequest)
+    {
+        $caregiver = Caregiver::where('status_token', $token)->firstOrFail();
+
+        abort_if($referenceRequest->caregiver_id !== $caregiver->id, 403);
+        abort_if($referenceRequest->submitted_at !== null, 422, 'Cannot replace a completed reference.');
+
+        $validated = $request->validate([
+            'reference_name' => 'required|string|max:255',
+            'reference_email' => 'required|email|max:255',
+            'relationship' => 'nullable|string|max:255',
+        ]);
+
+        $newToken = Str::random(32);
+
+        $referenceRequest->update([
+            'reference_name' => $validated['reference_name'],
+            'reference_email' => $validated['reference_email'],
+            'relationship' => $validated['relationship'] ?? $referenceRequest->relationship,
+            'token' => $newToken,
+            'submitted_at' => null,
+            'rating_reliability' => null,
+            'rating_trustworthiness' => null,
+            'rating_maturity' => null,
+            'rating_communication' => null,
+            'rating_warmth' => null,
+            'rating_overall_recommendation' => null,
+            'strengths' => null,
+            'concerns' => null,
+            'additional_comments' => null,
+        ]);
+
+        Mail::to($validated['reference_email'])->queue(new ReferenceRequestMail(
+            $validated['reference_name'],
+            $caregiver->first_name.' '.$caregiver->last_name,
+            $newToken,
+        ));
+
+        return redirect()->back();
     }
 }

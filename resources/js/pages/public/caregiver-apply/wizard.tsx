@@ -338,8 +338,7 @@ export default function Wizard() {
         setCurrentStep(step);
     };
 
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = () => {
         sessionStorage.removeItem('caregiver_application_draft');
         form.post('/caregiver/apply/submit');
     };
@@ -387,6 +386,7 @@ export default function Wizard() {
                         {[1, 2, 3, 4, 5, 6, 7, 8].map((step) => (
                             <button
                                 key={step}
+                                type="button"
                                 onClick={() => goToStep(step)}
                                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-sm font-medium ${
                                     step === currentStep
@@ -412,7 +412,7 @@ export default function Wizard() {
                 </div>
 
                 <form
-                    onSubmit={submit}
+                    onSubmit={(e) => e.preventDefault()}
                     className="rounded-lg bg-white p-6 shadow"
                 >
                     {Object.keys(form.errors).length > 0 && (
@@ -2235,7 +2235,7 @@ export default function Wizard() {
                                                 <SelectTrigger
                                                     id={`ref-years-known-${index}`}
                                                 >
-                                                    <SelectValue placeholder="Years Known *" />
+                                                    <SelectValue placeholder="Years Known" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="<1">
@@ -2725,7 +2725,8 @@ export default function Wizard() {
                             </Button>
                         ) : (
                             <Button
-                                type="submit"
+                                type="button"
+                                onClick={handleSubmit}
                                 disabled={
                                     form.processing ||
                                     form.data.authorized_to_work === 'no'
