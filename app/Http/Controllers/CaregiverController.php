@@ -301,6 +301,7 @@ class CaregiverController extends Controller
                             'education_type' => $edu['education_type'],
                             'school_name' => $edu['school_name'],
                             'graduation_year' => $edu['graduation_year'] ?? null,
+                            'degree' => $edu['degree'] ?? null,
                         ]);
                     }
                 }

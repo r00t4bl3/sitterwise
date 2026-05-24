@@ -10,3 +10,9 @@ Artisan::command('inspire', function () {
 
 // Clean up expired reservations every minute
 Schedule::command('bookings:cleanup-expired-reservations')->everyMinute();
+
+// Nudge incomplete applications every 6 hours
+Schedule::command('app:nudge-incomplete-applications')->everySixHours();
+
+// Archive stalled applications daily
+Schedule::command('app:archive-stalled-applications')->daily();

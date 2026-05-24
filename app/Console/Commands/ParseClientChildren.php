@@ -231,11 +231,11 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
         $response = Http::timeout((int) $this->option('timeout'))
             ->withHeaders([
-                'Authorization' => 'Bearer '.config('services.openrouter.api_key'),
+                'Authorization' => 'Bearer '.config('services.ai_parser.api_key'),
                 'Content-Type' => 'application/json',
             ])
-            ->post('https://openrouter.ai/api/v1/chat/completions', [
-                'model' => config('services.openrouter.model'),
+            ->post(config('services.ai_parser.api_url'), [
+                'model' => config('services.ai_parser.model'),
                 'messages' => [
                     ['role' => 'system', 'content' => 'You output JSON only. Never wrap in markdown.'],
                     ['role' => 'user', 'content' => $prompt],

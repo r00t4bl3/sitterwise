@@ -28,6 +28,15 @@ class ReferenceController extends Controller
             'defaults' => [
                 'relationship' => $reference->relationship,
                 'years_known' => $reference->years_known,
+                'rating_reliability' => $reference->rating_reliability,
+                'rating_trustworthiness' => $reference->rating_trustworthiness,
+                'rating_maturity' => $reference->rating_maturity,
+                'rating_communication' => $reference->rating_communication,
+                'rating_warmth' => $reference->rating_warmth,
+                'rating_overall_recommendation' => $reference->rating_overall_recommendation,
+                'strengths' => $reference->strengths,
+                'concerns' => $reference->concerns,
+                'additional_comments' => $reference->additional_comments,
             ],
         ]);
     }
@@ -43,8 +52,15 @@ class ReferenceController extends Controller
         $reference->update([
             'relationship' => $request->input('relationship'),
             'years_known' => $request->input('years_known'),
-            'rating' => $request->input('rating'),
-            'feedback' => $request->input('feedback'),
+            'rating_reliability' => $request->input('rating_reliability'),
+            'rating_trustworthiness' => $request->input('rating_trustworthiness'),
+            'rating_maturity' => $request->input('rating_maturity'),
+            'rating_communication' => $request->input('rating_communication'),
+            'rating_warmth' => $request->input('rating_warmth'),
+            'rating_overall_recommendation' => $request->input('rating_overall_recommendation'),
+            'strengths' => $request->input('strengths'),
+            'concerns' => $request->input('concerns'),
+            'additional_comments' => $request->input('additional_comments'),
             'submitted_at' => now(),
         ]);
 

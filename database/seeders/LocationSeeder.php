@@ -13,8 +13,8 @@ class LocationSeeder extends Seeder
     public function run(): void
     {
         $locations = [
-            ['name' => 'South County', 'description' => 'Southern area of the county'],
-            ['name' => 'North County', 'description' => 'Northern area of the county'],
+            ['name' => 'South County', 'description' => 'Coronado, Downtown, La Jolla, Mission Valley, Chula Vista, El Cajon, La Mesa'],
+            ['name' => 'North County', 'description' => 'Rancho Santa Fe, Del Mar, Carlsbad, Encinitas, Escondido, San Marcos, Vista'],
         ];
 
         foreach ($locations as $location) {

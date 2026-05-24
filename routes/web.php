@@ -65,6 +65,7 @@ Route::post('/caregiver/apply/verify-otp', [CaregiverApplicationController::clas
 
 Route::middleware(VerifyEmail::class)->group(function () {
     Route::get('/caregiver/apply', [CaregiverApplicationController::class, 'showWizard'])->name('caregiver.apply');
+    Route::post('/caregiver/apply/save-progress', [CaregiverApplicationController::class, 'saveProgress'])->name('caregiver.apply.save-progress');
     Route::post('/caregiver/apply/submit', [CaregiverApplicationController::class, 'submit'])->name('caregiver.apply.submit');
 });
 

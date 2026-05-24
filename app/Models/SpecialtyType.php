@@ -15,6 +15,8 @@ class SpecialtyType extends Model
         'description',
         'is_active',
         'sort_order',
+        'color_bg',
+        'color_text',
     ];
 
     protected $casts = [

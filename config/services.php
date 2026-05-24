@@ -56,9 +56,10 @@ return [
         'api_key' => env('GOOGLE_PLACE_API_KEY'),
     ],
 
-    'openrouter' => [
-        'api_key' => env('OPENROUTER_API_KEY'),
-        'model' => env('AI_MODEL', 'nvidia/nemotron-4-340b-instruct'),
+    'ai_parser' => [
+        'api_key' => env('AI_PARSER_API_KEY'),
+        'model' => env('AI_PARSER_MODEL', 'nvidia/nemotron-4-340b-instruct'),
+        'api_url' => env('AI_PARSER_API_URL', 'https://openrouter.ai/api/v1/chat/completions'),
     ],
 
 ];

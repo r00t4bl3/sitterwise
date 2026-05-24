@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { AlertCircle, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
@@ -115,9 +115,6 @@ export default function Wizard() {
         year: 'numeric',
     });
 
-    const expectedSignature =
-        `${form.data.personal.first_name} ${form.data.personal.last_name}`.trim();
-
     const defaultFormData = {
         sponsor: {
             first_name: '',
@@ -203,13 +200,7 @@ export default function Wizard() {
         things_i_bring: '',
         bio: '',
         interests: '',
-        skills: {
-            special_needs: false,
-            swimming: false,
-            driving: false,
-            bilingual: false,
-            other: '',
-        },
+
         references: [
             {
                 first_name: '',
@@ -253,6 +244,9 @@ export default function Wizard() {
     };
 
     const form = useForm(defaultFormData);
+
+    const expectedSignature =
+        `${form.data.personal.first_name} ${form.data.personal.last_name}`.trim();
 
     // Deep merge draft data with defaults to fill missing fields
     const deepMerge = (
@@ -312,7 +306,7 @@ export default function Wizard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.employment_status]);
 
-    // Save draft to sessionStorage on step change
+    // Save draft to sessionStorage and server on step change
     const saveDraft = () => {
         sessionStorage.setItem(
             'caregiver_application_draft',
@@ -321,6 +315,12 @@ export default function Wizard() {
                 data: form.data,
             }),
         );
+
+        fetch('/caregiver/apply/save-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (window as any).csrfToken || '' },
+            body: JSON.stringify({ step: currentStep }),
+        }).catch(() => {});
     };
 
     const nextStep = () => {
@@ -415,6 +415,24 @@ export default function Wizard() {
                     onSubmit={submit}
                     className="rounded-lg bg-white p-6 shadow"
                 >
+                    {Object.keys(form.errors).length > 0 && (
+                        <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="mb-1 font-medium">
+                                    Please fix the following errors before submitting:
+                                </p>
+                                <ul className="list-inside list-disc space-y-0.5">
+                                    {Object.entries(form.errors).map(
+                                        ([key, message]) => (
+                                            <li key={key}>{message as string}</li>
+                                        ),
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Step 1: Sponsor & Personal */}
                     {currentStep === 1 && (
                         <div>
@@ -1046,13 +1064,26 @@ export default function Wizard() {
                                             <div className="grid grid-cols-2 gap-2">
                                                 <Select
                                                     value={
-                                                        exp.start_date &&
-                                                        exp.start_date.length >=
-                                                            7
-                                                            ? exp.start_date.slice(
-                                                                  5,
-                                                                  7,
-                                                              )
+                                                        exp.start_date
+                                                            ? exp.start_date
+                                                                      .length >=
+                                                                  7
+                                                                ? exp.start_date.slice(
+                                                                      5,
+                                                                      7,
+                                                                  )
+                                                                : exp.start_date
+                                                                          .startsWith(
+                                                                              '-',
+                                                                          ) &&
+                                                                    exp.start_date
+                                                                        .length ===
+                                                                        3
+                                                                    ? exp.start_date.slice(
+                                                                          1,
+                                                                          3,
+                                                                      )
+                                                                    : ''
                                                             : ''
                                                     }
                                                     onValueChange={(month) => {
@@ -1068,12 +1099,12 @@ export default function Wizard() {
                                                                       0,
                                                                       4,
                                                                   )
-                                                                : '';
+                                                                : String(
+                                                                      currentYear,
+                                                                  );
                                                         newExp[
                                                             index
-                                                        ].start_date = year
-                                                            ? `${year}-${month}`
-                                                            : '';
+                                                        ].start_date = `${year}-${month}`;
                                                         form.setData(
                                                             'experiences',
                                                             newExp,
@@ -1111,19 +1142,30 @@ export default function Wizard() {
                                                                 .experiences,
                                                         ];
                                                         const month =
-                                                            exp.start_date &&
                                                             exp.start_date
-                                                                .length >= 7
-                                                                ? exp.start_date.slice(
-                                                                      5,
-                                                                      7,
-                                                                  )
+                                                                ? exp.start_date
+                                                                          .length >=
+                                                                      7
+                                                                    ? exp.start_date.slice(
+                                                                          5,
+                                                                          7,
+                                                                      )
+                                                                    : exp.start_date
+                                                                              .startsWith(
+                                                                                  '-',
+                                                                              ) &&
+                                                                        exp.start_date
+                                                                            .length ===
+                                                                            3
+                                                                        ? exp.start_date.slice(
+                                                                              1,
+                                                                              3,
+                                                                          )
+                                                                        : ''
                                                                 : '';
                                                         newExp[
                                                             index
-                                                        ].start_date = month
-                                                            ? `${year}-${month}`
-                                                            : year;
+                                                        ].start_date = `${year}-${month || '01'}`;
                                                         form.setData(
                                                             'experiences',
                                                             newExp,
@@ -1152,44 +1194,55 @@ export default function Wizard() {
                                                     <Label>End Date</Label>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <Select
-                                                            value={
-                                                                exp.end_date &&
-                                                                exp.end_date
-                                                                    .length >= 7
+                                                    value={
+                                                        exp.end_date
+                                                            ? exp.end_date
+                                                                      .length >=
+                                                                  7
+                                                                ? exp.end_date.slice(
+                                                                      5,
+                                                                      7,
+                                                                  )
+                                                                : exp.end_date
+                                                                          .startsWith(
+                                                                              '-',
+                                                                          ) &&
+                                                                    exp.end_date
+                                                                        .length ===
+                                                                        3
                                                                     ? exp.end_date.slice(
-                                                                          5,
-                                                                          7,
+                                                                          1,
+                                                                          3,
                                                                       )
                                                                     : ''
-                                                            }
-                                                            onValueChange={(
-                                                                month,
-                                                            ) => {
-                                                                const newExp = [
-                                                                    ...form.data
-                                                                        .experiences,
-                                                                ];
-                                                                const year =
-                                                                    exp.end_date &&
-                                                                    exp.end_date
-                                                                        .length >=
-                                                                        4
-                                                                        ? exp.end_date.slice(
-                                                                              0,
-                                                                              4,
-                                                                          )
-                                                                        : '';
-                                                                newExp[
-                                                                    index
-                                                                ].end_date =
-                                                                    year
-                                                                        ? `${year}-${month}`
-                                                                        : '';
-                                                                form.setData(
-                                                                    'experiences',
-                                                                    newExp,
-                                                                );
-                                                            }}
+                                                            : ''
+                                                    }
+                                                    onValueChange={(
+                                                        month,
+                                                    ) => {
+                                                        const newExp = [
+                                                            ...form.data
+                                                                .experiences,
+                                                        ];
+                                                        const year =
+                                                            exp.end_date &&
+                                                            exp.end_date
+                                                                .length >= 4
+                                                                ? exp.end_date.slice(
+                                                                      0,
+                                                                      4,
+                                                                  )
+                                                                : String(
+                                                                      currentYear,
+                                                                  );
+                                                        newExp[
+                                                            index
+                                                        ].end_date = `${year}-${month}`;
+                                                        form.setData(
+                                                            'experiences',
+                                                            newExp,
+                                                        );
+                                                    }}
                                                         >
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Month" />
@@ -1281,16 +1334,28 @@ export default function Wizard() {
                                                                     ...form.data
                                                                         .experiences,
                                                                 ];
-                                                                const month =
-                                                                    exp.end_date &&
-                                                                    exp.end_date
-                                                                        .length >=
-                                                                        7
+                                                            const month =
+                                                                exp.end_date
+                                                                    ? exp.end_date
+                                                                              .length >=
+                                                                          7
                                                                         ? exp.end_date.slice(
                                                                               5,
                                                                               7,
                                                                           )
-                                                                        : '';
+                                                                        : exp.end_date
+                                                                                  .startsWith(
+                                                                                      '-',
+                                                                                  ) &&
+                                                                            exp.end_date
+                                                                                .length ===
+                                                                                3
+                                                                            ? exp.end_date.slice(
+                                                                                  1,
+                                                                                  3,
+                                                                              )
+                                                                            : ''
+                                                                    : '';
 
                                                                 if (
                                                                     month &&
@@ -1307,31 +1372,19 @@ export default function Wizard() {
                                                                             7,
                                                                         );
 
-                                                                    if (
-                                                                        year ===
-                                                                            startYear &&
-                                                                        month <=
-                                                                            startMonth
-                                                                    ) {
-                                                                        newExp[
-                                                                            index
-                                                                        ].end_date =
-                                                                            year;
-                                                                        form.setData(
-                                                                            'experiences',
-                                                                            newExp,
-                                                                        );
-
-                                                                        return;
-                                                                    }
+                                                                if (
+                                                                    year ===
+                                                                        startYear &&
+                                                                    month <=
+                                                                        startMonth
+                                                                ) {
+                                                                    return;
                                                                 }
+                                                            }
 
-                                                                newExp[
-                                                                    index
-                                                                ].end_date =
-                                                                    month
-                                                                        ? `${year}-${month}`
-                                                                        : year;
+                                                            newExp[
+                                                                index
+                                                            ].end_date = `${year}-${month || '01'}`;
                                                                 form.setData(
                                                                     'experiences',
                                                                     newExp,
@@ -1866,6 +1919,8 @@ export default function Wizard() {
                                                     date,
                                                 )
                                             }
+                                            fromYear={currentYear - 2}
+                                            toYear={currentYear + 10}
                                             placeholder="Select expiration date"
                                         />
                                     </div>
@@ -1993,69 +2048,7 @@ export default function Wizard() {
                                 </div>
                             </div>
 
-                            <hr className="my-8" />
 
-                            <div className="mb-6">
-                                <h3 className="mb-3 text-lg font-semibold">
-                                    Special Skills
-                                </h3>
-                                {(
-                                    [
-                                        [
-                                            'special_needs',
-                                            'Experienced Caring for Children with Special Needs',
-                                        ],
-                                        [
-                                            'swimming',
-                                            'Willing to Accompany Children Swimming (Hotel Pools)',
-                                        ],
-                                        [
-                                            'driving',
-                                            'Willing to Drive Children in your Personal Car',
-                                        ],
-                                        [
-                                            'bilingual',
-                                            'Bilingual (English & Spanish)',
-                                        ],
-                                    ] as const
-                                ).map(([skill, label]) => (
-                                    <label
-                                        key={skill}
-                                        className={`mb-2 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.skills[skill] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
-                                    >
-                                        <Checkbox
-                                            checked={form.data.skills[skill]}
-                                            onCheckedChange={(checked) =>
-                                                form.setData('skills', {
-                                                    ...form.data.skills,
-                                                    [skill]: checked === true,
-                                                })
-                                            }
-                                        />
-                                        <span className="cursor-pointer">
-                                            {label}
-                                        </span>
-                                    </label>
-                                ))}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="skills-other">
-                                    Other Qualifications
-                                </Label>
-                                <Textarea
-                                    id="skills-other"
-                                    placeholder="Any additional skills or certifications..."
-                                    rows={4}
-                                    value={form.data.skills.other}
-                                    onChange={(e) =>
-                                        form.setData('skills', {
-                                            ...form.data.skills,
-                                            other: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
                         </div>
                     )}
 

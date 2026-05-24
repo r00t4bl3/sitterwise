@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CaregiverStatus;
 use App\Http\Requests\StoreCaregiverApplicationRequest;
 use App\Mail\AdminNewApplicationMail;
 use App\Mail\ApplicantConfirmationMail;
 use App\Mail\ReferenceRequestMail;
+use App\Models\AttributeDefinition;
 use App\Models\Caregiver;
 use App\Models\CaregiverAgreement;
 use App\Models\CaregiverApplication;
-use App\Models\CaregiverStatus;
+use App\Models\IncompleteApplication;
+use App\Models\Location;
 use App\Models\ReferenceRequest;
+use App\Models\SpecialtyType;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -140,14 +144,10 @@ class CaregiverApplicationController extends Controller
             'role' => 'caregiver',
         ]);
 
-        // Get applicant status
-        $applicantStatus = CaregiverStatus::where('name', 'applicant')->first();
-        $applicantStatusId = $applicantStatus ? $applicantStatus->id : null;
-
         // Create Caregiver
         $caregiver = Caregiver::create([
             'user_id' => $user->id,
-            'status_id' => $applicantStatusId,
+            'status' => CaregiverStatus::Applicant->value,
             'first_name' => $validated['personal']['first_name'],
             'last_name' => $validated['personal']['last_name'],
             'phone' => $validated['personal']['phone'],
@@ -158,6 +158,128 @@ class CaregiverApplicationController extends Controller
             'address_state' => $validated['personal']['address_state'] ?? null,
             'address_zip' => $validated['personal']['address_zip'] ?? null,
         ]);
+
+        // Store education records
+        $education = $validated['education'] ?? null;
+        if ($education && $education['level'] !== 'high_school') {
+            $caregiver->educations()->create([
+                'education_type' => $education['level'],
+                'school_name' => $education['college'] ?? null,
+                'graduation_year' => $education['graduation_year'] ?? null,
+                'degree' => $education['degree'] ?? null,
+            ]);
+        }
+        if ($education && $education['level'] === 'high_school') {
+            $caregiver->educations()->create([
+                'education_type' => 'high_school',
+                'school_name' => $education['high_school_name'] ?? null,
+                'graduation_year' => $education['high_school_graduation_year'] ?? null,
+            ]);
+        }
+
+        // Update Caregiver model columns
+        $caregiver->update([
+            'education_level' => $education['level'] ?? null,
+            'biography' => $validated['bio'] ?? null,
+            'languages' => $validated['languages'] ?? null,
+            'metadata' => [
+                'smokes' => $validated['smokes'] ?? null,
+                'alcohol' => $validated['alcohol'] ?? null,
+                'substance_abuse' => $validated['substance_abuse'] ?? null,
+                'limitations' => $validated['limitations'] ?? null,
+                'allergic_to_pets' => $validated['allergic_to_pets'] ?? null,
+                'visible_tattoos' => $validated['visible_tattoos'] ?? null,
+                'authorized_to_work' => $validated['authorized_to_work'] ?? null,
+                'reliable_vehicle' => $validated['reliable_vehicle'] ?? null,
+                'cpr_certified' => $validated['cpr_certified'] ?? null,
+                'cpr_expiration' => $validated['cpr_expiration'] ?? null,
+                'trustline_certified' => $validated['trustline_certified'] ?? null,
+                'has_children' => $validated['has_children'] ?? null,
+                'employment_status' => $validated['employment_status'] ?? null,
+                'current_employer' => $validated['current_employer'] ?? null,
+                'things_i_bring' => $validated['things_i_bring'] ?? null,
+                'interests' => $validated['interests'] ?? null,
+                'availability' => $validated['availability'] ?? [],
+                'location_flexible' => $validated['location']['flexible'] ?? false,
+            ],
+        ]);
+
+        // Sync specialty types (age_groups → specialty_types)
+        $ageGroupMap = [
+            'babies' => 1,
+            'toddlers' => 2,
+            'preschool' => 3,
+            'school_age' => 4,
+        ];
+        $specialtyIds = [];
+        foreach ($ageGroupMap as $wizardKey => $specialtyTypeId) {
+            if (! empty($validated['age_groups'][$wizardKey])) {
+                $specialtyIds[] = $specialtyTypeId;
+            }
+        }
+        if (! empty($specialtyIds)) {
+            $existingSpecialtyIds = SpecialtyType::whereIn('id', $specialtyIds)->pluck('id')->toArray();
+            if (! empty($existingSpecialtyIds)) {
+                $caregiver->specialtyTypes()->sync($existingSpecialtyIds);
+            }
+        }
+
+        // Sync locations
+        $northSelected = ! empty($validated['location']['north_county']);
+        $southSelected = ! empty($validated['location']['south_east_county']);
+        $flexible = ! empty($validated['location']['flexible']);
+        $locationSync = [];
+
+        if ($flexible) {
+            if ($northSelected && $southSelected) {
+                $locationSync[1] = ['is_preferred' => false]; // South
+                $locationSync[2] = ['is_preferred' => false]; // North
+            } elseif ($northSelected && ! $southSelected) {
+                $locationSync[1] = ['is_preferred' => false]; // South
+                $locationSync[2] = ['is_preferred' => true]; // North
+            } elseif (! $northSelected && $southSelected) {
+                $locationSync[1] = ['is_preferred' => true]; // South
+                $locationSync[2] = ['is_preferred' => false]; // North
+            } else {
+                $locationSync[1] = ['is_preferred' => false]; // South
+                $locationSync[2] = ['is_preferred' => false]; // North
+            }
+        } else {
+            if ($northSelected) {
+                $locationSync[2] = ['is_preferred' => false]; // North
+            }
+            if ($southSelected) {
+                $locationSync[1] = ['is_preferred' => false]; // South
+            }
+        }
+        if (! empty($locationSync)) {
+            $existingLocationIds = Location::whereIn('id', array_keys($locationSync))->pluck('id')->toArray();
+            if (! empty($existingLocationIds)) {
+                $caregiver->locations()->sync(
+                    array_intersect_key($locationSync, array_flip($existingLocationIds))
+                );
+            }
+        }
+
+        // Sync attributes
+        $attributeSync = [];
+        if (! empty($validated['position']['petsitting'])) {
+            $attributeSync[1] = ['value' => 'true']; // pet_sitting
+        }
+        if (! empty($validated['qualifications']['driving'])) {
+            $attributeSync[3] = ['value' => 'true']; // has_vehicle
+        }
+        if (($validated['smokes'] ?? '') === 'no') {
+            $attributeSync[4] = ['value' => 'true']; // non_smoker
+        }
+        if (! empty($attributeSync)) {
+            $existingAttributeIds = AttributeDefinition::whereIn('id', array_keys($attributeSync))->pluck('id')->toArray();
+            if (! empty($existingAttributeIds)) {
+                $caregiver->attributes()->syncWithoutDetaching(
+                    array_intersect_key($attributeSync, array_flip($existingAttributeIds))
+                );
+            }
+        }
 
         // Store application snapshot
         $application = CaregiverApplication::create([
@@ -216,10 +338,34 @@ class CaregiverApplicationController extends Controller
             $sponsorToken,
         ));
 
+        // Clear incomplete application tracking
+        IncompleteApplication::where('email', $email)->delete();
+
         // Clear session
         Session::forget(['verified_email', 'verified_at']);
 
         return redirect()->route('caregiver.apply.thank-you');
+    }
+
+    public function saveProgress(Request $request)
+    {
+        $email = Session::get('verified_email');
+
+        $request->validate([
+            'step' => 'required|integer|min:1|max:8',
+            'data' => 'nullable|array',
+        ]);
+
+        IncompleteApplication::updateOrCreate(
+            ['email' => $email],
+            [
+                'last_step' => $request->input('step'),
+                'draft_data' => $request->input('data'),
+                'last_activity_at' => now(),
+            ]
+        );
+
+        return response()->json(['status' => 'ok']);
     }
 
     public function thankYou()

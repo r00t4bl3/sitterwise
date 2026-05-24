@@ -3,6 +3,7 @@ import {
     ArrowLeft,
     Check,
     CheckCircle,
+    ChevronDown,
     MinusCircle,
     MoreVertical,
     Shield,
@@ -81,6 +82,8 @@ interface Status {
 interface SpecialtyType {
     id: number;
     name: string;
+    color_bg: string | null;
+    color_text: string | null;
 }
 
 interface AttributeDefinition {
@@ -100,6 +103,7 @@ interface Education {
     education_type: string;
     school_name: string;
     graduation_year: number | null;
+    degree: string | null;
 }
 
 interface Location {
@@ -140,8 +144,15 @@ interface ReferenceRequest {
     relationship: string | null;
     years_known: string | null;
     is_sponsor: boolean;
-    rating: number | null;
-    feedback: string | null;
+    rating_reliability: number | null;
+    rating_trustworthiness: number | null;
+    rating_maturity: number | null;
+    rating_communication: number | null;
+    rating_warmth: number | null;
+    rating_overall_recommendation: number | null;
+    strengths: string | null;
+    concerns: string | null;
+    additional_comments: string | null;
     submitted_at: string | null;
     created_at: string;
 }
@@ -201,20 +212,24 @@ function StatusBadge({ status }: { status: Status }) {
     );
 }
 
-function SpecialtyTag({ name }: { name: string }) {
-    const colors: Record<string, { bg: string; text: string }> = {
-        Babies: { bg: '#E0F7FA', text: '#006064' },
-        Toddlers: { bg: '#E8F5E9', text: '#2E7D32' },
-        Preschool: { bg: '#FFF3E0', text: '#E65100' },
-        'School Age': { bg: '#EDE7F6', text: '#4527A0' },
-        'Special Needs': { bg: '#FCE4EC', text: '#880E4F' },
+function SpecialtyTag({
+    name,
+    color_bg,
+    color_text,
+}: {
+    name: string;
+    color_bg?: string | null;
+    color_text?: string | null;
+}) {
+    const style = {
+        backgroundColor: color_bg || '#E8F5F5',
+        color: color_text || '#1B3A5C',
     };
-    const style = colors[name] || { bg: '#E8F5F5', text: '#1B3A5C' };
 
     return (
         <span
             className="inline-block rounded-[10px] px-2 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: style.bg, color: style.text }}
+            style={style}
         >
             {name}
         </span>
@@ -654,6 +669,8 @@ export default function CaregiverShow() {
                                     <SpecialtyTag
                                         key={specialty.id}
                                         name={specialty.name}
+                                        color_bg={specialty.color_bg}
+                                        color_text={specialty.color_text}
                                     />
                                 ))}
                                 {caregiver.specialty_types.length === 0 && (
@@ -713,7 +730,10 @@ export default function CaregiverShow() {
                                         string
                                     > = {
                                         high_school: 'High School',
-                                        college: 'College',
+                                        associate: 'Associate Degree',
+                                        bachelor: "Bachelor's Degree",
+                                        master: "Master's Degree",
+                                        phd: 'PhD / Doctorate',
                                     };
 
                                     return (
@@ -725,6 +745,8 @@ export default function CaregiverShow() {
                                                 {educationTypeLabels[
                                                     edu.education_type
                                                 ] || edu.education_type}
+                                                {edu.degree &&
+                                                    ` — ${edu.degree}`}
                                                 {edu.graduation_year &&
                                                     ` • ${edu.graduation_year}`}
                                             </p>
@@ -913,50 +935,195 @@ export default function CaregiverShow() {
                             </h2>
                             {caregiver.reference_requests.length > 0 ? (
                                 <div className="space-y-3">
-                                    {caregiver.reference_requests.map((ref) => (
-                                        <div
-                                            key={ref.id}
-                                            className="rounded-lg border border-border p-3"
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium">
-                                                        {ref.reference_name}
-                                                    </p>
-                                                    <p className="truncate text-xs text-muted-foreground">
-                                                        {ref.reference_email}
-                                                    </p>
+                                    {caregiver.reference_requests.map((ref) => {
+                                        const ratingKeys = [
+                                            'rating_reliability',
+                                            'rating_trustworthiness',
+                                            'rating_maturity',
+                                            'rating_communication',
+                                            'rating_warmth',
+                                            'rating_overall_recommendation',
+                                        ] as const;
+                                        const ratings = ratingKeys
+                                            .map(
+                                                (k) =>
+                                                    ref[
+                                                        k as keyof ReferenceRequest
+                                                    ],
+                                            )
+                                            .filter(
+                                                (r): r is number => r !== null,
+                                            );
+                                        const avg =
+                                            ratings.length > 0
+                                                ? (
+                                                      ratings.reduce(
+                                                          (a, b) => a + b,
+                                                          0,
+                                                      ) / ratings.length
+                                                  ).toFixed(1)
+                                                : null;
+                                        const [expanded, setExpanded] =
+                                            useState(false);
+
+                                        return (
+                                            <div
+                                                key={ref.id}
+                                                className="rounded-lg border border-border p-3"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-medium">
+                                                            {
+                                                                ref.reference_name
+                                                            }
+                                                        </p>
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {
+                                                                ref.reference_email
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    {ref.is_sponsor && (
+                                                        <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                                                            Sponsor
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {ref.is_sponsor && (
-                                                    <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
-                                                        Sponsor
-                                                    </span>
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    {ref.submitted_at ? (
+                                                        <>
+                                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                                                <Check className="h-3 w-3" />
+                                                                {avg}/5
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setExpanded(
+                                                                        !expanded,
+                                                                    )
+                                                                }
+                                                                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                                            >
+                                                                Details
+                                                                <ChevronDown
+                                                                    className={`h-3 w-3 transition-transform ${
+                                                                        expanded
+                                                                            ? 'rotate-180'
+                                                                            : ''
+                                                                    }`}
+                                                                />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                                            Pending
+                                                        </span>
+                                                    )}
+                                                    {ref.relationship && (
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            {ref.relationship}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {expanded && ref.submitted_at && (
+                                                    <div className="mt-3 space-y-2 border-t border-border pt-3">
+                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                                            {ratingKeys.map(
+                                                                (key) => {
+                                                                    const labels: Record<
+                                                                        string,
+                                                                        string
+                                                                    > = {
+                                                                        rating_reliability:
+                                                                            'Reliability',
+                                                                        rating_trustworthiness:
+                                                                            'Trustworthiness',
+                                                                        rating_maturity:
+                                                                            'Maturity',
+                                                                        rating_communication:
+                                                                            'Communication',
+                                                                        rating_warmth:
+                                                                            'Warmth',
+                                                                        rating_overall_recommendation:
+                                                                            'Overall',
+                                                                    };
+                                                                    const val =
+                                                                        ref[
+                                                                            key as keyof ReferenceRequest
+                                                                        ];
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                key
+                                                                            }
+                                                                            className="flex items-center justify-between text-xs"
+                                                                        >
+                                                                            <span className="text-muted-foreground">
+                                                                                {
+                                                                                    labels[
+                                                                                        key
+                                                                                    ]
+                                                                                }
+                                                                            </span>
+                                                                            <span className="font-medium">
+                                                                                {val ?? '—'}
+                                                                                /5
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                        {ref.strengths && (
+                                                            <div>
+                                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                                    Strengths
+                                                                </p>
+                                                                <p className="text-xs">
+                                                                    {
+                                                                        ref.strengths
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        {ref.concerns && (
+                                                            <div>
+                                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                                    Concerns
+                                                                </p>
+                                                                <p className="text-xs">
+                                                                    {
+                                                                        ref.concerns
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        {ref.additional_comments && (
+                                                            <div>
+                                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                                    Additional
+                                                                    Comments
+                                                                </p>
+                                                                <p className="text-xs">
+                                                                    {
+                                                                        ref.additional_comments
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {ref.submitted_at && (
+                                                    <p className="mt-1 text-[10px] text-muted-foreground">
+                                                        Submitted{' '}
+                                                        {ref.submitted_at}
+                                                    </p>
                                                 )}
                                             </div>
-                                            <div className="mt-2 flex items-center gap-2">
-                                                {ref.submitted_at ? (
-                                                    <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
-                                                        <Check className="h-3 w-3" />
-                                                        {ref.rating}/5
-                                                    </span>
-                                                ) : (
-                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                                                        Pending
-                                                    </span>
-                                                )}
-                                                {ref.relationship && (
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                        {ref.relationship}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {ref.submitted_at && (
-                                                <p className="mt-1 text-[10px] text-muted-foreground">
-                                                    Submitted {ref.submitted_at}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <p className="text-sm text-muted-foreground">

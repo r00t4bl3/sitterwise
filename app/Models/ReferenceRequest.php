@@ -15,14 +15,27 @@ class ReferenceRequest extends Model
         'relationship',
         'years_known',
         'is_sponsor',
-        'rating',
-        'feedback',
+        'rating_reliability',
+        'rating_trustworthiness',
+        'rating_maturity',
+        'rating_communication',
+        'rating_warmth',
+        'rating_overall_recommendation',
+        'strengths',
+        'concerns',
+        'additional_comments',
         'submitted_at',
     ];
 
     protected $casts = [
         'is_sponsor' => 'boolean',
         'submitted_at' => 'datetime',
+        'rating_reliability' => 'integer',
+        'rating_trustworthiness' => 'integer',
+        'rating_maturity' => 'integer',
+        'rating_communication' => 'integer',
+        'rating_warmth' => 'integer',
+        'rating_overall_recommendation' => 'integer',
     ];
 
     public function caregiver(): BelongsTo

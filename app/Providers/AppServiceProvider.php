@@ -7,11 +7,13 @@ use App\Events\BookingCreated;
 use App\Events\BookingInvitationSent;
 use App\Events\BookingReceipt;
 use App\Events\BookingReminderTriggered;
+use App\Events\GuestAccountSetup;
 use App\Listeners\SendBookingAcceptedNotifications;
 use App\Listeners\SendBookingCreatedNotifications;
 use App\Listeners\SendBookingInvitationNotifications;
 use App\Listeners\SendBookingReceiptNotification;
 use App\Listeners\SendBookingReminderNotifications;
+use App\Listeners\SendGuestAccountSetupNotification;
 use App\Listeners\UpdateLastLogin;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
@@ -66,6 +68,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             BookingReceipt::class,
             SendBookingReceiptNotification::class,
+        );
+
+        Event::listen(
+            GuestAccountSetup::class,
+            SendGuestAccountSetupNotification::class,
         );
     }
 

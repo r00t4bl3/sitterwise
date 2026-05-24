@@ -17,6 +17,7 @@ class CaregiverEducation extends Model
         'education_type',
         'school_name',
         'graduation_year',
+        'degree',
     ];
 
     protected $casts = [

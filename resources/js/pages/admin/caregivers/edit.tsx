@@ -92,10 +92,11 @@ interface Certification {
 }
 
 interface Education {
-    id: number;
     education_type: string;
     school_name: string;
     graduation_year: number | null;
+    degree: string | null;
+    id: number;
 }
 
 interface Caregiver {
@@ -288,6 +289,7 @@ export default function CaregiverEdit() {
                 education_type: 'high_school',
                 school_name: '',
                 graduation_year: null,
+                degree: null,
             },
         ]);
     };
@@ -1101,8 +1103,17 @@ export default function CaregiverEdit() {
                                                         <SelectItem value="high_school">
                                                             High School
                                                         </SelectItem>
-                                                        <SelectItem value="college">
-                                                            College
+                                                        <SelectItem value="associate">
+                                                            Associate Degree
+                                                        </SelectItem>
+                                                        <SelectItem value="bachelor">
+                                                            Bachelor's Degree
+                                                        </SelectItem>
+                                                        <SelectItem value="master">
+                                                            Master's Degree
+                                                        </SelectItem>
+                                                        <SelectItem value="phd">
+                                                            PhD / Doctorate
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -1133,6 +1144,26 @@ export default function CaregiverEdit() {
                                                         updateEducation(
                                                             edu.id,
                                                             'school_name',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor={`degree-${edu.id}`}
+                                                    className="text-xs"
+                                                >
+                                                    Degree / Major
+                                                </Label>
+                                                <Input
+                                                    id={`degree-${edu.id}`}
+                                                    type="text"
+                                                    value={edu.degree || ''}
+                                                    onChange={(e) =>
+                                                        updateEducation(
+                                                            edu.id,
+                                                            'degree',
                                                             e.target.value,
                                                         )
                                                     }

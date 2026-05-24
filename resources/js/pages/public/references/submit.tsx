@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,15 @@ const yearsKnownOptions = [
     { value: '10+', label: '10+ years' },
 ];
 
+const ratingCategories = [
+    { key: 'rating_reliability', label: 'Reliability & Dependability' },
+    { key: 'rating_trustworthiness', label: 'Trustworthiness' },
+    { key: 'rating_maturity', label: 'Maturity' },
+    { key: 'rating_communication', label: 'Communication' },
+    { key: 'rating_warmth', label: 'Warmth & Compassion' },
+    { key: 'rating_overall_recommendation', label: 'Overall Recommendation' },
+] as const;
+
 interface SubmitProps {
     token: string;
     referenceName: string;
@@ -26,7 +36,53 @@ interface SubmitProps {
     defaults: {
         relationship: string | null;
         years_known: string | null;
+        rating_reliability: number | null;
+        rating_trustworthiness: number | null;
+        rating_maturity: number | null;
+        rating_communication: number | null;
+        rating_warmth: number | null;
+        rating_overall_recommendation: number | null;
+        strengths: string | null;
+        concerns: string | null;
+        additional_comments: string | null;
     };
+}
+
+function StarRating({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (val: string) => void;
+}) {
+    const [hovered, setHovered] = useState(0);
+
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    onClick={() => onChange(String(star))}
+                    onMouseEnter={() => setHovered(star)}
+                    onMouseLeave={() => setHovered(0)}
+                    className="cursor-pointer"
+                >
+                    <svg
+                        className={`h-7 w-7 transition-colors ${
+                            (hovered || parseInt(value)) >= star
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-300 hover:text-amber-300'
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+            ))}
+        </div>
+    );
 }
 
 export default function Submit({
@@ -38,8 +94,15 @@ export default function Submit({
     const form = useForm({
         relationship: defaults.relationship ?? '',
         years_known: defaults.years_known ?? '',
-        rating: '',
-        feedback: '',
+        rating_reliability: defaults.rating_reliability?.toString() ?? '',
+        rating_trustworthiness: defaults.rating_trustworthiness?.toString() ?? '',
+        rating_maturity: defaults.rating_maturity?.toString() ?? '',
+        rating_communication: defaults.rating_communication?.toString() ?? '',
+        rating_warmth: defaults.rating_warmth?.toString() ?? '',
+        rating_overall_recommendation: defaults.rating_overall_recommendation?.toString() ?? '',
+        strengths: defaults.strengths ?? '',
+        concerns: defaults.concerns ?? '',
+        additional_comments: defaults.additional_comments ?? '',
     });
 
     const handleSubmit = (e: FormEvent) => {
@@ -124,59 +187,96 @@ export default function Submit({
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="rating">Rating</Label>
-                            <div className="flex gap-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                        key={star}
-                                        type="button"
-                                        onClick={() =>
-                                            form.setData('rating', String(star))
-                                        }
-                                        className="cursor-pointer"
-                                    >
-                                        <svg
-                                            className={`h-8 w-8 transition-colors ${
-                                                parseInt(form.data.rating) >=
-                                                star
-                                                    ? 'fill-amber-400 text-amber-400'
-                                                    : 'text-gray-300 hover:text-amber-300'
-                                            }`}
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                        </svg>
-                                    </button>
-                                ))}
-                            </div>
-                            {form.errors.rating && (
-                                <p className="text-sm text-red-500">
-                                    {form.errors.rating}
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="text-base">
+                                    Ratings
+                                </Label>
+                                <p className="text-xs text-gray-400">
+                                    Rate {applicantName} in each area
                                 </p>
-                            )}
-                            <p className="text-xs text-gray-400">
-                                Click a star to rate
-                            </p>
+                            </div>
+                            {ratingCategories.map(({ key, label }) => (
+                                <div key={key} className="space-y-1">
+                                    <Label
+                                        htmlFor={key}
+                                        className="text-sm font-normal"
+                                    >
+                                        {label}
+                                    </Label>
+                                    <StarRating
+                                        value={form.data[key]}
+                                        onChange={(val) =>
+                                            form.setData(key, val)
+                                        }
+                                    />
+                                    {form.errors[key] && (
+                                        <p className="text-sm text-red-500">
+                                            {form.errors[key]}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="feedback">Reference Feedback</Label>
+                            <Label htmlFor="strengths">
+                                What are {applicantName}&apos;s greatest
+                                strengths?
+                            </Label>
                             <Textarea
-                                id="feedback"
-                                rows={5}
-                                value={form.data.feedback}
+                                id="strengths"
+                                rows={4}
+                                value={form.data.strengths}
                                 onChange={(e) =>
-                                    form.setData('feedback', e.target.value)
+                                    form.setData('strengths', e.target.value)
                                 }
-                                placeholder="Please describe your experience working with the applicant, their strengths, and any areas for growth..."
+                                placeholder="Describe the applicant's strengths, skills, and qualities that make them a great caregiver..."
                             />
-                            {form.errors.feedback && (
+                            {form.errors.strengths && (
                                 <p className="text-sm text-red-500">
-                                    {form.errors.feedback}
+                                    {form.errors.strengths}
                                 </p>
                             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="concerns">
+                                Are there any areas of concern?
+                                <span className="ml-1 text-xs text-gray-400">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <Textarea
+                                id="concerns"
+                                rows={3}
+                                value={form.data.concerns}
+                                onChange={(e) =>
+                                    form.setData('concerns', e.target.value)
+                                }
+                                placeholder="Any concerns about the applicant working as a caregiver..."
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="additional_comments">
+                                Anything else you&apos;d like to share?
+                                <span className="ml-1 text-xs text-gray-400">
+                                    (optional)
+                                </span>
+                            </Label>
+                            <Textarea
+                                id="additional_comments"
+                                rows={3}
+                                value={form.data.additional_comments}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'additional_comments',
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="Any additional feedback..."
+                            />
                         </div>
 
                         <Button

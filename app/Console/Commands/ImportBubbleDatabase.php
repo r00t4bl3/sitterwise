@@ -296,6 +296,23 @@ class ImportBubbleDatabase extends Command
 
     protected function processStatement(string $type, \PDOStatement $stmt, bool $force, bool $dryRun): void
     {
+        if ($type === 'user') {
+            $hits = [];
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $hits[] = [
+                    '_source' => json_decode($row['raw_json'], true),
+                    '_id' => json_decode($row['raw_json'], true)['_id'] ?? null,
+                ];
+            }
+            $hits = $this->sortHitsByRole($hits);
+            $total = count($hits);
+            foreach ($hits as $i => $hit) {
+                $this->processHits($type, [$hit], $force, $dryRun, $i + 1, $total);
+            }
+
+            return;
+        }
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $hit = [
                 '_source' => json_decode($row['raw_json'], true),
@@ -493,6 +510,7 @@ class ImportBubbleDatabase extends Command
             $hasFastForwarded = false;
             $stagedCount = $this->getStagedCount($type);
             $isComplete = $this->isTypeComplete($type);
+            $userHits = [];
 
             while (true) {
                 $this->info("Intercepting page $page...");
@@ -528,7 +546,11 @@ class ImportBubbleDatabase extends Command
                         }
 
                         if ($liveInsert) {
-                            $this->processHits($type, [$hit], $force, $dryRun);
+                            if ($type === 'user') {
+                                $userHits[] = $hit;
+                            } else {
+                                $this->processHits($type, [$hit], $force, $dryRun);
+                            }
                         }
                     }
 
@@ -661,6 +683,14 @@ class ImportBubbleDatabase extends Command
                     break;
                 }
             }
+
+            if ($type === 'user' && $liveInsert && $userHits !== []) {
+                $userHits = $this->sortHitsByRole($userHits);
+                $total = count($userHits);
+                foreach ($userHits as $i => $hit) {
+                    $this->processHits($type, [$hit], $force, $dryRun, $i + 1, $total);
+                }
+            }
         } catch (\Exception $e) {
             throw $e;
         }
@@ -713,16 +743,38 @@ class ImportBubbleDatabase extends Command
         }
     }
 
-    protected function processHits(string $type, array $hits, bool $force, bool $dryRun): void
+    protected function sortHitsByRole(array $hits): array
     {
-        foreach ($hits as $index => $hit) {
+        $rolePriority = [
+            'admin' => 1,
+            'caregiver' => 2,
+            'caregiver_applicant' => 2,
+            'client' => 3,
+        ];
+
+        usort($hits, function (array $a, array $b) use ($rolePriority) {
+            $roleA = $a['_source']['role_permissions_option_role'] ?? 'caregiver';
+            $roleB = $b['_source']['role_permissions_option_role'] ?? 'caregiver';
+            $priorityA = $rolePriority[$roleA] ?? 9;
+            $priorityB = $rolePriority[$roleB] ?? 9;
+
+            return $priorityA <=> $priorityB;
+        });
+
+        return $hits;
+    }
+
+    protected function processHits(string $type, array $hits, bool $force, bool $dryRun, ?int $current = null, ?int $total = null): void
+    {
+        foreach ($hits as $hit) {
             $source = $hit['_source'] ?? [];
             $externalId = $hit['_id'] ?? null;
 
             if ($type === 'user') {
+                $counter = $current && $total ? " ($current of $total)" : '';
                 $name = ($source['first_name_text'] ?? 'Unknown').' '.($source['last_name_text'] ?? '');
                 $modifiedDate = $this->timestampToDate($source['Modified Date'] ?? null);
-                $this->line("    -> Processing User: $name (Modified: $modifiedDate)");
+                $this->line("    -> Processing User{$counter}: $name (Modified: $modifiedDate)");
 
                 if (! $dryRun) {
                     try {

@@ -47,6 +47,16 @@ class ImportBubbleProfilePictures extends Command
             return $this->handleSingleUser((int) $userId, $force, $dryRun, $disk);
         }
 
+        if (! $dryRun && ! $this->confirm('Running this command will delete the current profile photo directory. Are you sure you want to continue?')) {
+            return Command::FAILURE;
+        }
+
+        if (! $dryRun) {
+            Storage::disk($disk)->deleteDirectory('profile-photos');
+            Storage::disk($disk)->makeDirectory('profile-photos');
+            $this->info('Profile photo directory has been cleaned.');
+        }
+
         $query = User::query()
             ->whereNotNull('profile_photo_url')
             ->where(function ($q) {

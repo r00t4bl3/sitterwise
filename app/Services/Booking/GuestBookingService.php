@@ -7,6 +7,8 @@ use App\Enums\LocationType;
 use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
+use App\Events\BookingCreated;
+use App\Events\GuestAccountSetup;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
@@ -20,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Stripe\StripeClient;
@@ -156,76 +159,11 @@ class GuestBookingService
             'payment_method_id' => 'required|string',
         ]);
 
-        $paymentMethodId = $request->input('payment_method_id');
-
         try {
-            $booking = DB::transaction(function () use ($pendingData, $paymentMethodId) {
-                $client = $this->createClient($pendingData, $paymentMethodId);
-                $bookingGroup = BookingGroup::create([
-                    'client_id' => $client->id,
-                    'submitted_at' => now(),
-                    'submission_type' => 'guest',
-                    'is_split' => false,
-                ]);
-
-                $booking = Booking::create([
-                    'booking_group_id' => $bookingGroup->id,
-                    'client_id' => $client->id,
-                    'service_type' => $pendingData['service_type'],
-                    'location_type' => $pendingData['location_type'],
-                    'start_datetime' => $pendingData['start_datetime'],
-                    'end_datetime' => $pendingData['end_datetime'],
-                    'address_line1' => $pendingData['address_line1'],
-                    'address_line2' => $pendingData['address_line2'] ?? null,
-                    'address_city' => $pendingData['address_city'],
-                    'address_state' => $pendingData['address_state'],
-                    'address_zip' => $pendingData['address_zip'],
-                    'hotel_id' => $pendingData['hotel_id'] ?? null,
-                    'rental_platform' => $pendingData['rental_platform'] ?? null,
-                    'caregiver_notes' => $pendingData['caregiver_notes'] ?? null,
-                    'notes_to_sitterwise' => $pendingData['notes_to_sitterwise'] ?? null,
-                    'sitter_preferences' => $pendingData['sitter_preferences'] ?? [],
-                    'other_adults_present' => $pendingData['other_adults_present'] ?? null,
-                    'emergency_instructions' => $pendingData['emergency_instructions'] ?? null,
-                    'special_needs_notes' => $pendingData['special_needs_notes'] ?? null,
-                    'how_did_you_hear' => $pendingData['how_did_you_hear'] ?? null,
-                    'client_first_name' => $pendingData['client_first_name'],
-                    'client_last_name' => $pendingData['client_last_name'],
-                    'client_phone' => $pendingData['client_phone'],
-                    'client_email' => $pendingData['client_email'],
-                    'status' => 'received',
-                    'payment_status' => 'pending',
-                    'requires_payment' => true,
-                    'total_amount' => 0,
-                ]);
-
-                if (! empty($pendingData['new_children'])) {
-                    foreach ($pendingData['new_children'] as $childData) {
-                        ClientChild::create([
-                            'client_id' => $client->id,
-                            'name' => $childData['name'] ?? null,
-                            'gender' => $childData['gender'] ?? null,
-                            'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
-                                ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
-                                : null,
-                        ]);
-                    }
-                }
-
-                if (! empty($pendingData['new_pets'])) {
-                    foreach ($pendingData['new_pets'] as $petData) {
-                        ClientPet::create([
-                            'client_id' => $client->id,
-                            'name' => $petData['name'] ?? null,
-                            'type' => $petData['type'] ?? null,
-                            'breed' => $petData['breed'] ?? null,
-                            'notes' => $petData['notes'] ?? null,
-                        ]);
-                    }
-                }
-
-                return $booking;
-            });
+            $booking = $this->createBookingWithPayment(
+                $pendingData,
+                $request->input('payment_method_id'),
+            );
 
             $request->session()->forget(self::PENDING_KEY);
             $request->session()->forget(self::PAYMENT_TOKEN_KEY);
@@ -270,8 +208,9 @@ class GuestBookingService
 
     public function createBookingWithPayment(array $pendingData, string $paymentMethodId): Booking
     {
-        return DB::transaction(function () use ($pendingData, $paymentMethodId) {
-            $client = $this->createClient($pendingData, $paymentMethodId);
+        $result = DB::transaction(function () use ($pendingData, $paymentMethodId) {
+            $createResult = $this->createClient($pendingData, $paymentMethodId);
+            $client = $createResult['client'];
 
             $bookingGroup = BookingGroup::create([
                 'client_id' => $client->id,
@@ -309,6 +248,19 @@ class GuestBookingService
                 'payment_status' => 'pending',
                 'requires_payment' => true,
                 'total_amount' => 0,
+                'children' => array_map(fn ($child) => [
+                    'name' => $child['name'] ?? null,
+                    'gender' => $child['gender'] ?? null,
+                    'birth_date' => ! empty($child['birth_month']) && ! empty($child['birth_year'])
+                        ? Carbon::createFromDate((int) $child['birth_year'], (int) $child['birth_month'], 1)->format('Y-m-d')
+                        : null,
+                ], $pendingData['new_children'] ?? []),
+                'pets' => array_map(fn ($pet) => [
+                    'name' => $pet['name'] ?? null,
+                    'type' => $pet['type'] ?? null,
+                    'breed' => $pet['breed'] ?? null,
+                    'notes' => $pet['notes'] ?? null,
+                ], $pendingData['new_pets'] ?? []),
             ]);
 
             if (! empty($pendingData['new_children'])) {
@@ -336,8 +288,20 @@ class GuestBookingService
                 }
             }
 
-            return $booking;
+            return [
+                'booking' => $booking,
+                'isNewUser' => $createResult['isNewUser'],
+                'resetToken' => $createResult['resetToken'],
+            ];
         });
+
+        event(new BookingCreated($result['booking']));
+
+        if ($result['isNewUser'] && $result['resetToken']) {
+            event(new GuestAccountSetup($result['booking'], $result['resetToken']));
+        }
+
+        return $result['booking'];
     }
 
     public function createSetupIntent(Request $request): array
@@ -412,22 +376,24 @@ class GuestBookingService
         return null;
     }
 
-    protected function createClient(array $data, string $paymentMethodId): Client
+    protected function createClient(array $data, string $paymentMethodId): array
     {
         $user = User::where('email', $data['client_email'])->first();
 
         if ($user) {
             $user->update([
-                'first_name' => $data['client_first_name'],
-                'last_name' => $data['client_last_name'],
-                'phone' => $data['client_phone'],
+                'name' => $data['client_first_name'].' '.$data['client_last_name'],
             ]);
 
             $client = $user->client;
             if ($client) {
                 $this->attachPaymentMethod($client, $paymentMethodId);
 
-                return $client;
+                return [
+                    'client' => $client,
+                    'isNewUser' => false,
+                    'resetToken' => null,
+                ];
             }
 
             $client = Client::create([
@@ -439,7 +405,11 @@ class GuestBookingService
 
             $this->attachPaymentMethod($client, $paymentMethodId);
 
-            return $client;
+            return [
+                'client' => $client,
+                'isNewUser' => false,
+                'resetToken' => null,
+            ];
         }
 
         $tempPassword = Str::random(16);
@@ -459,7 +429,13 @@ class GuestBookingService
 
         $this->attachPaymentMethod($client, $paymentMethodId);
 
-        return $client;
+        $resetToken = Password::broker()->createToken($user);
+
+        return [
+            'client' => $client,
+            'isNewUser' => true,
+            'resetToken' => $resetToken,
+        ];
     }
 
     protected function attachPaymentMethod(Client $client, string $paymentMethodId): void

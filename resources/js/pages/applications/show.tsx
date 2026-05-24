@@ -48,8 +48,15 @@ interface ReferenceInfo {
     relationship: string | null;
     years_known: string | null;
     is_sponsor: boolean;
-    rating: number | null;
-    feedback: string | null;
+    rating_reliability: number | null;
+    rating_trustworthiness: number | null;
+    rating_maturity: number | null;
+    rating_communication: number | null;
+    rating_warmth: number | null;
+    rating_overall_recommendation: number | null;
+    strengths: string | null;
+    concerns: string | null;
+    additional_comments: string | null;
     submitted_at: string | null;
     created_at: string;
 }
@@ -225,6 +232,27 @@ export default function ApplicationShow() {
                             )}
                             {references.map((ref) => {
                                 const isCompleted = !!ref.submitted_at;
+                                const ratingKeys = [
+                                    'rating_reliability',
+                                    'rating_trustworthiness',
+                                    'rating_maturity',
+                                    'rating_communication',
+                                    'rating_warmth',
+                                    'rating_overall_recommendation',
+                                ] as const;
+                                const ratings = ratingKeys
+                                    .map((k) => ref[k as keyof ReferenceInfo])
+                                    .filter((r): r is number => r !== null);
+                                const avg =
+                                    ratings.length > 0
+                                        ? (
+                                              ratings.reduce(
+                                                  (a, b) => a + b,
+                                                  0,
+                                              ) / ratings.length
+                                          ).toFixed(1)
+                                        : null;
+                                const [expanded, setExpanded] = useState(false);
 
                                 return (
                                     <div
@@ -276,33 +304,123 @@ export default function ApplicationShow() {
                                                             ` · ${ref.years_known} years known`}
                                                     </p>
                                                 )}
-                                                {isCompleted && ref.rating && (
-                                                    <div className="mt-2 flex items-center gap-1">
-                                                        {[1, 2, 3, 4, 5].map(
-                                                            (star) => (
-                                                                <svg
-                                                                    key={star}
-                                                                    className={`h-4 w-4 ${
-                                                                        star <=
-                                                                        ref.rating!
-                                                                            ? 'fill-amber-400 text-amber-400'
-                                                                            : 'fill-gray-200 text-gray-200'
-                                                                    }`}
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                                                </svg>
-                                                            ),
-                                                        )}
+                                                {isCompleted && avg && (
+                                                    <div className="mt-2 flex items-center gap-2">
+                                                        <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                                                            {avg}/5 avg
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setExpanded(
+                                                                    !expanded,
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+                                                        >
+                                                            Details
+                                                            <svg
+                                                                className={`h-3 w-3 transition-transform ${
+                                                                    expanded
+                                                                        ? 'rotate-180'
+                                                                        : ''
+                                                                }`}
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M19 9l-7 7-7-7"
+                                                                />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 )}
-                                                {isCompleted &&
-                                                    ref.feedback && (
-                                                        <p className="mt-2 text-sm text-gray-600 italic">
-                                                            &ldquo;
-                                                            {ref.feedback}
-                                                            &rdquo;
-                                                        </p>
+                                                {expanded &&
+                                                    isCompleted && (
+                                                        <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
+                                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                                                {ratingKeys.map(
+                                                                    (key) => {
+                                                                        const labels: Record<
+                                                                            string,
+                                                                            string
+                                                                        > = {
+                                                                            rating_reliability:
+                                                                                'Reliability',
+                                                                            rating_trustworthiness:
+                                                                                'Trustworthiness',
+                                                                            rating_maturity:
+                                                                                'Maturity',
+                                                                            rating_communication:
+                                                                                'Communication',
+                                                                            rating_warmth:
+                                                                                'Warmth',
+                                                                            rating_overall_recommendation:
+                                                                                'Overall',
+                                                                        };
+                                                                        const val =
+                                                                            ref[
+                                                                                key as keyof ReferenceInfo
+                                                                            ];
+                                                                        return (
+                                                                            <div
+                                                                                key={
+                                                                                    key
+                                                                                }
+                                                                                className="flex items-center justify-between text-sm"
+                                                                            >
+                                                                                <span className="text-gray-500">
+                                                                                    {
+                                                                                        labels[
+                                                                                            key
+                                                                                        ]
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="font-medium">
+                                                                                    {val ?? '—'}
+                                                                                    /5
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    },
+                                                                )}
+                                                            </div>
+                                                            {ref.strengths && (
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">
+                                                                        Strengths:
+                                                                    </span>{' '}
+                                                                    {
+                                                                        ref.strengths
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {ref.concerns && (
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">
+                                                                        Concerns:
+                                                                    </span>{' '}
+                                                                    {
+                                                                        ref.concerns
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            {ref.additional_comments && (
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">
+                                                                        Additional
+                                                                        Comments:
+                                                                    </span>{' '}
+                                                                    {
+                                                                        ref.additional_comments
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     )}
                                             </div>
                                             {!isCompleted && (

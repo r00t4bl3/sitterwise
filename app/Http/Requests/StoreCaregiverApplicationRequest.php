@@ -55,8 +55,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'experiences.*.start_date' => 'required|date_format:Y-m',
             'experiences.*.end_date' => 'nullable|date_format:Y-m',
             'experiences.*.present' => 'boolean',
-            'experiences.*.role' => 'required|string|max:255',
-            'experiences.*.organization' => 'required|string|max:255',
+            'experiences.*.role' => 'nullable|string|max:255',
+            'experiences.*.organization' => 'nullable|string|max:255',
             'experiences.*.description' => 'required|string|max:2000',
             'experiences.*.ages_served' => 'required|array|min:1',
             'experiences.*.ages_served.*' => 'in:infant,toddler,preschool,school_age,teen',
@@ -77,11 +77,6 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'languages' => 'nullable|string|max:500',
             'has_children' => 'nullable|in:no,yes_at_home,yes_grown',
-            'skills.special_needs' => 'boolean',
-            'skills.swimming' => 'boolean',
-            'skills.driving' => 'boolean',
-            'skills.bilingual' => 'boolean',
-            'skills.other' => 'nullable|string|max:1000',
 
             // Step 5: References
             'references' => 'required|array|min:3',
@@ -107,7 +102,6 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'things_i_bring' => 'nullable|string|max:2000',
             'bio' => 'required|string|max:5000',
             'interests' => 'nullable|string|max:1000',
-            'terms.agree' => 'required|accepted',
 
             // Step 8: Agreements
             'verification.signature' => 'required|string|max:255',

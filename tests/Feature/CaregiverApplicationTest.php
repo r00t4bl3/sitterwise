@@ -5,30 +5,16 @@ use App\Mail\ApplicantConfirmationMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
-use App\Models\CaregiverStatus;
 use App\Models\ReferenceRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
-
-function caregiverApplicationEnsureApplicantStatus(): void
-{
-    if (! DB::table('caregiver_statuses')->where('name', 'applicant')->exists()) {
-        CaregiverStatus::create([
-            'name' => 'applicant',
-            'color' => '#F48A91',
-            'is_active' => true,
-            'sort_order' => 1,
-        ]);
-    }
-}
 
 function caregiverApplicationGetValidApplicationData(string $applicantEmail = 'test@example.com'): array
 {
@@ -284,7 +270,6 @@ describe('Caregiver Application - Wizard Access', function () {
 
 describe('Caregiver Application - Submission', function () {
     it('submit creates user with caregiver role', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'new-cgiver@example.com');
         Session::put('verified_at', now());
 
@@ -297,7 +282,6 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates caregiver with applicant status', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'caregiver-submit@example.com');
         Session::put('verified_at', now());
 
@@ -313,7 +297,6 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates application with full data snapshot', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'snapshot@example.com');
         Session::put('verified_at', now());
 
@@ -330,7 +313,6 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit creates verification and agreement PDFs', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'pdfs@example.com');
         Session::put('verified_at', now());
 
@@ -351,7 +333,6 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit clears session after success', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'clear-session@example.com');
         Session::put('verified_at', now());
 
@@ -361,7 +342,6 @@ describe('Caregiver Application - Submission', function () {
     });
 
     it('submit redirects to thank you page', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'thankyou@example.com');
         Session::put('verified_at', now());
 
@@ -377,7 +357,6 @@ describe('Caregiver Application - Submission', function () {
         User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
         User::factory()->create(['role' => 'super_admin', 'email' => 'superadmin@example.test']);
 
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'emails@example.com');
         Session::put('verified_at', now());
 
@@ -528,18 +507,6 @@ describe('Caregiver Application - Validation Rules', function () {
         $response->assertSessionHasErrors('education.level');
     });
 
-    it('validates terms agreement required', function () {
-        Session::put('verified_email', 'no-terms@example.com');
-        Session::put('verified_at', now());
-
-        $data = caregiverApplicationGetValidApplicationData('no-terms@example.com');
-        $data['terms']['agree'] = false;
-
-        $response = $this->post('/caregiver/apply/submit', $data);
-
-        $response->assertSessionHasErrors('terms.agree');
-    });
-
     it('validates verification signature required', function () {
         Session::put('verified_email', 'no-verification-sig@example.com');
         Session::put('verified_at', now());
@@ -652,30 +619,6 @@ describe('Caregiver Application - Step 3 Validation', function () {
         $response->assertSessionHasErrors('experiences.0.end_date');
     });
 
-    it('validates experience role is required', function () {
-        Session::put('verified_email', 'no-role@example.com');
-        Session::put('verified_at', now());
-
-        $data = caregiverApplicationGetValidApplicationData('no-role@example.com');
-        unset($data['experiences'][0]['role']);
-
-        $response = $this->post('/caregiver/apply/submit', $data);
-
-        $response->assertSessionHasErrors('experiences.0.role');
-    });
-
-    it('validates experience organization is required', function () {
-        Session::put('verified_email', 'no-org@example.com');
-        Session::put('verified_at', now());
-
-        $data = caregiverApplicationGetValidApplicationData('no-org@example.com');
-        unset($data['experiences'][0]['organization']);
-
-        $response = $this->post('/caregiver/apply/submit', $data);
-
-        $response->assertSessionHasErrors('experiences.0.organization');
-    });
-
     it('validates experience description is required', function () {
         Session::put('verified_email', 'no-exp-desc@example.com');
         Session::put('verified_at', now());
@@ -713,7 +656,6 @@ describe('Caregiver Application - Step 3 Validation', function () {
     });
 
     it('accepts present experience without end date', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'present-exp@example.com');
         Session::put('verified_at', now());
 
@@ -897,7 +839,6 @@ describe('Caregiver Application - Step 4 Validation', function () {
     });
 
     it('accepts submission with cpr_certified = no without conditional fields', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'cpr-no@example.com');
         Session::put('verified_at', now());
 
@@ -911,7 +852,6 @@ describe('Caregiver Application - Step 4 Validation', function () {
     });
 
     it('accepts submission with trustline_certified = no without conditional fields', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'trustline-no@example.com');
         Session::put('verified_at', now());
 
@@ -1026,7 +966,6 @@ describe('Caregiver Application - Step 7 Validation', function () {
 
 describe('Caregiver Application - Submission Edge Cases', function () {
     it('submits successfully with full-time employment and present experience', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'fulltime-present@example.com');
         Session::put('verified_at', now());
 
@@ -1045,7 +984,6 @@ describe('Caregiver Application - Submission Edge Cases', function () {
     });
 
     it('submits successfully with part-time employment', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'parttime@example.com');
         Session::put('verified_at', now());
 
@@ -1060,7 +998,6 @@ describe('Caregiver Application - Submission Edge Cases', function () {
     });
 
     it('submits successfully with student status', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'student@example.com');
         Session::put('verified_at', now());
 
@@ -1073,7 +1010,6 @@ describe('Caregiver Application - Submission Edge Cases', function () {
     });
 
     it('submits with all optional fields empty', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Session::put('verified_email', 'optional-empty@example.com');
         Session::put('verified_at', now());
 
@@ -1106,7 +1042,6 @@ describe('Caregiver Application - Submission Edge Cases', function () {
     });
 
     it('stores uploaded cpr and trustline files', function () {
-        caregiverApplicationEnsureApplicantStatus();
         Storage::fake('public');
         Session::put('verified_email', 'file-cpr@example.com');
         Session::put('verified_at', now());

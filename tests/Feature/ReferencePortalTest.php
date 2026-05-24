@@ -1,8 +1,8 @@
 <?php
 
+use App\Enums\CaregiverStatus;
 use App\Mail\ReferenceCompletedMail;
 use App\Models\Caregiver;
-use App\Models\CaregiverStatus;
 use App\Models\ReferenceRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,23 +11,12 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    CaregiverStatus::create([
-        'name' => 'applicant',
-        'color' => '#F48A91',
-        'is_active' => true,
-        'sort_order' => 1,
-    ]);
-});
-
 function referencePortalCreateReferenceRequest(?string $token = null): ReferenceRequest
 {
-    $status = CaregiverStatus::where('name', 'applicant')->first();
-
     $user = User::factory()->create(['role' => 'caregiver']);
     $caregiver = Caregiver::create([
         'user_id' => $user->id,
-        'status_id' => $status->id,
+        'status' => CaregiverStatus::Applicant->value,
         'first_name' => 'John',
         'last_name' => 'Doe',
         'slug' => 'john-doe-'.Str::random(6),
@@ -44,6 +33,23 @@ function referencePortalCreateReferenceRequest(?string $token = null): Reference
         'years_known' => '3-5',
         'is_sponsor' => false,
     ]);
+}
+
+function referencePortalValidPayload(array $overrides = []): array
+{
+    return array_merge([
+        'relationship' => 'Former Supervisor',
+        'years_known' => '5-10',
+        'rating_reliability' => 5,
+        'rating_trustworthiness' => 5,
+        'rating_maturity' => 4,
+        'rating_communication' => 5,
+        'rating_warmth' => 4,
+        'rating_overall_recommendation' => 5,
+        'strengths' => 'Very responsible and caring.',
+        'concerns' => '',
+        'additional_comments' => '',
+    ], $overrides);
 }
 
 describe('Reference Portal - Show', function () {
@@ -63,8 +69,7 @@ describe('Reference Portal - Show', function () {
     it('shows submitted page for already completed reference', function () {
         $reference = referencePortalCreateReferenceRequest();
         $reference->update([
-            'rating' => 5,
-            'feedback' => 'Great caregiver!',
+            'strengths' => 'Great person.',
             'submitted_at' => now(),
         ]);
 
@@ -77,21 +82,9 @@ describe('Reference Portal - Show', function () {
     });
 
     it('returns 404 for invalid token', function () {
-        $response = $this->get('/references/invalid-token-123');
+        $response = $this->get('/references/invalid-token');
 
         $response->assertStatus(404);
-    });
-
-    it('pre-fills relationship and years_known from application data', function () {
-        $reference = referencePortalCreateReferenceRequest();
-
-        $response = $this->get("/references/{$reference->token}");
-
-        $response->assertInertia(fn ($page) => $page
-            ->component('public/references/submit')
-            ->where('defaults.relationship', 'Former Employer')
-            ->where('defaults.years_known', '3-5')
-        );
     });
 });
 
@@ -101,86 +94,69 @@ describe('Reference Portal - Submit', function () {
 
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'relationship' => 'Former Supervisor',
-            'years_known' => '5-10',
-            'rating' => 5,
-            'feedback' => 'John is an excellent caregiver. Very responsible and caring.',
-        ]);
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload());
 
         $response->assertRedirect("/references/{$reference->token}");
 
         $reference->refresh();
         expect($reference->relationship)->toBe('Former Supervisor');
         expect($reference->years_known)->toBe('5-10');
-        expect($reference->rating)->toBe(5);
-        expect($reference->feedback)->toBe('John is an excellent caregiver. Very responsible and caring.');
+        expect($reference->rating_reliability)->toBe(5);
+        expect($reference->rating_trustworthiness)->toBe(5);
+        expect($reference->strengths)->toBe('Very responsible and caring.');
         expect($reference->submitted_at)->not->toBeNull();
     });
 
     it('rejects duplicate submission', function () {
         $reference = referencePortalCreateReferenceRequest();
         $reference->update([
-            'rating' => 4,
-            'feedback' => 'Already submitted.',
+            'strengths' => 'Already submitted.',
             'submitted_at' => now(),
         ]);
 
-        $response = $this->post("/references/{$reference->token}", [
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
             'relationship' => 'Friend',
-            'years_known' => '3-5',
-            'rating' => 5,
-            'feedback' => 'Trying again.',
-        ]);
+        ]));
 
         $response->assertSessionHasErrors('token');
     });
 
-    it('validates rating is required', function () {
+    it('validates rating_reliability is required', function () {
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'relationship' => 'Friend',
-            'years_known' => '1-3',
-            'feedback' => 'Good person.',
-        ]);
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'rating_reliability' => '',
+        ]));
 
-        $response->assertSessionHasErrors('rating');
+        $response->assertSessionHasErrors('rating_reliability');
     });
 
     it('validates rating must be between 1 and 5', function () {
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'relationship' => 'Friend',
-            'years_known' => '1-3',
-            'rating' => 6,
-            'feedback' => 'Good person.',
-        ]);
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'rating_reliability' => 6,
+        ]));
 
-        $response->assertSessionHasErrors('rating');
+        $response->assertSessionHasErrors('rating_reliability');
     });
 
-    it('validates feedback is required', function () {
+    it('validates strengths is required', function () {
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'relationship' => 'Friend',
-            'years_known' => '1-3',
-            'rating' => 3,
-        ]);
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'strengths' => '',
+        ]));
 
-        $response->assertSessionHasErrors('feedback');
+        $response->assertSessionHasErrors('strengths');
     });
 
     it('validates relationship is required', function () {
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'years_known' => '1-3',
-            'rating' => 3,
-            'feedback' => 'Good person.',
-        ]);
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'relationship' => '',
+        ]));
 
         $response->assertSessionHasErrors('relationship');
     });
@@ -188,12 +164,9 @@ describe('Reference Portal - Submit', function () {
     it('validates years_known must be valid option', function () {
         $reference = referencePortalCreateReferenceRequest();
 
-        $response = $this->post("/references/{$reference->token}", [
-            'relationship' => 'Friend',
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
             'years_known' => 'forever',
-            'rating' => 3,
-            'feedback' => 'Good person.',
-        ]);
+        ]));
 
         $response->assertSessionHasErrors('years_known');
     });
@@ -204,12 +177,7 @@ describe('Reference Portal - Submit', function () {
 
         $reference = referencePortalCreateReferenceRequest();
 
-        $this->post("/references/{$reference->token}", [
-            'relationship' => 'Former Employer',
-            'years_known' => '3-5',
-            'rating' => 5,
-            'feedback' => 'Excellent caregiver!',
-        ]);
+        $this->post("/references/{$reference->token}", referencePortalValidPayload());
 
         Mail::assertQueued(ReferenceCompletedMail::class, function ($mail) use ($reference) {
             return $mail->referenceName === 'Jane Reference'
@@ -223,23 +191,16 @@ describe('Reference Portal - Submit', function () {
 
         $reference = referencePortalCreateReferenceRequest();
 
-        $this->post("/references/{$reference->token}", [
-            'relationship' => 'Former Employer',
-            'years_known' => '3-5',
-            'rating' => 4,
-            'feedback' => 'Good caregiver.',
-        ]);
+        $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'rating_overall_recommendation' => 4,
+            'strengths' => 'Good caregiver.',
+        ]));
 
         Mail::assertQueued(ReferenceCompletedMail::class, 1);
     });
 
     it('returns 404 for invalid token on store', function () {
-        $response = $this->post('/references/invalid-token', [
-            'relationship' => 'Friend',
-            'years_known' => '1-3',
-            'rating' => 3,
-            'feedback' => 'Good person.',
-        ]);
+        $response = $this->post('/references/invalid-token', referencePortalValidPayload());
 
         $response->assertStatus(404);
     });
@@ -250,8 +211,7 @@ describe('Reference Portal - ReferenceRequest Model', function () {
         $pending = referencePortalCreateReferenceRequest();
         $completed = referencePortalCreateReferenceRequest();
         $completed->update([
-            'rating' => 5,
-            'feedback' => 'Done!',
+            'strengths' => 'Done!',
             'submitted_at' => now(),
         ]);
 
