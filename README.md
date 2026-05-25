@@ -34,9 +34,9 @@ Three entry points: **guest** (unauthenticated with Stripe checkout), **client**
 ### Caregiver Application
 Public multi-step wizard with email OTP verification. Collects personal info, experience, education, references, certifications. Generates PDF agreements on submission.
 
-**Reference Workflow:** On submission, reference request emails are queued to each reference with a unique token link. References submit feedback via a public portal (no auth required) — rating, relationship, years known, and written feedback. Admins receive notifications on each completed reference. A sponsor reference is also collected and displayed separately.
+**Reference Workflow**: On submission, reference request emails are queued to each reference with a unique token link. References submit feedback via a public portal (no auth required) — rating, relationship, years known, and written feedback. Admins receive notifications on each completed reference. A sponsor reference is also collected and displayed separately.
 
-**Admin Management:** Dedicated `/applications` page lists all applications with reference completion progress. Detail view shows full application data plus a reference grid with resend capability. Dashboard includes pending applications and stuck references (>7 days without response) counts.
+**Admin Management**: Dedicated `/applications` page lists all applications with reference completion progress. Detail view shows full application data plus a reference grid with resend capability. Dashboard includes pending applications and stuck references (>7 days without response) counts.
 
 ### Service Types
 Babysitter, Petsitter, Companion Care, Group Childcare (Invoiced), Corporate (Invoiced), Comped
@@ -55,22 +55,31 @@ Super-admin tool to send a single SMS to all active, opted-in caregivers via the
 ### Notifications
 Event-driven architecture with email (SendGrid), SMS (Twilio), and database notifications sent on booking creation, acceptance, invitations, receipts, and reminders.
 
+### Onboarding Checklist
+Admin tool to track caregiver onboarding progress with checklist items.
+
+### Interview Evaluation
+Admin page to evaluate caregiver applications through interview assessments.
+
+### Incomplete Application Tracking
+System to track and nudge incomplete caregiver applications.
+
 ## Architecture
 
 ### Design Patterns
 
 - **Strategy Pattern** — `BookingServiceFactory` resolves role-specific services (`AdminBookingService`, `CaregiverBookingService`, `ClientBookingService`, `GuestBookingService`)
-- **Event-Driven** — Booking lifecycle events decouple business logic from notifications (8 events, 6 listeners)
+- **Event-Driven** — Booking lifecycle events decouple business logic from notifications (9 events, 7 listeners)
 - **Service Layer** — Business logic encapsulated in service classes, controllers are thin
 - **EAV** — Dynamic attributes via `AttributeDefinition` + polymorphic pivot
 - **Snapshot Pattern** — Bookings snapshot client/children/pets at creation for historical accuracy
 - **Atomic Reservation** — Optimistic locking prevents race conditions on caregiver booking claims
 
-### Models (30)
+### Models (36)
 
-Core: `User`, `Caregiver`, `Client`, `Booking`, `BookingGroup`, `BookingRating`
+Core: `User`, `Caregiver`, `Client`, `Booking`, `BookingGroup`, `BookingRating`, `CaregiverAssignment`, `OnboardingChecklistItem`, `CaregiverInterview`, `IncompleteApplication`, `ClientTypeChange`, `BroadcastMessage`, `SmsBroadcast`, `ClientPayment`, `CaregiverPayoutMethod`
 
-Supporting: `CaregiverStatus`, `SpecialtyType`, `CertificationType`, `Location`, `Hotel`, `Availability`, `PricingRule`, `AttributeDefinition`, `ClientChild`, `ClientPet`, `ClientAddress`, `ClientPaymentMethod`, `CaregiverPayout`, `BookingCaregiverNotification`, `QuickLink`, `ReferenceRequest`
+Supporting: `CaregiverStatus`, `SpecialtyType`, `CertificationType`, `Location`, `Hotel`, `Availability`, `PricingRule`, `AttributeDefinition`, `ClientChild`, `ClientPet`, `ClientAddress`, `ClientPaymentMethod`, `CaregiverPayout`, `BookingCaregiverNotification`, `QuickLink`, `ReferenceRequest`, `CaregiverApplication`, `CaregiverAgreement`, `CaregiverEducation`, `CaregiverExperience`, `CaregiverReference`, `CaregiverSponsor`, `ClientBlockedCaregiver`
 
 ### Frontend Structure
 
@@ -156,21 +165,21 @@ Replace `{BASE_URL}` with the application's production domain (e.g. `https://sit
 
 ```
 app/
-  Enums/           — 11 PHP enums (BookingStatus, ServiceType, etc.)
+  Enums/           — 14 PHP enums (BookingStatus, ServiceType, AssignmentResolution, etc.)
   Http/
-  Controllers/   — 27 controllers
-  Middleware/     — 7 middleware classes (role gates)
-  Requests/      — 31 Form Request validation classes
-  Models/          — 33 Eloquent models
-  Services/        — Booking, Billing, Payments, Webhooks
-  Events/          — Booking lifecycle events (8)
-  Listeners/       — Notification handlers (6)
-  Mail/            — Mailable classes (13)
-  Notifications/   — Notification classes (7)
-database/
-  factories/       — Model factories
-  migrations/      — 51 migration files
-  seeders/         — Database seeders
+    Controllers/   — 30 controllers
+    Middleware/     — 7 middleware classes (role gates)
+    Requests/      — 37 Form Request validation classes
+  Models/          — 36 Eloquent models
+  Services/        — 20 service classes (Booking, Billing, Payments, Webhooks, Availability, CaregiverPayout, CaregiverRecommendation, ClientPayment, TwilioService)
+  Events/          — 9 booking lifecycle events
+  Listeners/       — 7 notification handlers
+  Mail/            — 21 mailable classes
+  Notifications/   — 8 notification classes
+  database/
+    factories/       — Model factories
+    migrations/      — 62 migration files
+    seeders/         — Database seeders
 tests/
   Feature/         — Auth, Admin, Client, Caregiver, Guest, Settings
   Unit/            — Models, Enums, Middleware, Requests, Resources, Policies

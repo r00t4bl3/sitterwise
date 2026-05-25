@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
 use App\Enums\ClientType;
@@ -1380,6 +1381,7 @@ class ImportBubbleDatabase extends Command
             'client_id' => $client?->id,
             'client_id' => $client?->id,
             'caregiver_id' => $caregiver?->id,
+            'confirmed_at' => $caregiver ? ($this->timestampToDateTime($source['confirmed_at_date'] ?? null) ?? now()) : null,
             'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
             'end_datetime' => $this->timestampToDateTime($source['end_date_date'] ?? null),
             'status' => $status->value,
@@ -1472,14 +1474,37 @@ class ImportBubbleDatabase extends Command
             $bookingData['client_id'] = $group->client_id;
         }
 
-        Booking::withoutEvents(function () use ($externalId, $bookingData) {
+        Booking::withoutEvents(function () use ($externalId, $bookingData, $caregiver, $status) {
             $existing = Booking::where('bubble_id', $externalId)->first();
             if (! $existing) {
                 $bookingData['ulid'] = (string) Str::ulid();
             }
 
-            Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
+            $booking = Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
+
+            // Create caregiver assignment if caregiver is assigned
+            if ($caregiver && $booking->caregiver_id) {
+                $this->createCaregiverAssignment($booking, $status);
+            }
         });
+    }
+
+    protected function createCaregiverAssignment(Booking $booking, BookingStatus $status): void
+    {
+        $resolution = $status === BookingStatus::Cancelled
+            ? AssignmentResolution::CancelledBySitterwise
+            : AssignmentResolution::Completed;
+
+        $booking->assignments()->firstOrCreate(
+            ['caregiver_id' => $booking->caregiver_id],
+            [
+                'assigned_at' => $booking->confirmed_at ?? $booking->created_at,
+                'resolution' => $resolution->value,
+                'resolution_at' => $resolution === AssignmentResolution::Completed
+                    ? ($booking->end_datetime ?? $booking->updated_at)
+                    : $booking->updated_at,
+            ]
+        );
     }
 
     protected function findHotelId(?string $hotelName, ?string $bubbleSlug): ?int
@@ -1712,7 +1737,7 @@ class ImportBubbleDatabase extends Command
             return;
         }
 
-        BookingRating::updateOrCreate(
+        $rating = BookingRating::updateOrCreate(
             [
                 'booking_id' => $booking->id,
                 'rater_id' => $raterId,
@@ -1725,6 +1750,12 @@ class ImportBubbleDatabase extends Command
                 'comment' => $comment,
             ]
         );
+
+        $createdDate = $this->timestampToDateTime($source['Created Date'] ?? null);
+        if ($createdDate) {
+            $rating->created_at = $createdDate;
+            $rating->save();
+        }
     }
 
     protected function importTransaction(array $source, string $externalId, bool $force, bool $dryRun = false): void

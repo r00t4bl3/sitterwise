@@ -49,7 +49,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAgeFromDate } from '@/lib/age';
-import { formatDisplayDateTime } from '@/lib/datetime';
+import { formatDisplayDateTime, formatShortDisplayDate } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -165,16 +165,17 @@ interface Review {
     created_at: string;
 }
 
-interface RecentJob {
+interface JobAssignment {
     id: number;
-    service_type: string;
-    service_type_label: string;
-    status: string;
-    start_datetime: string;
-    end_datetime: string | null;
-    client_name: string | null;
-    hotel_name: string | null;
-    total: number;
+    job_number: string;
+    date: string;
+    client_name: string;
+    client_description: string;
+    resolution: string | null;
+    resolution_label: string;
+    resolution_color: string;
+    resolution_note: string | null;
+    late_arrival: boolean;
 }
 
 interface Caregiver {
@@ -210,10 +211,11 @@ interface Caregiver {
 }
 
 interface Props {
+    [key: string]: unknown;
     caregiver: Caregiver;
     statuses: Status[];
     reviews?: Review[];
-    recentJobs?: RecentJob[];
+    jobHistory?: JobAssignment[];
 }
 
 function StatusBadge({ status }: { status: Status }) {
@@ -280,13 +282,13 @@ const TABS = [
     { key: 'references', label: 'References', icon: Users },
     { key: 'reviews', label: 'Reviews', icon: Star },
     { key: 'internal_rating', label: 'Internal Rating', icon: ClipboardCheck },
-    { key: 'engagement', label: 'Engagement', icon: Briefcase },
+    { key: 'job_history', label: 'Job History', icon: Briefcase },
     { key: 'compliance', label: 'Compliance', icon: Shield },
     { key: 'notes', label: 'Notes', icon: MessageSquare },
 ] as const;
 
 export default function CaregiverShow() {
-    const { caregiver, statuses, reviews, recentJobs } = usePage<Props>().props;
+    const { caregiver, statuses, reviews, jobHistory } = usePage<Props>().props;
     const [activeTab, setActiveTab] = useState<string>('summary');
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
@@ -482,26 +484,49 @@ export default function CaregiverShow() {
                                 <div className="mt-3 flex flex-wrap gap-4 border-t border-border pt-3">
                                     {caregiver.specialty_types.length > 0 && (
                                         <div>
-                                            <p className="mb-1 text-[10px] tracking-wider text-muted-foreground uppercase">Specialties</p>
+                                            <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Specialties</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {caregiver.specialty_types.map((s) => <SpecialtyTag key={s.id} {...s} />)}
                                             </div>
                                         </div>
                                     )}
-                                    {caregiver.educations.length > 0 && (
-                                        <div>
-                                            <p className="mb-1 text-[10px] tracking-wider text-muted-foreground uppercase">Education</p>
-                                            <div className="space-y-0.5">
-                                                {caregiver.educations.map((edu) => (
-                                                    <p key={edu.id} className="text-xs text-foreground">
-                                                        {edu.school_name} — <EducationTypeLabel type={edu.education_type} />
-                                                        {edu.degree && ` (${edu.degree})`}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
+                                {caregiver.educations.length > 0 && (
+                                    <div className="mt-3 border-t border-border pt-3">
+                                        <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Education</p>
+                                        <div className="space-y-0.5">
+                                            {caregiver.educations.map((edu) => (
+                                                <p key={edu.id} className="text-sm text-foreground">
+                                                    {edu.school_name} — <EducationTypeLabel type={edu.education_type} />
+                                                    {edu.degree && ` (${edu.degree})`}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {caregiver.locations.length > 0 && (
+                                    <div className="mt-3 border-t border-border pt-3">
+                                        <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Locations</p>
+                                        <div className="space-y-1.5">
+                                            {caregiver.locations.map((loc) => (
+                                                <div key={loc.id} className={`flex items-center gap-2 text-sm ${loc.is_preferred ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                                                    <span className={`h-2 w-2 rounded-full ${loc.is_preferred ? 'bg-ring' : 'bg-border'}`} />
+                                                    {loc.name} {loc.is_preferred && <span className="text-xs text-ring">(Preferred)</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {caregiver.attributes.filter((a) => a.value === 'true' || a.value === '1' || a.value === true).length > 0 && (
+                                    <div className="mt-3 border-t border-border pt-3">
+                                        <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Attributes</p>
+                                        <div className="grid gap-1.5 sm:grid-cols-2">
+                                            {caregiver.attributes.filter((a) => a.value === 'true' || a.value === '1' || a.value === true).map((attr) => (
+                                                <AttributeBadge key={attr.id} name={attr.attribute_definition.name} value={attr.value} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -639,7 +664,20 @@ export default function CaregiverShow() {
                         {/* Reviews tab */}
                         {activeTab === 'reviews' && (
                             <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Client Reviews</h2>
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h2 className="font-serif text-lg font-semibold text-foreground">Client Reviews</h2>
+                                    {reviews !== undefined && caregiver.rating && (
+                                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                            <span className="font-medium text-foreground">{caregiver.rating.toFixed(1)}</span>
+                                            <div className="flex">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Star key={star} className={`h-3.5 w-3.5 ${star <= Math.round(caregiver.rating!) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+                                                ))}
+                                            </div>
+                                            <span>· {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</span>
+                                        </div>
+                                    )}
+                                </div>
                                 {reviews === undefined ? (
                                     <div className="space-y-3">
                                         {[1, 2, 3].map((i) => (
@@ -663,7 +701,7 @@ export default function CaregiverShow() {
                                                         </div>
                                                         <span className="text-sm font-medium text-foreground">{r.rating.toFixed(1)}/5</span>
                                                     </div>
-                                                    <span className="text-xs text-muted-foreground">{r.created_at}</span>
+                                                    <span className="text-xs text-muted-foreground">{formatShortDisplayDate(r.created_at)}</span>
                                                 </div>
                                                 {r.comment && <p className="mt-2 text-sm text-foreground italic">"{r.comment}"</p>}
                                                 <div className="mt-2 flex gap-3 text-xs text-muted-foreground">
@@ -694,57 +732,73 @@ export default function CaregiverShow() {
                                             {adminRatingForm.processing ? 'Saving...' : 'Save Admin Rating'}
                                         </Button>
                                     </div>
-                                    <div className="border-t border-border pt-4">
-                                        <p className="mb-2 text-sm font-medium text-foreground">Client Rating (average)</p>
-                                        {caregiver.rating ? (
-                                            <div className="flex items-center gap-2">
-                                                <Rating value={caregiver.rating} size="md" />
-                                                <span className="text-sm text-muted-foreground">({caregiver.rating.toFixed(2)})</span>
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">No client ratings yet.</p>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Engagement tab */}
-                        {activeTab === 'engagement' && (
+                        {/* Job History tab */}
+                        {activeTab === 'job_history' && (
                             <div className="border border-border bg-card p-6">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="font-serif text-lg font-semibold text-foreground">Recent Jobs</h2>
-                                    <Link href={`/caregivers/${caregiver.id}/jobs`} className="text-sm text-primary hover:underline">View All Jobs</Link>
+                                    <h2 className="font-serif text-lg font-semibold text-foreground">Job History</h2>
+                                    <Link href={`/caregivers/${caregiver.id}/jobs`} className="text-sm text-primary hover:underline">
+                                        View Full Job History
+                                    </Link>
                                 </div>
-                                {recentJobs === undefined ? (
-                                    <div className="space-y-2">
+
+                                {jobHistory === undefined ? (
+                                    <div className="space-y-3">
                                         {[1, 2, 3, 4, 5].map((i) => (
-                                            <div key={i} className="animate-pulse rounded-lg border border-border p-3">
-                                                <div className="h-4 w-48 rounded bg-muted" />
+                                            <div key={i} className="animate-pulse space-y-2 rounded-lg border border-border p-4">
+                                                <div className="h-4 w-24 rounded bg-muted" />
+                                                <div className="h-3 w-full rounded bg-muted" />
                                             </div>
                                         ))}
                                     </div>
-                                ) : recentJobs.length > 0 ? (
+                                ) : jobHistory.length > 0 ? (
                                     <div className="-mx-6 -mb-6 mt-4 border-t border-border">
                                         <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[700px]">
+                                            <table className="w-full min-w-[600px]">
                                                 <thead>
                                                     <tr className="bg-foreground">
+                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Job ID</th>
                                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Date</th>
-                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Service</th>
                                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Client</th>
-                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Location</th>
-                                                        <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">Earnings</th>
+                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Resolution</th>
+                                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Notes</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {recentJobs.map((job) => (
-                                                        <tr key={job.id} className="border-b border-border transition hover:bg-blush last:border-0">
-                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{formatDisplayDateTime(job.start_datetime)}</td>
-                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{job.service_type_label}</td>
-                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{job.client_name || '—'}</td>
-                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{job.hotel_name || '—'}</td>
-                                                            <td className="px-4 py-3 text-right text-sm whitespace-nowrap text-foreground">${job.total.toFixed(2)}</td>
+                                                    {jobHistory.map((row) => (
+                                                        <tr key={row.id} className="border-b border-border transition hover:bg-blush last:border-0">
+                                                            <td className="px-4 py-3 text-sm whitespace-nowrap font-mono text-foreground">
+                                                                {row.job_number}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                                                {formatDisplayDateTime(row.date)}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm text-foreground">
+                                                                {row.client_name}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <span
+                                                                    className="inline-block rounded px-2 py-0.5 text-[11px] font-semibold"
+                                                                    style={{
+                                                                        backgroundColor: row.resolution_color + '20',
+                                                                        color: row.resolution_color,
+                                                                    }}
+                                                                >
+                                                                    {row.resolution_label}
+                                                                </span>
+                                                                {row.late_arrival && (
+                                                                    <span className="ml-1 text-[10px] text-amber-600 font-medium">
+                                                                        (Late)
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px] truncate">
+                                                                {row.resolution_note || '—'}
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -752,7 +806,7 @@ export default function CaregiverShow() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No jobs yet.</p>
+                                    <p className="text-sm text-muted-foreground">No job history yet.</p>
                                 )}
                             </div>
                         )}
@@ -778,29 +832,6 @@ export default function CaregiverShow() {
                                             </div>
                                         )) : (
                                             <p className="text-sm text-muted-foreground">No certifications</p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="border border-border bg-card p-6">
-                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Locations</h2>
-                                    <div className="space-y-2">
-                                        {caregiver.locations.map((loc) => (
-                                            <div key={loc.id} className={`flex items-center gap-2 ${loc.is_preferred ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                                                <span className={`h-2 w-2 rounded-full ${loc.is_preferred ? 'bg-ring' : 'bg-border'}`} />
-                                                {loc.name} {loc.is_preferred && <span className="text-xs text-ring">(Preferred)</span>}
-                                            </div>
-                                        ))}
-                                        {caregiver.locations.length === 0 && <p className="text-sm text-muted-foreground">No locations</p>}
-                                    </div>
-                                </div>
-                                <div className="border border-border bg-card p-6">
-                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Attributes</h2>
-                                    <div className="grid gap-2 sm:grid-cols-2">
-                                        {caregiver.attributes.filter((a) => a.value === 'true' || a.value === '1' || a.value === true).map((attr) => (
-                                            <AttributeBadge key={attr.id} name={attr.attribute_definition.name} value={attr.value} />
-                                        ))}
-                                        {caregiver.attributes.filter((a) => a.value === 'true' || a.value === '1' || a.value === true).length === 0 && (
-                                            <p className="text-sm text-muted-foreground">No attributes</p>
                                         )}
                                     </div>
                                 </div>
@@ -831,7 +862,8 @@ export default function CaregiverShow() {
                             <div className="border border-border bg-card p-6">
                                 <div className="mb-4 flex items-center justify-between">
                                     <h2 className="font-serif text-lg font-semibold text-foreground">Status</h2>
-                                    <StripeBadge isConnected={caregiver.stripe_charges_enabled} />
+                                    {/* eslint-disable-next-line no-constant-binary-expression */}
+                                    {false && <StripeBadge isConnected={caregiver.stripe_charges_enabled} />}
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="status">Change Status</Label>

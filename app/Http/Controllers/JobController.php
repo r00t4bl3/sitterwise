@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
@@ -151,6 +152,11 @@ class JobController extends Controller
             'bonus' => $validated['bonus'] ?? null,
             'status' => BookingStatus::Completed->value,
         ]);
+
+        $booking->assignments()
+            ->where('caregiver_id', $booking->caregiver_id)
+            ->first()
+            ?->resolve(AssignmentResolution::Completed);
 
         return back()->with('success', 'Job updated successfully');
     }

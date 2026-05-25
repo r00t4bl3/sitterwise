@@ -9,6 +9,7 @@ use App\Enums\SpecialConsideration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -177,7 +178,19 @@ class Booking extends Model
         ];
     }
 
-    public function ratings()
+    protected static function booted(): void
+    {
+        static::saved(function (Booking $booking) {
+            if ($booking->wasChanged('caregiver_id') && $booking->caregiver_id) {
+                $booking->assignments()->firstOrCreate(
+                    ['caregiver_id' => $booking->caregiver_id],
+                    ['assigned_at' => now()],
+                );
+            }
+        });
+    }
+
+    public function ratings(): HasMany
     {
         return $this->hasMany(BookingRating::class, 'booking_id');
     }
@@ -291,6 +304,11 @@ class Booking extends Model
     public function confirmedCaregiver()
     {
         return $this->belongsTo(Caregiver::class, 'confirmed_by');
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(CaregiverAssignment::class);
     }
 
     public function scopeInFuture($query)

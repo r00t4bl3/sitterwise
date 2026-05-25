@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
 use App\Enums\LocationType;
@@ -14,6 +15,7 @@ use App\Http\Resources\CaregiverResource;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\Caregiver;
+use App\Models\CaregiverAssignment;
 use App\Models\CertificationType;
 use App\Models\Location;
 use App\Models\SpecialtyType;
@@ -144,21 +146,32 @@ class CaregiverController extends Controller
                     'created_at' => $r->created_at?->format('Y-m-d'),
                 ]),
             ),
-            'recentJobs' => Inertia::defer(fn () => Booking::with(['client.user', 'hotel'])
+            'jobHistory' => Inertia::defer(fn () => CaregiverAssignment::with(['booking.client.user', 'booking.hotel'])
                 ->where('caregiver_id', $caregiver->id)
-                ->orderBy('start_datetime', 'desc')
-                ->take(5)
+                ->orderBy(
+                    Booking::select('start_datetime')
+                        ->whereColumn('id', 'caregiver_assignments.booking_id'),
+                    'desc'
+                )
+                ->take(20)
                 ->get()
-                ->map(fn ($b) => [
-                    'id' => $b->id,
-                    'service_type' => $b->service_type,
-                    'service_type_label' => ServiceType::tryFrom($b->service_type)?->label() ?? $b->service_type,
-                    'status' => $b->status,
-                    'start_datetime' => $b->start_datetime?->format('Y-m-d\TH:i:s'),
-                    'end_datetime' => $b->end_datetime?->format('Y-m-d\TH:i:s'),
-                    'client_name' => $b->client?->user?->name,
-                    'hotel_name' => $b->hotel?->name,
-                    'total' => (float) ($b->paid_to_caregiver_total ?? 0),
+                ->map(fn ($assignment) => [
+                    'id' => $assignment->id,
+                    'job_number' => '#'.$assignment->booking->id,
+                    'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s'),
+                    'client_name' => $assignment->booking->client?->user?->name ?? '—',
+                    'client_description' => $assignment->booking->hotel?->name
+                        ?? $assignment->booking->address_city
+                        ?? '—',
+                    'resolution' => $assignment->resolution,
+                    'resolution_label' => $assignment->resolution
+                        ? AssignmentResolution::tryFrom($assignment->resolution)?->label()
+                        : 'Pending',
+                    'resolution_color' => $assignment->resolution
+                        ? AssignmentResolution::tryFrom($assignment->resolution)?->color()
+                        : '#6B7280',
+                    'resolution_note' => $assignment->resolution_note,
+                    'late_arrival' => $assignment->late_arrival_flag,
                 ]),
             ),
         ]);

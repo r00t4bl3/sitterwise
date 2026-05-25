@@ -39,6 +39,22 @@ export const parseAsLocal = (
 };
 
 /**
+ * Formats a date for short display (Wall Clock).
+ * Output example: "Jan 2, 2022"
+ */
+export const formatShortDisplayDate = (
+    dateStr: string | null | undefined,
+): string => {
+    const date = parseAsLocal(dateStr);
+
+    if (!date) {
+        return '';
+    }
+
+    return format(date, 'MMM d, yyyy');
+};
+
+/**
  * Formats a date for display (Wall Clock).
  * Output example: "Monday, October 27, 2023"
  */

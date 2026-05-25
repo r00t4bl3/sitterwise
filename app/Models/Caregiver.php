@@ -248,6 +248,18 @@ class Caregiver extends Model
         return $this->hasMany(CaregiverAgreement::class);
     }
 
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(CaregiverAssignment::class);
+    }
+
+    public function assignedBookings(): BelongsToMany
+    {
+        return $this->belongsToMany(Booking::class, 'caregiver_assignments')
+            ->withPivot('resolution', 'assigned_at', 'resolution_at', 'resolution_note', 'late_arrival_flag')
+            ->withTimestamps();
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
