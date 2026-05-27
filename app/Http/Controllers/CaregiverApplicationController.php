@@ -109,7 +109,10 @@ class CaregiverApplicationController extends Controller
         if ($photo = $request->file('personal.photo')) {
             try {
                 $manager = new ImageManager(new Driver);
-                $manager->read($photo->getRealPath())->scale(width: 1200)->save($photo->getRealPath());
+                $resizedPath = $photo->getRealPath().'.'.($photo->getClientOriginalExtension() ?: 'jpg');
+                $manager->decodePath($photo->getRealPath())->scale(width: 1200)->save($resizedPath);
+                copy($resizedPath, $photo->getRealPath());
+                unlink($resizedPath);
             } catch (\Exception $e) {
                 // Degrade gracefully if image processing fails
             }

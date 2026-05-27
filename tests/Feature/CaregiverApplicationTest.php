@@ -312,6 +312,25 @@ describe('Caregiver Application - Submission', function () {
         expect($application->data['references'])->toHaveCount(3);
     });
 
+    it('submit processes uploaded photo with ImageManager', function () {
+        Storage::fake('public');
+
+        Session::put('verified_email', 'photo-test@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('photo-test@example.com');
+        $data['personal']['photo'] = UploadedFile::fake()->image('photo.jpg', 2000, 1500);
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $files = Storage::disk('public')->files('photos');
+        expect($files)->toHaveCount(1);
+
+        $stored = Storage::disk('public')->get($files[0]);
+        [$width] = getimagesizefromstring($stored);
+        expect($width)->toBeLessThanOrEqual(1200);
+    });
+
     it('submit creates verification and agreement PDFs', function () {
         Session::put('verified_email', 'pdfs@example.com');
         Session::put('verified_at', now());

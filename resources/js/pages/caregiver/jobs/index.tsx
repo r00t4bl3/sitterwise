@@ -1,9 +1,17 @@
 import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, MapPin, Building, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Building, Star, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     Tooltip,
     TooltipContent,
@@ -46,6 +54,8 @@ interface BookingStatus {
 interface Booking {
     id: number;
     ulid: string;
+    assignment_id: number | null;
+    assignment_resolution: string | null;
     service_type: string;
     service_type_label: string;
     location_type: string;
@@ -219,6 +229,29 @@ export default function CaregiverJobsIndex() {
 
     const [isCheckoutSheetOpen, setIsCheckoutSheetOpen] = useState(false);
     const [selectedJob, setSelectedJob] = useState<Booking | null>(null);
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+    const [cancellingJob, setCancellingJob] = useState<Booking | null>(null);
+
+    const cancelForm = useForm({
+        reason: '',
+    });
+
+    const openCancelDialog = (job: Booking) => {
+        setCancellingJob(job);
+        cancelForm.reset();
+        setIsCancelDialogOpen(true);
+    };
+
+    const handleBackOut = () => {
+        if (!cancellingJob?.assignment_id) return;
+
+        cancelForm.post(`/assignments/${cancellingJob.assignment_id}/back-out`, {
+            onSuccess: () => {
+                setIsCancelDialogOpen(false);
+                setCancellingJob(null);
+            },
+        });
+    };
 
     const checkoutForm = useForm({
         start_datetime: '',
@@ -592,6 +625,22 @@ export default function CaregiverJobsIndex() {
 
                                             {job.status.toLowerCase() ===
                                                 'confirmed' &&
+                                                !job.assignment_resolution && (
+                                                    <Button
+                                                         size="sm"
+                                                         variant="default"
+                                                         onClick={() =>
+                                                             openCancelDialog(
+                                                                 job,
+                                                             )
+                                                         }
+                                                     >
+                                                         Cancel Job
+                                                     </Button>
+                                                )}
+
+                                            {job.status.toLowerCase() ===
+                                                'confirmed' &&
                                                 new Date(
                                                     job.end_datetime,
                                                 ) < new Date() && (
@@ -886,6 +935,83 @@ export default function CaregiverJobsIndex() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                            <TriangleAlert className="h-6 w-6 text-red-600" />
+                        </div>
+                        <DialogTitle className="text-center">
+                            You're about to cancel this job
+                        </DialogTitle>
+                        <DialogDescription className="text-center">
+                            {cancellingJob && (
+                                <div className="mt-3 rounded-lg border border-border bg-muted p-3 text-left text-sm text-foreground">
+                                    <strong className="block">
+                                        {cancellingJob.client?.user?.name ?? 'Client'}
+                                        {cancellingJob.client?.children && cancellingJob.client.children.length > 0 && (
+                                            <> &middot; {cancellingJob.client.children.length} child{cancellingJob.client.children.length !== 1 ? 'ren' : ''}</>
+                                        )}
+                                    </strong>
+                                    {formatDisplayDate(cancellingJob.start_datetime)}{'\u00B7'}{' '}
+                                    {formatDisplayTime(cancellingJob.start_datetime)}{'\u2013'}{' '}
+                                    {formatDisplayTime(cancellingJob.end_datetime)}
+                                    <br />
+                                    {cancellingJob.hotel?.name ??
+                                        [cancellingJob.address_line1, cancellingJob.address_city, cancellingJob.address_state].filter(Boolean).join(', ') ??
+                                        cancellingJob.location_type}
+                                </div>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                        <strong>Heads up:</strong> This will count as a back-out on
+                        your reliability record. If something has come up that we can
+                        help with, text us at 619-663-4379 before canceling.
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="reason">
+                            Reason for cancellation{' '}
+                            <span className="text-destructive">*</span>
+                        </Label>
+                        <Textarea
+                            id="reason"
+                            value={cancelForm.data.reason}
+                            onChange={(e) => cancelForm.setData('reason', e.target.value)}
+                            placeholder="Briefly tell us what's going on. The team will see this."
+                            className="min-h-[80px]"
+                        />
+                        {cancelForm.errors.reason && (
+                            <p className="text-sm text-destructive">{cancelForm.errors.reason}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            Required. This helps us understand whether there's something
+                            we should know about.
+                        </p>
+                    </div>
+
+                    <DialogFooter className="gap-3">
+                        <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setIsCancelDialogOpen(false)}
+                        >
+                            Never mind, go back
+                        </Button>
+                        <Button
+                            variant="default"
+                            className="flex-1"
+                            onClick={handleBackOut}
+                            disabled={cancelForm.processing}
+                        >
+                            {cancelForm.processing ? 'Cancelling...' : 'Cancel this job'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

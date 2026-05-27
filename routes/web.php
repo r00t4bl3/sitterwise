@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttributeDefinitionController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
@@ -113,6 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('jobs/{booking}', [JobController::class, 'show'])->name('jobs.show');
     Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
     Route::post('jobs/{booking}/rate', [JobController::class, 'rate'])->name('jobs.rate');
+    Route::post('assignments/{assignment}/back-out', [AssignmentController::class, 'backOut'])->name('assignments.back-out');
 
     Route::middleware('client')->group(function () {
         Route::get('reviews/{booking}', [BookingReviewController::class, 'create'])->name('reviews.create');
@@ -154,6 +156,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('applications/{application}/complete-onboarding', [ApplicationController::class, 'completeOnboarding'])->name('applications.complete-onboarding');
         Route::post('applications/{application}/checklist/{checklistItem}/toggle', [ApplicationController::class, 'toggleChecklistItem'])->name('applications.checklist.toggle');
         Route::post('applications/{application}/decline', [ApplicationController::class, 'decline'])->name('applications.decline');
+
+        // Assignment management (admin actions)
+        Route::post('assignments/{assignment}/excuse', [AssignmentController::class, 'excuse'])->name('assignments.excuse');
+        Route::post('assignments/{assignment}/no-show', [AssignmentController::class, 'logNoShow'])->name('assignments.no-show');
+        Route::post('assignments/{assignment}/late-arrival', [AssignmentController::class, 'logLateArrival'])->name('assignments.late-arrival');
 
         // Interview evaluation
         Route::get('applications/{application}/interview', [InterviewController::class, 'create'])->name('applications.interview');

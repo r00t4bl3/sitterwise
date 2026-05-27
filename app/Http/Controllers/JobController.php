@@ -25,7 +25,7 @@ class JobController extends Controller
             abort(403, 'Caregiver profile not found');
         }
 
-        $query = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating'])
+        $query = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating', 'assignments'])
             ->where('caregiver_id', $caregiver->id)
             ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Completed->value, BookingStatus::Paid->value]);
 
@@ -45,6 +45,12 @@ class JobController extends Controller
         $bookings = $query->orderBy('start_datetime', 'desc')
             ->paginate(20)
             ->appends($request->query());
+
+        $bookings->getCollection()->transform(fn ($booking) => [
+            ...$booking->toArray(),
+            'assignment_id' => $booking->assignments->first()?->id,
+            'assignment_resolution' => $booking->assignments->first()?->resolution,
+        ]);
 
         $bookingStatuses = array_map(
             fn ($case) => [

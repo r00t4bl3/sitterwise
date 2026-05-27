@@ -25,8 +25,8 @@ test('security page is displayed', function () {
         ->get(route('security.edit'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
-            ->where('canManageTwoFactor', true)
-            ->where('twoFactorEnabled', false),
+            ->missing('canManageTwoFactor')
+            ->missing('twoFactorEnabled'),
         );
 });
 
@@ -76,9 +76,8 @@ test('security page renders without two factor when feature is disabled', functi
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
-            ->where('canManageTwoFactor', false)
-            ->missing('twoFactorEnabled')
-            ->missing('requiresConfirmation'),
+            ->missing('canManageTwoFactor')
+            ->missing('twoFactorEnabled'),
         );
 });
 

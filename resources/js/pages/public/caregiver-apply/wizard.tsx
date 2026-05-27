@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 
 interface Experience {
@@ -176,7 +177,9 @@ export default function Wizard() {
         substance_abuse: '',
         limitations: '',
         allergic_to_pets: '',
+        allergic_to_what: '',
         visible_tattoos: '',
+        tattoo_description: '',
         authorized_to_work: '',
         reliable_vehicle: '',
         cpr_certified: '',
@@ -186,6 +189,7 @@ export default function Wizard() {
         trustline_upload: null as File | null,
         languages: '',
         has_children: '',
+        children_ages: '',
         qualifications: {
             special_needs: false,
             companion_care: false,
@@ -324,6 +328,29 @@ export default function Wizard() {
     };
 
     const nextStep = () => {
+        if (currentStep === 4) {
+            form.clearErrors();
+            const data = form.data;
+            let hasError = false;
+
+            if (data.allergic_to_pets === 'yes' && !data.allergic_to_what) {
+                form.setError('allergic_to_what', 'Please select which pet you are allergic to.');
+                hasError = true;
+            }
+
+            if (data.visible_tattoos === 'yes' && !data.tattoo_description) {
+                form.setError('tattoo_description', 'Please describe your tattoos and whether they can be covered.');
+                hasError = true;
+            }
+
+            if (data.has_children === 'yes' && !data.children_ages) {
+                form.setError('children_ages', 'Please enter your children\'s ages.');
+                hasError = true;
+            }
+
+            if (hasError) return;
+        }
+
         saveDraft();
         setCurrentStep((prev) => Math.min(prev + 1, 8));
     };
@@ -665,7 +692,8 @@ export default function Wizard() {
                                             }
                                         />
                                     </div>
-                                    <div className="space-y-2">
+                                    {/* Profile Photo upload disabled */}
+                                    {/* <div className="space-y-2">
                                         <Label htmlFor="personal-photo">
                                             Profile Photo
                                         </Label>
@@ -682,7 +710,7 @@ export default function Wizard() {
                                                 })
                                             }
                                         />
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
@@ -1659,29 +1687,22 @@ export default function Wizard() {
                                         Authorized to work in the U.S.?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
-                                        value={
-                                            form.data.authorized_to_work ?? ''
-                                        }
+                                    <RadioGroup
+                                        value={form.data.authorized_to_work ?? ''}
                                         onValueChange={(value) =>
-                                            form.setData(
-                                                'authorized_to_work',
-                                                value,
-                                            )
+                                            form.setData('authorized_to_work', value)
                                         }
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="authorized-yes" />
+                                            <Label htmlFor="authorized-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="authorized-no" />
+                                            <Label htmlFor="authorized-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                     {form.data.authorized_to_work === 'no' && (
                                         <div className="mt-2 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
                                             Sitterwise is required by federal
@@ -1702,24 +1723,22 @@ export default function Wizard() {
                                         Do you smoke?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
+                                    <RadioGroup
                                         value={form.data.smokes ?? ''}
                                         onValueChange={(value) =>
                                             form.setData('smokes', value)
                                         }
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="smokes-yes" />
+                                            <Label htmlFor="smokes-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="smokes-no" />
+                                            <Label htmlFor="smokes-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
 
                                 {/* Do you drink alcohol? */}
@@ -1795,28 +1814,51 @@ export default function Wizard() {
                                         Allergic to dogs or cats?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
+                                    <RadioGroup
                                         value={form.data.allergic_to_pets ?? ''}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'allergic_to_pets',
-                                                value,
-                                            )
-                                        }
+                                        onValueChange={(value) => {
+                                            form.setData('allergic_to_pets', value);
+                                            if (value === 'no') form.setData('allergic_to_what', '');
+                                        }}
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="allergic-yes" />
+                                            <Label htmlFor="allergic-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="allergic-no" />
+                                            <Label htmlFor="allergic-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
+
+                                {form.data.allergic_to_pets === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Allergic to which?{' '}
+                                            <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Select
+                                            value={form.data.allergic_to_what ?? ''}
+                                            onValueChange={(value) =>
+                                                form.setData('allergic_to_what', value)
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="dogs">Dogs</SelectItem>
+                                                <SelectItem value="cats">Cats</SelectItem>
+                                                <SelectItem value="both">Both</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {form.errors.allergic_to_what && (
+                                            <p className="text-sm text-red-500">{form.errors.allergic_to_what}</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Visible tattoos? */}
                                 <div className="space-y-2">
@@ -1824,28 +1866,44 @@ export default function Wizard() {
                                         Visible tattoos?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
+                                    <RadioGroup
                                         value={form.data.visible_tattoos ?? ''}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'visible_tattoos',
-                                                value,
-                                            )
-                                        }
+                                        onValueChange={(value) => {
+                                            form.setData('visible_tattoos', value);
+                                            if (value === 'no') form.setData('tattoo_description', '');
+                                        }}
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="tattoos-yes" />
+                                            <Label htmlFor="tattoos-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="tattoos-no" />
+                                            <Label htmlFor="tattoos-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
+
+                                {form.data.visible_tattoos === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Please describe location and whether they can be covered with standard work attire{' '}
+                                            <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Textarea
+                                            rows={2}
+                                            placeholder="Describe location and whether they can be covered..."
+                                            value={form.data.tattoo_description ?? ''}
+                                            onChange={(e) =>
+                                                form.setData('tattoo_description', e.target.value)
+                                            }
+                                        />
+                                        {form.errors.tattoo_description && (
+                                            <p className="text-sm text-red-500">{form.errors.tattoo_description}</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Reliable vehicle? */}
                                 <div className="space-y-2">
@@ -1853,27 +1911,22 @@ export default function Wizard() {
                                         Reliable vehicle?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
+                                    <RadioGroup
                                         value={form.data.reliable_vehicle ?? ''}
                                         onValueChange={(value) =>
-                                            form.setData(
-                                                'reliable_vehicle',
-                                                value,
-                                            )
+                                            form.setData('reliable_vehicle', value)
                                         }
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="vehicle-yes" />
+                                            <Label htmlFor="vehicle-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="vehicle-no" />
+                                            <Label htmlFor="vehicle-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
 
                                 {/* CPR & First Aid certified? */}
@@ -1882,24 +1935,22 @@ export default function Wizard() {
                                         CPR & First Aid certified?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
+                                    <RadioGroup
                                         value={form.data.cpr_certified ?? ''}
                                         onValueChange={(value) =>
                                             form.setData('cpr_certified', value)
                                         }
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="cpr-yes" />
+                                            <Label htmlFor="cpr-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="cpr-no" />
+                                            <Label htmlFor="cpr-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
 
                                 {/* CPR Expiration Date (conditional) */}
@@ -1907,17 +1958,12 @@ export default function Wizard() {
                                     <div className="space-y-2">
                                         <Label>
                                             CPR Expiration Date{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            <span className="text-red-500">*</span>
                                         </Label>
                                         <DatePicker
                                             value={form.data.cpr_expiration}
                                             onChange={(date) =>
-                                                form.setData(
-                                                    'cpr_expiration',
-                                                    date,
-                                                )
+                                                form.setData('cpr_expiration', date)
                                             }
                                             fromYear={currentYear - 2}
                                             toYear={currentYear + 10}
@@ -1931,18 +1977,13 @@ export default function Wizard() {
                                     <div className="space-y-2">
                                         <Label>
                                             CPR Card Upload{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            <span className="text-red-500">*</span>
                                         </Label>
                                         <Input
                                             type="file"
                                             accept="image/*,.pdf"
                                             onChange={(e) =>
-                                                form.setData(
-                                                    'cpr_card',
-                                                    e.target.files?.[0] || null,
-                                                )
+                                                form.setData('cpr_card', e.target.files?.[0] || null)
                                             }
                                         />
                                     </div>
@@ -1954,29 +1995,22 @@ export default function Wizard() {
                                         Trustline certified?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
-                                        value={
-                                            form.data.trustline_certified ?? ''
-                                        }
+                                    <RadioGroup
+                                        value={form.data.trustline_certified ?? ''}
                                         onValueChange={(value) =>
-                                            form.setData(
-                                                'trustline_certified',
-                                                value,
-                                            )
+                                            form.setData('trustline_certified', value)
                                         }
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="yes">
-                                                Yes
-                                            </SelectItem>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="trustline-yes" />
+                                            <Label htmlFor="trustline-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="trustline-no" />
+                                            <Label htmlFor="trustline-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
 
                                 {/* Trustline Upload (conditional) */}
@@ -1984,18 +2018,13 @@ export default function Wizard() {
                                     <div className="space-y-2">
                                         <Label>
                                             Trustline Upload{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
+                                            <span className="text-red-500">*</span>
                                         </Label>
                                         <Input
                                             type="file"
                                             accept="image/*,.pdf"
                                             onChange={(e) =>
-                                                form.setData(
-                                                    'trustline_upload',
-                                                    e.target.files?.[0] || null,
-                                                )
+                                                form.setData('trustline_upload', e.target.files?.[0] || null)
                                             }
                                         />
                                     </div>
@@ -2003,49 +2032,58 @@ export default function Wizard() {
 
                                 {/* Languages */}
                                 <div className="space-y-2">
-                                    <Label>
-                                        Languages (other than English)
-                                    </Label>
+                                    <Label>Languages (other than English)</Label>
                                     <Input
                                         type="text"
                                         placeholder="e.g. Spanish, Tagalog, ASL"
                                         value={form.data.languages}
                                         onChange={(e) =>
-                                            form.setData(
-                                                'languages',
-                                                e.target.value,
-                                            )
+                                            form.setData('languages', e.target.value)
                                         }
                                     />
                                 </div>
 
                                 {/* Do you have children of your own? */}
                                 <div className="space-y-2">
-                                    <Label>
-                                        Do you have children of your own?
-                                    </Label>
-                                    <Select
+                                    <Label>Do you have children of your own?</Label>
+                                    <RadioGroup
                                         value={form.data.has_children ?? ''}
-                                        onValueChange={(value) =>
-                                            form.setData('has_children', value)
-                                        }
+                                        onValueChange={(value) => {
+                                            form.setData('has_children', value);
+                                            if (value === 'no') form.setData('children_ages', '');
+                                        }}
+                                        className="flex gap-4"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="no">
-                                                No
-                                            </SelectItem>
-                                            <SelectItem value="yes_at_home">
-                                                Yes (ages at home)
-                                            </SelectItem>
-                                            <SelectItem value="yes_grown">
-                                                Yes (grown)
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="yes" id="children-yes" />
+                                            <Label htmlFor="children-yes">Yes</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <RadioGroupItem value="no" id="children-no" />
+                                            <Label htmlFor="children-no">No</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
+
+                                {form.data.has_children === 'yes' && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            Children ages{' '}
+                                            <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            type="text"
+                                            placeholder="e.g., 2, 5, 8"
+                                            value={form.data.children_ages ?? ''}
+                                            onChange={(e) =>
+                                                form.setData('children_ages', e.target.value)
+                                            }
+                                        />
+                                        {form.errors.children_ages && (
+                                            <p className="text-sm text-red-500">{form.errors.children_ages}</p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
 

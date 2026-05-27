@@ -8,14 +8,10 @@ import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { pause as pauseRoute } from '@/routes/settings/caregiver';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: edit(),
-        icon: null,
-    },
     {
         title: 'Security',
         href: editSecurity(),
@@ -24,6 +20,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Appearance',
         href: editAppearance(),
+        icon: null,
+    },
+    {
+        title: 'Pause Account',
+        href: pauseRoute(),
         icon: null,
     },
 ];

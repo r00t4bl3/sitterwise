@@ -20,6 +20,7 @@ interface DatePickerProps {
   name?: string
   fromYear?: number
   toYear?: number
+  disabled?: { before: Date } | { after: Date }
 }
 
 export function DatePicker({
@@ -29,6 +30,7 @@ export function DatePicker({
   name,
   fromYear,
   toYear,
+  disabled,
 }: DatePickerProps) {
   const startMonth = fromYear ? new Date(fromYear, 0) : undefined
   const endMonth = toYear ? new Date(toYear, 11) : undefined
@@ -72,6 +74,7 @@ export function DatePicker({
           captionLayout="dropdown"
           startMonth={startMonth}
           endMonth={endMonth}
+          disabled={disabled}
         />
       </PopoverContent>
       {name && (

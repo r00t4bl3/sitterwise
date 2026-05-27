@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -231,6 +232,16 @@ class Caregiver extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(CaregiverApplication::class);
+    }
+
+    public function caregiverPauses(): HasMany
+    {
+        return $this->hasMany(CaregiverPause::class);
+    }
+
+    public function activePause(): HasOne
+    {
+        return $this->hasOne(CaregiverPause::class)->whereNull('resumed_at');
     }
 
     public function onboardingChecklistItems(): HasMany

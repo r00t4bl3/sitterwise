@@ -107,6 +107,9 @@ class ApplicationController extends Controller
                 'id' => $application->id,
                 'submitted_at' => $application->submitted_at?->format('Y-m-d H:i:s'),
                 'data' => $application->data,
+                'photo_url' => ($application->data['personal']['photo'] ?? null)
+                    ? Storage::url($application->data['personal']['photo'])
+                    : null,
                 'caregiver' => [
                     'id' => $caregiver->id,
                     'first_name' => $caregiver->first_name,

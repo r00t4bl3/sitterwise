@@ -48,7 +48,72 @@ interface ApplicationData {
         phone?: string;
         relationship?: string;
     };
+    position?: {
+        babysitting?: boolean;
+        petsitting?: boolean;
+        group_events?: boolean;
+    };
+    availability?: {
+        weekday_mornings?: boolean;
+        weekday_afternoons?: boolean;
+        weekday_evenings?: boolean;
+        weekends?: boolean;
+        overnights?: boolean;
+        notes?: string;
+    };
+    education?: {
+        level: string;
+        college?: string;
+        graduation_year?: string;
+        degree?: string;
+        high_school_name?: string;
+        high_school_graduation_year?: string;
+    };
+    employment_status?: string;
+    current_employer?: string;
+    experiences?: Array<{
+        start_date: string;
+        end_date: string;
+        present: boolean;
+        role: string;
+        organization: string;
+        description: string;
+        ages_served: string[];
+    }>;
+    smokes?: string;
+    alcohol?: string;
+    substance_abuse?: string;
+    limitations?: string;
+    allergic_to_pets?: string;
+    allergic_to_what?: string;
+    visible_tattoos?: string;
+    tattoo_description?: string;
+    authorized_to_work?: string;
+    reliable_vehicle?: string;
+    cpr_certified?: string;
+    cpr_expiration?: string;
+    trustline_certified?: string;
+    languages?: string;
+    has_children?: string;
+    children_ages?: string;
+    qualifications?: Record<string, boolean>;
+    things_i_bring?: string;
     bio?: string;
+    interests?: string;
+    location?: {
+        north_county?: boolean;
+        south_east_county?: boolean;
+        flexible?: boolean;
+    };
+    age_groups?: Record<string, boolean>;
+    verification?: {
+        signature?: string;
+        agree?: boolean;
+    };
+    agreement?: {
+        signature?: string;
+        agree?: boolean;
+    };
 }
 
 interface ApplicationInfo {
@@ -56,6 +121,7 @@ interface ApplicationInfo {
     submitted_at: string;
     data: ApplicationData;
     caregiver: CaregiverInfo;
+    photo_url?: string;
 }
 
 interface ReferenceInfo {
@@ -267,6 +333,15 @@ export default function ApplicationShow() {
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
                                 Applicant Information
                             </h2>
+                            {application.photo_url && (
+                                <div className="mb-4">
+                                    <img
+                                        src={application.photo_url}
+                                        alt={`${personal.first_name} ${personal.last_name}`}
+                                        className="h-48 w-48 rounded-lg border border-border object-cover"
+                                    />
+                                </div>
+                            )}
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -374,6 +449,532 @@ export default function ApplicationShow() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Education */}
+                        {data.education && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Education
+                                </h2>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Highest Level
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {({
+                                                high_school: 'High School',
+                                                associate: 'Associate Degree',
+                                                bachelor: "Bachelor's Degree",
+                                                master: "Master's Degree",
+                                                phd: 'PhD',
+                                            } as Record<string, string>)[data.education.level] ?? data.education.level}
+                                        </p>
+                                    </div>
+                                    {data.education.level !== 'high_school' && (
+                                        <>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Degree / Major
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.education.degree || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    College
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.education.college || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Graduation Year
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.education.graduation_year || '-'}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
+                                    {data.education.level === 'high_school' && (
+                                        <>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    High School
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.education.high_school_name || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Grad Year
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.education.high_school_graduation_year || '-'}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Experience */}
+                        {data.experiences && data.experiences.length > 0 && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Experience ({data.experiences.length})
+                                </h2>
+                                {data.experiences.map((exp, index) => (
+                                    <div key={index} className={index > 0 ? 'mt-4 border-t border-border pt-4' : ''}>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Role
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {exp.role || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Organization
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {exp.organization || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Duration
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {exp.start_date} — {exp.present ? 'Present' : exp.end_date || '-'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Ages Served
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {exp.ages_served?.join(', ') || '-'}
+                                                </p>
+                                            </div>
+                                            {exp.description && (
+                                                <div className="sm:col-span-2">
+                                                    <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                        Description
+                                                    </p>
+                                                    <p className="text-sm text-foreground">
+                                                        {exp.description}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Screening Questions */}
+                        {data.authorized_to_work && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Screening Questions
+                                </h2>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Employment Status
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {( ({
+                                                full_time: 'Full-Time',
+                                                part_time: 'Part-Time',
+                                                no: 'Not Employed',
+                                                student: 'Student',
+                                            } as Record<string, string>)[data.employment_status ?? ''] ?? data.employment_status) || '-'}
+                                        </p>
+                                    </div>
+                                    {data.employment_status && data.employment_status !== 'no' && data.employment_status !== 'student' && (
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Current Employer
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.current_employer || '-'}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Authorized to Work in U.S.
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.authorized_to_work === 'yes' ? 'Yes' : data.authorized_to_work === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Smokes
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.smokes === 'yes' ? 'Yes' : data.smokes === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Alcohol
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {( ({
+                                                no: 'No',
+                                                socially: 'Socially/Occasionally',
+                                                regularly: 'Regularly',
+                                            } as Record<string, string>)[data.alcohol ?? ''] ?? data.alcohol) || '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Allergic to Dogs or Cats
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.allergic_to_pets === 'yes'
+                                                ? `Yes — ${({ dogs: 'Dogs', cats: 'Cats', both: 'Both' } as Record<string, string>)[data.allergic_to_what ?? ''] ?? data.allergic_to_what}`
+                                                : data.allergic_to_pets === 'no'
+                                                    ? 'No'
+                                                    : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Visible Tattoos
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.visible_tattoos === 'yes' ? 'Yes' : data.visible_tattoos === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Reliable Vehicle
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.reliable_vehicle === 'yes' ? 'Yes' : data.reliable_vehicle === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            CPR & First Aid Certified
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.cpr_certified === 'yes' ? 'Yes' : data.cpr_certified === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    {data.cpr_certified === 'yes' && data.cpr_expiration && (
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                CPR Expiration
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.cpr_expiration}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Trustline Certified
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.trustline_certified === 'yes' ? 'Yes' : data.trustline_certified === 'no' ? 'No' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Languages
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.languages || '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Has Children
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.has_children === 'yes'
+                                                ? `Yes — ${data.children_ages || 'ages not specified'}`
+                                                : data.has_children === 'no'
+                                                    ? 'No'
+                                                    : '-'}
+                                        </p>
+                                    </div>
+                                    {data.tattoo_description && (
+                                        <div className="sm:col-span-2">
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Tattoo Description
+                                            </p>
+                                            <p className="text-sm text-foreground">
+                                                {data.tattoo_description}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {data.substance_abuse && (
+                                        <div className="sm:col-span-2">
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Substance Abuse History
+                                            </p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                {data.substance_abuse}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {data.limitations && (
+                                        <div className="sm:col-span-2">
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Physical/Psychological Limitations
+                                            </p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                {data.limitations}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Position & Availability */}
+                        {data.position && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Position & Availability
+                                </h2>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            On-Call Babysitting
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.position.babysitting ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            On-Call Petsitting
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.position.petsitting ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Group Events
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.position.group_events ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                </div>
+                                {data.availability && (
+                                    <>
+                                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Weekday Mornings
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.availability.weekday_mornings ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Weekday Afternoons
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.availability.weekday_afternoons ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Weekday Evenings
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.availability.weekday_evenings ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Weekends
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.availability.weekends ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Overnights
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.availability.overnights ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {data.availability.notes && (
+                                            <div className="mt-4 sm:col-span-2">
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Availability Notes
+                                                </p>
+                                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                    {data.availability.notes}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Qualifications & Activities */}
+                        {data.qualifications && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Qualifications & Activities
+                                </h2>
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const labels: Record<string, string> = {
+                                            special_needs: 'Special Needs Care',
+                                            companion_care: 'Companion Care',
+                                            sick_care: 'Sick Care',
+                                            work_from_home: 'Work-From-Home Parents',
+                                            driving: 'Driving',
+                                            dogsitting: 'Dogsitting',
+                                            catsitting: 'Catsitting',
+                                            swimming: 'Swimming',
+                                            overnight_care: 'Overnight Care',
+                                        };
+                                        const selected = Object.entries(data.qualifications)
+                                            .filter(([, v]) => v)
+                                            .map(([k]) => labels[k] ?? k);
+                                        return selected.length > 0 ? (
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Selected Qualifications
+                                                </p>
+                                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                                    {selected.map((label) => (
+                                                        <span
+                                                            key={label}
+                                                            className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                                                        >
+                                                            {label}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">
+                                                None selected
+                                            </p>
+                                        );
+                                    })()}
+                                    {data.things_i_bring && (
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Things I Bring to a Job
+                                            </p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                {data.things_i_bring}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {data.interests && (
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Interests & Hobbies
+                                            </p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                {data.interests}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Location & Age Groups */}
+                        {data.location && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Location & Age Groups
+                                </h2>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            North County
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.location.north_county ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            South / East County
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.location.south_east_county ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                            Flexible
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {data.location.flexible ? 'Yes' : 'No'}
+                                        </p>
+                                    </div>
+                                </div>
+                                {data.age_groups && (
+                                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Babies
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.age_groups.babies ? 'Yes' : 'No'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Toddlers
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.age_groups.toddlers ? 'Yes' : 'No'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                Preschool
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.age_groups.preschool ? 'Yes' : 'No'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                School Age
+                                            </p>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {data.age_groups.school_age ? 'Yes' : 'No'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* References */}
                         <div className="border border-border bg-card p-6">

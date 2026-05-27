@@ -67,7 +67,9 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'substance_abuse' => 'required|string|max:2000',
             'limitations' => 'required|string|max:2000',
             'allergic_to_pets' => 'required|in:yes,no',
+            'allergic_to_what' => 'nullable|required_if:allergic_to_pets,yes|in:dogs,cats,both',
             'visible_tattoos' => 'required|in:yes,no',
+            'tattoo_description' => 'nullable|required_if:visible_tattoos,yes|string|max:1000',
             'authorized_to_work' => 'required|in:yes,no',
             'reliable_vehicle' => 'required|in:yes,no',
             'cpr_certified' => 'required|in:yes,no',
@@ -76,7 +78,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'trustline_certified' => 'required|in:yes,no',
             'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'languages' => 'nullable|string|max:500',
-            'has_children' => 'nullable|in:no,yes_at_home,yes_grown',
+            'has_children' => 'nullable|in:yes,no',
+            'children_ages' => 'nullable|required_if:has_children,yes|string|max:255',
 
             // Step 5: References
             'references' => 'required|array|min:3',

@@ -179,7 +179,7 @@ class CaregiverController extends Controller
 
     public function jobHistory(Request $request, Caregiver $caregiver)
     {
-        $query = Booking::with(['client.user', 'hotel'])
+        $query = Booking::with(['client.user', 'hotel', 'assignments'])
             ->where('caregiver_id', $caregiver->id);
 
         if ($request->filled('status')) {
@@ -199,6 +199,20 @@ class CaregiverController extends Controller
             ->paginate(20)
             ->appends($request->query());
 
+        $bookings->getCollection()->transform(fn ($booking) => [
+            ...$booking->toArray(),
+            'assignment_id' => $booking->assignments->first()?->id,
+            'assignment_resolution' => $booking->assignments->first()?->resolution,
+            'assignment_resolution_label' => $booking->assignments->first()?->resolution
+                ? AssignmentResolution::tryFrom($booking->assignments->first()->resolution)?->label()
+                : null,
+            'assignment_resolution_color' => $booking->assignments->first()?->resolution
+                ? AssignmentResolution::tryFrom($booking->assignments->first()->resolution)?->color()
+                : null,
+            'assignment_note' => $booking->assignments->first()?->resolution_note,
+            'late_arrival' => $booking->assignments->first()?->late_arrival_flag ?? false,
+        ]);
+
         $bookingStatuses = array_map(
             fn ($case) => [
                 'value' => $case->value,
@@ -211,6 +225,15 @@ class CaregiverController extends Controller
         $serviceTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
             ServiceType::cases()
+        );
+
+        $assignmentResolutions = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'color' => $case->color(),
+            ],
+            AssignmentResolution::cases()
         );
 
         return Inertia::render('admin/caregivers/job-history', [
@@ -226,6 +249,7 @@ class CaregiverController extends Controller
                 fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                 LocationType::cases()
             ),
+            'assignmentResolutions' => $assignmentResolutions,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
