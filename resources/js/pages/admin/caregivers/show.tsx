@@ -170,6 +170,7 @@ interface JobAssignment {
     id: number;
     job_number: string;
     date: string;
+    client_id: number | null;
     client_name: string;
     client_description: string;
     resolution: string | null;
@@ -790,8 +791,10 @@ next.add(ref.id);
                                                             <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                                 {formatDisplayDateTimeInPT(row.date)}
                                                             </td>
-                                                            <td className="px-4 py-3 text-sm text-foreground">
-                                                                {row.client_name}
+                                                            <td className="px-4 py-3 text-sm font-medium text-ring">
+                                                                {row.client_id ? (
+                                                                    <Link href={`/clients/${row.client_id}`} className="hover:underline">{row.client_name}</Link>
+                                                                ) : row.client_name}
                                                             </td>
                                                             <td className="px-4 py-3">
                                                                 <span

@@ -137,7 +137,7 @@ export default function ApplicationsIndex() {
                     <div className="relative">
                         <Input
                             type="text"
-                            placeholder="Search by name..."
+                            placeholder="Search by name or email..."
                             value={searchQuery}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="h-8"

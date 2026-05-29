@@ -133,7 +133,6 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
             'work_from_home' => false,
             'driving' => true,
             'dogsitting' => false,
-            'catsitting' => false,
             'swimming' => true,
             'overnight_care' => false,
         ],

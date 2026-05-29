@@ -1910,12 +1910,19 @@ class ImportBubbleDatabase extends Command
 
     protected function importCertifications(Caregiver $caregiver, array $source): void
     {
-        $mappings = ['first_aid_exp_date' => 'First Aid', 'cpr_exp_date' => 'CPR', 'background_check_exp_date' => 'Background Check'];
+        $mappings = ['cpr_exp_date' => 'CPR', 'first_aid_exp_date' => 'First Aid', 'background_check_exp_date' => 'Background Check'];
         foreach ($mappings as $field => $certName) {
             if ($date = $this->timestampToDate($source[$field] ?? null)) {
                 if ($type = CertificationType::where('name', $certName)->first()) {
                     $caregiver->certifications()->syncWithoutDetaching([$type->id => ['expiration_date' => $date, 'verified_at' => now()]]);
                 }
+            }
+        }
+
+        $trustline = $source['trustline__text'] ?? null;
+        if (in_array(strtolower($trustline ?? ''), ['yes', 'true', '1'])) {
+            if ($type = CertificationType::where('name', 'Trustline')->first()) {
+                $caregiver->certifications()->syncWithoutDetaching([$type->id => ['verified_at' => now()]]);
             }
         }
     }

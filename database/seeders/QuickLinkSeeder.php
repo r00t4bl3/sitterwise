@@ -20,9 +20,9 @@ class QuickLinkSeeder extends Seeder
                 'is_external' => true,
             ],
             [
-                'title' => 'CPR/First Aid',
+                'title' => 'CPR',
                 'url' => 'https://nationalcprfoundation.com/courses/standard-cpr-aed-first-aid/',
-                'description' => 'CPR or First Aid certification',
+                'description' => 'CPR certification',
                 'icon' => 'Link',
                 'sort_order' => 1,
                 'is_active' => true,
@@ -94,7 +94,7 @@ class QuickLinkSeeder extends Seeder
             [
                 'title' => 'Care.com Caregiver Update',
                 'url' => 'https://sitterwise.com/care-update',
-                'description' => 'Update the Care.com system with caregiver background checks and CPR/First Aid certifications. Add new caregivers to their system.',
+                'description' => 'Update the Care.com system with caregiver background checks and CPR and First Aid certifications. Add new caregivers to their system.',
                 'icon' => 'Link',
                 'sort_order' => 1,
                 'is_active' => true,
@@ -103,7 +103,7 @@ class QuickLinkSeeder extends Seeder
             [
                 'title' => 'Caregiver Update Form',
                 'url' => 'https://sitterwise.com/caregiver-update',
-                'description' => 'Caregivers can use this form to update their CPR/First Aid and various other information.',
+                'description' => 'Caregivers can use this form to update their CPR and First Aid and various other information.',
                 'icon' => 'Link',
                 'sort_order' => 1,
                 'is_active' => true,

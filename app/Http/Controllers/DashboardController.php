@@ -46,11 +46,73 @@ class DashboardController extends Controller
         );
 
         if ($user->isAdmin() || $user->isSuperAdmin()) {
+            $now = now();
+            $monthStart = $now->copy()->startOfMonth();
+            $monthEnd = $now->copy()->endOfMonth();
+            $ytdStart = $now->copy()->startOfYear();
+
+            $completedStatuses = [BookingStatus::Completed->value, BookingStatus::Paid->value];
+            $activeStatuses = [BookingStatus::Received->value, BookingStatus::Pending->value, BookingStatus::Confirmed->value];
+
+            $thisMonthCompleted = Booking::whereBetween('start_datetime', [$monthStart, $monthEnd])
+                ->whereIn('status', $completedStatuses)
+                ->count();
+
+            $thisMonthUpcoming = Booking::whereBetween('start_datetime', [$monthStart, $monthEnd])
+                ->whereIn('status', $activeStatuses)
+                ->where('start_datetime', '>', $now)
+                ->count();
+
+            $ytdCompleted = Booking::whereBetween('start_datetime', [$ytdStart, $now])
+                ->whereIn('status', $completedStatuses)
+                ->count();
+
+            $ytdUpcoming = Booking::whereBetween('start_datetime', [$ytdStart, $now])
+                ->whereIn('status', $activeStatuses)
+                ->where('start_datetime', '>', $now)
+                ->count();
+
+            $ytdTotal = $ytdCompleted + $ytdUpcoming;
+
+            $lastYearDate = $now->copy()->subYear();
+            $lastYearStart = $lastYearDate->copy()->startOfYear();
+            $lytdTotal = Booking::whereBetween('start_datetime', [$lastYearStart, $lastYearDate])
+                ->whereIn('status', [...$completedStatuses, ...$activeStatuses])
+                ->count();
+
+            $ytdPercentChange = $lytdTotal > 0
+                ? round(($ytdTotal - $lytdTotal) / $lytdTotal * 100)
+                : ($ytdTotal > 0 ? 100 : null);
+
+            $unassigned = Booking::whereNull('caregiver_id')
+                ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
+                ->inFuture()
+                ->count();
+
+            $missingPayment = Booking::where('requires_payment', true)
+                ->whereIn('payment_status', [BookingPaymentStatus::Pending->value, BookingPaymentStatus::Failed->value])
+                ->where('status', '!=', BookingStatus::Cancelled->value)
+                ->count();
+
+            $awaitingCheckout = Booking::whereNotNull('checkout_at')
+                ->where('checkout_at', '<=', $now)
+                ->whereNotIn('status', [...$completedStatuses, BookingStatus::Cancelled->value])
+                ->count();
+
             $stats = [
                 'totalCaregivers' => Caregiver::count(),
                 'activeCaregivers' => Caregiver::where('status', CaregiverStatus::Active)->count(),
                 'totalClients' => User::where('role', 'client')->count(),
                 'totalBookings' => Booking::count(),
+                'thisMonthCompleted' => $thisMonthCompleted,
+                'thisMonthUpcoming' => $thisMonthUpcoming,
+                'ytdCompleted' => $ytdCompleted,
+                'ytdUpcoming' => $ytdUpcoming,
+                'ytdPercentChange' => $ytdPercentChange,
+                'ytdLastYearLabel' => (string) $lastYearDate->year,
+                'troubledUnassigned' => $unassigned,
+                'troubledMissingPayment' => $missingPayment,
+                'troubledAwaitingCheckout' => $awaitingCheckout,
             ];
 
             $serviceTypes = array_map(
@@ -170,13 +232,13 @@ class DashboardController extends Controller
                     ->where('created_at', '<', now()->subDays(7))
                     ->count(),
                 'needsAttention' => [
-                    [
-                        'key' => 'no_shows',
-                        'label' => 'No-shows logged today',
-                        'count' => 0,
-                        'href' => '/bookings?filter=no_show',
-                        'variant' => 'urgent',
-                    ],
+                    // [
+                    //     'key' => 'no_shows',
+                    //     'label' => 'No-shows logged today',
+                    //     'count' => 0,
+                    //     'href' => '/bookings?filter=no_show',
+                    //     'variant' => 'urgent',
+                    // ],
                     [
                         'key' => 'applications_ready',
                         'label' => 'Applications ready to review',

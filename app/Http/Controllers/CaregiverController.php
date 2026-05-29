@@ -159,6 +159,7 @@ class CaregiverController extends Controller
                     'id' => $assignment->id,
                     'job_number' => '#'.$assignment->booking->id,
                     'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s\Z'),
+                    'client_id' => $assignment->booking->client_id,
                     'client_name' => $assignment->booking->client?->user?->name ?? '—',
                     'client_description' => $assignment->booking->hotel?->name
                         ?? $assignment->booking->address_city

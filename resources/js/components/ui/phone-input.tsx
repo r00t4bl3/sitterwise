@@ -96,28 +96,27 @@ export function PhoneInput({
 
     return (
         <div>
-            <div className="flex items-center gap-2">
-                <Label>
-                    {label}
-                    {required && (
-                        <span className="text-coral" aria-hidden="true">
-                            {' '}*
-                        </span>
-                    )}
-                </Label>
+            <Label>
+                {label}
+                {required && (
+                    <span className="text-coral" aria-hidden="true">
+                        {' '}*
+                    </span>
+                )}
+                {' '}
                 <button
                     type="button"
                     onClick={toggleInternational}
                     className={cn(
-                        'text-xs underline-offset-2 transition-colors',
+                        'inline text-xs underline-offset-2 transition-colors',
                         international
                             ? 'text-ring hover:text-foreground'
                             : 'text-muted-foreground hover:text-ring',
                     )}
                 >
-                    {international ? 'US number?' : 'International?'}
+                    {international ? 'Back to US number' : 'Need a different country code?'}
                 </button>
-            </div>
+            </Label>
             <Input
                 type="tel"
                 name={name}

@@ -308,9 +308,13 @@ export default function BookingHistory() {
                                                 }
                                             />
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap font-medium text-ring">
                                             {booking.caregiver
-                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                ? (
+                                                    <Link href={`/caregivers/${booking.caregiver.id}`} className="hover:underline">
+                                                        {booking.caregiver.first_name} {booking.caregiver.last_name}
+                                                    </Link>
+                                                )
                                                 : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">

@@ -8,6 +8,7 @@ use App\Mail\ApplicantDeclinedMail;
 use App\Mail\ApplicantHiredMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\CaregiverApplication;
+use App\Models\CertificationType;
 use App\Models\OnboardingChecklistItem;
 use App\Models\ReferenceRequest;
 use Carbon\Carbon;
@@ -21,6 +22,17 @@ class ApplicationController extends Controller
     public function index()
     {
         $query = CaregiverApplication::with('caregiver.user', 'caregiver.referenceRequests');
+
+        if ($search = request('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('caregiver', function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                })->orWhereHas('caregiver.user', function ($q) use ($search) {
+                    $q->where('email', 'like', "%{$search}%");
+                });
+            });
+        }
 
         if ($status = request('status')) {
             $query->whereHas('caregiver', fn ($q) => $q->where('status', $status));
@@ -43,7 +55,7 @@ class ApplicationController extends Controller
 
         return Inertia::render('admin/applications/index', [
             'applications' => $applications,
-            'filters' => request()->only('status'),
+            'filters' => request()->only(['status', 'search']),
         ]);
     }
 
@@ -219,14 +231,17 @@ class ApplicationController extends Controller
         $caregiver = $application->caregiver;
 
         $certificationMap = [
-            'cpr_uploaded' => 1,        // CPR & First Aid
-            'trustline_submitted' => 3, // Trustline
+            'cpr_uploaded' => 'CPR',
+            'trustline_submitted' => 'Trustline',
         ];
 
         if (isset($certificationMap[$checklistItem->item_key])) {
-            $caregiver->certifications()->updateExistingPivot($certificationMap[$checklistItem->item_key], [
-                'verified_at' => $isBeingChecked ? now() : null,
-            ]);
+            $certType = CertificationType::where('name', $certificationMap[$checklistItem->item_key])->first();
+            if ($certType) {
+                $caregiver->certifications()->updateExistingPivot($certType->id, [
+                    'verified_at' => $isBeingChecked ? now() : null,
+                ]);
+            }
         }
 
         return back();

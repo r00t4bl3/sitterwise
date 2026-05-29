@@ -1,10 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     Users,
     UserCircle,
     Calendar,
     Clock,
     AlertCircle,
+    ChevronDown,
     ChevronRight,
     Briefcase,
     Plus,
@@ -83,6 +85,15 @@ interface AdminDashboardProps {
         activeCaregivers?: number;
         totalClients?: number;
         totalBookings?: number;
+        thisMonthCompleted: number;
+        thisMonthUpcoming: number;
+        ytdCompleted: number;
+        ytdUpcoming: number;
+        ytdPercentChange: number | null;
+        ytdLastYearLabel: string;
+        troubledUnassigned: number;
+        troubledMissingPayment: number;
+        troubledAwaitingCheckout: number;
     };
     admin: {
         bookingsNeedingAttention: Booking[];
@@ -130,6 +141,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
     const bookingStatuses = admin.bookingStatuses || [];
+    const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
 
     const sheet = useBookingSheet({
         clients: admin.clients || [],
@@ -163,41 +175,21 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                 {/* Summary Panels - 3 columns */}
                 <div className="grid gap-4 sm:grid-cols-3">
                     <Link
-                        href="/caregivers"
+                        href="/bookings"
                         className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
                     >
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4 text-primary" />
+                            <Calendar className="h-4 w-4 text-primary" />
                             <span className="text-xs font-medium tracking-wider uppercase">
-                                Caregivers
+                                This Month
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.activeCaregivers}
-                            <span className="text-lg font-normal text-muted-foreground">
-                                {' '}
-                                / {stats.totalCaregivers}
-                            </span>
+                            {stats.thisMonthCompleted + stats.thisMonthUpcoming}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Active / Total
+                            {stats.thisMonthCompleted} completed - {stats.thisMonthUpcoming} upcoming
                         </p>
-                    </Link>
-
-                    <Link
-                        href="/clients"
-                        className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
-                    >
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <UserCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-xs font-medium tracking-wider uppercase">
-                                Clients
-                            </span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">
-                            {stats.totalClients}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Total</p>
                     </Link>
 
                     <Link
@@ -205,89 +197,130 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                         className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
                     >
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4 text-blue-500" />
+                            <Briefcase className="h-4 w-4 text-blue-500" />
                             <span className="text-xs font-medium tracking-wider uppercase">
-                                Bookings
+                                Year to Date
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.totalBookings}
+                            {stats.ytdCompleted + stats.ytdUpcoming}
                         </p>
-                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="text-xs text-muted-foreground">
+                            {stats.ytdPercentChange !== null
+                                ? `${stats.ytdPercentChange > 0 ? '+' : ''}${stats.ytdPercentChange}% vs ${stats.ytdLastYearLabel}`
+                                : `${stats.ytdCompleted} completed - ${stats.ytdUpcoming} upcoming`}
+                        </p>
+                    </Link>
+
+                    <Link
+                        href="/bookings"
+                        className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md"
+                    >
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                            <span className="text-xs font-medium tracking-wider uppercase">
+                                Needs Attention
+                            </span>
+                        </div>
+                        <p className="text-2xl font-bold text-foreground">
+                            {stats.troubledUnassigned + stats.troubledMissingPayment + stats.troubledAwaitingCheckout}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {[
+                                stats.troubledUnassigned > 0 && `${stats.troubledUnassigned} unassigned`,
+                                stats.troubledMissingPayment > 0 && `${stats.troubledMissingPayment} missing payment${stats.troubledMissingPayment > 1 ? 's' : ''}`,
+                                stats.troubledAwaitingCheckout > 0 && `${stats.troubledAwaitingCheckout} awaiting checkout approval`,
+                            ]
+                                .filter(Boolean)
+                                .join(', ')}
+                        </p>
                     </Link>
                 </div>
 
                 {/* Needs Attention Widget */}
                 <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                    <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                        <h2 className="text-lg font-semibold">Needs Attention</h2>
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                            {admin.needsAttention.reduce((s, i) => s + i.count, 0)} total
-                        </span>
-                    </div>
-                    <div className="divide-y divide-border">
-                        {admin.needsAttention.map((item) => {
-                            const iconMap: Record<string, string> = {
-                                no_shows: '\u26A1',
-                                applications_ready: '\u{1F4CB}',
-                                onboarding_stalled: '\u{1F504}',
-                                trustline_suspended: '\u26D4',
-                                compliance_expired: '\u{1F6AB}',
-                                compliance_expiring: '\u{1F552}',
-                                inactive_45: '\u{1F634}',
-                                stuck_references: '\u{1F4AC}',
-                            };
+                    <button
+                        type="button"
+                        onClick={() => setNeedsAttentionOpen(!needsAttentionOpen)}
+                        className="flex w-full items-center justify-between border-b border-border px-6 py-4"
+                    >
+                        <h2 className="text-lg font-semibold">HR Needs Attention</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                {admin.needsAttention.reduce((s, i) => s + i.count, 0)} total
+                            </span>
+                            <ChevronDown
+                                className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                    needsAttentionOpen ? 'rotate-0' : '-rotate-90'
+                                }`}
+                            />
+                        </div>
+                    </button>
+                    {needsAttentionOpen && (
+                        <div className="divide-y divide-border">
+                            {admin.needsAttention.map((item) => {
+                                const iconMap: Record<string, string> = {
+                                    no_shows: '\u26A1',
+                                    applications_ready: '\u{1F4CB}',
+                                    onboarding_stalled: '\u{1F504}',
+                                    trustline_suspended: '\u26D4',
+                                    compliance_expired: '\u{1F6AB}',
+                                    compliance_expiring: '\u{1F552}',
+                                    inactive_45: '\u{1F634}',
+                                    stuck_references: '\u{1F4AC}',
+                                };
 
-                            return (
-                                <a
-                                    key={item.key}
-                                    href={item.href}
-                                    className={`flex items-center justify-between px-6 py-3 transition-colors hover:bg-accent/50 ${
-                                        item.variant === 'urgent'
-                                            ? 'bg-red-50 dark:bg-red-950/20'
-                                            : ''
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-lg">
-                                            {iconMap[item.key] ?? '\u{1F4A1}'}
-                                        </span>
-                                        <span className="text-sm text-foreground">
-                                            {item.label}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span
-                                            className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${
-                                                item.count > 0
-                                                    ? item.variant === 'warning'
-                                                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                                        : item.variant === 'urgent'
-                                                          ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                                                          : 'bg-primary/10 text-primary'
-                                                    : 'bg-muted text-muted-foreground'
-                                            }`}
-                                        >
-                                            {item.count}
-                                        </span>
-                                        <svg
-                                            className="h-4 w-4 text-muted-foreground"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </div>
-                                </a>
-                            );
-                        })}
-                    </div>
+                                return (
+                                    <a
+                                        key={item.key}
+                                        href={item.href}
+                                        className={`flex items-center justify-between px-6 py-3 transition-colors hover:bg-accent/50 ${
+                                            item.variant === 'urgent'
+                                                ? 'bg-red-50 dark:bg-red-950/20'
+                                                : ''
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-lg">
+                                                {iconMap[item.key] ?? '\u{1F4A1}'}
+                                            </span>
+                                            <span className="text-sm text-foreground">
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${
+                                                    item.count > 0
+                                                        ? item.variant === 'warning'
+                                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                                                            : item.variant === 'urgent'
+                                                              ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                                                              : 'bg-primary/10 text-primary'
+                                                        : 'bg-muted text-muted-foreground'
+                                                }`}
+                                            >
+                                                {item.count}
+                                            </span>
+                                            <svg
+                                                className="h-4 w-4 text-muted-foreground"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M9 5l7 7-7 7"
+                                                />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Two Column Layout Below */}

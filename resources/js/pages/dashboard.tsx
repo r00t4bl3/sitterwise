@@ -27,6 +27,15 @@ interface Props {
         favoriteCaregivers?: number;
         totalEarned?: number;
         completedJobs?: number;
+        thisMonthCompleted?: number;
+        thisMonthUpcoming?: number;
+        ytdCompleted?: number;
+        ytdUpcoming?: number;
+        ytdPercentChange?: number | null;
+        ytdLastYearLabel?: string;
+        troubledUnassigned?: number;
+        troubledMissingPayment?: number;
+        troubledAwaitingCheckout?: number;
     };
     caregiver?: {
         id: number;
@@ -111,10 +120,19 @@ export default function Dashboard() {
                 <AdminDashboard
                     admin={admin as any}
                     stats={{
-                        totalCaregivers: stats?.totalCaregivers || 0,
-                        activeCaregivers: stats?.activeCaregivers || 0,
-                        totalClients: stats?.totalClients || 0,
-                        totalBookings: stats?.totalBookings || 0,
+                        totalCaregivers: stats?.totalCaregivers ?? 0,
+                        activeCaregivers: stats?.activeCaregivers ?? 0,
+                        totalClients: stats?.totalClients ?? 0,
+                        totalBookings: stats?.totalBookings ?? 0,
+                        thisMonthCompleted: stats?.thisMonthCompleted ?? 0,
+                        thisMonthUpcoming: stats?.thisMonthUpcoming ?? 0,
+                        ytdCompleted: stats?.ytdCompleted ?? 0,
+                        ytdUpcoming: stats?.ytdUpcoming ?? 0,
+                        ytdPercentChange: stats?.ytdPercentChange ?? null,
+                        ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
+                        troubledUnassigned: stats?.troubledUnassigned ?? 0,
+                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );
@@ -124,10 +142,19 @@ export default function Dashboard() {
                 <SuperAdminDashboard
                     admin={admin as any}
                     stats={{
-                        totalCaregivers: stats?.totalCaregivers || 0,
-                        activeCaregivers: stats?.activeCaregivers || 0,
-                        totalClients: stats?.totalClients || 0,
-                        totalBookings: stats?.totalBookings || 0,
+                        totalCaregivers: stats?.totalCaregivers ?? 0,
+                        activeCaregivers: stats?.activeCaregivers ?? 0,
+                        totalClients: stats?.totalClients ?? 0,
+                        totalBookings: stats?.totalBookings ?? 0,
+                        thisMonthCompleted: stats?.thisMonthCompleted ?? 0,
+                        thisMonthUpcoming: stats?.thisMonthUpcoming ?? 0,
+                        ytdCompleted: stats?.ytdCompleted ?? 0,
+                        ytdUpcoming: stats?.ytdUpcoming ?? 0,
+                        ytdPercentChange: stats?.ytdPercentChange ?? null,
+                        ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
+                        troubledUnassigned: stats?.troubledUnassigned ?? 0,
+                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );

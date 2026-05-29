@@ -684,7 +684,7 @@ next.add(id);
                                     </div>
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                            CPR & First Aid Certified
+                                            CPR Certified
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
                                             {data.cpr_certified === 'yes' ? 'Yes' : data.cpr_certified === 'no' ? 'No' : '-'}
@@ -868,7 +868,6 @@ next.add(id);
                                             work_from_home: 'Work-From-Home Parents',
                                             driving: 'Driving',
                                             dogsitting: 'Dogsitting',
-                                            catsitting: 'Catsitting',
                                             swimming: 'Swimming',
                                             overnight_care: 'Overnight Care',
                                         };

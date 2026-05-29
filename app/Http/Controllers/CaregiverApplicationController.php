@@ -98,7 +98,9 @@ class CaregiverApplicationController extends Controller
 
     public function showWizard()
     {
-        return inertia('public/caregiver-apply/wizard');
+        return inertia('public/caregiver-apply/wizard', [
+            'verifiedEmail' => Session::get('verified_email'),
+        ]);
     }
 
     public function submit(StoreCaregiverApplicationRequest $request)
@@ -185,7 +187,7 @@ class CaregiverApplicationController extends Controller
 
         // Store certifications (caregiver_certifications pivot)
         if (($validated['cpr_certified'] ?? '') === 'yes') {
-            $cprType = CertificationType::where('name', 'CPR & First Aid')->first();
+            $cprType = CertificationType::where('name', 'CPR')->first();
             if ($cprType) {
                 $caregiver->certifications()->syncWithoutDetaching([
                     $cprType->id => [

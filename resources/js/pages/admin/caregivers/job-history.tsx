@@ -68,6 +68,11 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     location_type: string;
+    address_line1: string | null;
+    address_line2: string | null;
+    address_city: string | null;
+    address_state: string | null;
+    address_zip: string | null;
     paid_to_caregiver_total: number;
     client: ClientUser | null;
     hotel: Hotel | null;
@@ -405,18 +410,23 @@ return;
                                                 }
                                             />
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap font-medium text-ring">
                                             {booking.client
-                                                ? `${booking.client.first_name} ${booking.client.last_name}`
+                                                ? (
+                                                    <Link href={`/clients/${booking.client.id}`} className="hover:underline">
+                                                        {booking.client.first_name} {booking.client.last_name}
+                                                    </Link>
+                                                )
                                                 : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                            {booking.hotel?.name ??
+                                            {booking.hotel?.name ||
+                                                [booking.address_line1, booking.address_city, booking.address_state].filter(Boolean).join(', ') ||
                                                 locationTypes.find(
                                                     (l) =>
                                                         l.value ===
                                                         booking.location_type,
-                                                )?.label ??
+                                                )?.label ||
                                                 booking.location_type}
                                         </td>
                                         <td className="px-4 py-3">
