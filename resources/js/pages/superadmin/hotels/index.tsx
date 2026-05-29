@@ -7,13 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Sheet,
     SheetContent,
@@ -23,6 +22,7 @@ import {
 } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -217,7 +217,7 @@ export default function HotelsIndex() {
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                         {hotel.contact_name ||
-                                            hotel.contact_phone ||
+                                            formatPhoneDisplay(hotel.contact_phone) ||
                                             '—'}
                                     </td>
                                     <td className="px-4 py-3">
@@ -358,18 +358,11 @@ export default function HotelsIndex() {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="contact_phone">
-                                        Contact Phone
-                                    </Label>
-                                    <Input
-                                        id="contact_phone"
+                                    <PhoneInput
+                                        name="contact_phone"
+                                        label="Contact Phone"
                                         value={form.data.contact_phone}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'contact_phone',
-                                                e.target.value,
-                                            )
-                                        }
+                                        onChange={(v) => form.setData('contact_phone', v)}
                                     />
                                 </div>
                             </div>

@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import {
     ChevronLeft,
     ChevronRight,
+    ChevronUp,
     Baby,
     Dog,
     Calendar as CalendarIcon,
@@ -27,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayTime, parseAsLocal } from '@/lib/datetime';
+import { formatDisplayTimeInPT, parseAsLocal } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 import { BookingSheet } from './booking-sheet';
 import { ExportSheet } from './export-sheet';
@@ -155,6 +156,7 @@ export default function Bookings() {
     }, [searchQuery]);
 
     const [exportSheetOpen, setExportSheetOpen] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
     const [isTableView, setIsTableView] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -172,6 +174,16 @@ export default function Bookings() {
     }, [isTableView]);
 
     const tableBodyRef = useRef<HTMLTableSectionElement>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 300);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     useEffect(() => {
         if (!isTableView) {
@@ -587,11 +599,11 @@ export default function Bookings() {
                                                         <ServiceIcon className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-90" />
                                                         <div className="flex min-w-0 flex-col items-start text-left">
                                                             <span className="text-[10px] leading-tight opacity-80">
-                                                                {formatDisplayTime(
+                                                                {formatDisplayTimeInPT(
                                                                     booking.start_datetime,
                                                                 )}
                                                                 -
-                                                                {formatDisplayTime(
+                                                                {formatDisplayTimeInPT(
                                                                     booking.end_datetime,
                                                                 )}
                                                             </span>
@@ -772,11 +784,11 @@ export default function Bookings() {
                                                             </Link>
                                                         </td>
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                                            {formatDisplayTime(
+                                                            {formatDisplayTimeInPT(
                                                                 booking.start_datetime,
                                                             )}{' '}
                                                             -{' '}
-                                                            {formatDisplayTime(
+                                                            {formatDisplayTimeInPT(
                                                                 booking.end_datetime,
                                                             )}
                                                         </td>
@@ -958,11 +970,11 @@ export default function Bookings() {
                                             </div>
                                             <div className="overflow-hidden">
                                                 <div className="text-xs opacity-80">
-                                                    {formatDisplayTime(
+                                                    {formatDisplayTimeInPT(
                                                         booking.start_datetime,
                                                     )}
                                                     -
-                                                    {formatDisplayTime(
+                                                    {formatDisplayTimeInPT(
                                                         booking.end_datetime,
                                                     )}
                                                 </div>
@@ -984,6 +996,18 @@ export default function Bookings() {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+                {showScrollTop && (
+                    <button
+                        onClick={() =>
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }
+                        className="fixed bottom-6 right-6 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg transition-all hover:bg-accent"
+                        type="button"
+                    >
+                        <ChevronUp className="h-5 w-5" />
+                    </button>
+                )}
             </div>
         </AppLayout>
     );

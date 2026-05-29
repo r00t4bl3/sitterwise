@@ -4,7 +4,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -100,11 +100,11 @@ export default function ClientBookingsIndex() {
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                                 <span className="text-sm text-muted-foreground">
-                                                    {formatDisplayDateTime(
+                                                    {formatDisplayDateTimeInPT(
                                                         booking.start_datetime,
                                                     )}{' '}
                                                     -{' '}
-                                                    {formatDisplayDateTime(
+                                                    {formatDisplayDateTimeInPT(
                                                         booking.end_datetime,
                                                     )}
                                                 </span>

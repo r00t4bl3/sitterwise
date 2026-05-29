@@ -124,6 +124,85 @@ export const formatPointInTime = (
 };
 
 /**
+ * Formats a UTC ISO datetime string to a date in America/Los_Angeles.
+ * Output example: "Monday, October 27, 2023"
+ */
+export const formatDisplayDateInPT = (
+    dateStr: string | null | undefined,
+): string => {
+    if (!dateStr) {
+return '';
+}
+
+    const date = new Date(dateStr);
+
+    if (isNaN(date.getTime())) {
+return '';
+}
+
+    return date.toLocaleDateString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
+
+/**
+ * Formats a UTC ISO datetime string to a time in America/Los_Angeles.
+ * Output example: "9:15 AM"
+ */
+export const formatDisplayTimeInPT = (
+    dateStr: string | null | undefined,
+): string => {
+    if (!dateStr) {
+return '';
+}
+
+    const date = new Date(dateStr);
+
+    if (isNaN(date.getTime())) {
+return '';
+}
+
+    return date.toLocaleTimeString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+};
+
+/**
+ * Formats a UTC ISO datetime string to a short date/time in America/Los_Angeles.
+ * Output example: "Oct 27, 2023, 9:15 AM"
+ */
+export const formatDisplayDateTimeInPT = (
+    dateStr: string | null | undefined,
+): string => {
+    if (!dateStr) {
+return '';
+}
+
+    const date = new Date(dateStr);
+
+    if (isNaN(date.getTime())) {
+return '';
+}
+
+    return date.toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+};
+
+/**
  * Get time options with disabled states based on minimum duration rule
  * Disables times that would result in booking < 4 hours from start time
  */

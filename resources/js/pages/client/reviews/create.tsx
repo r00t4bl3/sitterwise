@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
+import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
 interface BookingData {
     ulid: string;
@@ -78,9 +78,9 @@ export default function ReviewBooking({
                         Review {booking.caregiver_name}
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        {formatDisplayDate(booking.start_datetime)} from{' '}
-                        {formatDisplayTime(booking.start_datetime)} to{' '}
-                        {formatDisplayTime(booking.end_datetime)}
+                        {formatDisplayDateInPT(booking.start_datetime)} from{' '}
+                        {formatDisplayTimeInPT(booking.start_datetime)} to{' '}
+                        {formatDisplayTimeInPT(booking.end_datetime)}
                     </p>
                 </div>
 

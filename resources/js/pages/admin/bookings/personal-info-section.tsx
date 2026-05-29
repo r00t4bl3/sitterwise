@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -24,6 +25,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { getChildBirthYearOptions } from '@/lib/age';
+import { formatPhoneDisplay } from '@/lib/phone';
 import { ClientInfoPanel } from './client-info-panel';
 import type { Booking } from './types';
 
@@ -231,7 +233,7 @@ export function PersonalInfoSection({
                                     href={`tel:${editingBooking.client.phone}`}
                                     className="text-primary hover:underline"
                                 >
-                                    {editingBooking.client.phone}
+                                    {formatPhoneDisplay(editingBooking.client.phone)}
                                 </a>
                             )) ||
                                 'No phone'}
@@ -596,31 +598,20 @@ export function PersonalInfoSection({
                                 )}
                             </div>
                             <div>
-                                <Label
-                                    className={`text-sm font-medium ${form.errors['new_client.phone'] ? 'text-destructive' : 'text-foreground'}`}
-                                >
-                                    Cell Phone{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
+                                <PhoneInput
                                     value={form.data.new_client.phone}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         form.setData('new_client', {
                                             ...form.data.new_client,
-                                            phone: e.target.value,
+                                            phone: value,
                                         })
                                     }
+                                    name="new_client.phone"
+                                    label="Cell Phone"
                                     placeholder="Cell Phone"
                                     required
-                                    aria-invalid={
-                                        !!form.errors['new_client.phone']
-                                    }
+                                    error={form.errors['new_client.phone']}
                                 />
-                                {form.errors['new_client.phone'] && (
-                                    <p className="mt-1 text-sm text-destructive">
-                                        {form.errors['new_client.phone']}
-                                    </p>
-                                )}
                             </div>
                             <div>
                                 <Label

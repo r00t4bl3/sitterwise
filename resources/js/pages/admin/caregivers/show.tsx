@@ -49,7 +49,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAgeFromDate } from '@/lib/age';
-import { formatDisplayDateTime, formatShortDisplayDate } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT, formatShortDisplayDate } from '@/lib/datetime';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -242,6 +243,7 @@ function SpecialtyTag({ name, color_bg, color_text }: { name: string; color_bg?:
 
 function AttributeBadge({ name, value }: { name: string; value: string | boolean }) {
     const isTrue = value === 'true' || value === '1' || value === true;
+
     return (
         <div className="flex items-center gap-2">
             {isTrue && <Check className="h-4 w-4 text-green-600" />}
@@ -273,6 +275,7 @@ function EducationTypeLabel({ type }: { type: string }) {
         master: "Master's Degree",
         phd: 'PhD / Doctorate',
     };
+
     return <>{labels[type] || type}</>;
 }
 
@@ -317,7 +320,9 @@ export default function CaregiverShow() {
     const handlePasswordReset: SubmitEventHandler = (e) => {
         e.preventDefault();
         passwordForm.post(`/caregivers/${caregiver.id}/password`, {
-            onSuccess: () => { setIsPasswordSheetOpen(false); passwordForm.reset(); },
+            onSuccess: () => {
+ setIsPasswordSheetOpen(false); passwordForm.reset(); 
+},
         });
     };
 
@@ -411,6 +416,7 @@ export default function CaregiverShow() {
                 <div className="flex overflow-x-auto border-b border-border">
                     {TABS.map((tab) => {
                         const Icon = tab.icon;
+
                         return (
                             <button
                                 key={tab.key}
@@ -445,7 +451,7 @@ export default function CaregiverShow() {
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">Phone</p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {caregiver.phone ? <a href={`tel:${caregiver.phone}`} className="text-primary hover:underline">{caregiver.phone}</a> : '—'}
+                                            {caregiver.phone ? <a href={`tel:${caregiver.phone}`} className="text-primary hover:underline">{formatPhoneDisplay(caregiver.phone)}</a> : '—'}
                                         </p>
                                     </div>
                                     <div>
@@ -595,11 +601,17 @@ export default function CaregiverShow() {
                                             const toggleExpanded = () => {
                                                 setExpandedRefs((prev) => {
                                                     const next = new Set(prev);
-                                                    if (next.has(ref.id)) next.delete(ref.id);
-                                                    else next.add(ref.id);
+
+                                                    if (next.has(ref.id)) {
+next.delete(ref.id);
+} else {
+next.add(ref.id);
+}
+
                                                     return next;
                                                 });
                                             };
+
                                             return (
                                                 <div key={ref.id} className="rounded-lg border border-border p-3">
                                                     <div className="flex items-start justify-between gap-2">
@@ -638,6 +650,7 @@ export default function CaregiverShow() {
                                                                         rating_overall_recommendation: 'Overall',
                                                                     };
                                                                     const val = ref[key as keyof ReferenceRequest];
+
                                                                     return (
                                                                         <div key={key} className="flex items-center justify-between text-xs">
                                                                             <span className="text-muted-foreground">{labels[key]}</span>
@@ -775,7 +788,7 @@ export default function CaregiverShow() {
                                                                 {row.job_number}
                                                             </td>
                                                             <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                                                {formatDisplayDateTime(row.date)}
+                                                                {formatDisplayDateTimeInPT(row.date)}
                                                             </td>
                                                             <td className="px-4 py-3 text-sm text-foreground">
                                                                 {row.client_name}

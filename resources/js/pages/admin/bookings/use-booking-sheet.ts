@@ -429,11 +429,37 @@ export function useBookingSheet({
                     locationType = 'hotel';
                 }
 
+                const clientChildren =
+                    data.client.children?.map((c: any) => ({
+                        tempId: `client-${c.id}`,
+                        name: c.name || '',
+                        gender: c.gender || '',
+                        birth_month: c.birth_month
+                            ? String(c.birth_month)
+                            : '',
+                        birth_year: c.birth_year
+                            ? String(c.birth_year)
+                            : '',
+                    })) || [];
+                const clientPets =
+                    data.client.pets?.map((p: any) => ({
+                        tempId: `client-${p.id}`,
+                        name: p.name || '',
+                        type: p.type?.toLowerCase() || '',
+                        breed: p.breed || '',
+                        notes: p.notes || '',
+                    })) || [];
+
+                setBookingChildren(clientChildren);
+                setBookingPets(clientPets);
+
                 form.setData((prev) => ({
                     ...prev,
                     child_ids:
                         data.client.children?.map((c: any) => c.id) || [],
                     pet_ids: data.client.pets?.map((p: any) => p.id) || [],
+                    new_children: clientChildren,
+                    new_pets: clientPets,
                     location_type: locationType,
                     emergency_instructions:
                         data.client.emergency_instructions || '',
@@ -447,6 +473,8 @@ export function useBookingSheet({
         } else {
             setClientAddresses([]);
             setSelectedClientType(null);
+            setBookingChildren([]);
+            setBookingPets([]);
             setCaregiverSuggestions(
                 caregivers as unknown as Array<{
                     id: number;

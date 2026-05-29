@@ -14,7 +14,7 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
@@ -244,7 +244,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                             </div>
                                                             <div className="flex flex-col text-left">
                                                                 <p className="text-sm font-medium">
-                                                                    {formatDisplayDateTime(
+                                                                    {formatDisplayDateTimeInPT(
                                                                         booking.start_datetime,
                                                                     )}
                                                                 </p>
@@ -338,7 +338,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                                                 'Unknown'}
                                                                         </p>
                                                                         <p className="text-xs text-muted-foreground">
-                                                                            {formatDisplayDateTime(
+                                                                            {formatDisplayDateTimeInPT(
                                                                                 booking.start_datetime,
                                                                             )}
                                                                         </p>
@@ -444,7 +444,7 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                             <div className="flex h-10 w-10 flex-col items-center justify-center rounded bg-primary/10 text-primary">
                                                                 <Clock className="h-4 w-4" />
                                                                 <span className="text-[10px] font-bold">
-                                                                    {formatDisplayTime(
+                                                                    {formatDisplayTimeInPT(
                                                                         booking.start_datetime,
                                                                     )}
                                                                 </span>

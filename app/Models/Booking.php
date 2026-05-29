@@ -149,6 +149,41 @@ class Booking extends Model
         'service_type_label',
     ];
 
+    public function setStartDatetimeAttribute($value): void
+    {
+        $this->attributes['start_datetime'] = $this->convertToUtc($value);
+    }
+
+    public function setEndDatetimeAttribute($value): void
+    {
+        $this->attributes['end_datetime'] = $this->convertToUtc($value);
+    }
+
+    public function setConfirmedAtAttribute($value): void
+    {
+        $this->attributes['confirmed_at'] = $this->convertToUtc($value);
+    }
+
+    public function setCancelledAtAttribute($value): void
+    {
+        $this->attributes['cancelled_at'] = $this->convertToUtc($value);
+    }
+
+    private function convertToUtc(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof Carbon) {
+            return $value->copy()->setTimezone('UTC')->format('Y-m-d H:i:s');
+        }
+
+        return Carbon::parse($value, 'America/Los_Angeles')
+            ->setTimezone('UTC')
+            ->format('Y-m-d H:i:s');
+    }
+
     public function casts(): array
     {
         return [
@@ -335,8 +370,12 @@ class Booking extends Model
      */
     public function toEmailData(): array
     {
-        $start = $this->start_datetime instanceof Carbon ? $this->start_datetime : Carbon::parse($this->start_datetime);
-        $end = $this->end_datetime instanceof Carbon ? $this->end_datetime : Carbon::parse($this->end_datetime);
+        $start = $this->start_datetime instanceof Carbon
+            ? $this->start_datetime->copy()->setTimezone('America/Los_Angeles')
+            : Carbon::parse($this->start_datetime)->setTimezone('America/Los_Angeles');
+        $end = $this->end_datetime instanceof Carbon
+            ? $this->end_datetime->copy()->setTimezone('America/Los_Angeles')
+            : Carbon::parse($this->end_datetime)->setTimezone('America/Los_Angeles');
 
         $childrenCount = count($this->children ?? []);
         $childrenSummary = collect($this->children ?? [])

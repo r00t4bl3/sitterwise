@@ -53,6 +53,7 @@ export default function Pause() {
 
     const formatPausedDate = (iso: string) => {
         const date = new Date(iso);
+
         return date.toLocaleDateString('en-US', {
             month: 'long',
             day: 'numeric',

@@ -12,7 +12,7 @@ class ParseClientChildren extends Command
 {
     protected $signature = 'app:parse-children
         {--type=all : Types to process (user, jobs, or all)}
-        {--batch=15 : Records per API call}
+        {--batch=25 : Records per API call}
         {--limit=0 : Max records to process (0 = all)}
         {--timeout=120 : API timeout in seconds}
         {--force : Re-parse even if cached}';
@@ -55,30 +55,60 @@ class ParseClientChildren extends Command
             foreach (array_chunk($records, (int) $this->option('batch')) as $batch) {
                 $batchNum = (int) ($processed / (int) $this->option('batch')) + 1;
                 $this->line("── Batch {$batchNum} ──────────────────────────────");
-                $this->line('Sending '.count($batch).' records to AI...');
+
+                $cachedResults = [];
+                $uncachedItems = [];
 
                 foreach ($batch as $item) {
-                    $this->line("  → {$item['external_id']}: \"{$item['text']}\"");
+                    $cacheKey = $currentType === 'jobs' ? "jobs_{$item['external_id']}" : $item['external_id'];
+                    $cached = $this->getCachedResult($cacheKey, $item['modified_at']);
+
+                    if ($cached !== null) {
+                        $cachedResults[$item['external_id']] = $cached;
+                        $this->line("  ✓ {$item['external_id']}: loaded from cache");
+                    } else {
+                        $uncachedItems[] = $item;
+                    }
                 }
 
-                $start = microtime(true);
-                $results = $this->callAI($batch);
-                $elapsed = round(microtime(true) - $start, 1);
+                if (empty($uncachedItems)) {
+                    $this->line('  All records loaded from cache, skipping AI call.');
+                    $results = $cachedResults;
+                } else {
+                    $this->line('Sending '.count($uncachedItems).' records to AI...');
 
-                if ($results === null) {
-                    $this->warn("  API call failed after {$elapsed}s, skipping batch.");
+                    foreach ($uncachedItems as $item) {
+                        $this->line("  → {$item['external_id']}: \"{$item['text']}\"");
+                    }
 
-                    continue;
-                }
+                    $start = microtime(true);
+                    $aiResults = $this->callAI($uncachedItems);
+                    $elapsed = round(microtime(true) - $start, 1);
 
-                $this->line('  Raw AI response:');
-                foreach ($results as $eid => $children) {
-                    foreach ($children as $c) {
-                        $name = $c['name'] ?? '?';
-                        $y = $c['age_years'] ?? '-';
-                        $m = $c['age_months'] ?? '-';
-                        $gender = $c['gender'] ?? '?';
-                        $this->line("    {$eid}: {$name}, {$y}y {$m}m, {$gender}");
+                    if ($aiResults === null) {
+                        $this->warn("  API call failed after {$elapsed}s.");
+
+                        if ($cachedResults) {
+                            $this->line('  Falling back to cached results for this batch.');
+                            $results = $cachedResults;
+                        } else {
+                            $this->warn('  No cached fallback available, skipping batch.');
+
+                            continue;
+                        }
+                    } else {
+                        $this->line('  Raw AI response:');
+                        foreach ($aiResults as $eid => $children) {
+                            foreach ($children as $c) {
+                                $name = $c['name'] ?? '?';
+                                $y = $c['age_years'] ?? '-';
+                                $m = $c['age_months'] ?? '-';
+                                $gender = $c['gender'] ?? '?';
+                                $this->line("    {$eid}: {$name}, {$y}y {$m}m, {$gender}");
+                            }
+                        }
+
+                        $results = array_merge($cachedResults, $aiResults);
                     }
                 }
 
@@ -127,6 +157,19 @@ class ParseClientChildren extends Command
         )');
 
         return $db;
+    }
+
+    private function getCachedResult(string $cacheKey, int $modifiedAt): ?array
+    {
+        $stmt = $this->db->prepare('SELECT children_json, modified_at FROM ai_caches WHERE external_id = ?');
+        $stmt->execute([$cacheKey]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (! $row || (int) $row['modified_at'] < $modifiedAt) {
+            return null;
+        }
+
+        return json_decode($row['children_json'], true);
     }
 
     private function getRecords(string $type): array
@@ -180,6 +223,24 @@ class ParseClientChildren extends Command
             }
 
             $records[] = $record;
+        }
+
+        if ($type === 'jobs') {
+            $ids = array_column($records, 'external_id');
+            $existing = Booking::whereIn('bubble_id', $ids)->pluck('bubble_id')->toArray();
+
+            $filtered = array_values(array_filter(
+                $records,
+                fn ($r) => in_array($r['external_id'], $existing, true),
+            ));
+
+            $skipped = count($records) - count($filtered);
+
+            if ($skipped > 0) {
+                $this->line("  Filtered out {$skipped} job IDs with no matching booking in app DB.");
+            }
+
+            $records = $filtered;
         }
 
         return $records;
@@ -264,6 +325,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
             return null;
         }
 
+        $content = $this->extractJsonFromMarkdown($content);
         $decoded = json_decode($content, true);
 
         if (! is_array($decoded)) {
@@ -273,6 +335,17 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
         }
 
         return $decoded;
+    }
+
+    private function extractJsonFromMarkdown(string $content): string
+    {
+        $content = trim($content);
+
+        if (preg_match('/^```(?:json)?\s*\n?(.*?)\n?```$/s', $content, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $content;
     }
 
     private function saveToApp(string $externalId, array $children, string $type): ?string

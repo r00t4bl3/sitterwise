@@ -16,7 +16,8 @@ import {
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
-import { formatDisplayDate, formatDisplayTime } from '@/lib/datetime';
+import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import { formatPhoneDisplay } from '@/lib/phone';
 
 interface Booking {
     id: number;
@@ -142,7 +143,7 @@ export default function JobDetail({ booking }: PageProps) {
                                                 href={`sms:${booking.client_phone}`}
                                                 className="text-blue-500 hover:underline"
                                             >
-                                                {booking.client_phone}
+                                                {formatPhoneDisplay(booking.client_phone)}
                                             </a>
                                         </span>
                                     </div>
@@ -168,23 +169,23 @@ export default function JobDetail({ booking }: PageProps) {
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm text-muted-foreground">
-                                        {formatDisplayDate(
+                                        {formatDisplayDateInPT(
                                             booking.start_datetime,
                                         )}{' '}
                                         from{' '}
-                                        {formatDisplayTime(
+                                        {formatDisplayTimeInPT(
                                             booking.start_datetime,
                                         )}{' '}
                                         to{' '}
-                                        {formatDisplayDate(
+                                        {formatDisplayDateInPT(
                                             booking.start_datetime,
                                         ) !==
-                                        formatDisplayDate(booking.end_datetime)
-                                            ? `${formatDisplayDate(
+                                        formatDisplayDateInPT(booking.end_datetime)
+                                            ? `${formatDisplayDateInPT(
                                                   booking.end_datetime,
                                               )} `
                                             : ''}
-                                        {formatDisplayTime(
+                                        {formatDisplayTimeInPT(
                                             booking.end_datetime,
                                         )}
                                     </span>

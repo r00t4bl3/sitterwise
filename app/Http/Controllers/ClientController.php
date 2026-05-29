@@ -124,7 +124,8 @@ class ClientController extends Controller
                     $q->where(function ($q) use ($term) {
                         $q->where('first_name', 'like', "%{$term}%")
                             ->orWhere('last_name', 'like', "%{$term}%")
-                            ->orWhere('email', 'like', "%{$term}%");
+                            ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$term}%"))
+                            ->orWhereHas('user', fn ($q) => $q->where('email', 'like', "%{$term}%"));
                     });
                 }
             });

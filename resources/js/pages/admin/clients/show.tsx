@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -801,7 +802,7 @@ export default function ClientShow() {
                                             href={`tel:${client.phone}`}
                                             className="text-primary hover:underline"
                                         >
-                                            {client.phone}
+                                            {formatPhoneDisplay(client.phone)}
                                         </a>
                                     )}
                                 </p>

@@ -52,10 +52,21 @@ function HeartRating({ value, onChange }: { value: number; onChange: (v: number)
     const activeValue = hovered ?? value;
 
     function heartColor(): string {
-        if (activeValue === 4) return 'text-green-500';
-        if (activeValue === 3) return 'text-blue-500';
-        if (activeValue === 2) return 'text-amber-400';
-        if (activeValue === 1) return 'text-red-400';
+        if (activeValue === 4) {
+return 'text-green-500';
+}
+
+        if (activeValue === 3) {
+return 'text-blue-500';
+}
+
+        if (activeValue === 2) {
+return 'text-amber-400';
+}
+
+        if (activeValue === 1) {
+return 'text-red-400';
+}
 
         return 'text-gray-200';
     }
@@ -110,7 +121,10 @@ export default function InterviewEvaluate() {
     }
 
     function handleSave(status: 'draft' | 'declined' | 'completed') {
-        if (!notes.trim()) return;
+        if (!notes.trim()) {
+return;
+}
+
         setSubmitting(true);
         router.post(
             `/applications/${application.id}/interview`,

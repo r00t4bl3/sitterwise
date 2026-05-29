@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
     Dialog,
     DialogContent,
@@ -12,13 +13,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,12 +24,18 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import {
-    formatDisplayDate,
-    formatDisplayDateTime,
-    formatDisplayTime,
+    formatDisplayDateInPT,
+    formatDisplayDateTimeInPT,
+    formatDisplayTimeInPT,
     parseAsLocal,
     autoSetEndDateTime,
 } from '@/lib/datetime';
@@ -243,7 +243,9 @@ export default function CaregiverJobsIndex() {
     };
 
     const handleBackOut = () => {
-        if (!cancellingJob?.assignment_id) return;
+        if (!cancellingJob?.assignment_id) {
+return;
+}
 
         cancelForm.post(`/assignments/${cancellingJob.assignment_id}/back-out`, {
             onSuccess: () => {
@@ -465,7 +467,7 @@ export default function CaregiverJobsIndex() {
                                         className="border-b border-border transition hover:bg-blush"
                                     >
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                            {formatDisplayDateTime(
+                                            {formatDisplayDateTimeInPT(
                                                 job.start_datetime,
                                             )}
                                         </td>
@@ -954,9 +956,9 @@ export default function CaregiverJobsIndex() {
                                             <> &middot; {cancellingJob.client.children.length} child{cancellingJob.client.children.length !== 1 ? 'ren' : ''}</>
                                         )}
                                     </strong>
-                                    {formatDisplayDate(cancellingJob.start_datetime)}{'\u00B7'}{' '}
-                                    {formatDisplayTime(cancellingJob.start_datetime)}{'\u2013'}{' '}
-                                    {formatDisplayTime(cancellingJob.end_datetime)}
+                                    {formatDisplayDateInPT(cancellingJob.start_datetime)}{'\u00B7'}{' '}
+                                    {formatDisplayTimeInPT(cancellingJob.start_datetime)}{'\u2013'}{' '}
+                                    {formatDisplayTimeInPT(cancellingJob.end_datetime)}
                                     <br />
                                     {cancellingJob.hotel?.name ??
                                         [cancellingJob.address_line1, cancellingJob.address_city, cancellingJob.address_state].filter(Boolean).join(', ') ??

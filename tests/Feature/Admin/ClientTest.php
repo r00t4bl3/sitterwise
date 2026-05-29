@@ -182,7 +182,53 @@ describe('Client - Admin', function () {
         $response->assertSuccessful();
     });
 
-    test('admin users can access search suggestions endpoint', function () {
+    test('admin users can search clients by first name', function () {
+        $this->actingAs($this->user);
+
+        Client::factory()->create([
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+        ]);
+        Client::factory()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Smith',
+        ]);
+        Client::factory()->create([
+            'first_name' => 'Alice',
+            'last_name' => 'Jones',
+        ]);
+
+        $response = $this->get(route('clients.searchSuggestions', ['q' => 'John']));
+        $response->assertSuccessful();
+        $response->assertHeader('content-type', 'application/json');
+        $results = $response->json();
+        expect($results)->toHaveCount(1)
+            ->and($results[0]['name'])->toBe('John Doe');
+    });
+
+    test('admin users can search clients by email', function () {
+        $this->actingAs($this->user);
+
+        $client = Client::factory()->create([
+            'first_name' => 'Sarah',
+            'last_name' => 'Connor',
+        ]);
+        $client->user->update(['email' => 'sarah.connor@example.com']);
+
+        Client::factory()->create([
+            'first_name' => 'Alice',
+            'last_name' => 'Jones',
+        ]);
+
+        $response = $this->get(route('clients.searchSuggestions', ['q' => 'sarah.connor']));
+        $response->assertSuccessful();
+        $response->assertHeader('content-type', 'application/json');
+        $results = $response->json();
+        expect($results)->toHaveCount(1)
+            ->and($results[0]['name'])->toBe('Sarah Connor');
+    });
+
+    test('search suggestions returns empty when no match', function () {
         $this->actingAs($this->user);
 
         Client::factory()->create([
@@ -190,9 +236,28 @@ describe('Client - Admin', function () {
             'last_name' => 'Doe',
         ]);
 
-        $response = $this->get(route('clients.searchSuggestions', ['q' => 'John']));
+        $response = $this->get(route('clients.searchSuggestions', ['q' => 'ZZZZZZ']));
         $response->assertSuccessful();
-        $response->assertHeader('content-type', 'application/json');
+        expect($response->json())->toBeEmpty();
+    });
+
+    test('admin users can search clients by full name', function () {
+        $this->actingAs($this->user);
+
+        Client::factory()->create([
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+        ]);
+        Client::factory()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+        ]);
+
+        $response = $this->get(route('clients.searchSuggestions', ['q' => 'John Doe']));
+        $response->assertSuccessful();
+        $results = $response->json();
+        expect($results)->toHaveCount(1)
+            ->and($results[0]['name'])->toBe('John Doe');
     });
 
     test('admin users can access client data endpoint', function () {

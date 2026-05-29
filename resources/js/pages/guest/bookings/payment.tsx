@@ -4,6 +4,8 @@ import {
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
+import BookingProgress from '@/components/booking-progress';
+import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
 const stripePromise = loadStripe(
     import.meta.env.VITE_STRIPE_KEY || 'pk_test_placeholder',
@@ -40,26 +42,6 @@ export default function PaymentPage({
         error || null,
     );
     const [loading, setLoading] = useState(true);
-
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
-    };
-
-    const formatTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-        });
-    };
 
     const serviceLabels: Record<string, string> = {
         sitting: 'Pet Sitting',
@@ -115,6 +97,8 @@ export default function PaymentPage({
     return (
         <div className="min-h-screen bg-gray-50 px-4 py-12">
             <div className="mx-auto max-w-2xl">
+                <BookingProgress currentStep={2} />
+
                 <h1 className="mb-8 text-center text-3xl font-bold text-gray-900">
                     Complete Your Booking
                 </h1>
@@ -141,14 +125,14 @@ export default function PaymentPage({
                         <div className="flex justify-between">
                             <dt className="text-gray-600">Date</dt>
                             <dd className="font-medium">
-                                {formatDate(booking.start_datetime)}
+                                {formatDisplayDateInPT(booking.start_datetime)}
                             </dd>
                         </div>
                         <div className="flex justify-between">
                             <dt className="text-gray-600">Time</dt>
                             <dd className="font-medium">
-                                {formatTime(booking.start_datetime)} -{' '}
-                                {formatTime(booking.end_datetime)}
+                                {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
+                                {formatDisplayTimeInPT(booking.end_datetime)}
                             </dd>
                         </div>
                         <div className="flex justify-between">

@@ -6,7 +6,7 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 interface BookingStatus {
@@ -289,7 +289,7 @@ export default function BookingHistory() {
                                         className="border-b border-border transition hover:bg-blush"
                                     >
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                            {formatDisplayDateTime(
+                                            {formatDisplayDateTimeInPT(
                                                 booking.start_datetime,
                                             )}
                                         </td>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { X } from 'lucide-react';
 
 function highlightText(text: string, query: string): React.ReactNode {
@@ -54,10 +54,12 @@ export function Autocomplete({
     const [query, setQuery] = useState(displayValue ?? '');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [isFocused, setIsFocused] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const listboxId = `autocomplete-listbox-${useId()}`;
     const totalItems = suggestions.length + (showAddNew && onAddNew ? 1 : 0);
 
     useEffect(() => {
@@ -67,10 +69,10 @@ export function Autocomplete({
     }, [displayValue]);
 
     useEffect(() => {
-        if (suggestions.length > 0) {
+        if (suggestions.length > 0 && isFocused) {
             setShowSuggestions(true);
         }
-    }, [suggestions]);
+    }, [suggestions, isFocused]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -174,11 +176,20 @@ export function Autocomplete({
         <div ref={wrapperRef} className="relative">
             <input
                 type="text"
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-controls={listboxId}
+                aria-activedescendant={
+                    activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+                }
+                aria-autocomplete="list"
                 value={query ?? ''}
                 onChange={(e) => handleInputChange(e.target.value)}
-                onFocus={() =>
-                    suggestions.length > 0 && setShowSuggestions(true)
-                }
+                onFocus={() => {
+                    setIsFocused(true);
+                    suggestions.length > 0 && setShowSuggestions(true);
+                }}
+                onBlur={() => setIsFocused(false)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 className="h-11 w-full rounded-[3px] border border-input px-3 pr-10 text-sm outline-none focus:border-ring"
@@ -198,6 +209,8 @@ export function Autocomplete({
             {showSuggestions && (
                 <div
                     ref={suggestionsRef}
+                    id={listboxId}
+                    role="listbox"
                     className="absolute top-full right-0 left-0 z-[100] mt-1 max-h-60 overflow-auto rounded-[3px] border border-border bg-card shadow-md"
                 >
                     {loading ? (
@@ -209,6 +222,9 @@ export function Autocomplete({
                             {showAddNew && onAddNew ? (
                                 <button
                                     type="button"
+                                    role="option"
+                                    aria-selected={activeIndex === suggestions.length}
+                                    id={`${listboxId}-option-${suggestions.length}`}
                                     data-suggestion
                                     onClick={() => {
                                         onAddNew();
@@ -237,6 +253,9 @@ export function Autocomplete({
                             <button
                                 key={item.id}
                                 type="button"
+                                role="option"
+                                aria-selected={activeIndex === index}
+                                id={`${listboxId}-option-${index}`}
                                 data-suggestion
                                 onClick={() => handleItemClick(item)}
                                 onMouseEnter={() => setActiveIndex(index)}

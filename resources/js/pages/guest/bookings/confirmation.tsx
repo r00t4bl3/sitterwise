@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
+import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
 interface BookingData {
     id: number;
@@ -17,30 +18,10 @@ interface BookingData {
     address_zip: string;
 }
 
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-}
-
-function formatTime(dateString: string): string {
-    const date = new Date(dateString);
-
-    return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
-}
-
 export default function GuestBookingConfirmation() {
-    const { booking } = usePage().props as unknown as {
+    const { booking, passwordSetupUrl } = usePage().props as unknown as {
         booking: BookingData;
+        passwordSetupUrl: string | null;
     };
 
     return (
@@ -99,14 +80,14 @@ export default function GuestBookingConfirmation() {
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Date</span>
                             <span className="font-medium">
-                                {formatDate(booking.start_datetime)}
+                                {formatDisplayDateInPT(booking.start_datetime)}
                             </span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Time</span>
                             <span className="font-medium">
-                                {formatTime(booking.start_datetime)} -{' '}
-                                {formatTime(booking.end_datetime)}
+                                {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
+                                {formatDisplayTimeInPT(booking.end_datetime)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -133,11 +114,26 @@ export default function GuestBookingConfirmation() {
                         </p>
                     </div>
 
-                    <div className="mt-6 flex justify-center">
-                        Track this booking anytime — we'll email you a link to set up 
-                        your account so you can check status, view past bookings, and 
-                        book again with one click.
+                    <div className="mt-6 text-center text-sm text-muted-foreground">
+                        Track this booking anytime — we'll email you a link to
+                        set up your account so you can check status, view past
+                        bookings, and book again with one click.
                     </div>
+
+                    {passwordSetupUrl && (
+                        <div className="mt-6 rounded-lg border border-navy/20 bg-navy/[0.03] p-5 text-center">
+                            <p className="mb-3 text-sm text-muted-foreground">
+                                Set up your account now to track bookings,
+                                manage preferences, and book faster next time.
+                            </p>
+                            <Link
+                                href={passwordSetupUrl}
+                                className="inline-flex h-11 items-center justify-center rounded-[3px] bg-navy px-6 text-sm font-semibold text-white transition-colors hover:bg-navy-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
+                            >
+                                Set Your Password
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </GuestLayout>

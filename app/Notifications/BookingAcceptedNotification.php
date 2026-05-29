@@ -48,8 +48,8 @@ class BookingAcceptedNotification extends BaseNotification implements ShouldQueu
     {
         $clientLastName = $this->booking->client?->last_name ?? $this->booking->client_last_name;
         $caregiverName = $this->booking->caregiver ? ($this->booking->caregiver->first_name.' '.$this->booking->caregiver->last_name) : 'A sitter';
-        $date = $this->booking->start_datetime->format('n/j/y');
-        $time = $this->booking->start_datetime->format('g:i A');
+        $date = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('n/j/y');
+        $time = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('g:i A');
         $profileLink = $this->booking->caregiver ? config('app.url').'/bio/'.$this->booking->caregiver->slug : 'our platform';
 
         return (object) [
@@ -61,7 +61,7 @@ class BookingAcceptedNotification extends BaseNotification implements ShouldQueu
     {
         $caregiverName = $this->booking->caregiver ? ($this->booking->caregiver->first_name.' '.$this->booking->caregiver->last_name) : 'A sitter';
         $clientName = ($this->booking->client?->first_name ?? $this->booking->client_first_name).' '.($this->booking->client?->last_name ?? $this->booking->client_last_name);
-        $date = $this->booking->start_datetime->format('M j, Y');
+        $date = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('M j, Y');
 
         if ($notifiable->isAdmin()) {
             return [

@@ -1379,7 +1379,6 @@ class ImportBubbleDatabase extends Command
         $bookingData = [
             'bubble_id' => $externalId,
             'client_id' => $client?->id,
-            'client_id' => $client?->id,
             'caregiver_id' => $caregiver?->id,
             'confirmed_at' => $caregiver ? ($this->timestampToDateTime($source['confirmed_at_date'] ?? null) ?? now()) : null,
             'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
@@ -1476,11 +1475,16 @@ class ImportBubbleDatabase extends Command
 
         Booking::withoutEvents(function () use ($externalId, $bookingData, $caregiver, $status) {
             $existing = Booking::where('bubble_id', $externalId)->first();
-            if (! $existing) {
+            if ($existing) {
+                DB::table('bookings')->where('id', $existing->id)->update($bookingData);
+                $booking = $existing->fresh();
+            } else {
                 $bookingData['ulid'] = (string) Str::ulid();
+                $bookingData['created_at'] = now();
+                $bookingData['updated_at'] = now();
+                $id = DB::table('bookings')->insertGetId($bookingData);
+                $booking = Booking::find($id);
             }
-
-            $booking = Booking::updateOrCreate(['bubble_id' => $externalId], $bookingData);
 
             // Create caregiver assignment if caregiver is assigned
             if ($caregiver && $booking->caregiver_id) {
@@ -1660,7 +1664,9 @@ class ImportBubbleDatabase extends Command
             return null;
         }
         try {
-            return Carbon::createFromTimestampMs($t, 'America/Los_Angeles')->toDateTimeString();
+            return Carbon::createFromTimestampMs($t, 'America/Los_Angeles')
+                ->setTimezone('UTC')
+                ->toDateTimeString();
         } catch (\Exception $e) {
             return null;
         }

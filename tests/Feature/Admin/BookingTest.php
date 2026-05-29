@@ -10,6 +10,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -1402,6 +1403,89 @@ describe('Booking - Admin', function () {
 
             $response->assertSuccessful();
             $response->assertHeader('Content-Disposition', 'attachment; filename=bookings-March-2025.xlsx');
+        });
+
+        test('baseline: timezone behavior documents current PT-as-UTC storage for admin booking', function () {
+            // The admin booking sheet sends naive datetime strings like "2026-05-29T09:00"
+            // from formatDateTimeLocal(). These represent 9:00 AM PT but have
+            // no timezone indicator. The backend currently treats them as UTC.
+            //
+            // This documents the CURRENT (buggy) behavior for the admin flow.
+            // Both admin and client booking creation hit AdminBookingService@store.
+
+            $this->actingAs($this->user);
+            $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+            $startStr = now()->addDays(1)->format('Y-m-d\TH:i');
+            $endStr = now()->addDays(1)->addHours(4)->format('Y-m-d\TH:i');
+
+            // Extract the time portion to assert on
+            $startTime = substr($startStr, 11, 5);
+            $endTime = substr($endStr, 11, 5);
+
+            // Extract the time portion to assert on
+            $startTime = substr($startStr, 11, 5); // "09:00"
+            $endTime = substr($endStr, 11, 5);     // "13:00" (will be adjusted by +4h below)
+
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => $startStr,
+                'end_datetime' => $endStr,
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'child_ids' => [$child->id],
+                'address_line1' => '100 Timezone St',
+                'address_line2' => '',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $booking = Booking::latest('id')->first();
+
+            // ── 1. Raw DB value ──
+            // The frontend sends a naive datetime (no timezone).
+            // Mutator converts PT→UTC, so the stored value is UTC not PT.
+            $rawStart = $booking->getRawOriginal('start_datetime');
+            $rawEnd = $booking->getRawOriginal('end_datetime');
+
+            // Input time "09:00" PT = 16:00 UTC, input "13:00" PT = 20:00 UTC
+            $utcStartTime = Carbon::parse($startStr, 'America/Los_Angeles')->setTimezone('UTC')->format('H:i');
+            $utcEndTime = Carbon::parse($endStr, 'America/Los_Angeles')->setTimezone('UTC')->format('H:i');
+            expect(Carbon::parse($rawStart)->format('H:i'))->toBe($utcStartTime);
+            expect(Carbon::parse($rawEnd)->format('H:i'))->toBe($utcEndTime);
+
+            // ── 2. Carbon serialization (what the frontend receives) ──
+            $isoStart = $booking->start_datetime->toISOString();
+            $isoEnd = $booking->end_datetime->toISOString();
+
+            expect($isoStart)->toContain('T'.$utcStartTime.':00');
+            expect($isoEnd)->toContain('T'.$utcEndTime.':00');
+
+            // ── 3. PT conversion (now shows correct PT time) ──
+            // If we convert the stored UTC value to America/Los_Angeles,
+            // the time matches the original PT input.
+            $ptStart = $booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
+
+            expect($ptStart->format('H:i'))->toBe($startTime);
+
+            // ── 4. Inertia response (what the frontend receives) ──
+            // Hit the show endpoint and verify the serialized datetime values.
+            $showResponse = $this->get(route('bookings.show', $booking));
+            $showResponse->assertInertia(fn ($page) => $page
+                ->where('booking.start_datetime', $booking->start_datetime->toISOString())
+                ->where('booking.end_datetime', $booking->end_datetime->toISOString())
+            );
+
+            // ── Summary ──
+            // User meant:    9:00 AM PT  →  stores 16:00 UTC  →  displays as 9:00 AM PT ✅
+            // Mutator converts "09:00" parsed as PT → 16:00 UTC → stored correctly
+            // → toISOString() = "...T16:00:00..."
+            // → formatDisplayTimeInPT() = "9:00 AM" ✅
         });
 
     });

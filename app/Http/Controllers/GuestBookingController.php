@@ -197,6 +197,14 @@ class GuestBookingController extends Controller
 
     public function confirmation(Booking $booking)
     {
+        $passwordSetupUrl = null;
+        $token = session()->get('password_setup_token');
+        $email = session()->get('password_setup_email');
+
+        if ($token && $email && $email === $booking->client_email) {
+            $passwordSetupUrl = url('/reset-password/'.$token.'?email='.urlencode($email));
+        }
+
         return Inertia::render('guest/bookings/confirmation', [
             'booking' => [
                 'id' => $booking->id,
@@ -213,6 +221,7 @@ class GuestBookingController extends Controller
                 'address_state' => $booking->address_state,
                 'address_zip' => $booking->address_zip,
             ],
+            'passwordSetupUrl' => $passwordSetupUrl,
         ]);
     }
 }

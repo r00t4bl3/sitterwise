@@ -26,7 +26,7 @@ class BookingReminderNotification extends BaseNotification implements ShouldQueu
     public function toArray(object $notifiable): array
     {
         $clientName = ($this->booking->client?->first_name ?? $this->booking->client_first_name);
-        $time = $this->booking->start_datetime->format('g:i A');
+        $time = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('g:i A');
 
         return [
             'booking_id' => $this->booking->id,

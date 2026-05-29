@@ -14,6 +14,7 @@ import {
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAgeFromDate } from '@/lib/age';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -58,6 +59,7 @@ interface Caregiver {
         profile_photo_url: string | null;
     };
     status: Status;
+    phone: string | null;
     specialty_types: SpecialtyType[];
     locations: Location[];
     certifications: Array<{ id: number; certification_type_id: number }>;
@@ -233,6 +235,9 @@ export default function CaregiversIndex() {
                                     Area
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Phone
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Expertise
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -360,6 +365,11 @@ export default function CaregiversIndex() {
                                                 </span>
                                             )}
                                         </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {caregiver.phone
+                                            ? <a href={`tel:${caregiver.phone}`} className="text-primary hover:underline">{formatPhoneDisplay(caregiver.phone)}</a>
+                                            : '—'}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">

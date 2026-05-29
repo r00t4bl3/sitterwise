@@ -1,11 +1,13 @@
 import { usePage } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
+import InputError from '@/components/input-error';
 
 interface Props {
     form: any;
     isAddressLocked?: boolean;
     addressValue?: string;
     onAddressLock?: (locked: boolean, addressValue?: string) => void;
+    errors?: Record<string, string>;
 }
 
 interface Suggestion {
@@ -26,19 +28,41 @@ interface Suggestion {
     };
 }
 
+const SERVICE_AREA_CITIES = [
+    'San Diego',
+    'Coronado',
+    'La Jolla',
+    'Chula Vista',
+    'El Cajon',
+    'La Mesa',
+    'Rancho Santa Fe',
+    'Del Mar',
+    'Carlsbad',
+    'Encinitas',
+    'Escondido',
+    'San Marcos',
+    'Vista',
+];
+
 export function BookingAddressFields({
     form,
     isAddressLocked = false,
     addressValue = '',
     onAddressLock,
+    errors = {},
 }: Props) {
     const { props } = usePage();
     const googleApiKey = (props as any).google_places_api_key || '';
     const inputRef = useRef<HTMLInputElement>(null);
+    const listboxId = `baf-listbox-${useId()}`;
     const [inputValue, setInputValue] = useState('');
     const [predictions, setPredictions] = useState<Suggestion[]>([]);
     const [showPredictions, setShowPredictions] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
+    const [noPredictions, setNoPredictions] = useState(false);
+    const [outsideServiceArea, setOutsideServiceArea] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const autocompleteSuggestionRef = useRef<any>(null);
 
     useEffect(() => {
@@ -69,26 +93,35 @@ export function BookingAddressFields({
                     clearInterval(checkGoogle);
                 }
             }, 100);
+            const timeout = setTimeout(() => clearInterval(checkGoogle), 5000);
 
-            setTimeout(() => clearInterval(checkGoogle), 5000);
-
-            return;
+            return () => {
+                clearInterval(checkGoogle);
+                clearTimeout(timeout);
+            };
         }
 
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places`;
-        script.async = true;
-        script.defer = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places&loading=async`;
         script.onload = () => {
-            autocompleteSuggestionRef.current = (
-                window as any
-            ).google.maps.places.AutocompleteSuggestion;
+            const checkPlaces = setInterval(() => {
+                if ((window as any).google?.maps?.places) {
+                    autocompleteSuggestionRef.current = (
+                        window as any
+                    ).google.maps.places.AutocompleteSuggestion;
+                    clearInterval(checkPlaces);
+                }
+            }, 100);
+            setTimeout(() => clearInterval(checkPlaces), 5000);
         };
         document.head.appendChild(script);
     }, [googleApiKey]);
 
     const handleInputChange = async (value: string) => {
         setInputValue(value);
+        setIsVerified(false);
+        setNoPredictions(false);
+        setOutsideServiceArea(false);
 
         if (!value.trim()) {
             setPredictions([]);
@@ -117,10 +150,11 @@ export function BookingAddressFields({
                     },
                 });
 
-            if (response.suggestions) {
-                setPredictions(response.suggestions as unknown as Suggestion[]);
-                setShowPredictions(true);
-            }
+            const suggestions = response.suggestions || [];
+
+            setPredictions(suggestions as unknown as Suggestion[]);
+            setShowPredictions(suggestions.length > 0);
+            setNoPredictions(suggestions.length === 0);
         } catch (error) {
             console.error('Autocomplete error:', error);
         } finally {
@@ -167,6 +201,8 @@ export function BookingAddressFields({
                 }
             });
 
+            const outsideArea = state !== 'CA' || !SERVICE_AREA_CITIES.includes(city);
+
             form.setData('address_line1', line1);
             form.setData('address_line2', line2);
             form.setData('address_city', city);
@@ -180,9 +216,82 @@ export function BookingAddressFields({
             setInputValue('');
             setPredictions([]);
             setShowPredictions(false);
-            onAddressLock?.(true, fullAddress);
+
+            if (outsideArea) {
+                setIsVerified(false);
+                setOutsideServiceArea(true);
+                onAddressLock?.(false);
+            } else {
+                setIsVerified(true);
+                setOutsideServiceArea(false);
+                onAddressLock?.(true, fullAddress);
+            }
         } catch (error) {
             console.error('Get place details error:', error);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showPredictions || predictions.length === 0) {
+            if (e.key === 'Escape') {
+                setShowPredictions(false);
+                setActiveIndex(-1);
+            }
+
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev >= predictions.length - 1 ? 0 : prev + 1,
+                );
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex((prev) =>
+                    prev <= 0 ? predictions.length - 1 : prev - 1,
+                );
+                break;
+            case 'Enter':
+                e.preventDefault();
+
+                if (activeIndex >= 0 && activeIndex < predictions.length) {
+                    handleSelectPrediction(predictions[activeIndex]);
+                }
+
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setShowPredictions(false);
+                setActiveIndex(-1);
+                break;
+        }
+    };
+
+    const handleBlurAutoPick = () => {
+        if (!inputValue.trim() || predictions.length === 0) {
+            return;
+        }
+
+        const firstPrediction =
+            predictions[0]?.placePrediction?.text?.text?.trim();
+        const typed = inputValue.trim().toLowerCase();
+
+        if (!firstPrediction) {
+            return;
+        }
+
+        const predictionLower = firstPrediction.toLowerCase();
+
+        const isMatch =
+            predictionLower.startsWith(typed) ||
+            predictionLower.includes(typed) ||
+            typed.includes(predictionLower);
+
+        if (isMatch) {
+            handleSelectPrediction(predictions[0]);
         }
     };
 
@@ -191,7 +300,7 @@ export function BookingAddressFields({
             <div className="space-y-3">
                 <div>
                     <label className="text-sm font-medium text-foreground">
-                        Address
+                        Address <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1 flex h-11 items-center gap-2 rounded-[3px] border border-input px-3 py-2 text-sm">
                         <span className="flex-1 text-foreground">
@@ -206,6 +315,8 @@ export function BookingAddressFields({
                                 form.setData('address_state', '');
                                 form.setData('address_zip', '');
                                 setInputValue('');
+                                setIsVerified(false);
+                                setOutsideServiceArea(false);
                                 onAddressLock?.(false);
                             }}
                             className="text-xs text-ring hover:text-foreground"
@@ -219,6 +330,21 @@ export function BookingAddressFields({
                 <input type="hidden" value={form.data.address_city || ''} />
                 <input type="hidden" value={form.data.address_state || ''} />
                 <input type="hidden" value={form.data.address_zip || ''} />
+                <p className="mt-1 text-xs text-muted-foreground">
+                    We currently serve the San Diego area.
+                </p>
+                {errors.address_line1 && (
+                    <InputError message={errors.address_line1} />
+                )}
+                {errors.address_city && (
+                    <InputError message={errors.address_city} />
+                )}
+                {errors.address_state && (
+                    <InputError message={errors.address_state} />
+                )}
+                {errors.address_zip && (
+                    <InputError message={errors.address_zip} />
+                )}
             </div>
         );
     }
@@ -232,13 +358,32 @@ export function BookingAddressFields({
                 <input
                     ref={inputRef}
                     type="text"
+                    role="combobox"
+                    aria-required="true"
+                    aria-expanded={showPredictions}
+                    aria-controls={listboxId}
+                    aria-activedescendant={
+                        activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+                    }
+                    aria-autocomplete="list"
                     value={inputValue}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() =>
                         predictions.length > 0 && setShowPredictions(true)
                     }
+                    onBlur={() => {
+                        setTimeout(() => {
+                            setShowPredictions(false);
+                            handleBlurAutoPick();
+                        }, 200);
+                    }}
+                    onKeyDown={handleKeyDown}
                     placeholder="Start typing address..."
-                    className="mt-1 h-11 w-full rounded-[3px] border border-input px-3 text-sm"
+                    className={`mt-1 h-11 w-full rounded-[3px] border px-3 text-sm ${
+                        !isVerified && inputValue.trim()
+                            ? 'border-amber-400'
+                            : 'border-input'
+                    }`}
                     autoComplete="off"
                 />
                 {loading && (
@@ -247,24 +392,65 @@ export function BookingAddressFields({
                     </div>
                 )}
                 {showPredictions && predictions.length > 0 && (
-                    <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-[3px] border border-input bg-background shadow-lg">
+                    <ul
+                        id={listboxId}
+                        role="listbox"
+                        className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-[3px] border border-input bg-background shadow-lg"
+                    >
                         {predictions.map((suggestion, index) => (
                             <li
                                 key={
                                     suggestion.placePrediction?.place ||
                                     `prediction-${index}`
                                 }
-                                className="cursor-pointer px-3 py-2 text-sm hover:bg-muted"
+                                role="option"
+                                aria-selected={activeIndex === index}
+                                id={`${listboxId}-option-${index}`}
+                                className={`cursor-pointer px-3 py-2 text-sm ${
+                                    activeIndex === index ? 'bg-muted' : 'hover:bg-muted'
+                                }`}
                                 onClick={() =>
                                     handleSelectPrediction(suggestion)
                                 }
+                                onMouseEnter={() => setActiveIndex(index)}
                             >
                                 {suggestion.placePrediction?.text?.text}
                             </li>
                         ))}
                     </ul>
                 )}
+                {noPredictions && !loading && inputValue.trim() && (
+                    <p className="mt-1 text-xs text-destructive">
+                        This address appears to be outside our service area.
+                    </p>
+                )}
+                {outsideServiceArea && (
+                    <p className="mt-1 text-xs text-destructive">
+                        This address is outside our service area. We currently
+                        serve the San Diego area.
+                    </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                    We currently serve the San Diego area.
+                </p>
             </div>
+            {!isVerified && inputValue.trim() && !errors.address_line1 && (
+                <p className="mt-1 text-xs text-amber-600">
+                    Please select an address from the suggestions.
+                </p>
+            )}
+            {errors.address_line1 && (
+                <InputError message={errors.address_line1} />
+            )}
+            {errors.address_city && (
+                <InputError message={errors.address_city} />
+            )}
+            {errors.address_state && (
+                <InputError message={errors.address_state} />
+            )}
+            {errors.address_zip && (
+                <InputError message={errors.address_zip} />
+            )}
             <input type="hidden" value={form.data.address_line1 || ''} />
             <input type="hidden" value={form.data.address_line2 || ''} />
             <input type="hidden" value={form.data.address_city || ''} />

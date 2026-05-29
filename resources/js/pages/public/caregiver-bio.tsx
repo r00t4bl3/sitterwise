@@ -2,6 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { ArrowLeft, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/user-avatar';
+import { formatPhoneDisplay } from '@/lib/phone';
 
 interface User {
     profile_photo_url: string | null;
@@ -83,7 +84,7 @@ export default function CaregiverBio() {
                                     href={`tel:${caregiver.phone}`}
                                     className="hover:text-[#1b1b18] dark:hover:text-[#EDEDEC]"
                                 >
-                                    {caregiver.phone}
+                                    {formatPhoneDisplay(caregiver.phone)}
                                 </a>
                             </div>
                         )}

@@ -1,15 +1,10 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
     Dialog,
     DialogContent,
@@ -18,8 +13,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { calculateAgeFromDate } from '@/lib/age';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
+import { calculateAgeFromDate } from '@/lib/age';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 interface CaregiverInfo {
@@ -221,16 +222,29 @@ export default function ApplicationShow() {
     const [togglingItem, setTogglingItem] = useState<number | null>(null);
     const [declineNote, setDeclineNote] = useState('');
     const [showDeclineNote, setShowDeclineNote] = useState(false);
+    const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
     const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
         open: false, title: '', message: '', onConfirm: () => {},
     });
+
+    const toggleRef = (id: number) => {
+        setExpandedRefs((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+next.delete(id);
+} else {
+next.add(id);
+}
+
+            return next;
+        });
+    };
 
     const data = application.data;
     const personal = data.personal || {};
     const sponsor = data.sponsor;
     const completedRefs = references.filter((r) => r.submitted_at);
-    const pendingRefs = references.filter((r) => !r.submitted_at);
-
     const status = application.caregiver.status;
     const actions = getActions(status, caregiverStatuses);
 
@@ -274,6 +288,7 @@ export default function ApplicationShow() {
                     executeAction(action);
                 },
             });
+
             return;
         }
 
@@ -288,6 +303,7 @@ export default function ApplicationShow() {
                 { note: declineNote },
                 { preserveScroll: true, onFinish: () => setActionLoading(null) },
             );
+
             return;
         }
 
@@ -356,7 +372,7 @@ export default function ApplicationShow() {
                                         Phone
                                     </p>
                                     <p className="text-sm font-medium text-foreground">
-                                        {personal.phone || '-'}
+                                        {formatPhoneDisplay(personal.phone) || '-'}
                                     </p>
                                 </div>
                                 <div>
@@ -859,6 +875,7 @@ export default function ApplicationShow() {
                                         const selected = Object.entries(data.qualifications)
                                             .filter(([, v]) => v)
                                             .map(([k]) => labels[k] ?? k);
+
                                         return selected.length > 0 ? (
                                             <div>
                                                 <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -1009,7 +1026,7 @@ export default function ApplicationShow() {
                                                   ) / ratings.length
                                               ).toFixed(1)
                                             : null;
-                                    const [expanded, setExpanded] = useState(false);
+                                    const expanded = expandedRefs.has(ref.id);
 
                                     return (
                                         <div
@@ -1059,8 +1076,8 @@ export default function ApplicationShow() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() =>
-                                                                    setExpanded(
-                                                                        !expanded,
+                                                                    toggleRef(
+                                                                        ref.id,
                                                                     )
                                                                 }
                                                                 className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
@@ -1113,6 +1130,7 @@ export default function ApplicationShow() {
                                                                                 ref[
                                                                                     key as keyof ReferenceInfo
                                                                                 ];
+
                                                                             return (
                                                                                 <div
                                                                                     key={
@@ -1300,7 +1318,11 @@ export default function ApplicationShow() {
                                             role="button"
                                             tabIndex={0}
                                             onClick={() => handleToggleChecklistItem(item.id)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleToggleChecklistItem(item.id); }}
+                                            onKeyDown={(e) => {
+ if (e.key === 'Enter' || e.key === ' ') {
+handleToggleChecklistItem(item.id);
+} 
+}}
                                             className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50 ${
                                                 togglingItem === item.id ? 'pointer-events-none opacity-60' : ''
                                             }`}

@@ -299,6 +299,9 @@ class GuestBookingService
 
         if ($result['isNewUser'] && $result['resetToken']) {
             event(new GuestAccountSetup($result['booking'], $result['resetToken']));
+
+            session()->flash('password_setup_token', $result['resetToken']);
+            session()->flash('password_setup_email', $result['booking']->client_email);
         }
 
         return $result['booking'];

@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     Select,
     SelectContent,
@@ -14,7 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 
 interface Experience {
@@ -348,7 +349,9 @@ export default function Wizard() {
                 hasError = true;
             }
 
-            if (hasError) return;
+            if (hasError) {
+return;
+}
         }
 
         saveDraft();
@@ -536,23 +539,12 @@ export default function Wizard() {
                                             }
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="sponsor-phone">
-                                            Phone
-                                        </Label>
-                                        <Input
-                                            id="sponsor-phone"
-                                            type="tel"
-                                            placeholder="(619) 555-0000"
-                                            value={form.data.sponsor.phone}
-                                            onChange={(e) =>
-                                                form.setData('sponsor', {
-                                                    ...form.data.sponsor,
-                                                    phone: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
+                                    <PhoneInput
+                                        value={form.data.sponsor.phone}
+                                        onChange={(value) => form.setData('sponsor', { ...form.data.sponsor, phone: value })}
+                                        label="Phone"
+                                        placeholder="(619) 555-0000"
+                                    />
                                     <div className="space-y-2 md:col-span-2">
                                         <Label htmlFor="sponsor-relationship">
                                             Relationship to You
@@ -630,26 +622,14 @@ export default function Wizard() {
                                             prefix="personal.address_"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="personal-phone">
-                                            Phone{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="personal-phone"
-                                            type="tel"
-                                            placeholder="(858) 555-1234"
-                                            value={form.data.personal.phone}
-                                            onChange={(e) =>
-                                                form.setData('personal', {
-                                                    ...form.data.personal,
-                                                    phone: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
+                                    <PhoneInput
+                                        value={form.data.personal.phone}
+                                        onChange={(value) => form.setData('personal', { ...form.data.personal, phone: value })}
+                                        label="Phone"
+                                        placeholder="(858) 555-1234"
+                                        required
+                                        error={form.errors['personal.phone']}
+                                    />
                                     <div className="space-y-2">
                                         <Label htmlFor="personal-email">
                                             Email{' '}
@@ -1818,7 +1798,10 @@ export default function Wizard() {
                                         value={form.data.allergic_to_pets ?? ''}
                                         onValueChange={(value) => {
                                             form.setData('allergic_to_pets', value);
-                                            if (value === 'no') form.setData('allergic_to_what', '');
+
+                                            if (value === 'no') {
+form.setData('allergic_to_what', '');
+}
                                         }}
                                         className="flex gap-4"
                                     >
@@ -1870,7 +1853,10 @@ export default function Wizard() {
                                         value={form.data.visible_tattoos ?? ''}
                                         onValueChange={(value) => {
                                             form.setData('visible_tattoos', value);
-                                            if (value === 'no') form.setData('tattoo_description', '');
+
+                                            if (value === 'no') {
+form.setData('tattoo_description', '');
+}
                                         }}
                                         className="flex gap-4"
                                     >
@@ -2050,7 +2036,10 @@ export default function Wizard() {
                                         value={form.data.has_children ?? ''}
                                         onValueChange={(value) => {
                                             form.setData('has_children', value);
-                                            if (value === 'no') form.setData('children_ages', '');
+
+                                            if (value === 'no') {
+form.setData('children_ages', '');
+}
                                         }}
                                         className="flex gap-4"
                                     >
@@ -2191,33 +2180,18 @@ export default function Wizard() {
                                                 }}
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label
-                                                htmlFor={`ref-phone-${index}`}
-                                            >
-                                                Phone{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <Input
-                                                id={`ref-phone-${index}`}
-                                                type="tel"
-                                                placeholder="(619) 555-0000"
-                                                value={ref.phone}
-                                                onChange={(e) => {
-                                                    const newRefs = [
-                                                        ...form.data.references,
-                                                    ];
-                                                    newRefs[index].phone =
-                                                        e.target.value;
-                                                    form.setData(
-                                                        'references',
-                                                        newRefs,
-                                                    );
-                                                }}
-                                            />
-                                        </div>
+                                        <PhoneInput
+                                            value={ref.phone}
+                                            onChange={(value) => {
+                                                const newRefs = [...form.data.references];
+                                                newRefs[index] = { ...newRefs[index], phone: value };
+                                                form.setData('references', newRefs);
+                                            }}
+                                            label="Phone"
+                                            placeholder="(619) 555-0000"
+                                            required
+                                            error={form.errors[`references.${index}.phone`]}
+                                        />
                                         <div className="space-y-2">
                                             <Label
                                                 htmlFor={`ref-relationship-${index}`}

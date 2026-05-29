@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { parseAsLocal } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -152,20 +152,7 @@ export default function TransactionsIndex() {
     });
 
     const formatDateTime = (dateStr: string) => {
-        const date = parseAsLocal(dateStr);
-
-        if (!date) {
-            return '—';
-        }
-
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
+        return formatDisplayDateTimeInPT(dateStr) || '—';
     };
 
     const openPaymentSheet = (booking: Booking) => {

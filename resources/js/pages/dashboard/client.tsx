@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime, formatDisplayTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -155,7 +155,7 @@ export default function ClientDashboard({
                                                 Service
                                             </h3>
                                             <p className="text-lg font-bold">
-                                                {formatDisplayDateTime(
+                                                {formatDisplayDateTimeInPT(
                                                     client.nextBooking
                                                         .start_datetime,
                                                 )}
@@ -177,12 +177,12 @@ export default function ClientDashboard({
                                             <Clock className="h-4 w-4 text-muted-foreground" />
                                             <span>
                                                 Duration:{' '}
-                                                {formatDisplayTime(
+                                                {formatDisplayTimeInPT(
                                                     client.nextBooking
                                                         .start_datetime,
                                                 )}{' '}
                                                 -{' '}
-                                                {formatDisplayTime(
+                                                {formatDisplayTimeInPT(
                                                     client.nextBooking
                                                         .end_datetime,
                                                 )}
@@ -238,7 +238,7 @@ export default function ClientDashboard({
                                                         </div>
                                                         <div className="flex flex-col text-left">
                                                             <p className="text-sm font-medium">
-                                                                {formatDisplayDateTime(
+                                                                {formatDisplayDateTimeInPT(
                                                                     booking.start_datetime,
                                                                 )}
                                                             </p>
@@ -308,7 +308,7 @@ export default function ClientDashboard({
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium">
-                                                            {formatDisplayDateTime(
+                                                            {formatDisplayDateTimeInPT(
                                                                 booking.start_datetime,
                                                             )}
                                                         </p>

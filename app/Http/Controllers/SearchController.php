@@ -64,7 +64,7 @@ class SearchController extends Controller
                 return [
                     'id' => $booking->id,
                     'name' => $clientName,
-                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->format('D, M j, Y'),
+                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('jobs.show', $booking),
                     'ulid' => $booking->ulid,
@@ -110,7 +110,7 @@ class SearchController extends Controller
                 return [
                     'id' => $booking->id,
                     'name' => $caregiverName,
-                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->format('D, M j, Y'),
+                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('bookings.show', $booking),
                     'ulid' => $booking->ulid,
@@ -156,7 +156,7 @@ class SearchController extends Controller
                 return [
                     'id' => $booking->id,
                     'name' => $booking->corporate_id ?? $booking->ulid,
-                    'subtitle' => $clientName.' — '.($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->format('D, M j, Y'),
+                    'subtitle' => $clientName.' — '.($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('bookings.show', $booking),
                     'ulid' => $booking->ulid,

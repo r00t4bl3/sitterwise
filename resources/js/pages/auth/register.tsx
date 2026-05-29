@@ -5,6 +5,7 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -34,7 +35,7 @@ export default function Register() {
                 disableWhileProcessing
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
+                {({ data, setData, processing, errors }) => (
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-4 sm:grid-cols-2">
@@ -81,20 +82,13 @@ export default function Register() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">
-                                    Phone
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="tel"
+                                <PhoneInput
                                     name="phone"
-                                    placeholder="(555) 123-4567"
+                                    value={data.phone}
+                                    onChange={(v) => setData('phone', v)}
+                                    error={errors.phone}
+                                    required
                                 />
-                                <InputError message={errors.phone} />
                             </div>
 
                             <div className="grid gap-2">

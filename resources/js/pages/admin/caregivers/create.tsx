@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -157,14 +158,11 @@ export default function CaregiverCreate() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone</Label>
-                                <Input
-                                    id="phone"
-                                    type="text"
+                                <PhoneInput
+                                    name="phone"
                                     value={form.data.phone}
-                                    onChange={(e) =>
-                                        form.setData('phone', e.target.value)
-                                    }
+                                    onChange={(v) => form.setData('phone', v)}
+                                    error={form.errors.phone}
                                 />
                             </div>
                             <div className="space-y-2">

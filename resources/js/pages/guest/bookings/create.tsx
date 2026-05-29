@@ -2,6 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { ChevronDown, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
+import BookingProgress from '@/components/booking-progress';
 import InputError from '@/components/input-error';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -10,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -22,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import GuestLayout from '@/layouts/guest-layout';
 import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
 import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
+import { validatePhone } from '@/lib/phone';
 
 interface NewChild {
     tempId: string;
@@ -55,41 +58,101 @@ function formatDateTimeLocal(date: Date): string {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function validateClientDetails(data: ClientDetailsFormData): string | null {
-    if (!data.first_name.trim()) {
-        return 'First name is required.';
+function validateForm(formData: Record<string, any>, isAddressLocked: boolean = false): Record<string, string> {
+    const errors: Record<string, string> = {};
+
+    if (!formData.client_first_name?.trim()) {
+        errors.client_first_name = 'First name is required.';
     }
 
-    if (!data.last_name.trim()) {
-        return 'Last name is required.';
+    if (!formData.client_last_name?.trim()) {
+        errors.client_last_name = 'Last name is required.';
     }
 
-    if (!data.email.trim()) {
-        return 'Email is required.';
+    if (!formData.client_email?.trim()) {
+        errors.client_email = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email)) {
+        errors.client_email = 'Please enter a valid email address.';
     }
 
-    if (!data.phone.trim()) {
-        return 'Phone is required.';
+    if (!formData.client_phone?.trim()) {
+        errors.client_phone = 'Phone is required.';
+    } else {
+        const phoneError = validatePhone(formData.client_phone);
+
+        if (phoneError) {
+            errors.client_phone = phoneError;
+        }
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.location_type !== 'hotel') {
+        if (!isAddressLocked) {
+            errors.address_line1 = 'Please select a valid San Diego area address from the suggestions.';
+        }
 
-    if (!emailRegex.test(data.email)) {
-        return 'Please enter a valid email address.';
+        if (!formData.address_line1?.trim()) {
+            errors.address_line1 = 'Address is required.';
+        }
+
+        if (!formData.address_city?.trim()) {
+            errors.address_city = 'City is required.';
+        }
+
+        if (!formData.address_state?.trim()) {
+            errors.address_state = 'State is required.';
+        }
+
+        if (!formData.address_zip?.trim()) {
+            errors.address_zip = 'ZIP code is required.';
+        }
     }
 
-    return null;
-}
+    if (formData.start_datetime && formData.end_datetime) {
+        const start = new Date(formData.start_datetime);
+        const end = new Date(formData.end_datetime);
+        const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
-interface ClientDetailsFormData {
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone: string;
+        if (diffHours < 4) {
+            errors.end_datetime = 'Booking must be at least 4 hours long.';
+        }
+    }
+
+    if (!formData.new_children?.length) {
+        errors.new_children = 'Please add at least one child.';
+    }
+
+    return errors;
 }
 
 function generateId(): string {
     return Math.random().toString(36).substr(2, 9);
+}
+
+function findDateOverlaps(
+    dates: DateEntry[],
+): Record<string, string[]> {
+    const overlaps: Record<string, string[]> = {};
+
+    for (let i = 0; i < dates.length; i++) {
+        for (let j = i + 1; j < dates.length; j++) {
+            const a = dates[i];
+            const b = dates[j];
+            const aStart = new Date(a.start_datetime).getTime();
+            const aEnd = new Date(a.end_datetime).getTime();
+            const bStart = new Date(b.start_datetime).getTime();
+            const bEnd = new Date(b.end_datetime).getTime();
+
+            if (aStart < bEnd && bStart < aEnd) {
+                const aLabel = `Date ${i + 1}`;
+                const bLabel = `Date ${j + 1}`;
+
+                (overlaps[a.id] ??= []).push(bLabel);
+                (overlaps[b.id] ??= []).push(aLabel);
+            }
+        }
+    }
+
+    return overlaps;
 }
 
 function getPreferenceLabel(option: { value: string; label: string }): string {
@@ -165,7 +228,9 @@ export default function GuestBookingCreate() {
         emergency_instructions: '',
         special_needs_notes: '',
         how_did_you_hear: '',
-        new_children: [] as NewChild[],
+        new_children: [
+            { tempId: generateId(), name: '', gender: '', birth_month: '', birth_year: '' },
+        ] as NewChild[],
         new_pets: [] as NewPet[],
     });
 
@@ -183,17 +248,19 @@ export default function GuestBookingCreate() {
     const [isAddressLocked, setIsAddressLocked] = useState(false);
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
-
-    const clientDetailsError = validateClientDetails({
-        first_name: form.data.client_first_name,
-        last_name: form.data.client_last_name,
-        email: form.data.client_email,
-        phone: form.data.client_phone,
-    });
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
         form.data.end_datetime,
+    );
+
+    const today = new Date();
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const dateOverlaps = findDateOverlaps(dates);
+
+    const sameDayWarning = dates.some(
+        (d) => d.start_datetime?.startsWith(todayDateStr),
     );
 
     const hotelSuggestions = hotels
@@ -307,7 +374,39 @@ export default function GuestBookingCreate() {
         form.setData('new_pets', updated);
     };
 
+    const handleBlurValidate = (field: string) => {
+        const allErrors = validateForm(form.data, isAddressLocked);
+        setValidationErrors((prev) => {
+            if (allErrors[field]) {
+                return { ...prev, [field]: allErrors[field] };
+            }
+
+            const next = { ...prev };
+            delete next[field];
+
+            return next;
+        });
+    };
+
     const handleSubmit = () => {
+        if (isFormSubmitting) {
+            return;
+        }
+
+        const clientErrors = validateForm(form.data, isAddressLocked);
+        setValidationErrors(clientErrors);
+
+        if (Object.keys(clientErrors).length > 0) {
+            const firstField = Object.keys(clientErrors)[0];
+            const el = document.querySelector<HTMLElement>(
+                `[name="${firstField}"], [data-field="${firstField}"]`,
+            );
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.focus();
+
+            return;
+        }
+
         setIsFormSubmitting(true);
         form.post('/book', {
             onSuccess: () => {
@@ -318,6 +417,12 @@ export default function GuestBookingCreate() {
             },
         });
     };
+
+    const isFormIncomplete =
+        !form.data.client_first_name?.trim() ||
+        !form.data.client_last_name?.trim() ||
+        !form.data.client_email?.trim() ||
+        !form.data.client_phone?.trim();
 
     const hasNewChildren = form.data.new_children.length > 0;
     const hasNewPets = form.data.new_pets.length > 0;
@@ -345,6 +450,8 @@ export default function GuestBookingCreate() {
                     </p>
                 </div>
 
+                <BookingProgress currentStep={1} />
+
                 {/* CARD 1: ABOUT YOU */}
                 <div className="overflow-hidden rounded-[3px] border border-border bg-card">
                     <button
@@ -371,9 +478,16 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         First Name{' '}
-                                        <span className="text-coral">*</span>
+                                        <span className="text-coral" aria-hidden="true">*</span>
                                     </Label>
                                     <Input
+                                        aria-required="true"
+                                        aria-invalid={
+                                            !!(
+                                                validationErrors.client_first_name ||
+                                                form.errors.client_first_name
+                                            )
+                                        }
                                         value={form.data.client_first_name}
                                         onChange={(e) =>
                                             form.setData(
@@ -381,11 +495,18 @@ export default function GuestBookingCreate() {
                                                 e.target.value,
                                             )
                                         }
+                                        onBlur={() =>
+                                            handleBlurValidate(
+                                                'client_first_name',
+                                            )
+                                        }
                                         placeholder="First name"
                                     />
-                                    {form.errors.client_first_name && (
+                                    {(validationErrors.client_first_name ||
+                                        form.errors.client_first_name) && (
                                         <InputError
                                             message={
+                                                validationErrors.client_first_name ||
                                                 form.errors.client_first_name
                                             }
                                         />
@@ -394,9 +515,16 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         Last Name{' '}
-                                        <span className="text-coral">*</span>
+                                        <span className="text-coral" aria-hidden="true">*</span>
                                     </Label>
                                     <Input
+                                        aria-required="true"
+                                        aria-invalid={
+                                            !!(
+                                                validationErrors.client_last_name ||
+                                                form.errors.client_last_name
+                                            )
+                                        }
                                         value={form.data.client_last_name}
                                         onChange={(e) =>
                                             form.setData(
@@ -404,11 +532,18 @@ export default function GuestBookingCreate() {
                                                 e.target.value,
                                             )
                                         }
+                                        onBlur={() =>
+                                            handleBlurValidate(
+                                                'client_last_name',
+                                            )
+                                        }
                                         placeholder="Last name"
                                     />
-                                    {form.errors.client_last_name && (
+                                    {(validationErrors.client_last_name ||
+                                        form.errors.client_last_name) && (
                                         <InputError
                                             message={
+                                                validationErrors.client_last_name ||
                                                 form.errors.client_last_name
                                             }
                                         />
@@ -420,10 +555,17 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         Email{' '}
-                                        <span className="text-coral">*</span>
+                                        <span className="text-coral" aria-hidden="true">*</span>
                                     </Label>
                                     <Input
                                         type="email"
+                                        aria-required="true"
+                                        aria-invalid={
+                                            !!(
+                                                validationErrors.client_email ||
+                                                form.errors.client_email
+                                            )
+                                        }
                                         value={form.data.client_email}
                                         onChange={(e) =>
                                             form.setData(
@@ -431,35 +573,41 @@ export default function GuestBookingCreate() {
                                                 e.target.value,
                                             )
                                         }
+                                        onBlur={() =>
+                                            handleBlurValidate(
+                                                'client_email',
+                                            )
+                                        }
                                         placeholder="your@email.com"
                                     />
-                                    {form.errors.client_email && (
+                                    {(validationErrors.client_email ||
+                                        form.errors.client_email) && (
                                         <InputError
-                                            message={form.errors.client_email}
+                                            message={
+                                                validationErrors.client_email ||
+                                                form.errors.client_email
+                                            }
                                         />
                                     )}
                                 </div>
                                 <div>
-                                    <Label>
-                                        Phone{' '}
-                                        <span className="text-coral">*</span>
-                                    </Label>
-                                    <Input
-                                        type="tel"
+                                    <PhoneInput
+                                        name="client_phone"
                                         value={form.data.client_phone}
-                                        onChange={(e) =>
-                                            form.setData(
+                                        onChange={(v) =>
+                                            form.setData('client_phone', v)
+                                        }
+                                        onBlur={() =>
+                                            handleBlurValidate(
                                                 'client_phone',
-                                                e.target.value,
                                             )
                                         }
-                                        placeholder="(555) 123-4567"
+                                        error={
+                                            validationErrors.client_phone ||
+                                            form.errors.client_phone
+                                        }
+                                        required
                                     />
-                                    {form.errors.client_phone && (
-                                        <InputError
-                                            message={form.errors.client_phone}
-                                        />
-                                    )}
                                 </div>
                             </div>
 
@@ -761,8 +909,22 @@ export default function GuestBookingCreate() {
                                                 />
                                             </div>
                                         </div>
+                                        {dateOverlaps[dateEntry.id]?.length > 0 && (
+                                            <p className="mt-2 text-xs text-amber-700">
+                                                ⚠ This overlaps with{' '}
+                                                {dateOverlaps[dateEntry.id].join(', ')}.
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
+
+                                {sameDayWarning && (
+                                    <p className="mt-3 rounded-[4px] border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                        Heads up: this is a same-day booking —
+                                        extra fees may apply and availability is
+                                        limited.
+                                    </p>
+                                )}
 
                                 <button
                                     type="button"
@@ -777,9 +939,13 @@ export default function GuestBookingCreate() {
                                         {datetimeError}
                                     </p>
                                 )}
-                                {form.errors.end_datetime && (
+                                {(validationErrors.end_datetime ||
+                                    form.errors.end_datetime) && (
                                     <InputError
-                                        message={form.errors.end_datetime}
+                                        message={
+                                            validationErrors.end_datetime ||
+                                            form.errors.end_datetime
+                                        }
                                     />
                                 )}
 
@@ -789,6 +955,7 @@ export default function GuestBookingCreate() {
                                         form={form}
                                         isAddressLocked={isAddressLocked}
                                         addressValue={addressValue}
+                                        errors={form.errors}
                                         onAddressLock={(
                                             locked,
                                             newAddressValue,
@@ -1024,10 +1191,13 @@ export default function GuestBookingCreate() {
                                     </div>
                                 )}
 
-                                {!hasNewChildren && (
-                                    <p className="mt-2 text-sm text-destructive">
-                                        Please add at least one child
-                                    </p>
+                                {(validationErrors.new_children || form.errors.new_children) && (
+                                    <InputError
+                                        message={
+                                            validationErrors.new_children ||
+                                            form.errors.new_children
+                                        }
+                                    />
                                 )}
 
                                 {/* Special Needs */}
@@ -1336,11 +1506,7 @@ export default function GuestBookingCreate() {
                     </p>
                     <Button
                         onClick={handleSubmit}
-                        disabled={
-                            !hasNewChildren ||
-                            !!clientDetailsError ||
-                            !!datetimeError
-                        }
+                        aria-disabled={isFormIncomplete || isFormSubmitting || undefined}
                     >
                         {isFormSubmitting ? <Spinner /> : null}
                         {isFormSubmitting

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
+import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
 function ClientTypeBadge({ type }: { type: string }) {
@@ -288,7 +289,7 @@ export default function ClientsIndex() {
                                         {client.email}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {client.phone}
+                                        {formatPhoneDisplay(client.phone)}
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
                                         <Button asChild className="h-8">

@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 interface BookingStatus {
@@ -121,7 +121,6 @@ export default function JobHistory() {
         bookingStatuses,
         serviceTypes,
         locationTypes,
-        assignmentResolutions,
         filters,
     } = usePage<Props>().props;
 
@@ -185,7 +184,10 @@ export default function JobHistory() {
     }>({ open: false, booking: null });
 
     const handleExcuse = () => {
-        if (!excuseDialog.booking?.assignment_id) return;
+        if (!excuseDialog.booking?.assignment_id) {
+return;
+}
+
         excuseForm.post(`/assignments/${excuseDialog.booking.assignment_id}/excuse`, {
             onSuccess: () => {
                 setExcuseDialog({ open: false, booking: null });
@@ -195,7 +197,10 @@ export default function JobHistory() {
     };
 
     const handleNoShow = () => {
-        if (!noShowDialog.booking?.assignment_id) return;
+        if (!noShowDialog.booking?.assignment_id) {
+return;
+}
+
         noShowForm.post(`/assignments/${noShowDialog.booking.assignment_id}/no-show`, {
             onSuccess: () => {
                 setNoShowDialog({ open: false, booking: null });
@@ -205,7 +210,10 @@ export default function JobHistory() {
     };
 
     const handleLateArrival = () => {
-        if (!lateArrivalDialog.booking?.assignment_id) return;
+        if (!lateArrivalDialog.booking?.assignment_id) {
+return;
+}
+
         lateArrivalForm.post(`/assignments/${lateArrivalDialog.booking.assignment_id}/late-arrival`, {
             onSuccess: () => {
                 setLateArrivalDialog({ open: false, booking: null });
@@ -378,7 +386,7 @@ export default function JobHistory() {
                                         className="border-b border-border transition hover:bg-blush"
                                     >
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                            {formatDisplayDateTime(
+                                            {formatDisplayDateTimeInPT(
                                                 booking.start_datetime,
                                             )}
                                         </td>

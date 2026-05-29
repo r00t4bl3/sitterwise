@@ -14,6 +14,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -498,22 +499,12 @@ export default function CaregiverEdit() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone</Label>
-                                <Input
-                                    id="phone"
-                                    type="text"
+                                <PhoneInput
                                     name="phone"
                                     value={form.data.phone}
-                                    onChange={(e) =>
-                                        form.setData('phone', e.target.value)
-                                    }
-                                    aria-invalid={!!form.errors.phone}
+                                    onChange={(v) => form.setData('phone', v)}
+                                    error={form.errors.phone}
                                 />
-                                {form.errors.phone && (
-                                    <p className="text-sm text-destructive">
-                                        {form.errors.phone}
-                                    </p>
-                                )}
                             </div>
                             <div className="space-y-1 sm:col-span-2">
                                 <AddressAutocomplete

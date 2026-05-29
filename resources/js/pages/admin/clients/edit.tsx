@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
     Select,
     SelectContent,
@@ -457,25 +458,14 @@ export default function ClientEdit() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">
-                                    Cell Phone{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="phone"
-                                    type="text"
+                                <PhoneInput
                                     value={form.data.phone}
-                                    onChange={(e) =>
-                                        form.setData('phone', e.target.value)
-                                    }
+                                    onChange={(value) => form.setData('phone', value)}
+                                    name="phone"
+                                    label="Cell Phone"
                                     required
-                                    aria-invalid={!!form.errors.phone}
+                                    error={form.errors.phone}
                                 />
-                                {form.errors.phone && (
-                                    <p className="text-sm text-destructive">
-                                        {form.errors.phone}
-                                    </p>
-                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>

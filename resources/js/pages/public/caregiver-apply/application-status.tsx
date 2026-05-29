@@ -52,7 +52,10 @@ export default function ApplicationStatus() {
     }
 
     function submitReplace(refId: number) {
-        if (!form.reference_name.trim() || !form.reference_email.trim()) return;
+        if (!form.reference_name.trim() || !form.reference_email.trim()) {
+return;
+}
+
         setSubmitting(true);
         router.post(
             `/caregiver/apply/status/${token}/replace-reference/${refId}`,
@@ -111,6 +114,7 @@ export default function ApplicationStatus() {
                             <div className="mt-4 space-y-3">
                                 {checklist_items.map((item) => {
                                     const isCompleted = item.completed;
+
                                     return (
                                         <div
                                             key={item.id}

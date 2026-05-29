@@ -158,7 +158,7 @@ class CaregiverController extends Controller
                 ->map(fn ($assignment) => [
                     'id' => $assignment->id,
                     'job_number' => '#'.$assignment->booking->id,
-                    'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s'),
+                    'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s\Z'),
                     'client_name' => $assignment->booking->client?->user?->name ?? '—',
                     'client_description' => $assignment->booking->hotel?->name
                         ?? $assignment->booking->address_city

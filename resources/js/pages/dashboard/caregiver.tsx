@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDate, formatDisplayDateTime } from '@/lib/datetime';
+import { formatDisplayDateInPT, formatDisplayDateTimeInPT } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -302,7 +302,7 @@ export default function CaregiverDashboard({
                                             {caregiver.nextJob.service_type} Job
                                         </h3>
                                         <p className="text-lg font-bold">
-                                            {formatDisplayDateTime(
+                                            {formatDisplayDateTimeInPT(
                                                 caregiver.nextJob
                                                     .start_datetime,
                                             )}
@@ -390,7 +390,7 @@ export default function CaregiverDashboard({
                                                     </span>
                                                 </div>
                                                 <p className="text-sm font-medium">
-                                                    {formatDisplayDateTime(
+                                                    {formatDisplayDateTimeInPT(
                                                         invite.start_datetime,
                                                     )}
                                                 </p>
@@ -443,7 +443,7 @@ export default function CaregiverDashboard({
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium">
-                                                            {formatDisplayDateTime(
+                                                            {formatDisplayDateTimeInPT(
                                                                 job.start_datetime,
                                                             )}
                                                         </p>
@@ -486,7 +486,7 @@ export default function CaregiverDashboard({
                     <SheetHeader>
                         <SheetTitle>
                             {selectedDate
-                                ? formatDisplayDate(selectedDate)
+                                ? formatDisplayDateInPT(selectedDate)
                                 : 'Availability'}{' '}
                         </SheetTitle>
                         <SheetDescription>
@@ -589,7 +589,7 @@ export default function CaregiverDashboard({
                                                         delete your availability
                                                         for{' '}
                                                         {selectedDate
-                                                            ? formatDisplayDate(
+                                                            ? formatDisplayDateInPT(
                                                                   selectedDate,
                                                               )
                                                             : 'this date'}
