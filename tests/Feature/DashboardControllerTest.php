@@ -36,7 +36,7 @@ test('caregiver sees dashboard with caregiver data', function () {
         'first_name' => 'Jane',
         'last_name' => 'Smith',
         'rating' => 4.5,
-        'phone' => '1234567890',
+        'phone' => '+11234567890',
         'address_city' => 'San Diego',
         'address_state' => 'CA',
     ]);
@@ -121,7 +121,7 @@ test('caregiver sees future availabilities', function () {
         'status' => CaregiverStatus::Active->value,
         'first_name' => 'Jane',
         'last_name' => 'Smith',
-        'phone' => '1234567890',
+        'phone' => '+11234567890',
         'address_city' => 'San Diego',
         'address_state' => 'CA',
     ]);

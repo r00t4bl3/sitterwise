@@ -96,7 +96,13 @@ const years = Array.from({ length: 31 }, (_, i) =>
     String(currentYear - 30 + i),
 );
 
-export default function Wizard() {
+const startYear = 1960;
+const graduationYears = Array.from(
+    { length: currentYear - startYear + 1 },
+    (_, i) => String(startYear + i),
+);
+
+export default function Wizard({ verifiedEmail }: { verifiedEmail?: string }) {
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
 
@@ -198,7 +204,6 @@ export default function Wizard() {
             work_from_home: false,
             driving: false,
             dogsitting: false,
-            catsitting: false,
             swimming: false,
             overnight_care: false,
         },
@@ -296,6 +301,15 @@ export default function Wizard() {
     }, []);
 
     // Sync employment status with first experience's "present" checkbox
+    useEffect(() => {
+        if (verifiedEmail && !form.data.personal.email) {
+            form.setData('personal', {
+                ...form.data.personal,
+                email: verifiedEmail,
+            });
+        }
+    }, [verifiedEmail]);
+
     useEffect(() => {
         const isEmployed =
             form.data.employment_status === 'full_time' ||
@@ -894,85 +908,102 @@ return;
                                             />
                                         </div>
                                     )}
+                                    {form.data.education.level !==
+                                        'high_school' && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="education-graduation-year">
+                                                Graduation Year
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    form.data.education
+                                                        .graduation_year
+                                                }
+                                                onValueChange={(value) =>
+                                                    form.setData('education', {
+                                                        ...form.data.education,
+                                                        graduation_year: value,
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger id="education-graduation-year">
+                                                    <SelectValue placeholder="Select year" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {graduationYears.map(
+                                                        (y) => (
+                                                            <SelectItem
+                                                                key={y}
+                                                                value={y}
+                                                            >
+                                                                {y}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
-                                        <Label htmlFor="education-graduation-year">
-                                            Graduation Year
+                                        <Label htmlFor="education-high-school-name">
+                                            High School Name
                                         </Label>
                                         <Input
-                                            id="education-graduation-year"
+                                            id="education-high-school-name"
                                             type="text"
-                                            placeholder="e.g. 2017"
+                                            placeholder="High school attended"
                                             value={
                                                 form.data.education
-                                                    .graduation_year
+                                                    .high_school_name
                                             }
                                             onChange={(e) =>
                                                 form.setData('education', {
                                                     ...form.data.education,
-                                                    graduation_year:
+                                                    high_school_name:
                                                         e.target.value,
                                                 })
                                             }
                                         />
                                     </div>
-                                    {form.data.education.level !==
-                                        'high_school' && (
-                                        <>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="education-high-school-name">
-                                                    High School Name
-                                                </Label>
-                                                <Input
-                                                    id="education-high-school-name"
-                                                    type="text"
-                                                    placeholder="High school attended"
-                                                    value={
-                                                        form.data.education
-                                                            .high_school_name
-                                                    }
-                                                    onChange={(e) =>
-                                                        form.setData(
-                                                            'education',
-                                                            {
-                                                                ...form.data
-                                                                    .education,
-                                                                high_school_name:
-                                                                    e.target
-                                                                        .value,
-                                                            },
-                                                        )
-                                                    }
-                                                />
-                                            </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="education-high-school-graduation-year">
                                                     High School Graduation Year
                                                 </Label>
-                                                <Input
-                                                    id="education-high-school-graduation-year"
-                                                    type="text"
-                                                    placeholder="e.g. 2013"
+                                                <Select
                                                     value={
                                                         form.data.education
                                                             .high_school_graduation_year
                                                     }
-                                                    onChange={(e) =>
+                                                    onValueChange={(value) =>
                                                         form.setData(
                                                             'education',
                                                             {
                                                                 ...form.data
                                                                     .education,
                                                                 high_school_graduation_year:
-                                                                    e.target
-                                                                        .value,
+                                                                    value,
                                                             },
                                                         )
                                                     }
-                                                />
+                                                >
+                                                    <SelectTrigger id="education-high-school-graduation-year">
+                                                        <SelectValue placeholder="Select year" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {graduationYears.map(
+                                                            (y) => (
+                                                                <SelectItem
+                                                                    key={y}
+                                                                    value={y}
+                                                                >
+                                                                    {y}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                        </>
-                                    )}
-                                </div>
+                                        </div>
                             </div>
                         </div>
                     )}
@@ -1915,10 +1946,10 @@ form.setData('tattoo_description', '');
                                     </RadioGroup>
                                 </div>
 
-                                {/* CPR & First Aid certified? */}
+                                {/* CPR certified? */}
                                 <div className="space-y-2">
                                     <Label>
-                                        CPR & First Aid certified?{' '}
+                                        CPR certified?{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
                                     <RadioGroup
@@ -2413,11 +2444,6 @@ form.setData('children_ages', '');
                                                     'Comfortable with all dog sizes/breeds',
                                                 ],
                                                 [
-                                                    'catsitting',
-                                                    'Catsitting',
-                                                    'Newly added separate catsitting option',
-                                                ],
-                                                [
                                                     'swimming',
                                                     'Swimming',
                                                     'Pool/beach supervision and water safety',
@@ -2639,7 +2665,7 @@ form.setData('children_ages', '');
                                     Sitterwise caregivers are W-2 employees and
                                     that all pay is processed through OnPay,
                                     with applicable taxes withheld. I agree to
-                                    maintain current CPR/First Aid certification
+                                    maintain current CPR certification
                                     and to submit a Trustline application within
                                     7 days of activation, as conditions of
                                     employment.

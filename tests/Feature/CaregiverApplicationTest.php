@@ -23,7 +23,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
             'first_name' => 'Sponsor',
             'last_name' => 'Reference',
             'email' => 'sponsor@example.com',
-            'phone' => '555-1234',
+            'phone' => '+15551234567',
             'relationship' => 'Friend',
         ],
         'personal' => [
@@ -34,7 +34,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
-            'phone' => '555-5678',
+            'phone' => '+15555555678',
             'dob' => '1990-01-01',
         ],
         'position' => [
@@ -94,7 +94,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
                 'first_name' => 'Reference',
                 'last_name' => 'One',
                 'email' => 'ref1@example.com',
-                'phone' => '555-0001',
+                'phone' => '+15550000001',
                 'relationship' => 'Former Employer',
                 'years_known' => '3-5',
             ],
@@ -102,7 +102,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
                 'first_name' => 'Reference',
                 'last_name' => 'Two',
                 'email' => 'ref2@example.com',
-                'phone' => '555-0002',
+                'phone' => '+15550000002',
                 'relationship' => 'Friend',
                 'years_known' => '5-10',
             ],
@@ -110,7 +110,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
                 'first_name' => 'Reference',
                 'last_name' => 'Three',
                 'email' => 'ref3@example.com',
-                'phone' => '555-0003',
+                'phone' => '+15550000003',
                 'relationship' => 'Co-worker',
                 'years_known' => '1-3',
             ],
@@ -357,6 +357,19 @@ describe('Caregiver Application - Submission', function () {
         $this->post('/caregiver/apply/submit', caregiverApplicationGetValidApplicationData('clear-session@example.com'));
 
         expect(Cache::get('otp_clear-session@example.com'))->toBeNull();
+    });
+
+    it('stores personal phone in E.164 format', function () {
+        Session::put('verified_email', 'phone-e164@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('phone-e164@example.com');
+        $data['personal']['phone'] = '+15551234567';
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        $caregiver = Caregiver::latest('id')->first();
+        expect($caregiver->phone)->toBe('+15551234567');
     });
 
     it('submit redirects to thank you page', function () {

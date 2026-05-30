@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
+use App\Models\Traits\Phone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 
 class Booking extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, Phone, SoftDeletes;
 
     protected static function boot(): void
     {
@@ -434,5 +435,10 @@ class Booking extends Model
             'total_hours' => $this->total_working_hour ?? 0,
 
         ];
+    }
+
+    protected function getPhoneColumns(): array
+    {
+        return ['client_phone'];
     }
 }

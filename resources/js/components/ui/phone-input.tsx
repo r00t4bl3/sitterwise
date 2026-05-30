@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     formatPhoneDisplay,
     isInternational,
     stripPhone,
     toE164,
-    validatePhone,
 } from '@/lib/phone';
 import { cn } from '@/lib/utils';
 import InputError from '@/components/input-error';
@@ -37,19 +36,8 @@ export function PhoneInput({
     const [international, setInternational] = useState(() =>
         value ? isInternational(value) : false,
     );
-    const [displayValue, setDisplayValue] = useState(() =>
-        value ? formatPhoneDisplay(value) : '',
-    );
 
-    useEffect(() => {
-        if (value) {
-            setInternational(isInternational(value));
-            setDisplayValue(formatPhoneDisplay(value));
-        } else {
-            setDisplayValue('');
-            setInternational(false);
-        }
-    }, [value]);
+    const displayValue = value ? formatPhoneDisplay(value) : '';
 
     const handleChange = (raw: string) => {
         if (international) {
@@ -57,40 +45,22 @@ export function PhoneInput({
             const cleaned = digits === '+' ? '' : digits;
 
             if (cleaned.startsWith('+')) {
-                setDisplayValue(formatPhoneDisplay(cleaned));
-                if (cleaned.length >= 3) {
-                    onChange(toE164(cleaned));
-                } else {
-                    onChange('');
-                }
+                onChange(cleaned.length >= 3 ? toE164(cleaned) : cleaned);
             } else if (cleaned.length > 0) {
                 const withPlus = '+' + cleaned;
-                setDisplayValue(formatPhoneDisplay(withPlus));
-                if (withPlus.length >= 3) {
-                    onChange(toE164(withPlus));
-                } else {
-                    onChange('');
-                }
+                onChange(withPlus.length >= 3 ? toE164(withPlus) : withPlus);
             } else {
-                setDisplayValue('');
                 onChange('');
             }
         } else {
             const digits = stripPhone(raw).slice(0, 10);
 
-            setDisplayValue(formatPhoneDisplay('+1' + digits));
-
-            if (digits.length === 10) {
-                onChange('+1' + digits);
-            } else {
-                onChange('');
-            }
+            onChange(digits.length > 0 ? '+1' + digits : '');
         }
     };
 
     const toggleInternational = () => {
         setInternational((prev) => !prev);
-        setDisplayValue('');
         onChange('');
     };
 

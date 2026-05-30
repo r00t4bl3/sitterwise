@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Phone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Hotel extends Model
 {
-    use HasFactory;
+    use HasFactory, Phone;
 
     protected $fillable = [
         'name',
@@ -34,5 +35,10 @@ class Hotel extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('name');
+    }
+
+    protected function getPhoneColumns(): array
+    {
+        return ['contact_phone'];
     }
 }

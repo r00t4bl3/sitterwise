@@ -188,7 +188,7 @@ describe('Booking Workflow', function () {
                 'first_name' => 'New',
                 'last_name' => 'Client',
                 'email' => 'new.client@example.com',
-                'phone' => '5551234567',
+                'phone' => '+15551234567',
                 'client_type' => 'vacationer',
             ],
             'new_children' => [

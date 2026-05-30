@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Phone;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 
 class Client extends Model
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, Phone, SoftDeletes;
 
     protected static function newFactory(): ClientFactory
     {

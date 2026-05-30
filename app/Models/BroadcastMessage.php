@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\Phone;
 use Database\Factories\BroadcastMessageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class BroadcastMessage extends Model
 {
     /** @use HasFactory<BroadcastMessageFactory> */
-    use HasFactory;
+    use HasFactory, Phone;
 
     protected $fillable = [
         'broadcast_id',
@@ -37,5 +38,10 @@ class BroadcastMessage extends Model
     public function caregiver(): BelongsTo
     {
         return $this->belongsTo(Caregiver::class);
+    }
+
+    protected function getPhoneColumns(): array
+    {
+        return ['phone_number'];
     }
 }

@@ -30,7 +30,7 @@ describe('Guest Booking Workflow', function () {
             'client_first_name' => 'John',
             'client_last_name' => 'Guest',
             'client_email' => 'john.guest@example.com',
-            'client_phone' => '1234567890',
+            'client_phone' => '+11234567890',
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
             'start_datetime' => $start->toDateTimeString(),
@@ -59,7 +59,7 @@ describe('Guest Booking Workflow', function () {
             'client_first_name' => 'Jane',
             'client_last_name' => 'Guest',
             'client_email' => 'jane.guest@example.com',
-            'client_phone' => '9876543210',
+            'client_phone' => '+19876543210',
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
             'start_datetime' => $start->toDateTimeString(),
@@ -117,7 +117,7 @@ describe('Guest Booking Workflow', function () {
             'client_first_name' => 'Sarah',
             'client_last_name' => 'Test',
             'client_email' => 'sarah.test@example.com',
-            'client_phone' => '5551234567',
+            'client_phone' => '+15551234567',
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
             'start_datetime' => $start->toDateTimeString(),
@@ -206,7 +206,7 @@ describe('Guest Booking Workflow', function () {
             'client_first_name' => 'Timezone',
             'client_last_name' => 'Test',
             'client_email' => 'tz.test@example.com',
-            'client_phone' => '5550000000',
+            'client_phone' => '+15550000000',
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
             'start_datetime' => '2026-05-28T09:00',
@@ -291,7 +291,7 @@ describe('Guest Booking Workflow', function () {
             'client_first_name' => 'John',
             'client_last_name' => 'Guest',
             'client_email' => 'john.guest@example.com',
-            'client_phone' => '1234567890',
+            'client_phone' => '+11234567890',
             'service_type' => ServiceType::Babysitter->value,
             'location_type' => LocationType::PrivateHome->value,
             'start_datetime' => $start->toDateTimeString(),
@@ -311,5 +311,95 @@ describe('Guest Booking Workflow', function () {
             'address_zip',
         ]);
         $response->assertStatus(302);
+    });
+
+    test('stores US phone in E.164 format', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $pendingData = [
+            'client_first_name' => 'US',
+            'client_last_name' => 'Phone',
+            'client_email' => 'us-phone@example.com',
+            'client_phone' => '+16195551212',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '555 Phone St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2022'],
+            ],
+        ];
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        $booking = $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
+
+        $user = User::where('email', 'us-phone@example.com')->first();
+        $client = Client::where('user_id', $user->id)->first();
+
+        expect($client->phone)->toBe('+16195551212');
+        expect($booking->client_phone)->toBe('+16195551212');
+    });
+
+    test('stores international phone in E.164 format', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $pendingData = [
+            'client_first_name' => 'International',
+            'client_last_name' => 'Phone',
+            'client_email' => 'intl-phone@example.com',
+            'client_phone' => '+447900123456',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '123 London Rd',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '3', 'birth_year' => '2023'],
+            ],
+        ];
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        $booking = $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
+
+        $user = User::where('email', 'intl-phone@example.com')->first();
+        $client = Client::where('user_id', $user->id)->first();
+
+        expect($client->phone)->toBe('+447900123456');
+        expect($booking->client_phone)->toBe('+447900123456');
     });
 });

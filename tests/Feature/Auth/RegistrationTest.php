@@ -19,7 +19,7 @@ test('new users can register as client', function () {
     $response = $this->post(route('register.store'), [
         'first_name' => 'John',
         'last_name' => 'Doe',
-        'phone' => '(555) 123-4567',
+        'phone' => '+15551234567',
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -34,14 +34,14 @@ test('new users can register as client', function () {
     expect($client)->not->toBeNull();
     expect($client->first_name)->toBe('John');
     expect($client->last_name)->toBe('Doe');
-    expect($client->phone)->toBe('(555) 123-4567');
+    expect($client->phone)->toBe('+15551234567');
 });
 
 test('new users can register with how_did_you_hear', function () {
     $response = $this->post(route('register.store'), [
         'first_name' => 'Jane',
         'last_name' => 'Smith',
-        'phone' => '(555) 987-6543',
+        'phone' => '+15559876543',
         'email' => 'jane@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',

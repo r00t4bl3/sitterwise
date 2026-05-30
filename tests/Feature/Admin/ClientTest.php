@@ -44,7 +44,7 @@ describe('Client - Admin', function () {
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'phone' => '1234567890',
+            'phone' => '+11234567890',
             'client_type' => 'vacationer',
         ]);
 
@@ -133,7 +133,7 @@ describe('Client - Admin', function () {
             'email' => 'newclient@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'phone' => '1234567890',
+            'phone' => '+11234567890',
             'client_type' => 'vacationer',
         ]);
 
@@ -147,7 +147,7 @@ describe('Client - Admin', function () {
             'first_name' => 'Test',
             'last_name' => 'Client',
             'biography' => 'Just a common client',
-            'phone' => '1234567890',
+            'phone' => '+11234567890',
             'client_type' => 'vacationer',
         ]);
     });

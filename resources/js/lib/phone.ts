@@ -27,12 +27,22 @@ export function formatPhoneDisplay(e164: string): string {
 
     const digits = e164.slice(1);
 
-    if (digits.startsWith('1') && digits.length === 11) {
-        const area = digits.slice(1, 4);
-        const prefix = digits.slice(4, 7);
-        const line = digits.slice(7, 11);
+    if (digits.startsWith('1') && digits.length <= 11) {
+        if (digits.length === 1) {
+            return '';
+        }
 
-        return `(${area}) ${prefix}-${line}`;
+        const partial = digits.slice(1);
+
+        if (partial.length <= 3) {
+            return partial;
+        }
+
+        if (partial.length <= 6) {
+            return `(${partial.slice(0, 3)}) ${partial.slice(3)}`;
+        }
+
+        return `(${partial.slice(0, 3)}) ${partial.slice(3, 6)}-${partial.slice(6, 10)}`;
     }
 
     const parts: string[] = [];
@@ -63,7 +73,7 @@ export function isInternational(e164: string): boolean {
 
     const digits = e164.slice(1);
 
-    return !(digits.startsWith('1') && digits.length === 11);
+    return !(digits.startsWith('1') && digits.length <= 11);
 }
 
 export function validatePhone(e164: string): string | null {

@@ -34,7 +34,7 @@ test('has correct fillable fields', function () {
 
     $this->assertEquals('John', $client->first_name);
     $this->assertEquals('Doe', $client->last_name);
-    $this->assertEquals('123-456-7890', $client->phone);
+    $this->assertEquals('+11234567890', $client->phone);
     $this->assertEquals('vacationer', $client->client_type);
     $this->assertEquals('google', $client->how_did_you_hear);
 });

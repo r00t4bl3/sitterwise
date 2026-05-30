@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CaregiverStatus;
+use App\Models\Traits\Phone;
 use Database\Factories\CaregiverFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 
 class Caregiver extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, Phone, SoftDeletes;
 
     protected static function newFactory(): CaregiverFactory
     {
