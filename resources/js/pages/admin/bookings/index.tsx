@@ -28,12 +28,24 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayTimeInPT, parseAsLocal } from '@/lib/datetime';
+import { formatDisplayTimeInPT, formatDisplayDateShortInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 import { BookingSheet } from './booking-sheet';
 import { ExportSheet } from './export-sheet';
 import type { Booking as FullBooking, Props } from './types';
 import { useBookingSheet } from './use-booking-sheet';
+
+const getPTDate = (str: string): Date | null => {
+    const d = new Date(str.replace(/\.\d+Z$/, 'Z'));
+    if (isNaN(d.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d);
+    const g = (t: string) => parseInt(parts.find(x => x.type === t)!.value, 10);
+    return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -290,19 +302,19 @@ export default function Bookings() {
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, FullBooking[]> = {};
         filteredBookings.forEach((booking) => {
-            const date = parseAsLocal(booking.start_datetime);
+            const date = getPTDate(booking.start_datetime);
 
             if (!date) {
                 return;
             }
 
-            const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-            if (!grouped[localDate]) {
-                grouped[localDate] = [];
+            if (!grouped[key]) {
+                grouped[key] = [];
             }
 
-            grouped[localDate].push(booking);
+            grouped[key].push(booking);
         });
 
         return grouped;
@@ -310,15 +322,15 @@ export default function Bookings() {
 
     const currentMonthBookings = useMemo(() => {
         return filteredBookings.filter((booking) => {
-            const startDate = parseAsLocal(booking.start_datetime);
+            const d = getPTDate(booking.start_datetime);
 
-            if (!startDate) {
+            if (!d) {
                 return false;
             }
 
             return (
-                startDate.getMonth() + 1 === currentMonth &&
-                startDate.getFullYear() === currentYear
+                d.getMonth() + 1 === currentMonth &&
+                d.getFullYear() === currentYear
             );
         });
     }, [filteredBookings, currentMonth, currentYear]);
@@ -512,13 +524,12 @@ export default function Bookings() {
                                 const dayBookings = (
                                     bookingsByDate[dateStr] || []
                                 ).sort(
-                                    (a, b) =>
-                                        (parseAsLocal(
-                                            a.start_datetime,
-                                        )?.getTime() || 0) -
-                                        (parseAsLocal(
-                                            b.start_datetime,
-                                        )?.getTime() || 0),
+                                    (a, b) => {
+                                        const ae = new Date(a.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+                                        const be = new Date(b.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+
+                                        return (ae || 0) - (be || 0);
+                                    },
                                 );
                                 const displayBookings = dayBookings.slice(0, 5);
                                 const remainingCount = dayBookings.length - 5;
@@ -709,14 +720,12 @@ export default function Bookings() {
                                     ) : (
                                         [...currentMonthBookings]
                                             .sort(
-                                                (a, b) =>
-                                                    (parseAsLocal(
-                                                        a.start_datetime,
-                                                    )?.getTime() || 0) -
-                                                    (parseAsLocal(
-                                                        b.start_datetime,
-                                                    )?.getTime() || 0),
-                                            )
+                                                (a, b) => {
+                                                    const ae = new Date(a.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+                                                    const be = new Date(b.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+
+                                                    return (ae || 0) - (be || 0);
+                                                })
                                             .map((booking) => {
                                                 const statusKey =
                                                     booking.status?.toLowerCase() ||
@@ -741,7 +750,7 @@ export default function Bookings() {
                                                 const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
-                                                const parsedDate = parseAsLocal(
+                                                const parsedDate = getPTDate(
                                                     booking.start_datetime,
                                                 );
                                                 const rowIso = parsedDate
@@ -928,7 +937,7 @@ export default function Bookings() {
                                 Bookings for{' '}
                                 {selectedDay &&
                                     format(
-                                        parseAsLocal(selectedDay.date)!,
+                                        new Date(selectedDay.date + 'T12:00:00'),
                                         'PPPP',
                                     )}
                             </DialogTitle>

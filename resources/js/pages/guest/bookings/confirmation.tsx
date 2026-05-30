@@ -12,6 +12,7 @@ interface BookingData {
     status: string;
     client_first_name: string;
     client_last_name: string;
+    hotel_name?: string;
     address_line1: string;
     address_city: string;
     address_state: string;
@@ -95,10 +96,15 @@ export default function GuestBookingConfirmation() {
                                 Location
                             </span>
                             <span className="text-right font-medium">
-                                {booking.address_line1}
-                                <br />
-                                {booking.address_city}, {booking.address_state}{' '}
-                                {booking.address_zip}
+                                {booking.hotel_name ? (
+                                    booking.hotel_name
+                                ) : (
+                                    <>
+                                        {booking.address_line1}<br />
+                                        {booking.address_city}, {booking.address_state}{' '}
+                                        {booking.address_zip}
+                                    </>
+                                )}
                             </span>
                         </div>
                     </div>

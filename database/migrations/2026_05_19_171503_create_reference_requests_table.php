@@ -17,8 +17,15 @@ return new class extends Migration
             $table->string('relationship')->nullable();
             $table->string('years_known')->nullable();
             $table->boolean('is_sponsor')->default(false);
-            $table->unsignedTinyInteger('rating')->nullable();
-            $table->text('feedback')->nullable();
+            $table->unsignedTinyInteger('rating_reliability')->nullable();
+            $table->unsignedTinyInteger('rating_trustworthiness')->nullable();
+            $table->unsignedTinyInteger('rating_maturity')->nullable();
+            $table->unsignedTinyInteger('rating_communication')->nullable();
+            $table->unsignedTinyInteger('rating_warmth')->nullable();
+            $table->unsignedTinyInteger('rating_overall_recommendation')->nullable();
+            $table->text('strengths')->nullable();
+            $table->text('concerns')->nullable();
+            $table->text('additional_comments')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
         });

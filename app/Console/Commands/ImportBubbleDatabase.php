@@ -1376,6 +1376,17 @@ class ImportBubbleDatabase extends Command
         $geo = $source['street_address_geographic_address'] ?? [];
         $components = $geo['components'] ?? [];
 
+        $negations = ['', 'no', 'none', 'na', 'other'];
+        $hotelNameText = $source['hotel_name_text'] ?? null;
+        $bubbleSlug = $source['address_is_hotel__option_list_of_hotels'] ?? null;
+
+        $resolvedHotelName = null;
+        if (is_string($hotelNameText) && ! in_array(strtolower($hotelNameText), $negations, true)) {
+            $resolvedHotelName = $hotelNameText;
+        } elseif (is_string($bubbleSlug) && ! in_array(strtolower($bubbleSlug), $negations, true)) {
+            $resolvedHotelName = str_replace('_', ' ', $bubbleSlug);
+        }
+
         $bookingData = [
             'bubble_id' => $externalId,
             'client_id' => $client?->id,
@@ -1404,7 +1415,8 @@ class ImportBubbleDatabase extends Command
             'reimbursement' => $reimbursement = $source['check_out_reimbursement_number'] ?? 0,
             'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
             'hotel_fee' => $source['job_hotel_booking_fee_number'] ?? 0,
-            'hotel_id' => $this->findHotelId($source['hotel_name_text'] ?? null, $source['address_is_hotel__option_list_of_hotels'] ?? null),
+            'hotel_id' => $this->findHotelId($hotelNameText, $bubbleSlug),
+            'hotel_name' => $resolvedHotelName,
             'client_first_name' => $this->formatName($source['client_first_name1_text'] ?? null),
             'client_last_name' => $this->formatName($source['client_last_name1_text'] ?? null),
             'client_email' => $clientEmail,
@@ -1471,6 +1483,12 @@ class ImportBubbleDatabase extends Command
             );
             $bookingData['booking_group_id'] = $group->id;
             $bookingData['client_id'] = $group->client_id;
+        }
+
+        foreach ($bookingData as $k => $v) {
+            if (is_array($v)) {
+                $bookingData[$k] = json_encode($v);
+            }
         }
 
         Booking::withoutEvents(function () use ($externalId, $bookingData, $caregiver, $status) {

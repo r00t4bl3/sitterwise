@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('caregiver_educations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('caregiver_id')->constrained()->onDelete('cascade');
-            $table->enum('education_type', ['high_school', 'college']);
+            $table->string('education_type');
             $table->string('school_name')->nullable();
             $table->integer('graduation_year')->nullable();
+            $table->string('degree')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

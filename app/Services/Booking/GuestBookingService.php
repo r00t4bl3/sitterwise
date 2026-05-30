@@ -110,6 +110,7 @@ class GuestBookingService
             'address_state' => 'required|string|max:100',
             'address_zip' => 'required|string|max:20',
             'hotel_id' => 'nullable|exists:hotels,id',
+            'hotel_name' => 'nullable|string|max:255',
             'rental_platform' => 'nullable|string|max:255',
             'caregiver_notes' => 'nullable|string',
             'notes_to_sitterwise' => 'nullable|string',
@@ -202,7 +203,7 @@ class GuestBookingService
             'address_city' => $pendingData['address_city'],
             'address_state' => $pendingData['address_state'],
             'address_zip' => $pendingData['address_zip'],
-            'hotel_name' => $pendingData['hotel_id'] ?? null,
+            'hotel_name' => $pendingData['hotel_name'] ?? null,
         ];
     }
 
@@ -232,6 +233,7 @@ class GuestBookingService
                 'address_state' => $pendingData['address_state'],
                 'address_zip' => $pendingData['address_zip'],
                 'hotel_id' => $pendingData['hotel_id'] ?? null,
+                'hotel_name' => $pendingData['hotel_name'] ?? null,
                 'rental_platform' => $pendingData['rental_platform'] ?? null,
                 'caregiver_notes' => $pendingData['caregiver_notes'] ?? null,
                 'notes_to_sitterwise' => $pendingData['notes_to_sitterwise'] ?? null,

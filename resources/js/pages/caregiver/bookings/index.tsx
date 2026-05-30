@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -107,19 +108,6 @@ export default function CaregiverBookings() {
         };
     }, [bookings.data]);
 
-    const formatDateTime = (dateStr: string) => {
-        const date = new Date(dateStr);
-
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
     const getStatusBadge = (booking: Booking) => {
         const secondsLeft = countdowns[booking.id] ?? 0;
 
@@ -210,11 +198,11 @@ export default function CaregiverBookings() {
                                         <div className="flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
                                             <span className="text-sm text-muted-foreground">
-                                                {formatDateTime(
+                                                {formatDisplayDateTimeInPT(
                                                     booking.start_datetime,
                                                 )}{' '}
                                                 -{' '}
-                                                {formatDateTime(
+                                                {formatDisplayDateTimeInPT(
                                                     booking.end_datetime,
                                                 )}
                                             </span>
@@ -225,7 +213,9 @@ export default function CaregiverBookings() {
                                                 Notified{' '}
                                                 {new Date(
                                                     booking.notified_at,
-                                                ).toLocaleDateString()}
+                                                ).toLocaleDateString('en-US', {
+                                                    timeZone: 'America/Los_Angeles',
+                                                })}
                                             </span>
                                         </div>
                                     </div>

@@ -128,7 +128,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 'address_state' => $booking->address_state,
                 'address_zip' => $booking->address_zip,
                 'hotel_id' => $booking->hotel_id,
-                'hotel_name' => $booking->hotel?->name,
+                'hotel_name' => $booking->hotel_name ?? $booking->hotel?->name,
                 'location_type' => $booking->location_type,
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,

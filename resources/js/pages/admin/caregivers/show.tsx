@@ -49,7 +49,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAgeFromDate } from '@/lib/age';
-import { formatDisplayDateTimeInPT, formatShortDisplayDate } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT, formatDisplayDateShortInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
@@ -715,7 +715,7 @@ next.add(ref.id);
                                                         </div>
                                                         <span className="text-sm font-medium text-foreground">{r.rating.toFixed(1)}/5</span>
                                                     </div>
-                                                    <span className="text-xs text-muted-foreground">{formatShortDisplayDate(r.created_at)}</span>
+                                                    <span className="text-xs text-muted-foreground">{formatDisplayDateShortInPT(r.created_at)}</span>
                                                 </div>
                                                 {r.comment && <p className="mt-2 text-sm text-foreground italic">"{r.comment}"</p>}
                                                 <div className="mt-2 flex gap-3 text-xs text-muted-foreground">

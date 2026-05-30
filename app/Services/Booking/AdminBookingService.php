@@ -429,7 +429,7 @@ class AdminBookingService implements BookingServiceInterface
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
                 'hotel_id' => $booking->hotel_id,
-                'hotel_name' => $booking->hotel?->name,
+                'hotel_name' => $booking->hotel_name ?? $booking->hotel?->name,
                 'location_type' => $booking->location_type,
                 'charge_to_client' => $booking->charge_to_client,
                 'paid_to_caregiver' => $booking->paid_to_caregiver,

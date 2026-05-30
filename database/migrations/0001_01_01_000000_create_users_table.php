@@ -15,8 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->enum('role', ['caregiver', 'client', 'admin', 'super_admin'])->default('client');
+            $table->string('profile_photo_path')->nullable();
+            $table->string('profile_photo_url')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('bubble_id')->nullable()->index();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

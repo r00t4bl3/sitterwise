@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('caregivers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
-            $table->foreignId('status_id')->constrained('caregiver_statuses');
+            $table->string('status')->default('applied');
+            $table->string('status_token', 64)->nullable()->unique();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('slug')->unique();
@@ -34,6 +35,8 @@ return new class extends Migration
             $table->string('education_level')->nullable();
             $table->json('languages')->nullable();
             $table->json('metadata')->nullable();
+            $table->string('bubble_id')->nullable()->index();
+            $table->boolean('sms_opted_out')->default(false);
 
             $table->softDeletes();
             $table->timestamps();

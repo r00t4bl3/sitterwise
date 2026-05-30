@@ -260,7 +260,7 @@ export default function BookingDetail({
                                     </div>
                                 )}
 
-                                {booking.hotel_id !== null && (
+                                {booking.hotel_name && (
                                     <div className="flex items-center gap-2">
                                         <Building className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm text-muted-foreground">

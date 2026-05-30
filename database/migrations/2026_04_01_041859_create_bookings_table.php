@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('caregiver_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('availability_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('hotel_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('hotel_name', 255)->nullable();
             $table->foreignId('address_id')->nullable()->constrained('client_addresses')->nullOnDelete();
             $table->foreignId('pricing_rule_id')->nullable()->nullOnDelete();
             $table->string('address_line1')->nullable();
@@ -71,6 +72,11 @@ return new class extends Migration
             $table->integer('charge_attempt_count')->default(0);
             $table->timestamp('last_charge_attempt_at')->nullable();
             $table->boolean('requires_payment')->default(true);
+            $table->string('bubble_id')->nullable()->index();
+            $table->text('children_notes')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->foreignId('cancelled_by_id')->nullable()->constrained('users')->onDelete('set null');
             $table->softDeletes();
             $table->timestamps();
             $table->comment('Bookings table to store all booking information, which is true at the time of booking. This allows us to keep a historical record of bookings even if related data changes');

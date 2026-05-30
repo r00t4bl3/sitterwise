@@ -36,7 +36,6 @@ import {
     formatDisplayDateInPT,
     formatDisplayDateTimeInPT,
     formatDisplayTimeInPT,
-    parseAsLocal,
     autoSetEndDateTime,
 } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -149,6 +148,19 @@ function formatDateTimeLocal(date: Date): string {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function parsePT(value: string): Date {
+    const date = new Date(value);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: 'numeric', minute: 'numeric', second: 'numeric',
+        hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? '0', 10);
+    return new Date(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+}
+
 export default function CaregiverJobsIndex() {
     const { jobs, booking_statuses, service_types, location_types, filters } =
         usePage<Props>().props;
@@ -204,8 +216,8 @@ export default function CaregiverJobsIndex() {
 
         if (statusKey === 'confirmed' && start_datetime && end_datetime) {
             const now = new Date();
-            const start = parseAsLocal(start_datetime) as Date;
-            const end = parseAsLocal(end_datetime) as Date;
+            const start = new Date(start_datetime);
+            const end = new Date(end_datetime);
 
             if (now >= end) {
                 return (
@@ -280,8 +292,8 @@ return;
     const openCheckoutSheet = (job: Booking) => {
         setSelectedJob(job);
 
-        const start = parseAsLocal(job.start_datetime) as Date;
-        const end = parseAsLocal(job.end_datetime) as Date;
+        const start = parsePT(job.start_datetime);
+        const end = parsePT(job.end_datetime);
         const hours = calculateTotalHours(job.start_datetime, job.end_datetime);
 
         checkoutForm.setData({
@@ -752,12 +764,14 @@ return;
                                                     month: 'short',
                                                     day: 'numeric',
                                                     year: 'numeric',
+                                                    timeZone: 'America/Los_Angeles',
                                                 };
                                             const timeOptions: Intl.DateTimeFormatOptions =
                                                 {
                                                     hour: 'numeric',
                                                     minute: '2-digit',
                                                     hour12: true,
+                                                    timeZone: 'America/Los_Angeles',
                                                 };
 
                                             if (isSameDay) {

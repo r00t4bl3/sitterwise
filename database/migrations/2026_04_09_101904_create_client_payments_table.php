@@ -26,6 +26,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->string('error_code')->nullable();
             $table->text('error_message')->nullable();
+            $table->string('bubble_id')->nullable()->index();
             $table->timestamps();
 
             $table->index('client_id');

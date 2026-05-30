@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('ratable_type', 255);
             $table->decimal('rating', 3, 2);
             $table->text('comment')->nullable();
+            $table->string('bubble_id')->nullable()->index();
             $table->timestamps();
             $table->softDeletes();
 

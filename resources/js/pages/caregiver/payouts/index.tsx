@@ -18,7 +18,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import AppLayout from '@/layouts/app-layout';
-import { formatPointInTime } from '@/lib/datetime';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -388,7 +388,7 @@ export default function CaregiverPayoutsIndex() {
                                             className="border-b border-border transition hover:bg-blush"
                                         >
                                             <td className="px-4 py-3 text-sm text-foreground">
-                                                {formatPointInTime(
+                                                {formatDisplayDateTimeInPT(
                                                     payout.payout_date ||
                                                         payout.created_at,
                                                 )}

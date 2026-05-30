@@ -3,7 +3,6 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { parseAsLocal } from "@/lib/datetime"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -32,16 +31,30 @@ export function DatePicker({
   toYear,
   disabled,
 }: DatePickerProps) {
+  const parsePT = React.useCallback((dateStr: string | null | undefined): Date | null => {
+    if (!dateStr) return null
+    const s = dateStr.replace(/\.(\d{3})\d*Z$/, '.$1Z')
+    const d = new Date(s)
+    if (isNaN(d.getTime())) return null
+    const p = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d)
+    const g = (t: string) => parseInt(p.find(x => x.type === t)!.value, 10)
+    return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'))
+  }, [])
+
   const startMonth = fromYear ? new Date(fromYear, 0) : undefined
   const endMonth = toYear ? new Date(toYear, 11) : undefined
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? parseAsLocal(value) ?? undefined : undefined
+    value ? parsePT(value) ?? undefined : undefined
   )
   const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (value) {
-      setDate(parseAsLocal(value) ?? undefined)
+      setDate(parsePT(value) ?? undefined)
     }
   }, [value])
 

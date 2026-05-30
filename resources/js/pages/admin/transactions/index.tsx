@@ -1,5 +1,4 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
-import { format } from 'date-fns';
 import {
     ChevronLeft,
     ChevronRight,
@@ -229,13 +228,13 @@ export default function TransactionsIndex() {
 
         // Two-way: update checkout_at based on start_datetime + hours
         if (selectedBooking.start_datetime && hours > 0) {
-            const startDate = parseAsLocal(selectedBooking.start_datetime);
+            const startDate = new Date(selectedBooking.start_datetime.replace(/\.\d+Z$/, 'Z'));
 
-            if (startDate) {
+            if (!isNaN(startDate.getTime())) {
                 const newCheckout = new Date(
                     startDate.getTime() + hours * 60 * 60 * 1000,
                 );
-                const checkoutStr = format(newCheckout, "yyyy-MM-dd'T'HH:mm");
+                const checkoutStr = newCheckout.toISOString().slice(0, 16);
                 setLocalValues((prev) => ({
                     ...prev,
                     checkout_at: checkoutStr,
@@ -249,6 +248,12 @@ export default function TransactionsIndex() {
         }
     };
 
+    const parseFromUtc = (str: string): Date | null => {
+        const d = new Date(str.endsWith('Z') ? str.replace(/\.\d+Z$/, 'Z') : str + 'Z');
+
+        return isNaN(d.getTime()) ? null : d;
+    };
+
     const handleCheckoutAtChange = (checkoutStr: string) => {
         if (!selectedBooking) {
             return;
@@ -258,22 +263,20 @@ export default function TransactionsIndex() {
         let validatedCheckout = checkoutStr;
 
         if (selectedBooking.start_datetime && checkoutStr) {
-            const startDate = parseAsLocal(selectedBooking.start_datetime);
-            const checkoutDate = parseAsLocal(checkoutStr);
+            const startDate = parseFromUtc(selectedBooking.start_datetime);
+            const checkoutDate = parseFromUtc(checkoutStr);
 
             if (startDate && checkoutDate) {
                 const diffMs = checkoutDate.getTime() - startDate.getTime();
                 const diffHours = diffMs / (1000 * 60 * 60);
 
                 if (diffHours < 4) {
-                    const startLocal = parseAsLocal(
-                        selectedBooking.start_datetime,
-                    );
-                    const minCheckout = startLocal
-                        ? new Date(startLocal.getTime() + 4 * 60 * 60 * 1000)
+                    const startFromUtc = parseFromUtc(selectedBooking.start_datetime);
+                    const minCheckout = startFromUtc
+                        ? new Date(startFromUtc.getTime() + 4 * 60 * 60 * 1000)
                         : null;
                     validatedCheckout = minCheckout
-                        ? format(minCheckout, "yyyy-MM-dd'T'HH:mm")
+                        ? minCheckout.toISOString().slice(0, 16)
                         : checkoutStr;
                 }
             }
@@ -286,8 +289,8 @@ export default function TransactionsIndex() {
 
         // Two-way: calculate hours from start_datetime to checkout_at
         if (selectedBooking.start_datetime && validatedCheckout) {
-            const startDate = parseAsLocal(selectedBooking.start_datetime);
-            const checkoutDate = parseAsLocal(validatedCheckout);
+            const startDate = parseFromUtc(selectedBooking.start_datetime);
+            const checkoutDate = parseFromUtc(validatedCheckout);
 
             if (startDate && checkoutDate) {
                 const diffMs = checkoutDate.getTime() - startDate.getTime();

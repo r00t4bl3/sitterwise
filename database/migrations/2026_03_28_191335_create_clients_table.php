@@ -28,6 +28,8 @@ return new class extends Migration
             $table->text('special_needs_notes')->nullable();
             $table->text('emergency_instructions')->nullable();
             $table->text('notes')->nullable();
+            $table->string('bubble_id')->nullable()->index();
+            $table->date('last_booking_date')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

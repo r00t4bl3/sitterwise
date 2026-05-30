@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('caregiver_payouts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('booking_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('caregiver_id')->constrained()->onDelete('cascade');
             $table->foreignId('caregiver_payout_method_id')->constrained('caregiver_payout_methods')->onDelete('cascade');
             $table->decimal('amount', 15, 2);
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->string('status')->default('pending'); // pending, paid, failed
             $table->string('provider_transfer_id')->unique()->nullable();
             $table->datetime('payout_date')->nullable();
+            $table->string('bubble_id')->nullable()->index();
             $table->timestamps();
 
             $table->index('caregiver_id');

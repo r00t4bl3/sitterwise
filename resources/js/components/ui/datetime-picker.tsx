@@ -3,7 +3,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon, Clock } from "lucide-react"
-import { parseAsLocal } from "@/lib/datetime"
+import { formatUtcStringFromPt } from "@/lib/datetime"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -30,16 +30,30 @@ export function DateTimePicker({
     error,
     startTime,
     minDate}: DateTimePickerProps) {
+    const parsePT = React.useCallback((dateStr: string | null | undefined): Date | null => {
+        if (!dateStr) return null
+        const s = dateStr.replace(/\.(\d{3})\d*Z$/, '.$1Z')
+        const d = new Date(s)
+        if (isNaN(d.getTime())) return null
+        const p = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Los_Angeles',
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hour12: false,
+        }).formatToParts(d)
+        const g = (t: string) => parseInt(p.find(x => x.type === t)!.value, 10)
+        return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'))
+    }, [])
+
     const [date, setDate] = React.useState<Date | undefined>(() => {
-        const parsed = value ? parseAsLocal(value) : null
+        const parsed = value ? parsePT(value) : null
         return parsed && !isNaN(parsed.getTime()) ? parsed : undefined
     })
     const [time, setTime] = React.useState(() => {
-        const parsed = value ? parseAsLocal(value) : null
+        const parsed = value ? parsePT(value) : null
         return parsed && !isNaN(parsed.getTime()) ? format(parsed, "HH:mm") : "09:00"
     })
 
-    const startDate = startTime ? parseAsLocal(startTime) : null
+    const startDate = startTime ? parsePT(startTime) : null
     const minDateConstraint = startDate ? { before: startDate } : minDate ? { before: minDate } : undefined
 
     const MIN_DURATION_MS = 4 * 60 * 60 * 1000
@@ -77,7 +91,7 @@ export function DateTimePicker({
 
     React.useEffect(() => {
         if (value) {
-            const d = parseAsLocal(value)
+            const d = parsePT(value)
             if (d && !isNaN(d.getTime())) {
                 setDate(d)
                 setTime(format(d, "HH:mm"))
@@ -89,7 +103,7 @@ export function DateTimePicker({
     React.useEffect(() => {
         if (!startDate || isNaN(startDate.getTime()) || !value || !onChange) return
 
-        const current = parseAsLocal(value)
+        const current = parsePT(value)
         if (!current || isNaN(current.getTime())) return
 
         const diffMs = current.getTime() - startDate.getTime()
@@ -97,10 +111,9 @@ export function DateTimePicker({
 
         if (diffHours < 4) {
             const minDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000)
-            const corrected = format(minDate, "yyyy-MM-dd'T'HH:mm")
             setDate(minDate)
             setTime(format(minDate, "HH:mm"))
-            onChange(corrected)
+            onChange(formatUtcStringFromPt(minDate))
         }
     }, [value, startTime])
 
@@ -111,7 +124,7 @@ export function DateTimePicker({
             const minutes = parseTimeMinutes(time)
             const newDate = new Date(selectedDate)
             newDate.setHours(hours24, minutes, 0, 0)
-            onChange(format(newDate, "yyyy-MM-dd'T'HH:mm"))
+            onChange(formatUtcStringFromPt(newDate))
         }
         setOpen(false)
     }
@@ -173,7 +186,7 @@ export function DateTimePicker({
                     const minutes = parseTimeMinutes(newTime);
                     const newDate = new Date(date);
                     newDate.setHours(hours24, minutes, 0, 0);
-                    onChange(format(newDate, "yyyy-MM-dd'T'HH:mm"));
+                    onChange(formatUtcStringFromPt(newDate));
                 }
             }}>
                 <SelectTrigger

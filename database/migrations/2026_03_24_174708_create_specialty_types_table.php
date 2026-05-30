@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);
+            $table->string('color_bg', 7)->nullable();
+            $table->string('color_border', 7)->nullable();
+            $table->string('color_text', 7)->nullable();
             $table->timestamps();
         });
     }

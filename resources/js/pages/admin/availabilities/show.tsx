@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDate } from '@/lib/datetime';
+import { formatDisplayDateInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 interface Status {
@@ -226,13 +226,13 @@ export default function ManageAvailability() {
                         <SheetHeader>
                             <SheetTitle>
                                 {selectedDate
-                                    ? formatDisplayDate(selectedDate)
+                                    ? formatDisplayDateInPT(selectedDate)
                                     : 'Availability'}
                             </SheetTitle>
                             <SheetDescription>
                                 Manage availability for{' '}
                                 {selectedDate
-                                    ? formatDisplayDate(selectedDate)
+                                    ? formatDisplayDateInPT(selectedDate)
                                     : 'the selected date'}
                             </SheetDescription>
                         </SheetHeader>
@@ -323,9 +323,9 @@ export default function ManageAvailability() {
                                                         delete the availability
                                                         for{' '}
                                                         {selectedDate
-                                                            ? formatDisplayDate(
-                                                                  selectedDate,
-                                                              )
+? formatDisplayDateInPT(
+                                        selectedDate,
+                                    )
                                                             : 'this date'}
                                                         ? This action cannot be
                                                         undone.

@@ -194,6 +194,8 @@ export function PersonalInfoSection({
 
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
 
+    const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
+
     const notifyForm = useForm({
         caregiver_ids: [] as number[],
     });
@@ -896,54 +898,90 @@ export function PersonalInfoSection({
                                 Hotel
                             </Label>
                             <div className="mt-1">
-                                <Autocomplete
-                                    value={form.data.hotel_id}
-                                    onChange={(id) => {
-                                        form.setData('hotel_id', id);
-                                        const hotel = hotels.find(
-                                            (h) => h.id === id,
-                                        );
+                                {!showUnlistedHotel ? (
+                                    <>
+                                        <Autocomplete
+                                            value={form.data.hotel_id}
+                                            onChange={(id) => {
+                                                form.setData('hotel_id', id);
+                                                const hotel = hotels.find(
+                                                    (h) => h.id === id,
+                                                );
 
-                                        if (hotel) {
-                                            form.setData(
-                                                'address_line1',
-                                                hotel.line1 || '',
-                                            );
-                                            form.setData(
-                                                'address_line2',
-                                                hotel.line2 || '',
-                                            );
-                                            form.setData(
-                                                'address_city',
-                                                hotel.city || '',
-                                            );
-                                            form.setData(
-                                                'address_state',
-                                                hotel.state || '',
-                                            );
-                                            form.setData(
-                                                'address_zip',
-                                                hotel.zip || '',
-                                            );
-                                            setAddressValue(
-                                                `${hotel.line1 || ''}${
-                                                    hotel.line2
-                                                        ? `, ${hotel.line2}`
-                                                        : ''
-                                                }, ${hotel.city || ''}, ${hotel.state || ''} ${hotel.zip || ''}`.trim(),
-                                            );
-                                            setIsAddressLocked(true);
-                                        }
-                                    }}
-                                    suggestions={hotelSuggestions}
-                                    onSearch={handleHotelSearch}
-                                    placeholder="Search hotel..."
-                                    displayValue={selectedHotelName}
-                                />
+                                                if (hotel) {
+                                                    form.setData('hotel_name', hotel.name);
+                                                    form.setData(
+                                                        'address_line1',
+                                                        hotel.line1 || '',
+                                                    );
+                                                    form.setData(
+                                                        'address_line2',
+                                                        hotel.line2 || '',
+                                                    );
+                                                    form.setData(
+                                                        'address_city',
+                                                        hotel.city || '',
+                                                    );
+                                                    form.setData(
+                                                        'address_state',
+                                                        hotel.state || '',
+                                                    );
+                                                    form.setData(
+                                                        'address_zip',
+                                                        hotel.zip || '',
+                                                    );
+                                                    setAddressValue(
+                                                        `${hotel.line1 || ''}${
+                                                            hotel.line2
+                                                                ? `, ${hotel.line2}`
+                                                                : ''
+                                                        }, ${hotel.city || ''}, ${hotel.state || ''} ${hotel.zip || ''}`.trim(),
+                                                    );
+                                                    setIsAddressLocked(true);
+                                                }
+                                            }}
+                                            suggestions={hotelSuggestions}
+                                            onSearch={handleHotelSearch}
+                                            placeholder="Search hotel..."
+                                            displayValue={selectedHotelName}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowUnlistedHotel(true);
+                                                form.setData('hotel_id', null);
+                                                form.setData('hotel_name', '');
+                                            }}
+                                            className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                        >
+                                            My hotel is not listed
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Input
+                                            value={form.data.hotel_name || ''}
+                                            onChange={(e) =>
+                                                form.setData('hotel_name', e.target.value)
+                                            }
+                                            placeholder="Enter hotel name"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowUnlistedHotel(false);
+                                                form.setData('hotel_name', '');
+                                            }}
+                                            className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                        >
+                                            Back to hotel list
+                                        </button>
+                                    </>
+                                )}
                             </div>
-                            {form.errors.hotel_id && (
+                            {(form.errors.hotel_id || form.errors.hotel_name) && (
                                 <p className="mt-1 text-sm text-destructive">
-                                    {form.errors.hotel_id}
+                                    {form.errors.hotel_id || form.errors.hotel_name}
                                 </p>
                             )}
                         </div>

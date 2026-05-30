@@ -216,6 +216,7 @@ class GuestBookingController extends Controller
                 'status' => $booking->status,
                 'client_first_name' => $booking->client_first_name,
                 'client_last_name' => $booking->client_last_name,
+                'hotel_name' => $booking->hotel_name ?? $booking->hotel?->name,
                 'address_line1' => $booking->address_line1,
                 'address_city' => $booking->address_city,
                 'address_state' => $booking->address_state,
