@@ -435,13 +435,71 @@ See completed section above. Self-service pause/resume + admin resume + 3-tier c
 See completed section above. Back-out/excuse/no-show/late-arrival actions + admin notification + 11 tests.
 
 ### Low #4 — Internal rating system (§11.5–11.8)
-Communication score, reliability score, composite.
 
-**What to do:**
-- Communication: rating + notes + last updated
-- Reliability: auto-calculated (5.0 start, -0.5/back-out, +0.1/10 jobs, cap 5.0), admin override
-- Composite: 20% interview + 30% communication + 50% reliability, configurable weights
-- `caregiver_internal_ratings` table, `caregiver_rating_history` table
+**Status:** Planned — approved design, awaiting implementation.
+
+#### Current state
+
+| What | Detail |
+|------|--------|
+| `caregivers.admin_rating` | `decimal(3,2)`, 112 imported caregivers at 5.00 |
+| `caregiver_interviews.composite` | `tinyint(0-36)` — sum of 9 interview dimensions (1-4 each) |
+| `caregiver_assignments.resolution` | 14,387 `completed`, 710 `cancelled_by_sitterwise` — no back_out/no_show data yet |
+
+#### Planned implementation
+
+**One new table** — no redundant events/audit table. `caregiver_assignments` already stores the source data for reliability calculation.
+
+**Migration: `create_caregiver_internal_ratings_table`**
+
+One row per caregiver (unique on `caregiver_id`):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `bigint unsigned` PK | |
+| `caregiver_id` | `bigint unsigned` FK → caregivers | **unique** |
+| `communication_score` | `decimal(3,2)` nullable | Manual admin rating 1-5 |
+| `communication_notes` | `text` nullable | Admin notes on communication |
+| `communication_updated_at` | `timestamp` nullable | Tracks last edit |
+| `reliability_score` | `decimal(3,2)` nullable | **Cached** — auto-calculated from assignments |
+| `reliability_override` | `decimal(3,2)` nullable | Admin override — when set, used instead of auto |
+| `reliability_cached_at` | `timestamp` nullable | When reliability was last recalculated |
+| `composite_score` | `decimal(3,2)` nullable | Weighted formula result |
+| `created_at` / `updated_at` | timestamps | |
+
+**Reliability formula:**
+```php
+$backs = $assignments->whereIn('resolution', ['backed_out', 'no_show'])->count();
+$completed = $assignments->where('resolution', 'completed')->count();
+$score = 5.0 - ($backs * 0.5) + (floor($completed / 10) * 0.1);
+$reliability = round(max(0, min(5.0, $score)), 2);
+```
+
+- `cancelled_by_sitterwise` does NOT count as a penalty
+- `reliability_override IS NOT NULL` → use override instead of auto
+
+**Recalculation triggers:**
+- Artisan command `app:recalculate-reliability {--caregiver=}`
+- Hook in `AssignmentController` — after `backOut()`, `excuse()`, `logNoShow()`
+- Scheduled daily via `routes/console.php`
+
+**Composite formula (0–100):**
+
+| Component | Source | Weight | Calculation |
+|-----------|--------|--------|-------------|
+| Interview | `caregiver_interviews.composite` (0-36) | 20% | `(composite / 36) * 20` |
+| Communication | `communication_score` (1-5) | 30% | `(score / 5) * 30` |
+| Reliability | `reliability_score` or override (0-5) | 50% | `(score / 5) * 50` |
+
+If a component is null, its weight is excluded and remaining weights are re-proportioned.
+
+**Seed existing data:**
+```sql
+INSERT INTO caregiver_internal_ratings (caregiver_id, communication_score, communication_updated_at)
+SELECT id, admin_rating, updated_at FROM caregivers WHERE admin_rating IS NOT NULL;
+```
+
+The `admin_rating` column on `caregivers` stays for backward compatibility and will be removed once the frontend fully migrates.
 
 **Wireframe:** Not shown — backend system feeding profile display.
 
