@@ -75,19 +75,19 @@ return;
         <>
             <Head title="Application Status - Sitterwise" />
 
-            <div className="flex min-h-screen items-start justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+            <div className="flex min-h-screen items-start justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
                 <div className="w-full max-w-2xl space-y-8">
                     <div className="text-center">
-                        <h1 className="text-3xl font-extrabold text-gray-900">
+                        <h1 className="text-3xl font-extrabold text-foreground">
                             Application Status
                         </h1>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-muted-foreground">
                             Hi {caregiver_name}, here's where things stand.
                         </p>
                     </div>
 
-                    <div className="rounded-lg bg-white p-6 shadow">
-                        <h2 className="text-lg font-semibold text-gray-900">
+                    <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                        <h2 className="text-lg font-semibold text-foreground">
                             Application Status
                         </h2>
                         <div className="mt-3">
@@ -104,11 +104,11 @@ return;
                     </div>
 
                     {checklist_items && checklist_items.length > 0 && (
-                        <div className="rounded-lg bg-white p-6 shadow">
-                            <h2 className="text-lg font-semibold text-gray-900">
+                        <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                            <h2 className="text-lg font-semibold text-foreground">
                                 Onboarding Checklist
                             </h2>
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-muted-foreground">
                                 Your admin will guide you through each item.
                             </p>
                             <div className="mt-4 space-y-3">
@@ -121,24 +121,24 @@ return;
                                             className={`flex items-start gap-4 rounded-lg border p-4 ${
                                                 isCompleted
                                                     ? 'border-green-200 bg-green-50'
-                                                    : 'border-gray-200 bg-white'
+                                                    : 'border-border bg-card'
                                             }`}
                                         >
                                             <div
                                                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                                                     isCompleted
                                                         ? 'border-green-500 bg-green-500 text-white'
-                                                        : 'border-gray-300 bg-gray-100 text-transparent'
+                                                        : 'border-muted bg-muted text-transparent'
                                                 }`}
                                             >
                                                 {isCompleted ? '✓' : ''}
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-semibold text-gray-900">
+                                                <p className="text-sm font-semibold text-foreground">
                                                     {item.label}
                                                 </p>
                                                 {item.description && (
-                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                    <p className="mt-0.5 text-xs text-muted-foreground">
                                                         {item.description}
                                                     </p>
                                                 )}
@@ -152,20 +152,20 @@ return;
                                     );
                                 })}
                             </div>
-                            <div className="mt-4 border-t border-gray-200 pt-4">
-                                <p className="text-xs text-gray-400">
+                            <div className="mt-4 border-t border-border pt-4">
+                                <p className="text-xs text-muted-foreground">
                                     {checklist_items.filter((i) => i.completed).length}/{checklist_items.length} completed
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <div className="rounded-lg bg-white p-6 shadow">
+                    <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">
+                            <h2 className="text-lg font-semibold text-foreground">
                                 Reference Check
                             </h2>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-muted-foreground">
                                 {completedCount}/{totalCount} completed
                             </span>
                         </div>
@@ -177,13 +177,13 @@ return;
                                     className={`rounded-lg border p-4 ${
                                         ref.is_completed
                                             ? 'border-green-200 bg-green-50'
-                                            : 'border-gray-200 bg-white'
+                                            : 'border-border bg-card'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-sm text-gray-900">
+                                                <span className="font-semibold text-sm text-foreground">
                                                     {ref.reference_name}
                                                 </span>
                                                 {ref.is_sponsor && (
@@ -196,13 +196,13 @@ return;
                                                     className={
                                                         ref.is_completed
                                                             ? 'bg-green-100 text-green-700'
-                                                            : 'bg-gray-100 text-gray-600'
+                                                            : 'bg-muted text-muted-foreground'
                                                     }
                                                 >
                                                     {ref.is_completed ? 'Completed' : 'Pending'}
                                                 </Badge>
                                             </div>
-                                            <p className="mt-1 text-xs text-gray-500">
+                                            <p className="mt-1 text-xs text-muted-foreground">
                                                 {ref.reference_email}
                                                 {ref.relationship && ` · ${ref.relationship}`}
                                             </p>
@@ -220,7 +220,7 @@ return;
                                     </div>
 
                                     {replacing === ref.id && (
-                                        <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                                        <div className="mt-4 space-y-3 border-t border-border pt-4">
                                             <div>
                                                 <Label>
                                                     Name
@@ -280,11 +280,11 @@ return;
                         </div>
                     </div>
 
-                    <div className="rounded-lg bg-teal-50 border border-teal-200 p-4 text-sm text-[#1B3A5C] leading-relaxed">
+                    <div className="rounded-lg border border-border-teal bg-teal-bg p-4 text-sm text-foreground leading-relaxed">
                         <strong className="mb-1 block font-semibold">
                             Need help?
                         </strong>
-                        Reach out to <a href="mailto:hello@sitterwise.com" className="font-semibold text-[#F48A91]">hello@sitterwise.com</a> or text us at 619-663-4379 if anything's blocking you.
+                        Reach out to <a href="mailto:hello@sitterwise.com" className="font-semibold text-primary">hello@sitterwise.com</a> or text us at 619-663-4379 if anything's blocking you.
                     </div>
                 </div>
             </div>

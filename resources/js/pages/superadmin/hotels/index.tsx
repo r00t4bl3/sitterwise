@@ -183,7 +183,7 @@ export default function HotelsIndex() {
                 <div className="overflow-x-auto border border-border bg-card">
                     <table className="w-full min-w-[600px]">
                         <thead>
-                            <tr className="bg-foreground">
+                            <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Name
                                 </th>

@@ -1350,7 +1350,7 @@ handleToggleChecklistItem(item.id);
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => e.stopPropagation()}
-                                                                    className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground hover:bg-foreground hover:text-background"
+                                                                    className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground hover:bg-table-header hover:text-background"
                                                                 >
                                                                     ?
                                                                 </button>

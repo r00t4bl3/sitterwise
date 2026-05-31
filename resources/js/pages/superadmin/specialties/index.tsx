@@ -133,7 +133,7 @@ export default function SpecialtiesIndex() {
                 <div className="border border-border bg-card">
                     <table className="w-full">
                         <thead>
-                            <tr className="bg-foreground">
+                            <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Name
                                 </th>

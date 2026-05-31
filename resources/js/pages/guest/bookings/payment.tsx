@@ -99,44 +99,44 @@ export default function PaymentPage({
             <div className="mx-auto max-w-2xl">
                 <BookingProgress currentStep={2} />
 
-                <h1 className="mb-8 text-center text-3xl font-bold text-gray-900">
+                <h1 className="mb-8 text-center text-3xl font-bold text-foreground">
                     Complete Your Booking
                 </h1>
 
-                <div className="mb-6 rounded-lg bg-white p-6 shadow-md">
-                    <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                <div className="mb-6 rounded-lg bg-card p-6 shadow-xs border border-border">
+                    <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Booking Summary
                     </h2>
                     <dl className="space-y-3">
                         <div className="flex justify-between">
-                            <dt className="text-gray-600">Service</dt>
+                            <dt className="text-muted-foreground">Service</dt>
                             <dd className="font-medium">
                                 {serviceLabels[booking.service_type] ||
                                     booking.service_type}
                             </dd>
                         </div>
                         <div className="flex justify-between">
-                            <dt className="text-gray-600">Location</dt>
+                            <dt className="text-muted-foreground">Location</dt>
                             <dd className="font-medium">
                                 {locationLabels[booking.location_type] ||
                                     booking.location_type}
                             </dd>
                         </div>
                         <div className="flex justify-between">
-                            <dt className="text-gray-600">Date</dt>
+                            <dt className="text-muted-foreground">Date</dt>
                             <dd className="font-medium">
                                 {formatDisplayDateInPT(booking.start_datetime)}
                             </dd>
                         </div>
                         <div className="flex justify-between">
-                            <dt className="text-gray-600">Time</dt>
+                            <dt className="text-muted-foreground">Time</dt>
                             <dd className="font-medium">
                                 {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
                                 {formatDisplayTimeInPT(booking.end_datetime)}
                             </dd>
                         </div>
                         <div className="flex justify-between">
-                            <dt className="text-gray-600">Address</dt>
+                            <dt className="text-muted-foreground">Address</dt>
                             <dd className="text-right font-medium">
                                 {booking.address_line1}
                                 <br />
@@ -145,7 +145,7 @@ export default function PaymentPage({
                             </dd>
                         </div>
                         <div className="mt-3 flex justify-between border-t pt-3">
-                            <dt className="text-gray-600">Client</dt>
+                            <dt className="text-muted-foreground">Client</dt>
                             <dd className="font-medium">
                                 {booking.client_first_name}{' '}
                                 {booking.client_last_name}
@@ -160,11 +160,11 @@ export default function PaymentPage({
                     </div>
                 )}
 
-                <div className="rounded-lg bg-white p-6 shadow-md">
-                    <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                    <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Payment Details
                     </h2>
-                    <p className="mb-4 text-gray-600">
+                    <p className="mb-4 text-muted-foreground">
                         Please add your payment method to complete the booking.
                         Your card will be stored securely for future bookings.
                     </p>
@@ -172,7 +172,7 @@ export default function PaymentPage({
                     {loading && !clientSecret && (
                         <div className="py-8 text-center">
                             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
-                            <p className="mt-2 text-gray-600">
+                            <p className="mt-2 text-muted-foreground">
                                 Loading payment form...
                             </p>
                         </div>

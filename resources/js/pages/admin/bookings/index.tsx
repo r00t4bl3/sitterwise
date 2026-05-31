@@ -679,7 +679,7 @@ export default function Bookings() {
                         <div className="-mx-4 -mb-4 overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="bg-foreground">
+                                    <tr className="bg-table-header">
                                         <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
                                             Date
                                         </th>

@@ -31,6 +31,72 @@ Admin specialty/location/education/attribute sections now populate immediately o
 ### Wizard Steps 4 cleanup
 Removed `skills.*` fields (special_needs, swimming, driving, bilingual, other) from wizard — they overlapped with Step 7 qualifications. Validation rules and `defaultFormData` updated accordingly.
 
+### Low #1 — Admin caregiver profile tabs — ✅ Completed
+
+Tabbed profile layout in `resources/js/pages/admin/caregivers/show.tsx`:
+
+- 8 tabs: Summary, Application, References, Reviews, Internal Rating, Job History, Compliance, Notes
+- Summary is the default/leftmost tab (wireframe match)
+- Deferred props for Reviews and Job History (lazy-loaded)
+- Job History table with resolution badges, late-arrival flags, client links
+
+**Files:** `resources/js/pages/admin/caregivers/show.tsx`
+
+**Wireframe:** "Caregiver Assignments View" screen — profile header, 7 tabs, Job History table.
+
+### Low #2 — Self-service hold/resume + inactivity automation — ✅ Completed
+
+**Self-service pause (caregiver-facing):**
+- Pause form at `/settings/caregiver/pause` with optional `resume_by` date and `pause_reason`
+- One-tap resume on same screen, no admin required
+- Status transitions: Active ↔ On Hold (pause/resume)
+- `CaregiverPause` model + factory, `paused_at`/`resume_by`/`pause_reason`/`resumed_at` columns
+
+**Admin resume:**
+- `POST /admin/caregivers/{caregiver}/resume` route (admin middleware)
+- `CaregiverController@resumeCaregiver()` — sets status to Active, marks `resumed_at`
+- Pause info card in admin sidebar with Resume button
+- 3 tests: admin resume, no active pause error, non-admin 403
+
+**Inactivity automation (Artisan commands):**
+- `app:check-in-on-hold-caregivers` — 3-tier mail at 30/45/60d
+- `app:archive-long-term-inactive` — 166d warning, 180d archive to Inactive
+- `AdminCaregiverArchivedMail` queued to all admin + super_admin users on archive
+- `CaregiverOnHoldCheckinMail` (3 tiers: checkin, reminder, final)
+- `CaregiverArchiveWarningMail` at 166d
+
+**Tests:** 12 tests in `CaregiverPauseTest.php`
+
+**Wireframe:** Full design in "Pause Account" screen — hold card with form, callout explaining resume.
+
+### Low #3 — Caregiver cancellation flow — ✅ Completed
+
+**Backend — `AssignmentController` with 4 actions:**
+- `backOut()` — caregiver back-out with required reason
+- `excuse()` — marks excused with optional note
+- `logNoShow()` — no-show resolution
+- `logLateArrival()` — late arrival flag (always available, even after final resolution)
+- Booking status stays `Confirmed` — resolution on assignment, not booking
+- `app:check-late-arrivals` daily at 11:00 flags 3+ late arrivals in 60 days
+
+**Admin notification:** `AdminCaregiverBackedOutMail` (queueable Blade view) sent to all admins.
+
+**Frontend — caregiver jobs page:** Cancel Job button + cancellation Dialog (wireframe match).
+
+**Frontend — admin job history:** Resolution badges + Excuse/No-Show/Late dialogs.
+
+**Tests:** 11 tests in `CaregiverCancellationTest.php`
+
+**Wireframe:** "Cancellation Flow" screen — modal with job summary, warning, reason field.
+
+### Email footer standardization — ✅ Completed
+
+Standardized footer across all 17 email templates:
+- `This is an automated notification from Sitterwise.`
+- `Sitterwise — San Diego's most trusted childcare agency.`
+
+Each template had existing content preserved (reference-specific, booking-specific text) with missing lines appended. `reference-completed` had old copy replaced with standardized version.
+
 ## Caregiver Lifecycle Flow
 
 ```mermaid
@@ -359,38 +425,14 @@ Removed duplicated status data (badge colors, labels, terminal list) from fronte
 
 ## Low (future phases — add after core flow is solid)
 
-### Low #1 — Admin caregiver profile tabs (§16.2, wireframe)
-Tabbed profile layout: Application, References, Reviews, Internal Rating, Engagement (wireframe calls this Job History), Compliance, Notes.
+### Low #1 — Admin caregiver profile tabs (§16.2, wireframe) — ✅ Completed
+See completed section above. 8 tabs with deferred props for reviews/job history.
 
-**What to do:**
-- Tab components matching wireframe's 7-tab layout
-- Lazy-load tab content with deferred props for performance
-- Job History tab shows assignment-based table (wireframe "Assignments View")
+### Low #2 — Self-service hold/resume + inactivity automation (§14, wireframe) — ✅ Completed
+See completed section above. Self-service pause/resume + admin resume + 3-tier check-in + 180d archive.
 
-**Wireframe:** Full design in "Caregiver Assignments View" screen — profile header, 7 tabs, Job History table with resolution badges.
-
-### Low #2 — Self-service hold/resume + inactivity automation (§14, wireframe)
-Caregiver self-service pause with optional return date and reason. One-tap resume. Inactivity check-ins and archive.
-
-**What to do:**
-- Hold UI matching wireframe: date picker for return date, optional reason textarea, Cancel/Pause buttons
-- Resume: single-tap on same screen, no admin required
-- Artisan commands for 30/45/60d inactivity check-ins
-- 180d archive after 14-day warning
-
-**Wireframe:** Full design in "Pause Account" screen — hold card with form, callout explaining resume.
-
-### Low #3 — Caregiver cancellation flow (§9, wireframe)
-Modal with back-out warning, required reason, admin actions (excuse, reassign).
-
-**What to do:**
-- Backend: `caregiver_assignments` table with resolution states (Completed, Backed Out, Backed Out (Excused), Reassigned, No-Show), late_arrival_flag
-- Modal UI matching wireframe: job summary, warning text, required reason textarea, back/cancel buttons
-- Admin actions: Mark Excused (requires note), Log No-Show, Log Late Arrival
-- 3 late arrivals in 60 days auto-flags for admin review
-- Notification to admin on back-out
-
-**Wireframe:** Full design in "Cancellation Flow" screen — modal with job summary, warning, reason field, two actions. Also "Assignments View" table with resolution badges.
+### Low #3 — Caregiver cancellation flow (§9, wireframe) — ✅ Completed
+See completed section above. Back-out/excuse/no-show/late-arrival actions + admin notification + 11 tests.
 
 ### Low #4 — Internal rating system (§11.5–11.8)
 Communication score, reliability score, composite.

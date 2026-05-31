@@ -158,7 +158,7 @@ export default function ClientBookingsIndex() {
                                                 href={link.url || '#'}
                                                 className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
                                                     link.active
-                                                        ? 'bg-foreground text-white'
+                                                        ? 'bg-table-header text-white'
                                                         : 'border border-border text-muted-foreground hover:bg-accent'
                                                 } ${
                                                     !link.url

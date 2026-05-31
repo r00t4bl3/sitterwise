@@ -248,7 +248,7 @@ export default function BookingHistory() {
                 <div className="overflow-x-auto border border-border bg-card">
                     <table className="w-full min-w-[800px]">
                         <thead>
-                            <tr className="bg-foreground">
+                            <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Date
                                 </th>
@@ -371,7 +371,7 @@ export default function BookingHistory() {
                                         href={link.url || '#'}
                                         className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
                                             link.active
-                                                ? 'bg-foreground text-white'
+                                                ? 'bg-table-header text-white'
                                                 : 'border border-border text-muted-foreground hover:bg-accent'
                                         } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
                                     >

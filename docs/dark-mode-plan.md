@@ -282,10 +282,61 @@ Open each sidebar file and check that `--sidebar-*` variable names are used for 
 
 ---
 
+### Step 6: Add Pest Feature Test for `HandleAppearance` Middleware
+*Target File:* `tests/Feature/HandleAppearanceTest.php`
+
+This test verifies the middleware correctly reads the `appearance` cookie and shares it with the Blade view (which controls the `.dark` class injection and the inline script value).
+
+Create the file:
+```php
+<?php
+
+test('appearance middleware applies dark class and script when cookie is dark', function () {
+    $response = $this->withCookie('appearance', 'dark')->get('/login');
+
+    $response->assertSuccessful();
+    $response->assertSee('class="dark"', false);
+    $response->assertSee("appearance = 'dark'", false);
+});
+
+test('appearance middleware defaults to system when no cookie is set', function () {
+    $response = $this->get('/login');
+
+    $response->assertSuccessful();
+    $response->assertDontSee('class="dark"', false);
+    $response->assertSee("appearance = 'system'", false);
+});
+
+test('appearance middleware applies light mode when cookie is light', function () {
+    $response = $this->withCookie('appearance', 'light')->get('/login');
+
+    $response->assertSuccessful();
+    $response->assertDontSee('class="dark"', false);
+    $response->assertSee("appearance = 'light'", false);
+});
+```
+
+Run the test to confirm it passes:
+```bash
+php artisan test --compact --filter=HandleAppearance
+```
+
+---
+
 ## 3. How to Run, Test, and Verify
 
-To verify your changes are working perfectly:
+### Automated Tests
+After implementing, run all tests to ensure nothing is broken:
+```bash
+php artisan test --compact
+```
 
+Run just the appearance middleware test for quick feedback during development:
+```bash
+php artisan test --compact --filter=HandleAppearance
+```
+
+### Manual Verification
 1. **Run the Vite Development Server**:
    ```bash
    npm run dev
@@ -297,8 +348,14 @@ To verify your changes are working perfectly:
 3. **Verify the Theme Transition**:
    * Confirm that the `.dark` class has been added to the root `<html>` element in the Inspector.
    * Verify that all background areas transition to the deep navy color scheme, borders remain legible, and all text is readable.
-4. **Run Backend Tests**:
-   Ensure no controllers or page rendering endpoints are broken by the UI updates:
-   ```bash
-   php artisan test --compact
-   ```
+4. **Toggle Between Themes**:
+   * Switch between Light, Dark, and System modes.
+   * Verify the transition is smooth (no white flash).
+   * Refresh the page in each mode to confirm the anti-flicker (FOUC) mechanism works.
+5. **Check Specific Components**:
+   * Verify `.btn-primary` and `.btn-secondary` buttons look correct in both themes.
+   * Verify form inputs (`Input` component and `.form-input` class) are readable.
+   * Check that sidebar components render correctly with `--sidebar-*` variables.
+6. **Edge Cases**:
+   * Test without a cookie (first visit) — should default to System.
+   * Test with an invalid cookie value — should fall back gracefully.

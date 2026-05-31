@@ -26,7 +26,7 @@ export default function BookingProgress({
                                     s.step < currentStep &&
                                         'bg-logo-teal text-white',
                                     s.step > currentStep &&
-                                        'border border-gray-300 bg-white text-gray-400',
+                                        'border border-border bg-card text-muted-foreground',
                                 )}
                             >
                                 {s.step < currentStep ? (
@@ -51,8 +51,8 @@ export default function BookingProgress({
                                 className={cn(
                                     'whitespace-nowrap text-xs',
                                     s.step <= currentStep
-                                        ? 'font-medium text-navy'
-                                        : 'text-gray-400',
+                                        ? 'font-medium text-foreground'
+                                        : 'text-muted-foreground',
                                 )}
                             >
                                 {s.label}
@@ -64,7 +64,7 @@ export default function BookingProgress({
                                     'mx-4 mt-[-1.25rem] h-px w-16 sm:w-24',
                                     s.step < currentStep
                                         ? 'bg-logo-teal'
-                                        : 'bg-gray-300',
+                                        : 'bg-border',
                                 )}
                             />
                         )}
