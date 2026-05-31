@@ -30,8 +30,9 @@
         <p>Thank you for your patience as we complete the review process.</p>
     </div>
     <div class="footer">
+        <p>If you have any questions, please contact us at {{ config('mail.from.address', 'admin@sitterwise.io') }}.</p>
+        <p>This is an automated notification from Sitterwise.</p>
         <p>Sitterwise — San Diego's most trusted childcare agency.</p>
-        <p>Questions? Contact us at {{ config('mail.from.address', 'admin@sitterwise.io') }}.</p>
     </div>
 </body>
 </html>

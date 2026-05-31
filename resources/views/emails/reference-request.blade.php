@@ -31,6 +31,8 @@
     </div>
     <div class="footer">
         <p>This reference request was sent on behalf of Sitterwise. If you have any questions, please contact us at {{ config('mail.from.address', 'admin@sitterwise.io') }}.</p>
+        <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>
 </html>

@@ -212,10 +212,17 @@ interface Caregiver {
     reference_requests: ReferenceRequest[];
 }
 
+interface ActivePause {
+    paused_at: string;
+    resume_by: string | null;
+    pause_reason: string | null;
+}
+
 interface Props {
     [key: string]: unknown;
     caregiver: Caregiver;
     statuses: Status[];
+    activePause?: ActivePause | null;
     reviews?: Review[];
     jobHistory?: JobAssignment[];
 }
@@ -292,12 +299,13 @@ const TABS = [
 ] as const;
 
 export default function CaregiverShow() {
-    const { caregiver, statuses, reviews, jobHistory } = usePage<Props>().props;
+    const { caregiver, statuses, activePause, reviews, jobHistory } = usePage<Props>().props;
     const [activeTab, setActiveTab] = useState<string>('summary');
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
     const [isPasswordSheetOpen, setIsPasswordSheetOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
+    const [isResuming, setIsResuming] = useState(false);
 
     const adminRatingForm = useForm({ admin_rating: caregiver.admin_rating || 0 });
     const statusForm = useForm<{ status: string }>({ status: caregiver.status.value });
@@ -305,6 +313,13 @@ export default function CaregiverShow() {
         new_password: '',
         new_password_confirmation: '',
     });
+
+    const handleResume = () => {
+        setIsResuming(true);
+        statusForm.post(`/caregivers/${caregiver.id}/resume`, {
+            onFinish: () => setIsResuming(false),
+        });
+    };
 
     const handleAdminRatingUpdate = () => {
         adminRatingForm.put(`/caregivers/${caregiver.id}/admin-rating`, { preserveScroll: true });
@@ -874,6 +889,32 @@ next.add(ref.id);
 
                     {/* Sidebar */}
                     <div className="space-y-6">
+                        {activePause && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">On Hold</h2>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Paused since</span>
+                                        <span className="font-medium text-foreground">{activePause.paused_at}</span>
+                                    </div>
+                                    {activePause.resume_by && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Resume by</span>
+                                            <span className="font-medium text-foreground">{activePause.resume_by}</span>
+                                        </div>
+                                    )}
+                                    {activePause.pause_reason && (
+                                        <div>
+                                            <span className="text-muted-foreground">Reason</span>
+                                            <p className="mt-0.5 text-foreground">{activePause.pause_reason}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <Button onClick={handleResume} disabled={isResuming} className="mt-4 w-full">
+                                    {isResuming ? 'Resuming...' : 'Resume'}
+                                </Button>
+                            </div>
+                        )}
                         {caregiver.status.value !== 'applicant' && (
                             <div className="border border-border bg-card p-6">
                                 <div className="mb-4 flex items-center justify-between">

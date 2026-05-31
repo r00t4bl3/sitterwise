@@ -132,6 +132,11 @@ class CaregiverController extends Controller
         return Inertia::render('admin/caregivers/show', [
             'caregiver' => (new CaregiverResource($caregiver))->resolve(),
             'statuses' => $statuses,
+            'activePause' => $caregiver->activePause()->first() ? [
+                'paused_at' => $caregiver->activePause->paused_at?->format('Y-m-d'),
+                'resume_by' => $caregiver->activePause->resume_by?->format('Y-m-d'),
+                'pause_reason' => $caregiver->activePause->pause_reason,
+            ] : null,
             'reviews' => Inertia::defer(fn () => $caregiver->receivedRatings()
                 ->with(['rater', 'booking.client.user'])
                 ->orderBy('created_at', 'desc')
@@ -450,5 +455,20 @@ class CaregiverController extends Controller
         ]);
 
         return back()->with('success', 'Admin rating updated successfully');
+    }
+
+    public function resumeCaregiver(Caregiver $caregiver): RedirectResponse
+    {
+        $activePause = $caregiver->activePause;
+
+        if (! $activePause) {
+            return back()->with('error', 'This caregiver does not have an active pause.');
+        }
+
+        $caregiver->update(['status' => CaregiverStatus::Active]);
+
+        $activePause->update(['resumed_at' => now()]);
+
+        return back()->with('success', 'Caregiver has been resumed successfully.');
     }
 }

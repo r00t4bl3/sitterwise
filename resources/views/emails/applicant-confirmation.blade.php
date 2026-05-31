@@ -37,6 +37,7 @@
         <p>If you have any questions in the meantime, please don't hesitate to reach out.</p>
     </div>
     <div class="footer">
+        <p>This is an automated notification from Sitterwise.</p>
         <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>

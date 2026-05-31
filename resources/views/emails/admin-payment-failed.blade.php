@@ -107,6 +107,7 @@
 
     <div class="footer">
         <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>
 </html>

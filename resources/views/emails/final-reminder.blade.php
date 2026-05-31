@@ -30,6 +30,7 @@
         <p style="font-size: 14px; color: #999;">If the button above doesn't work, copy and paste this link into your browser: {{ config('app.url') }}/caregiver/apply</p>
     </div>
     <div class="footer">
+        <p>This is an automated notification from Sitterwise.</p>
         <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>

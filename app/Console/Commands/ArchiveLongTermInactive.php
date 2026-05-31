@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Enums\CaregiverStatus;
+use App\Mail\AdminCaregiverArchivedMail;
 use App\Mail\CaregiverArchiveWarningMail;
 use App\Models\CaregiverPause;
+use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -52,6 +54,18 @@ class ArchiveLongTermInactive extends Command
             $caregiver = $pause->caregiver;
             $caregiver->update(['status' => CaregiverStatus::Inactive]);
             $pause->update(['resumed_at' => now()]);
+
+            $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
+
+            foreach ($adminEmails as $adminEmail) {
+                Mail::to($adminEmail)->queue(
+                    new AdminCaregiverArchivedMail(
+                        caregiverName: "{$caregiver->first_name} {$caregiver->last_name}",
+                        caregiverId: $caregiver->id,
+                        daysOnHold: $pause->paused_at->diffInDays(now()),
+                    ),
+                );
+            }
 
             $this->info("Archived caregiver {$caregiver->id} ({$caregiver->first_name} {$caregiver->last_name}) to Inactive");
             $archived++;

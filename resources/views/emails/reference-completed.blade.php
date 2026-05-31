@@ -22,7 +22,8 @@
         <p>Log in to the admin panel to review the full reference details.</p>
     </div>
     <div class="footer">
-        <p>This notification was sent automatically by Sitterwise.</p>
+        <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>
 </html>

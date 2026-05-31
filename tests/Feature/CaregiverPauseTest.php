@@ -161,3 +161,51 @@ describe('commands', function () {
         expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Inactive);
     });
 });
+
+describe('admin resume', function () {
+    it('allows an admin to resume a paused caregiver', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::OnHold]);
+
+        CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(10),
+            'resume_by' => now()->addDays(20),
+            'pause_reason' => 'Personal leave',
+        ]);
+
+        actingAs($admin)
+            ->post(route('caregivers.resume', $caregiver->id))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Active);
+
+        $pause = CaregiverPause::where('caregiver_id', $caregiver->id)->first();
+        expect($pause->resumed_at)->not->toBeNull();
+    });
+
+    it('returns error when caregiver has no active pause', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::Active]);
+
+        actingAs($admin)
+            ->post(route('caregivers.resume', $caregiver->id))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    });
+
+    it('does not allow a non-admin to resume a caregiver', function () {
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::OnHold]);
+        $user = $caregiver->user;
+
+        CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(10),
+        ]);
+
+        actingAs($user)
+            ->post(route('caregivers.resume', $caregiver->id))
+            ->assertForbidden();
+    });
+});

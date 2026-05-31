@@ -74,14 +74,40 @@ To implement dark mode, add a `.dark` CSS class block directly underneath the `:
 }
 ```
 
+> **Note about `--color-blush` and `--color-teal-bg`**: These custom colors are redefined in `.dark` so existing `bg-blush` and `bg-teal-bg` utility classes adapt automatically. No need to replace them with different classes.
+
 ---
 
 ### Step 2: Refactor Custom CSS Classes in `app.css`
 *Target File:* [resources/css/app.css](file:///home/adjie/Documents/Project/Portfolio/sitterwise/resources/css/app.css) (Lines 131+)
 
-Currently, several custom CSS classes use hardcoded light-theme colors (like `#ffffff`, `#1b3a5c`, and `#c6e7e7`). To make them theme-aware, refactor their properties to use semantic CSS variables.
+Several custom CSS classes use hardcoded light-theme colors. Refactor them to use semantic CSS variables.
 
-#### 1. Secondary Buttons (`.btn-secondary`)
+#### 1. Primary Buttons (`.btn-primary` + hover)
+*   **Before:**
+    ```css
+    .btn-primary {
+        background: #f48a91;
+        color: #ffffff;
+    }
+    .btn-primary:hover {
+        background: #e6747c;
+    }
+    ```
+*   **After (Refactored to variables):**
+    ```css
+    .btn-primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
+    }
+    .btn-primary:hover {
+        background: var(--primary);
+        filter: brightness(0.9);
+    }
+    ```
+    Using `filter: brightness(0.9)` avoids hardcoding a hover variant — it works for both light and dark themes automatically.
+
+#### 2. Secondary Buttons (`.btn-secondary`)
 *   **Before:**
     ```css
     .btn-secondary {
@@ -99,7 +125,7 @@ Currently, several custom CSS classes use hardcoded light-theme colors (like `#f
     }
     ```
 
-#### 2. Clickable Selection Chips (`.chip-label`)
+#### 3. Clickable Selection Chips (`.chip-label`)
 *   **Before:**
     ```css
     .chip-label {
@@ -135,32 +161,6 @@ Currently, several custom CSS classes use hardcoded light-theme colors (like `#f
     }
     ```
 
-#### 3. Segmented Control Selection Pills (`.radio-pill`)
-*   **Before:**
-    ```css
-    .radio-pill {
-        background: #ffffff;
-        color: #5a6b73;
-        border-right: 1px solid #c6e7e7;
-    }
-    .radio-pill.selected {
-        background: #1b3a5c;
-        color: #ffffff;
-    }
-    ```
-*   **After (Refactored to variables):**
-    ```css
-    .radio-pill {
-        background: var(--card);
-        color: var(--muted-foreground);
-        border-right: 1px solid var(--border);
-    }
-    .radio-pill.selected {
-        background: var(--sidebar-primary);
-        color: var(--primary-foreground);
-    }
-    ```
-
 #### 4. Legacy Global Form Inputs (`.form-input`)
 *   **Before:**
     ```css
@@ -170,12 +170,22 @@ Currently, several custom CSS classes use hardcoded light-theme colors (like `#f
         background: #ffffff;
     }
     ```
-*   **After (Refactored to variables):**
+*   **After:**
     ```css
     .form-input {
         color: var(--foreground);
         border: 1px solid var(--border);
         background: var(--background);
+    }
+    ```
+*   Also update `:focus` and `::placeholder`:
+    ```css
+    .form-input:focus {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent);
+    }
+    .form-input::placeholder {
+        color: var(--muted-foreground);
     }
     ```
 
@@ -194,28 +204,81 @@ The standard text input component has a hardcoded `bg-white` class which stays b
     )}
     ```
 *   **After:**
-    Change `bg-white` to `bg-background` (which dynamically adjusts using our css variables):
+    Change `bg-white` to `bg-background`:
     ```diff
-    - "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-11 w-full min-w-0 rounded-[3px] border bg-white px-3 py-[9px] text-sm shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-    + "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-11 w-full min-w-0 rounded-[3px] border bg-background px-3 py-[9px] text-sm shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+    - ...rounded-[3px] border bg-white px-3...
+    + ...rounded-[3px] border bg-background px-3...
     ```
 
 ---
 
 ### Step 4: Audit & Patch Layout Containers
-To avoid blinding white sections when switching to dark mode, search the codebase for hardcoded `bg-white` classes in layouts and card components and replace them with semantic theme-aware classes.
+Search the codebase for hardcoded `bg-white` classes in layouts and card components and replace them with semantic theme-aware classes. A `rg 'bg-white' resources/js/ --include '*.tsx'` search reveals ~30 occurrences across 16+ files. The critical ones are listed below.
 
-1. **Guest Layout Container** (`resources/js/layouts/guest-layout.tsx`)
-   * Ensure that the central wrapper card uses `bg-card` instead of `bg-white` to automatically adapt.
-2. **Booking Wizard Page** (`resources/js/pages/guest/bookings/create.tsx`)
-   * Identify hardcoded `bg-white`, `bg-blush`, and `text-navy` wrappers.
-   * Replace them with theme tokens:
-     - `bg-white` -> `bg-card`
-     - `text-navy` -> `text-foreground`
-     - `bg-blush` -> `bg-muted` or `bg-secondary`
-3. **Application Wizard Status** (`resources/js/pages/public/caregiver-apply/application-status.tsx`)
-   * Replace hardcoded card wrappers:
-     - `bg-white shadow` -> `bg-card text-card-foreground border border-border shadow-xs`
+#### 4.1 Guest Layout Container
+*Target File:* `resources/js/layouts/guest-layout.tsx`
+*   The main area uses `bg-blush` — this adapts automatically since the `.dark` block redefines `--color-blush`. No change needed.
+*   Other containers already use `bg-background` and `bg-card` — no changes needed.
+
+#### 4.2 Booking Wizard Page
+*Target File:* `resources/js/pages/guest/bookings/create.tsx`
+*   Replace hardcoded colors with theme variables:
+    | Current | Replacement | Lines |
+    |---|---|---|
+    | `bg-white` | `bg-card` | 984 |
+    | `bg-[#FDFCFA]` | `bg-card` | 895 |
+    | `text-navy` | `text-foreground` | ~20 occurrences |
+    | `text-sittergray` | `text-muted-foreground` | ~15 occurrences |
+    | `border-border-teal` | `border-border` | ~6 occurrences |
+    | `text-coral` | `text-primary` | ~15 occurrences |
+*   The `bg-blush` and `bg-teal-bg` areas adapt automatically via `.dark` variable overrides — keep them as-is.
+
+#### 4.3 Application Status Page
+*Target File:* `resources/js/pages/public/caregiver-apply/application-status.tsx`
+*   Replace hardcoded card wrappers:
+    - `bg-white shadow rounded-lg` → `bg-card text-card-foreground border border-border shadow-xs rounded-lg`
+    - `bg-gray-50` (page background) → `bg-background`
+    - `text-gray-900` → `text-foreground`
+    - `text-gray-500`, `text-gray-600` → `text-muted-foreground`
+    - `border-gray-200` → `border-border`
+
+#### 4.4 Sidebar Components
+Four sidebar component files exist but were built with `--sidebar-*` CSS variables already in mind:
+- `resources/js/components/app-sidebar.tsx`
+- `resources/js/components/app-sidebar-header.tsx`
+- `resources/js/layouts/app/app-sidebar-layout.tsx`
+- `resources/js/components/ui/sidebar.tsx`
+
+These should work automatically once the `.dark` block defines the `--sidebar-*` variables (Step 1). Verify they render correctly in dark mode rather than proactively refactoring.
+
+#### 4.5 Remaining Files (Broader Audit)
+The following files also contain `bg-white` and should be patched if they render in dark-mode contexts:
+
+| File | Occurrences |
+|---|---|
+| `pages/admin/clients/edit.tsx` | 4 |
+| `pages/welcome.tsx` | 4 |
+| `pages/guest/bookings/payment.tsx` | 2 |
+| `pages/public/references/submit.tsx` | 2 |
+| `pages/public/caregiver-bio.tsx` | 1 |
+| `pages/admin/bookings/index.tsx` | 1 |
+| `pages/public/caregiver-apply/wizard.tsx` | 1 |
+| `pages/public/caregiver-apply/thank-you.tsx` | 1 |
+| `pages/public/references/submitted.tsx` | 1 |
+| `components/app-header.tsx` | 1 |
+| `components/booking-progress.tsx` | 1 |
+| `components/availability-calendar.tsx` | 1 |
+| `components/two-factor-setup-modal.tsx` | 1 |
+| `components/appearance-tabs.tsx` | 1 |
+
+For each, replace `bg-white` with `bg-card` (card containers) or `bg-background` (page backgrounds) and add `border border-border` where a visual boundary is needed.
+
+---
+
+### Step 5: Verify Sidebar Components Use Theme Variables
+*Target Files:* Sidebar component files listed in 4.4
+
+Open each sidebar file and check that `--sidebar-*` variable names are used for colors (e.g., `bg-sidebar`, `text-sidebar-foreground`, `border-sidebar-border`). If any hardcoded `bg-white` or `text-navy` classes exist, replace them with the sidebar-specific tokens. This step is verification only — the components likely already use the correct tokens since they were generated with theme support.
 
 ---
 

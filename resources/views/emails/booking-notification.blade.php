@@ -130,7 +130,8 @@
 
     <div class="footer">
         <p>This booking was sent by Sitterwise. You're receiving this email because you've been shortlisted for this booking.</p>
-        <p>If you have any questions, please contact your administrator.</p>
+        <p>This is an automated notification from Sitterwise.</p>
+        <p>Sitterwise — San Diego's most trusted childcare agency.</p>
     </div>
 </body>
 </html>
