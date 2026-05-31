@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\ClientType;
 use App\Models\Booking;
 use App\Models\Client as ClientModel;
 use Illuminate\Console\Command;
@@ -15,7 +14,8 @@ class ParseClientChildren extends Command
         {--batch=25 : Records per API call}
         {--limit=0 : Max records to process (0 = all)}
         {--timeout=120 : API timeout in seconds}
-        {--force : Re-parse even if cached}';
+        {--force : Re-parse even if cached}
+        {--from-cache : Import children from cached AI responses instead of calling AI}';
 
     protected $description = 'Parse children from Bubble staging using AI';
 
@@ -29,6 +29,10 @@ class ParseClientChildren extends Command
             $this->error('Invalid type. Must be user, jobs, or all.');
 
             return Command::INVALID;
+        }
+
+        if ($this->option('from-cache')) {
+            return $this->handleFromCache();
         }
 
         $this->db = $this->initDb();
@@ -139,6 +143,85 @@ class ParseClientChildren extends Command
 
             $this->info("Done. Processed {$processed} {$currentType} records.");
         }
+
+        return Command::SUCCESS;
+    }
+
+    private function handleFromCache(): int
+    {
+        $filterType = $this->option('type');
+        $limit = (int) $this->option('limit');
+        $batchSize = (int) $this->option('batch');
+
+        $this->db = $this->initDb();
+
+        $stmt = $this->db->query('SELECT external_id, children_json FROM ai_caches');
+        $records = [];
+
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $cacheKey = $row['external_id'];
+
+            if (str_starts_with($cacheKey, 'jobs_')) {
+                $currentType = 'jobs';
+                $externalId = substr($cacheKey, 5);
+            } else {
+                $currentType = 'user';
+                $externalId = $cacheKey;
+            }
+
+            if ($filterType !== 'all' && $currentType !== $filterType) {
+                continue;
+            }
+
+            $records[] = [
+                'external_id' => $externalId,
+                'type' => $currentType,
+                'children' => json_decode($row['children_json'], true),
+            ];
+        }
+
+        if (empty($records)) {
+            $this->info('No cached records found.');
+
+            return Command::SUCCESS;
+        }
+
+        $total = count($records);
+        $this->line("Found {$total} cached records to import.");
+
+        if ($limit > 0) {
+            $records = array_slice($records, 0, $limit);
+            $this->line("Limited to {$limit} records.");
+        }
+
+        $this->line('');
+        $processed = 0;
+        $imported = 0;
+
+        foreach (array_chunk($records, $batchSize) as $batch) {
+            $batchNum = (int) ($processed / $batchSize) + 1;
+            $this->line("── Batch {$batchNum} ──────────────────────────────");
+
+            foreach ($batch as $item) {
+                $entityName = $this->saveToApp($item['external_id'], $item['children'], $item['type']);
+
+                if ($entityName) {
+                    $this->line('  ✓ '.$entityName.': '.count($item['children']).' child'.(count($item['children']) !== 1 ? 'ren' : '').' imported');
+                    $cacheKey = $item['type'] === 'jobs' ? "jobs_{$item['external_id']}" : $item['external_id'];
+                    $this->cacheResult($cacheKey, $item['external_id'], $item['children']);
+                    $imported++;
+                } else {
+                    $this->line("  ✗ {$item['external_id']}: {$item['type']} record not found in app DB, skipped");
+                }
+
+                $processed++;
+            }
+
+            $this->line("  Progress: {$processed}/{$total}");
+            $this->line('');
+        }
+
+        $this->info("Done. Imported {$imported}/{$total} records from cache.");
 
         return Command::SUCCESS;
     }
@@ -369,17 +452,17 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
                 $birthMonth = null;
                 $birthYear = null;
 
-                if (isset($child['age_months']) && $child['age_months'] !== null) {
+                if (isset($child['age_months']) && $child['age_months'] !== null && $child['age_months'] !== '') {
                     $birthDate = now()->subMonths((int) $child['age_months']);
                     $birthMonth = (int) $birthDate->format('n');
                     $birthYear = (int) $birthDate->format('Y');
-                } elseif (isset($child['age_years']) && $child['age_years'] !== null) {
+                } elseif (isset($child['age_years']) && $child['age_years'] !== null && $child['age_years'] !== '') {
                     $birthYear = (int) now()->subYears((int) $child['age_years'])->format('Y');
                 }
 
                 $formattedChildren[] = [
                     'name' => $name,
-                    'gender' => $child['gender'] ?? null,
+                    'gender' => $child['gender'] ?: null,
                     'birth_month' => $birthMonth,
                     'birth_year' => $birthYear,
                 ];
@@ -408,7 +491,11 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
         $client = ClientModel::whereHas('user', fn ($q) => $q->where('email', $email))->first();
 
-        if (! $client || $client->client_type === ClientType::Invoiced->value) {
+        if (! $client) {
+            return null;
+        }
+
+        if ($client->bookings()->where('service_type', 'group_childcare_invoiced')->exists()) {
             return null;
         }
 
@@ -425,16 +512,16 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
             $birthDate = null;
 
-            if (isset($child['age_months']) && $child['age_months'] !== null) {
+            if (isset($child['age_months']) && $child['age_months'] !== null && $child['age_months'] !== '') {
                 $birthDate = now()->subMonths((int) $child['age_months']);
-            } elseif (isset($child['age_years']) && $child['age_years'] !== null) {
+            } elseif (isset($child['age_years']) && $child['age_years'] !== null && $child['age_years'] !== '') {
                 $birthDate = now()->subYears((int) $child['age_years']);
             }
 
             $client->children()->create([
                 'name' => $name,
                 'birth_date' => $birthDate,
-                'gender' => $child['gender'] ?? null,
+                'gender' => $child['gender'] ?: null,
             ]);
         }
 
