@@ -220,6 +220,7 @@ export default function GuestBookingCreate() {
         location_type: 'private_home',
         start_datetime: defaultStartStr,
         end_datetime: defaultEndStr,
+        dates: [{ start_datetime: defaultStartStr, end_datetime: defaultEndStr }] as Array<{ start_datetime: string; end_datetime: string }>,
         hotel_id: null as number | null,
         hotel_name: '',
         rental_platform: '',
@@ -278,10 +279,14 @@ export default function GuestBookingCreate() {
     const selectedHotelName =
         hotels.find((h) => h.id === form.data.hotel_id)?.name || '';
 
-    const syncDate1ToForm = (allDates: DateEntry[]) => {
+    const syncDatesToForm = (allDates: DateEntry[]) => {
         if (allDates.length > 0) {
             form.setData('start_datetime', allDates[0].start_datetime);
             form.setData('end_datetime', allDates[0].end_datetime);
+            form.setData(
+                'dates',
+                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+            );
         }
     };
 
@@ -297,13 +302,13 @@ export default function GuestBookingCreate() {
         };
         const updated = [...dates, newEntry];
         setDates(updated);
-        syncDate1ToForm(updated);
+        syncDatesToForm(updated);
     };
 
     const handleRemoveDate = (id: string) => {
         const updated = dates.filter((d) => d.id !== id);
         setDates(updated);
-        syncDate1ToForm(updated);
+        syncDatesToForm(updated);
     };
 
     const handleUpdateDate = (
@@ -325,7 +330,7 @@ export default function GuestBookingCreate() {
             return next;
         });
         setDates(updated);
-        syncDate1ToForm(updated);
+        syncDatesToForm(updated);
     };
 
     const handleAddChild = () => {

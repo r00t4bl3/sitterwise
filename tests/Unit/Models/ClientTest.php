@@ -10,6 +10,7 @@ use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -128,11 +129,11 @@ test('defines blocked caregivers relationship', function () {
     $this->assertInstanceOf(BelongsToMany::class, $relation);
 });
 
-test('defines previous caregivers relationship', function () {
+test('previous caregivers returns query builder', function () {
     $client = Client::factory()->create();
-    $relation = $client->previousCaregivers();
+    $query = $client->previousCaregivers();
 
-    $this->assertInstanceOf(BelongsToMany::class, $relation);
+    $this->assertInstanceOf(Builder::class, $query);
 });
 
 test('favorite caregivers syncs correctly', function () {

@@ -209,7 +209,7 @@ describe('Booking Workflow', function () {
         expect($newClient)->not->toBeNull();
 
         // 3. Verify Booking was created correctly
-        $booking = Booking::where('client_id', $newClient->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $newClient->id))->first();
         expect($booking->status)->toBe(BookingStatus::Confirmed->value);
         expect($booking->caregiver_id)->toBe($caregiver->id);
         expect($booking->address_line1)->toBe('789 Admin St');

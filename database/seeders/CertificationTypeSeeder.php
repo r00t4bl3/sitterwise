@@ -13,8 +13,7 @@ class CertificationTypeSeeder extends Seeder
     public function run(): void
     {
         $certifications = [
-            ['name' => 'CPR', 'description' => 'Cardiopulmonary Resuscitation certification', 'expires_required' => true],
-            ['name' => 'First Aid', 'description' => 'First aid and emergency response certification', 'expires_required' => true],
+            ['name' => 'CPR & First Aid', 'description' => 'CPR and First Aid certification', 'expires_required' => true],
             ['name' => 'Background Check', 'description' => 'Criminal background verification', 'expires_required' => true],
             ['name' => 'Trustline', 'description' => 'State registry certification', 'expires_required' => true],
             ['name' => 'Care.com Certified', 'description' => 'Care.com verification badge', 'expires_required' => false],

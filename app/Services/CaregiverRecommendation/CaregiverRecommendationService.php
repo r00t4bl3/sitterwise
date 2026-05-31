@@ -189,7 +189,7 @@ class CaregiverRecommendationService
         Client $client
     ): int {
         return Booking::where('caregiver_id', $caregiver->id)
-            ->where('client_id', $client->id)
+            ->whereHas('bookingGroup', fn ($q) => $q->where('client_id', $client->id))
             ->whereIn('status', ['completed', 'confirmed'])
             ->count();
     }

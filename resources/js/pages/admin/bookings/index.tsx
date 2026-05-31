@@ -283,10 +283,10 @@ export default function Bookings() {
             const query = debouncedSearch.toLowerCase().trim();
             result = result.filter((booking) => {
                 const clientName =
-                    booking.client?.user?.name?.toLowerCase() || '';
+                    booking.booking_group?.client?.user?.name?.toLowerCase() || '';
                 const caregiverName =
                     booking.caregiver?.user?.name?.toLowerCase() || '';
-                const hotelName = booking.hotel?.name?.toLowerCase() || '';
+                const hotelName = booking.booking_group?.hotel?.name?.toLowerCase() || '';
 
                 return (
                     clientName.includes(query) ||
@@ -577,7 +577,7 @@ export default function Bookings() {
                                             const colors = statusObj?.colors;
                                             const ServiceIcon =
                                                 serviceTypeIcons[
-                                                    booking.service_type
+                                                    booking.booking_group?.service_type
                                                 ] || CalendarIcon;
                                             const canCharge =
                                                 (statusKey === 'completed' ||
@@ -619,10 +619,8 @@ export default function Bookings() {
                                                                 )}
                                                             </span>
                                                             <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
-                                                                {booking.client
-                                                                    ?.user
-                                                                    ?.name ||
-                                                                    `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||
+622|                                                                {booking.booking_group?.client?.user?.name ||
+                                                                    `${booking.booking_group?.client?.first_name || ''} ${booking.booking_group?.client?.last_name || ''}`.trim() ||
                                                                     'Unknown Client'}
                                                             </span>
                                                         </div>
@@ -731,22 +729,22 @@ export default function Bookings() {
                                                     booking.status?.toLowerCase() ||
                                                     'received';
                                                 const isHotel =
-                                                    booking.location_type ===
+                                                    booking.booking_group?.location_type ===
                                                     'hotel';
                                                 const hotel = isHotel
                                                     ? hotels.find(
                                                           (h) =>
                                                               h.id ===
-                                                              booking.hotel_id,
+                                                              booking.booking_group?.hotel_id,
                                                       )
                                                     : null;
                                                 const location = isHotel
                                                     ? hotel?.name
-                                                    : booking.address_line1;
+                                                    : booking.booking_group?.address_line1;
                                                 const addressQuery =
                                                     isHotel && hotel
                                                         ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
-                                                        : `${booking.address_line1 || ''} ${booking.address_line2 || ''} ${booking.address_city || ''} ${booking.address_state || ''} ${booking.address_zip || ''}`.trim();
+                                                        : `${booking.booking_group?.address_line1 || ''} ${booking.booking_group?.address_line2 || ''} ${booking.booking_group?.address_city || ''} ${booking.booking_group?.address_state || ''} ${booking.booking_group?.address_zip || ''}`.trim();
                                                 const mapsUrl = addressQuery
                                                     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
                                                     : null;
@@ -777,18 +775,14 @@ export default function Bookings() {
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
                                                             <Link
-                                                                href={`/clients/${booking.client.id}`}
+                                                                href={`/clients/${booking.booking_group?.client?.id}`}
                                                                 className="hover:underline"
                                                             >
                                                                 {
-                                                                    booking
-                                                                        .client
-                                                                        .first_name
+                                                                    booking.booking_group?.client?.first_name
                                                                 }{' '}
                                                                 {
-                                                                    booking
-                                                                        .client
-                                                                        .last_name
+                                                                    booking.booking_group?.client?.last_name
                                                                 }
                                                             </Link>
                                                         </td>
@@ -955,7 +949,7 @@ export default function Bookings() {
                                     );
                                 const colors = statusObj?.colors;
                                 const ServiceIcon =
-                                    serviceTypeIcons[booking.service_type] ||
+                                    serviceTypeIcons[booking.booking_group?.service_type] ||
                                     CalendarIcon;
 
                                 return (
@@ -988,10 +982,6 @@ export default function Bookings() {
                                                     )}
                                                 </div>
                                                 <div className="truncate font-semibold whitespace-nowrap">
-                                                    {booking.client?.user
-                                                        ?.name ||
-                                                        `${booking.client?.first_name || ''} ${booking.client?.last_name || ''}`.trim() ||
-                                                        'Unknown Client'}
                                                 </div>
                                             </div>
                                         </div>

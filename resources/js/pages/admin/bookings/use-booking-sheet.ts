@@ -223,13 +223,13 @@ export function useBookingSheet({
     });
 
     const populateCaregiverSuggestions = async () => {
-        if (!editingBooking?.client_id) {
+        if (!editingBooking?.booking_group?.client_id) {
             return;
         }
 
         try {
             const params = new URLSearchParams({
-                client_id: editingBooking.client_id.toString(),
+                client_id: editingBooking.booking_group?.client_id.toString(),
             });
 
             if (editingBooking.id) {
@@ -575,7 +575,7 @@ export function useBookingSheet({
             });
             const fullBooking = await response.json();
 
-            const client = clients.find((c) => c.id === booking.client_id);
+            const client = clients.find((c) => c.id === booking.booking_group?.client_id);
 
             if (client) {
                 setSelectedClientName(client.name);
@@ -762,8 +762,8 @@ export function useBookingSheet({
                     notes: pet.notes || '',
                 })) || [];
 
-            const client = booking.client_id
-                ? clients.find((c) => c.id === booking.client_id)
+            const client = booking.booking_group?.client_id
+                ? clients.find((c) => c.id === booking.booking_group?.client_id)
                 : null;
 
             if (client) {
@@ -823,8 +823,8 @@ export function useBookingSheet({
             setBookingChildren(clientChildren);
             setBookingPets(clientPets);
 
-            if (booking.hotel_id) {
-                const hotel = hotels.find((h) => h.id === booking.hotel_id);
+            if (booking.booking_group?.hotel_id) {
+                const hotel = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
 
                 if (hotel) {
                     setSelectedHotelName(hotel.name);
@@ -847,15 +847,15 @@ export function useBookingSheet({
 
             setSelectedCaregiverName('');
 
-            const hasDirectAddress = !!booking.address_line1;
+            const hasDirectAddress = !!booking.booking_group?.address_line1;
 
             if (hasDirectAddress) {
                 const addressParts = [
-                    booking.address_line1,
-                    booking.address_line2,
-                    booking.address_city,
-                    booking.address_state,
-                    booking.address_zip,
+                    booking.booking_group?.address_line1,
+                    booking.booking_group?.address_line2,
+                    booking.booking_group?.address_city,
+                    booking.booking_group?.address_state,
+                    booking.booking_group?.address_zip,
                 ].filter(Boolean);
                 setAddressValue(addressParts.join(', '));
                 setShowManualAddressInput(true);

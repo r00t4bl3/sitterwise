@@ -32,8 +32,7 @@ beforeEach(function () {
         'rating' => 0,
     ]);
 
-    $this->booking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $this->booking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Completed->value,
     ]);
@@ -124,8 +123,7 @@ test('allows admin to update global admin rating', function () {
 });
 
 test('correctly recalculates average rating and ignores soft deleted ratings', function () {
-    $booking2 = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $booking2 = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Completed->value,
     ]);

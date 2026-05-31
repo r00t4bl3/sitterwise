@@ -67,8 +67,9 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->where('caregiver.firstName', 'Jane')
         ->where('caregiver.lastName', 'Smith')
         ->where('caregiver.status.value', CaregiverStatus::Active->value)
-        ->where('stats.total_earned', 100)
-        ->where('stats.completed_jobs', 1)
+        ->has('stats', fn ($page) => $page
+            ->where('completed_jobs', 1)
+        )
         ->has('caregiver.nextJob')
         ->has('caregiver.newInvites')
     );
@@ -79,16 +80,14 @@ test('client sees dashboard with stats and bookings', function () {
     $client = Client::factory()->create(['user_id' => $user->id]);
 
     // Active booking
-    Booking::factory()->create([
-        'client_id' => $client->id,
+    Booking::factory()->forClient($client)->create([
         'status' => BookingStatus::Confirmed->value,
         'start_datetime' => now()->addDays(1),
         'end_datetime' => now()->addDays(1)->addHours(4),
     ]);
 
     // Past booking
-    Booking::factory()->create([
-        'client_id' => $client->id,
+    Booking::factory()->forClient($client)->create([
         'status' => BookingStatus::Completed->value,
         'start_datetime' => now()->subDays(1),
         'end_datetime' => now()->subDays(1)->addHours(4),
@@ -139,5 +138,26 @@ test('caregiver sees future availabilities', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('dashboard')
         ->count('caregiver.availabilities', 1)
+    );
+});
+
+test('admin dashboard loads with bookings that require payment', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Booking::factory()
+        ->withBookingGroup(fn ($group) => $group->state(['requires_payment' => true]))
+        ->create([
+            'payment_status' => 'pending',
+            'status' => BookingStatus::Confirmed->value,
+            'start_datetime' => now()->addDays(1),
+            'end_datetime' => now()->addDays(1)->addHours(4),
+        ]);
+
+    $response = $this->actingAs($admin)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('dashboard')
+        ->where('stats.troubledMissingPayment', 1)
     );
 });

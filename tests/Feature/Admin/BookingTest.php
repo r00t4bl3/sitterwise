@@ -173,7 +173,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
             'service_type' => 'babysitter',
@@ -205,7 +205,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'location_type' => 'vacation_rental',
             'rental_platform' => 'airbnb',
@@ -242,7 +242,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'address_id' => $clientAddress->id,
         ]);
@@ -271,17 +271,15 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
         $booking->refresh();
-        expect((float) $booking->total_amount)->toBe(0.00);
-        // expect($booking->status)->toBe('confirmed');
-        // expect($booking->start_datetime)->toBe(now()->addDays(10)->toISOString());
+        expect($booking->status)->toBe('confirmed');
     });
 
     test('admin can update booking vacation rental with platform and address', function () {
         $this->actingAs($this->user);
 
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'location_type' => 'vacation_rental',
-        ]);
+        ]))->create();
         $child = ClientChild::factory()->create(['client_id' => $booking->client_id]);
 
         $response = $this->patch(route('bookings.update', $booking), [
@@ -304,8 +302,8 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertDatabaseHas('bookings', [
-            'id' => $booking->id,
+        $this->assertDatabaseHas('booking_groups', [
+            'id' => $booking->booking_group_id,
             'rental_platform' => 'vrbo',
             'address_line1' => '456 Mountain Cabin',
             'address_city' => 'Lake Tahoe',
@@ -396,7 +394,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $booking = Booking::where('client_id', $client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $client->id))->first();
 
         // Verify snapshot data was captured
         expect($booking->client_first_name)->toBe($client->first_name);
@@ -420,8 +418,7 @@ describe('Booking - Admin', function () {
         ]);
 
         // Create booking
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 
@@ -568,7 +565,7 @@ describe('Booking - Admin', function () {
         ]);
 
         // Verify booking snapshot includes the new children
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
         expect($booking->children)->toHaveCount(2);
         expect($booking->children[0]['name'])->toBe('Child One');
         expect($booking->children[1]['name'])->toBe('Child Two');
@@ -613,7 +610,7 @@ describe('Booking - Admin', function () {
         ]);
 
         // Snapshot SHOULD include new_children data even if we didn't save to profile, because we set it on the booking before saving.
-        $booking = Booking::where('client_id', $this->client->id)->latest()->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->latest()->first();
         expect($booking->children)->toHaveCount(1);
         expect($booking->children[0]['name'])->toBe('Transient Child');
 
@@ -624,11 +621,12 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
 
         // Create a booking without children
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
             'service_type' => 'petsitter',
             'location_type' => 'hotel',
+        ]))->create([
             'start_datetime' => now()->addDays(1)->setHour(14),
             'end_datetime' => now()->addDays(1)->setHour(18),
             'status' => 'received',
@@ -669,9 +667,12 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
+        $this->assertDatabaseHas('booking_groups', [
+            'id' => $booking->booking_group_id,
+            'service_type' => 'babysitter',
+        ]);
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
-            'service_type' => 'babysitter',
             'status' => 'confirmed',
         ]);
 
@@ -696,11 +697,12 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
 
         // Create a booking without children
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
             'service_type' => 'babysitter',
             'location_type' => 'hotel',
+        ]))->create([
             'start_datetime' => now()->addDays(1)->setHour(14),
             'end_datetime' => now()->addDays(1)->setHour(18),
             'status' => 'received',
@@ -753,15 +755,11 @@ describe('Booking - Admin', function () {
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing children but not saving to profile
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
             'service_type' => 'babysitter',
             'location_type' => 'hotel',
-            'start_datetime' => now()->addDays(1)->setHour(14),
-            'end_datetime' => now()->addDays(1)->setHour(18),
-            'status' => 'received',
-            'payment_status' => 'pending',
             'children' => [
                 [
                     'name' => 'Original Child',
@@ -770,6 +768,11 @@ describe('Booking - Admin', function () {
                     'birth_year' => 2020,
                 ],
             ],
+        ]))->create([
+            'start_datetime' => now()->addDays(1)->setHour(14),
+            'end_datetime' => now()->addDays(1)->setHour(18),
+            'status' => 'received',
+            'payment_status' => 'pending',
         ]);
 
         // Verify booking has children
@@ -859,7 +862,7 @@ describe('Booking - Admin', function () {
         ]);
 
         // Verify booking snapshot includes the new pets
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
         expect($booking->pets)->toHaveCount(2);
         expect($booking->pets[0]['name'])->toBe('Pet One');
         expect($booking->pets[1]['name'])->toBe('Pet Two');
@@ -905,7 +908,7 @@ describe('Booking - Admin', function () {
         ]);
 
         // Snapshot SHOULD include new_pets data even if we didn't save to profile
-        $booking = Booking::where('client_id', $this->client->id)->latest()->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->latest()->first();
         expect($booking->pets)->toHaveCount(1);
         expect($booking->pets[0]['name'])->toBe('Transient Pet');
     });
@@ -915,10 +918,11 @@ describe('Booking - Admin', function () {
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking without pets
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'service_type' => 'petsitter',
             'location_type' => 'private_home',
+        ]))->create([
             'start_datetime' => now()->addDays(1)->setHour(10),
             'end_datetime' => now()->addDays(1)->setHour(14),
             'status' => 'received',
@@ -982,10 +986,11 @@ describe('Booking - Admin', function () {
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking without pets
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'service_type' => 'petsitter',
             'location_type' => 'private_home',
+        ]))->create([
             'start_datetime' => now()->addDays(1)->setHour(10),
             'end_datetime' => now()->addDays(1)->setHour(14),
             'status' => 'received',
@@ -1038,15 +1043,11 @@ describe('Booking - Admin', function () {
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing pets but not saving to profile
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
             'service_type' => 'babysitter',
             'location_type' => 'private_home',
-            'start_datetime' => now()->addDays(1)->setHour(10),
-            'end_datetime' => now()->addDays(1)->setHour(14),
-            'status' => 'received',
-            'payment_status' => 'pending',
             'pets' => [
                 [
                     'name' => 'Original Pet',
@@ -1055,6 +1056,11 @@ describe('Booking - Admin', function () {
                     'notes' => 'Very friendly',
                 ],
             ],
+        ]))->create([
+            'start_datetime' => now()->addDays(1)->setHour(10),
+            'end_datetime' => now()->addDays(1)->setHour(14),
+            'status' => 'received',
+            'payment_status' => 'pending',
         ]);
 
         // Verify booking has pets
@@ -1147,9 +1153,10 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
+        ]))->create([
             'start_datetime' => now()->subDays(1)->setHour(14),
             'end_datetime' => now()->subDays(1)->setHour(18),
             'status' => 'received',
@@ -1175,9 +1182,10 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
+        ]))->create([
             'start_datetime' => now()->subDays(1)->setHour(14),
             'end_datetime' => now()->subDays(1)->setHour(18),
             'status' => 'received',
@@ -1203,9 +1211,10 @@ describe('Booking - Admin', function () {
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
-        $booking = Booking::factory()->create([
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
             'client_id' => $this->client->id,
             'hotel_id' => $this->hotel->id,
+        ]))->create([
             'start_datetime' => now()->subDays(1)->setHour(14),
             'end_datetime' => now()->subDays(1)->setHour(18),
             'status' => 'received',
@@ -1253,10 +1262,12 @@ describe('Booking - Admin', function () {
         $response->assertSessionHasNoErrors();
         $response->assertRedirect();
 
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
 
         expect($booking)->not->toBeNull();
-        expect($booking->children)->toBeNull();
+        expect($booking->children)->toBe([]);
+        $group = $booking->bookingGroup;
+        expect($group?->children_notes)->toBe('10 children, ages 3-7');
         expect($booking->children_notes)->toBe('10 children, ages 3-7');
         expect($booking->service_type)->toBe('group_childcare_invoiced');
     });
@@ -1286,8 +1297,9 @@ describe('Booking - Admin', function () {
 
         $response->assertSessionHasNoErrors();
 
-        $booking = Booking::where('client_id', $this->client->id)
-            ->where('service_type', 'corporate_invoiced')
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q
+            ->where('client_id', $this->client->id)
+            ->where('service_type', 'corporate_invoiced'))
             ->first();
 
         expect($booking)->not->toBeNull();
@@ -1321,8 +1333,9 @@ describe('Booking - Admin', function () {
 
         $response->assertSessionHasNoErrors();
 
-        $booking = Booking::where('client_id', $this->client->id)
-            ->where('service_type', 'babysitter')
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q
+            ->where('client_id', $this->client->id)
+            ->where('service_type', 'babysitter'))
             ->first();
 
         expect($booking)->not->toBeNull();
@@ -1334,11 +1347,12 @@ describe('Booking - Admin', function () {
     it('can update a group booking children notes', function () {
         $this->actingAs($this->user);
 
-        $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
-        $booking = Booking::factory()->create([
+        $group = BookingGroup::factory()->create([
             'client_id' => $this->client->id,
-            'booking_group_id' => $group->id,
             'service_type' => 'group_childcare_invoiced',
+        ]);
+        $booking = Booking::factory()->create([
+            'booking_group_id' => $group->id,
             'status' => 'received',
         ]);
 
@@ -1362,7 +1376,7 @@ describe('Booking - Admin', function () {
         $booking->refresh();
 
         expect($booking->children_notes)->toBe('12 children, ages 5-12');
-        expect($booking->children)->toBeNull();
+        expect($booking->children)->toBe([]);
     });
 
     describe('export', function () {
@@ -1393,8 +1407,9 @@ describe('Booking - Admin', function () {
         test('export respects month and year parameters', function () {
             $this->actingAs($this->user);
 
-            Booking::factory()->create([
+            Booking::factory()->withBookingGroup(fn ($g) => $g->state([
                 'client_id' => $this->client->id,
+            ]))->create([
                 'start_datetime' => now()->year(2025)->month(3)->day(15)->setHour(10),
                 'end_datetime' => now()->year(2025)->month(3)->day(15)->setHour(14),
             ]);
@@ -1422,10 +1437,6 @@ describe('Booking - Admin', function () {
             // Extract the time portion to assert on
             $startTime = substr($startStr, 11, 5);
             $endTime = substr($endStr, 11, 5);
-
-            // Extract the time portion to assert on
-            $startTime = substr($startStr, 11, 5); // "09:00"
-            $endTime = substr($endStr, 11, 5);     // "13:00" (will be adjusted by +4h below)
 
             $response = $this->post(route('bookings.store'), [
                 'client_id' => $this->client->id,

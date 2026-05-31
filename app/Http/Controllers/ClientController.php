@@ -367,7 +367,7 @@ class ClientController extends Controller
     public function bookingHistory(Request $request, Client $client)
     {
         $query = Booking::with(['caregiver.user', 'hotel'])
-            ->where('client_id', $client->id);
+            ->whereHas('bookingGroup', fn ($q) => $q->where('client_id', $client->id));
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

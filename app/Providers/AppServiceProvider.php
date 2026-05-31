@@ -4,17 +4,21 @@ namespace App\Providers;
 
 use App\Events\BookingAccepted;
 use App\Events\BookingCreated;
+use App\Events\BookingGroupCreated;
 use App\Events\BookingInvitationSent;
 use App\Events\BookingReceipt;
 use App\Events\BookingReminderTriggered;
 use App\Events\GuestAccountSetup;
 use App\Listeners\SendBookingAcceptedNotifications;
 use App\Listeners\SendBookingCreatedNotifications;
+use App\Listeners\SendBookingGroupCreatedNotifications;
 use App\Listeners\SendBookingInvitationNotifications;
 use App\Listeners\SendBookingReceiptNotification;
 use App\Listeners\SendBookingReminderNotifications;
 use App\Listeners\SendGuestAccountSetupNotification;
 use App\Listeners\UpdateLastLogin;
+use App\Models\BookingGroup;
+use App\Observers\BookingGroupObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
@@ -40,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
+        BookingGroup::observe(BookingGroupObserver::class);
+
         Event::listen(
             Login::class,
             UpdateLastLogin::class,
@@ -48,6 +54,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             BookingCreated::class,
             SendBookingCreatedNotifications::class,
+        );
+
+        Event::listen(
+            BookingGroupCreated::class,
+            SendBookingGroupCreatedNotifications::class,
         );
 
         Event::listen(

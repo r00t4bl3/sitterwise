@@ -242,7 +242,7 @@ next.add(id);
     };
 
     const data = application.data;
-    const personal = data.personal || {};
+    const personal = data.personal ?? { first_name: '', last_name: '', phone: '', dob: '' };
     const sponsor = data.sponsor;
     const completedRefs = references.filter((r) => r.submitted_at);
     const status = application.caregiver.status;
@@ -684,7 +684,7 @@ next.add(id);
                                     </div>
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                            CPR Certified
+                                            CPR & First Aid Certified
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
                                             {data.cpr_certified === 'yes' ? 'Yes' : data.cpr_certified === 'no' ? 'No' : '-'}
@@ -693,7 +693,7 @@ next.add(id);
                                     {data.cpr_certified === 'yes' && data.cpr_expiration && (
                                         <div>
                                             <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                                CPR Expiration
+                                                CPR & First Aid Expiration
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
                                                 {data.cpr_expiration}

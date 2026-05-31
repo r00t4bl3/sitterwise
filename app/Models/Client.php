@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -109,13 +110,15 @@ class Client extends Model
         return $this->belongsToMany(Caregiver::class, 'client_blocked_caregivers');
     }
 
-    public function previousCaregivers(): BelongsToMany
+    public function previousCaregivers()
     {
-        return $this->belongsToMany(Caregiver::class, 'bookings')
-            ->select('caregivers.*')
+        return Caregiver::select('caregivers.*')
+            ->join('bookings', 'bookings.caregiver_id', '=', 'caregivers.id')
+            ->join('booking_groups', 'bookings.booking_group_id', '=', 'booking_groups.id')
+            ->where('booking_groups.client_id', $this->id)
             ->whereNotNull('bookings.caregiver_id')
             ->whereIn('bookings.status', ['completed', 'confirmed', 'paid'])
-            ->groupBy('caregivers.id', 'bookings.client_id', 'bookings.caregiver_id')
+            ->groupBy('caregivers.id', 'bookings.caregiver_id')
             ->orderByRaw('MAX(bookings.start_datetime) DESC');
     }
 
@@ -129,9 +132,9 @@ class Client extends Model
         return $this->hasMany(BookingGroup::class);
     }
 
-    public function bookings(): HasMany
+    public function bookings(): HasManyThrough
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasManyThrough(Booking::class, BookingGroup::class);
     }
 
     public function paymentMethods(): HasMany

@@ -2,6 +2,7 @@
 
 use App\Models\Availability;
 use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
@@ -25,16 +26,18 @@ test('has correct fillable fields', function () {
     $endDatetime = (clone $startDatetime)->addHours(4);
 
     $client = Client::factory()->create();
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
-        'start_datetime' => $startDatetime,
-        'end_datetime' => $endDatetime,
         'service_type' => 'babysitter',
         'location_type' => 'hotel',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'start_datetime' => $startDatetime,
+        'end_datetime' => $endDatetime,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_working_hour' => 4,
-        'requires_payment' => true,
     ]);
 
     $this->assertEquals($client->id, $booking->client_id);
@@ -49,10 +52,11 @@ test('has correct fillable fields', function () {
 test('casts attributes correctly', function () {
     $startDateTime = now()->addDays(1);
     $endDateTime = now()->addDays(1)->addHours(4);
-    $booking = Booking::factory()->create([
+    $booking = Booking::factory()->withBookingGroup(fn ($group) => $group->state([
+        'requires_payment' => false,
+    ]))->create([
         'start_datetime' => $startDateTime,
         'end_datetime' => $endDateTime,
-        'requires_payment' => false,
     ]);
 
     $this->assertInstanceOf(CarbonImmutable::class, $booking->start_datetime);
@@ -65,7 +69,7 @@ test('casts attributes correctly', function () {
 
 test('defines client relationship', function () {
     $client = Client::factory()->create();
-    $booking = Booking::factory()->create(['client_id' => $client->id]);
+    $booking = Booking::factory()->forClient($client)->create();
 
     $relatedClient = $booking->client;
 
@@ -110,7 +114,8 @@ test('defines availability relationship', function () {
 
 test('defines hotel relationship', function () {
     $hotel = Hotel::factory()->create();
-    $booking = Booking::factory()->create(['hotel_id' => $hotel->id]);
+    $group = BookingGroup::factory()->create(['hotel_id' => $hotel->id]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
 
     $relatedHotel = $booking->hotel;
 
@@ -120,7 +125,8 @@ test('defines hotel relationship', function () {
 
 test('defines address relationship', function () {
     $address = ClientAddress::factory()->create();
-    $booking = Booking::factory()->create(['address_id' => $address->id]);
+    $group = BookingGroup::factory()->create(['address_id' => $address->id]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
 
     $relatedAddress = $booking->address;
 
@@ -129,13 +135,14 @@ test('defines address relationship', function () {
 });
 
 test('has address fields', function () {
-    $booking = Booking::factory()->make([
+    $group = BookingGroup::factory()->create([
         'address_line1' => '123 Test St',
         'address_line2' => 'Apt 4B',
         'address_city' => 'Test City',
         'address_state' => 'TS',
         'address_zip' => '12345',
     ]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
 
     $this->assertEquals('123 Test St', $booking->address_line1);
     $this->assertEquals('Apt 4B', $booking->address_line2);
@@ -165,14 +172,18 @@ test('calculate hourly rate uses matching children count', function () {
         'sitterwise_cut' => 10.00,
     ]);
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'babysitter',
         'children' => ['child1', 'child2'],
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(30.00, $booking->charge_to_client_hourly);
     $this->assertEquals(20.00, $booking->paid_to_caregiver_hourly);
@@ -191,14 +202,18 @@ test('calculate hourly rate falls back to max children when exceeds', function (
         'sitterwise_cut' => 15.00,
     ]);
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'babysitter',
         'children' => ['child1', 'child2', 'child3', 'child4', 'child5'],
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(50.00, $booking->charge_to_client_hourly);
     $this->assertEquals(35.00, $booking->paid_to_caregiver_hourly);
@@ -217,14 +232,18 @@ test('calculate hourly rate for petsitter with pets', function () {
         'sitterwise_cut' => 15.00,
     ]);
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'petsitter',
         'pets' => ['dog', 'cat'],
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(40.00, $booking->charge_to_client_hourly);
     $this->assertEquals(25.00, $booking->paid_to_caregiver_hourly);
@@ -243,14 +262,18 @@ test('calculate hourly rate for petsitter without pets', function () {
         'sitterwise_cut' => 15.00,
     ]);
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'petsitter',
         'pets' => null,
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(35.00, $booking->charge_to_client_hourly);
     $this->assertEquals(20.00, $booking->paid_to_caregiver_hourly);
@@ -269,14 +292,18 @@ test('calculate hourly rate uses zero children when children null', function () 
         'sitterwise_cut' => 10.00,
     ]);
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'babysitter',
         'children' => null,
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(25.00, $booking->charge_to_client_hourly);
     $this->assertEquals(15.00, $booking->paid_to_caregiver_hourly);
@@ -286,14 +313,18 @@ test('calculate hourly rate uses zero children when children null', function () 
 test('calculate hourly rate defaults to zero when no match', function () {
     $client = Client::factory()->create();
 
-    $booking = Booking::factory()->create([
+    $group = BookingGroup::factory()->create([
         'client_id' => $client->id,
         'service_type' => 'babysitter',
         'children' => ['child1'],
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
         'status' => 'received',
         'payment_status' => 'pending',
         'total_amount' => 0,
     ]);
+    $booking->calculateHourlyRate();
 
     $this->assertEquals(0.00, $booking->charge_to_client_hourly);
     $this->assertEquals(0.00, $booking->paid_to_caregiver_hourly);

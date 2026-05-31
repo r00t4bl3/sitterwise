@@ -27,15 +27,15 @@ export default function VerifyEmail() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8">
                 <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
                         {step === 'email'
                             ? 'Verify Your Email'
                             : 'Enter Verification Code'}
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
                         {step === 'email'
                             ? 'Enter your email to start the caregiver application'
                             : `We sent a code to ${email}`}
@@ -47,7 +47,7 @@ export default function VerifyEmail() {
                         <div>
                             <label
                                 htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
+                                className="block text-sm font-medium text-foreground"
                             >
                                 Email address
                             </label>
@@ -63,7 +63,7 @@ export default function VerifyEmail() {
                                 }
                             />
                             {emailForm.errors.email && (
-                                <p className="mt-2 text-sm text-red-600">
+                                <p className="mt-2 text-sm text-destructive">
                                     {emailForm.errors.email}
                                 </p>
                             )}
@@ -80,7 +80,7 @@ export default function VerifyEmail() {
                         </Button>
 
                         {emailForm.recentlySuccessful && (
-                            <p className="text-center text-sm text-green-600">
+                            <p className="text-center text-sm text-green-600 dark:text-green-400">
                                 Verification code sent!
                             </p>
                         )}
@@ -90,7 +90,7 @@ export default function VerifyEmail() {
                         <div>
                             <label
                                 htmlFor="otp"
-                                className="block text-sm font-medium text-gray-700"
+                                className="block text-sm font-medium text-foreground"
                             >
                                 Verification Code
                             </label>
@@ -107,7 +107,7 @@ export default function VerifyEmail() {
                                 }
                             />
                             {otpForm.errors.otp && (
-                                <p className="mt-2 text-sm text-red-600">
+                                <p className="mt-2 text-sm text-destructive">
                                     {otpForm.errors.otp}
                                 </p>
                             )}

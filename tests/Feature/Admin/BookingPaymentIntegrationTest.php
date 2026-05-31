@@ -39,10 +39,8 @@ it('processes manual payment and calls billing service', function () {
     $start = Carbon::parse('2026-05-01 10:00:00');
     $end = Carbon::parse('2026-05-01 15:00:00'); // 5 hours
 
-    $booking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $booking = Booking::factory()->forClient($this->client)->create([
         'status' => BookingStatus::Completed->value,
-        'service_type' => ServiceType::Babysitter->value,
         'charge_to_client_hourly' => 20,
         'start_datetime' => $start,
         'end_datetime' => $end,
@@ -84,10 +82,8 @@ it('handles payment failure and keeps booking details', function () {
     $start = Carbon::parse('2026-05-01 10:00:00');
     $end = Carbon::parse('2026-05-01 15:00:00'); // 5 hours
 
-    $booking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $booking = Booking::factory()->forClient($this->client)->create([
         'status' => BookingStatus::Completed->value,
-        'service_type' => ServiceType::Babysitter->value,
         'charge_to_client_hourly' => 20,
         'start_datetime' => $start,
         'end_datetime' => $end,

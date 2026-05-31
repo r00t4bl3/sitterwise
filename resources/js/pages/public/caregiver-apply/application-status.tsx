@@ -120,14 +120,14 @@ return;
                                             key={item.id}
                                             className={`flex items-start gap-4 rounded-lg border p-4 ${
                                                 isCompleted
-                                                    ? 'border-green-200 bg-green-50'
+                                                    ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
                                                     : 'border-border bg-card'
                                             }`}
                                         >
                                             <div
                                                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                                                     isCompleted
-                                                        ? 'border-green-500 bg-green-500 text-white'
+                                                        ? 'border-green-500 bg-green-500 text-white dark:border-green-600 dark:bg-green-600'
                                                         : 'border-muted bg-muted text-transparent'
                                                 }`}
                                             >
@@ -143,7 +143,7 @@ return;
                                                     </p>
                                                 )}
                                                 {item.completed_at && (
-                                                    <Badge className="mt-1.5 bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">
+                                                    <Badge className="mt-1.5 bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
                                                         Done · {format(new Date(item.completed_at), 'MMM d')}
                                                     </Badge>
                                                 )}
@@ -176,7 +176,7 @@ return;
                                     key={ref.id}
                                     className={`rounded-lg border p-4 ${
                                         ref.is_completed
-                                            ? 'border-green-200 bg-green-50'
+                                            ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
                                             : 'border-border bg-card'
                                     }`}
                                 >
@@ -195,7 +195,7 @@ return;
                                                     variant={ref.is_completed ? 'default' : 'secondary'}
                                                     className={
                                                         ref.is_completed
-                                                            ? 'bg-green-100 text-green-700'
+                                                            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                                                             : 'bg-muted text-muted-foreground'
                                                     }
                                                 >

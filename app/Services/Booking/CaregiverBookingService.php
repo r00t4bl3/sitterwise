@@ -93,7 +93,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         }
 
         // Get booking details
-        $booking->load('client.user');
+        $booking->load('bookingGroup', 'client.user');
 
         if (! $booking) {
             abort(404);

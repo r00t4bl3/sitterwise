@@ -43,34 +43,24 @@ export interface ClientPet {
     notes: string | null;
 }
 
-export interface Booking {
+export interface BookingGroup {
     id: number;
     client_id: number;
     service_type: string;
     location_type: string;
-    start_datetime: string;
-    end_datetime: string;
-    status: string;
-    special_considerations: string[] | null;
-    caregiver_notes: string | null;
-    notes_to_sitterwise: string | null;
-    admin_notes: string | null;
-    corporate_id: string | null;
-    total_amount: number;
-    payment_status: string;
-    requires_payment: boolean;
-    hotel_id: number | null;
+    rental_platform: string | null;
+    client_first_name: string | null;
+    client_last_name: string | null;
+    client_phone: string | null;
+    client_email: string | null;
     address_id: number | null;
-    caregiver_id: number | null;
     address_line1: string | null;
     address_line2: string | null;
     address_city: string | null;
     address_state: string | null;
     address_zip: string | null;
-    client_first_name: string | null;
-    client_last_name: string | null;
-    client_phone: string | null;
-    client_email: string | null;
+    hotel_id: number | null;
+    hotel_name: string | null;
     children: Array<{
         name: string;
         gender: string | null;
@@ -84,19 +74,69 @@ export interface Booking {
         breed: string | null;
         notes: string | null;
     }> | null;
-    rental_platform: string | null;
     sitter_preferences: string[] | null;
     other_adults_present: string | null;
     emergency_instructions: string | null;
     special_needs_notes: string | null;
     how_did_you_hear: string | null;
+    caregiver_notes: string | null;
+    notes_to_sitterwise: string | null;
+    admin_notes: string | null;
+    corporate_id: string | null;
+    requires_payment: boolean;
+    special_considerations: string[] | null;
+    client?: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        phone: string | null;
+        biography: string | null;
+        user: {
+            name: string;
+            profile_photo_path: string | null;
+        };
+        children_count?: number;
+        pets_count?: number;
+        children?: Array<{
+            id: number;
+            name: string;
+            gender: string | null;
+            birth_month: number | null;
+            birth_year: number | null;
+        }>;
+        pets?: Array<{
+            id: number;
+            name: string;
+            type: string | null;
+            breed: string | null;
+            notes: string | null;
+        }>;
+    };
+    hotel?: {
+        id: number;
+        name: string;
+    } | null;
+}
+
+export interface Booking {
+    id: number;
+    ulid: string;
+    booking_group_id: number;
+    start_datetime: string;
+    end_datetime: string;
+    status: string;
+    total_amount: number;
+    payment_status: string;
+    caregiver_id: number | null;
+    service_type_label?: string;
     attributeDefinitions?: Array<{
         pivot: {
             attribute_definition_id: number;
             value: string;
         };
     }>;
-    client: {
+    booking_group: BookingGroup;
+    client?: {
         id: number;
         first_name: string;
         last_name: string;
@@ -150,11 +190,11 @@ export interface Booking {
             };
         }>;
     };
-    hotel: {
+    hotel?: {
         id: number;
         name: string;
     } | null;
-    caregiver: {
+    caregiver?: {
         id: number;
         first_name: string;
         last_name: string;

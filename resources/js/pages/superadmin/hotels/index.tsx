@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -217,7 +219,7 @@ export default function HotelsIndex() {
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                         {hotel.contact_name ||
-                                            formatPhoneDisplay(hotel.contact_phone) ||
+                                            (hotel.contact_phone ? formatPhoneDisplay(hotel.contact_phone) : null) ||
                                             '—'}
                                     </td>
                                     <td className="px-4 py-3">

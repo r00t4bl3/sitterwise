@@ -90,7 +90,7 @@ describe('Booking - Client', function () {
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('bookings.index'));
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'service_type' => 'babysitter',
             'location_type' => 'private_home',
@@ -115,7 +115,7 @@ describe('Booking - Client', function () {
         ]);
 
         // Verify snapshot data includes existing and new
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
 
         expect($booking->children)->toHaveCount(3); // 2 existing + 1 new
         expect($booking->pets)->toHaveCount(2); // 1 existing + 1 new
@@ -171,14 +171,14 @@ describe('Booking - Client', function () {
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('bookings.index'));
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'location_type' => 'private_home',
             'address_line1' => '123 Main St',
             'address_city' => 'San Diego',
             'how_did_you_hear' => 'friend_family',
         ]);
-        expect(Booking::where('client_id', $this->client->id)->first()->children)->toHaveCount(1);
+        expect(Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first()->children)->toHaveCount(1);
     });
 
     test('client can create a booking for a hotel', function () {
@@ -220,7 +220,7 @@ describe('Booking - Client', function () {
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('bookings.index'));
 
-        $this->assertDatabaseHas('bookings', [
+        $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
             'location_type' => 'hotel',
             'hotel_id' => $hotel->id,
@@ -303,7 +303,7 @@ describe('Booking - Client', function () {
         $this->assertSoftDeleted('client_children', ['id' => $childToDelete->id]);
         $this->assertDatabaseHas('client_children', ['id' => $childToKeep->id]);
 
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
         expect($booking->children)->toHaveCount(1);
         expect($booking->children[0]['name'])->toBe($childToKeep->name);
     });
@@ -345,7 +345,7 @@ describe('Booking - Client', function () {
         $this->assertSoftDeleted('client_pets', ['id' => $petToDelete->id]);
         $this->assertDatabaseHas('client_pets', ['id' => $petToKeep->id]);
 
-        $booking = Booking::where('client_id', $this->client->id)->first();
+        $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
         expect($booking->pets)->toHaveCount(1);
         expect($booking->pets[0]['name'])->toBe($petToKeep->name);
     });

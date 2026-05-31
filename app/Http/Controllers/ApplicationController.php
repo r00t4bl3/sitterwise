@@ -231,7 +231,7 @@ class ApplicationController extends Controller
         $caregiver = $application->caregiver;
 
         $certificationMap = [
-            'cpr_uploaded' => 'CPR',
+            'cpr_uploaded' => 'CPR & First Aid',
             'trustline_submitted' => 'Trustline',
         ];
 

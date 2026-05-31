@@ -20,13 +20,11 @@ test('has correct fillable fields', function () {
         'client_id' => $client->id,
         'submitted_at' => now(),
         'submission_type' => 'logged_in',
-        'is_split' => true,
     ]);
 
     $this->assertEquals($client->id, $bookingGroup->client_id);
     $this->assertInstanceOf(CarbonImmutable::class, $bookingGroup->submitted_at);
     $this->assertEquals('logged_in', $bookingGroup->submission_type);
-    $this->assertTrue($bookingGroup->is_split);
 });
 
 test('casts submitted at as datetime', function () {
@@ -36,13 +34,6 @@ test('casts submitted at as datetime', function () {
 
     $this->assertInstanceOf(CarbonImmutable::class, $bookingGroup->submitted_at);
     $this->assertEquals('2026-12-25', $bookingGroup->submitted_at->toDateString());
-});
-
-test('casts is split as boolean', function () {
-    $bookingGroup = BookingGroup::factory()->create(['is_split' => true]);
-
-    $this->assertTrue($bookingGroup->is_split);
-    $this->assertIsBool($bookingGroup->is_split);
 });
 
 test('defines client relationship', function () {
@@ -58,4 +49,12 @@ test('defines bookings relationship', function () {
     $booking = Booking::factory()->create(['booking_group_id' => $bookingGroup->id]);
 
     $this->assertTrue($bookingGroup->bookings->contains($booking));
+});
+
+test('normalizes client phone on creation', function () {
+    $bookingGroup = BookingGroup::factory()->create([
+        'client_phone' => '(619) 555-1212',
+    ]);
+
+    expect($bookingGroup->fresh()->client_phone)->toBe('+16195551212');
 });

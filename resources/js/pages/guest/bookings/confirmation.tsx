@@ -2,6 +2,14 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
+interface SiblingBooking {
+    id: number;
+    ulid: string;
+    start_datetime: string;
+    end_datetime: string;
+    status: string;
+}
+
 interface BookingData {
     id: number;
     ulid: string;
@@ -17,6 +25,11 @@ interface BookingData {
     address_city: string;
     address_state: string;
     address_zip: string;
+    booking_group: {
+        id: number;
+        bookings_count: number;
+        sibling_bookings: SiblingBooking[];
+    } | null;
 }
 
 export default function GuestBookingConfirmation() {
@@ -24,6 +37,8 @@ export default function GuestBookingConfirmation() {
         booking: BookingData;
         passwordSetupUrl: string | null;
     };
+
+    const hasSiblings = booking.booking_group && booking.booking_group.bookings_count > 1;
 
     return (
         <GuestLayout>
@@ -108,6 +123,31 @@ export default function GuestBookingConfirmation() {
                             </span>
                         </div>
                     </div>
+
+                    {hasSiblings && (
+                        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                            <h3 className="text-sm font-medium text-blue-800 mb-2">
+                                This is a group booking ({booking.booking_group!.bookings_count} dates)
+                            </h3>
+                            <div className="space-y-1.5">
+                                {booking.booking_group!.sibling_bookings.map((sibling) => (
+                                    <div
+                                        key={sibling.id}
+                                        className="flex items-center justify-between rounded border border-blue-100 bg-white px-3 py-2 text-xs"
+                                    >
+                                        <span className="text-foreground">
+                                            {formatDisplayDateInPT(sibling.start_datetime)}
+                                            {' '}
+                                            {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
+                                        </span>
+                                        <span className="capitalize text-muted-foreground">
+                                            {sibling.status}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="mt-6 text-center text-sm text-muted-foreground">
                         <p>

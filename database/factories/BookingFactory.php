@@ -4,14 +4,11 @@ namespace Database\Factories;
 
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
-use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
-use App\Models\ClientAddress;
-use App\Models\Hotel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -27,30 +24,11 @@ class BookingFactory extends Factory
         return [
             'ulid' => Str::ulid(),
             'booking_group_id' => BookingGroup::factory(),
-            'client_id' => Client::factory(),
             'caregiver_id' => Caregiver::query()->exists() && fake()->boolean(60) ? Caregiver::inRandomOrder()->first()?->id : null,
             'availability_id' => null,
-            'hotel_id' => null,
-            'address_id' => ClientAddress::factory(),
-            'address_line1' => fake()->streetAddress(),
-            'address_line2' => null,
-            'address_city' => fake()->city(),
-            'address_state' => fake()->stateAbbr(),
-            'address_zip' => fake()->postcode(),
-            'service_type' => ServiceType::Babysitter->value,
-            'location_type' => LocationType::PrivateHome->value,
-            'rental_platform' => null,
             'start_datetime' => $startDatetime,
             'end_datetime' => $endDatetime,
             'status' => BookingStatus::Received->value,
-            'caregiver_notes' => null,
-            'notes_to_sitterwise' => null,
-            'admin_notes' => null,
-            'corporate_id' => null,
-            'sitter_preferences' => null,
-            'other_adults_present' => null,
-            'special_needs_notes' => null,
-            'emergency_instructions' => null,
             'total_amount' => rand(50, 200),
             'total_service_amount' => rand(50, 200),
             'charge_to_client_hourly' => 25.00,
@@ -60,8 +38,21 @@ class BookingFactory extends Factory
             'actual_amount' => null,
             'charge_attempt_count' => 0,
             'last_charge_attempt_at' => null,
-            'requires_payment' => true,
         ];
+    }
+
+    public function withBookingGroup(?callable $callback = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'booking_group_id' => BookingGroup::factory()->when($callback, $callback),
+        ]);
+    }
+
+    public function forClient(Client|int $client): static
+    {
+        $clientId = $client instanceof Client ? $client->id : $client;
+
+        return $this->withBookingGroup(fn ($group) => $group->state(['client_id' => $clientId]));
     }
 
     public function confirmed(): static
@@ -84,17 +75,10 @@ class BookingFactory extends Factory
     public function comped(): static
     {
         return $this->state(fn (array $attributes) => [
-            'requires_payment' => false,
-            'service_type' => ServiceType::Comped->value,
-        ]);
-    }
-
-    public function hotel(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'hotel_id' => Hotel::factory(),
-            'address_id' => null,
-            'location_type' => LocationType::Hotel->value,
+            'booking_group_id' => BookingGroup::factory()->state([
+                'requires_payment' => false,
+                'service_type' => ServiceType::Comped->value,
+            ]),
         ]);
     }
 

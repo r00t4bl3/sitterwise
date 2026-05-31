@@ -32,8 +32,7 @@ beforeEach(function () {
         'rating' => 0,
     ]);
 
-    $this->completedBooking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $this->completedBooking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Completed->value,
     ]);
@@ -51,8 +50,7 @@ test('review form accessible for logged in client', function () {
 });
 
 test('review form only works for completed bookings', function () {
-    $pendingBooking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $pendingBooking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Pending->value,
     ]);
@@ -66,8 +64,7 @@ test('review form only works for own bookings', function () {
     $otherClientUser = User::factory()->create(['role' => 'client']);
     $otherClient = Client::factory()->create(['user_id' => $otherClientUser->id]);
 
-    $otherBooking = Booking::factory()->create([
-        'client_id' => $otherClient->id,
+    $otherBooking = Booking::factory()->forClient($otherClient)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Completed->value,
     ]);
@@ -250,8 +247,7 @@ test('invalid signed url rejected', function () {
 });
 
 test('guest cannot review non completed booking', function () {
-    $pendingBooking = Booking::factory()->create([
-        'client_id' => $this->client->id,
+    $pendingBooking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Pending->value,
     ]);

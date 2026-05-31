@@ -89,7 +89,7 @@ class DashboardController extends Controller
                 ->inFuture()
                 ->count();
 
-            $missingPayment = Booking::where('requires_payment', true)
+            $missingPayment = Booking::whereHas('bookingGroup', fn ($q) => $q->where('requires_payment', true))
                 ->whereIn('payment_status', [BookingPaymentStatus::Pending->value, BookingPaymentStatus::Failed->value])
                 ->where('status', '!=', BookingStatus::Cancelled->value)
                 ->count();

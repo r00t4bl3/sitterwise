@@ -21,6 +21,7 @@ use App\Models\ClientPayment;
 use App\Models\Hotel;
 use App\Models\SpecialtyType;
 use App\Models\User;
+use App\Services\ImportUserService;
 use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -180,10 +181,10 @@ class ImportBubbleDatabase extends Command
                 $client->update(['last_booking_date' => $lastBooking->start_datetime]);
             }
 
-            // Link bookings to client's primary address where address_id is null
+            // Link booking groups to client's primary address where address_id is null
             $primaryAddress = $client->addresses()->where('is_primary', true)->first();
             if ($primaryAddress) {
-                $client->bookings()->whereNull('address_id')->update(['address_id' => $primaryAddress->id]);
+                $client->bookingGroups()->whereNull('address_id')->update(['address_id' => $primaryAddress->id]);
             }
         });
 
@@ -779,7 +780,7 @@ class ImportBubbleDatabase extends Command
 
                 if (! $dryRun) {
                     try {
-                        DB::transaction(fn () => $this->syncUser($source, $externalId, $force));
+                        app(ImportUserService::class)->processUserHit($source, $externalId, $force);
                         $this->successCount++;
                     } catch (\Exception $e) {
                         $this->error('       User sync failed: '.$e->getMessage());
@@ -1387,34 +1388,19 @@ class ImportBubbleDatabase extends Command
             $resolvedHotelName = str_replace('_', ' ', $bubbleSlug);
         }
 
-        $bookingData = [
-            'bubble_id' => $externalId,
+        $serviceType = $this->mapServiceType($source['service1_option_services'] ?? 'babysitting');
+
+        // Group data — shared fields that apply to all dates in this booking
+        $groupData = [
             'client_id' => $client?->id,
-            'caregiver_id' => $caregiver?->id,
-            'confirmed_at' => $caregiver ? ($this->timestampToDateTime($source['confirmed_at_date'] ?? null) ?? now()) : null,
-            'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
-            'end_datetime' => $this->timestampToDateTime($source['end_date_date'] ?? null),
-            'status' => $status->value,
-            'service_type' => $serviceType = $this->mapServiceType($source['service1_option_services'] ?? 'babysitting'),
+            'submitted_at' => now(),
+            'submission_type' => 'import',
+            'service_type' => $serviceType,
             'location_type' => $this->mapLocationType($source['address_is_hotel__option_list_of_hotels'] ?? ''),
             'address_line1' => trim(($components['street number'] ?? '').' '.($components['street'] ?? '')),
             'address_city' => $components['city'] ?? null,
             'address_state' => $components['state code'] ?? null,
             'address_zip' => $components['zip code'] ?? null,
-            'total_working_hour' => $hours = $source['total_hours_number'] ?? 0,
-            'charge_to_client_hourly' => $clientHourly = $source['client_job_hourly_rate_number'] ?? 0,
-            'paid_to_caregiver_hourly' => $cgHourly = $source['job_cg_hourly_rate_number'] ?? 0,
-            'sitterwise_cut_hourly' => $swHourly = $source['job_agency_hourly_rate_number'] ?? 0,
-            'charge_to_client' => round($clientHourly * $hours, 2),
-            'paid_to_caregiver' => $serviceType === ServiceType::CorporateInvoiced->value || $serviceType === ServiceType::GroupChildcareInvoiced->value
-                ? 0
-                : round($cgHourly * $hours, 2),
-            'sitterwise_cut' => round($swHourly * $hours, 2),
-            'tip' => $tip = $source['cg_tip_number'] ?? 0,
-            'bonus' => $bonus = $source['bonus_number'] ?? 0,
-            'reimbursement' => $reimbursement = $source['check_out_reimbursement_number'] ?? 0,
-            'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
-            'hotel_fee' => $source['job_hotel_booking_fee_number'] ?? 0,
             'hotel_id' => $this->findHotelId($hotelNameText, $bubbleSlug),
             'hotel_name' => $resolvedHotelName,
             'client_first_name' => $this->formatName($source['client_first_name1_text'] ?? null),
@@ -1424,10 +1410,6 @@ class ImportBubbleDatabase extends Command
             'caregiver_notes' => $source['cg_checkout_job_notes_text'] ?? $source['caregiver_notes_text'] ?? null,
             'notes_to_sitterwise' => $source['notes_to_sw_admin_text'] ?? null,
             'admin_notes' => $source['admin_notes_text'] ?? null,
-            'payment_status' => $bubbleStatus === 'paid' ? 'paid' : 'unpaid',
-            'stripe_payment_intent_id' => $source['payment_intent_id_text'] ?? null,
-            'cancelled_at' => $this->timestampToDateTime($source['cancellation_date_date'] ?? null),
-            'cancellation_reason' => $source['cancellation_reason_text'] ?? null,
             'children' => $serviceType === ServiceType::GroupChildcareInvoiced->value
                 ? null
                 : $this->parseChildren($source['names_and_ages_of_children_text'] ?? null, $source['__of_children_option_number_of_kids'] ?? null),
@@ -1436,17 +1418,46 @@ class ImportBubbleDatabase extends Command
                 : null,
             'pets' => $this->parsePets($source['pets_text'] ?? null),
             'special_considerations' => $this->mapSpecialConsiderations($source),
-            'paid_to_caregiver_total' => round($cgHourly * $hours, 2)
-                + $reimbursement
-                + $bonus
-                + $tip,
-            'total_service_amount' => round($clientHourly * $hours, 2)
-                + $reimbursement
-                + $bonus,
-            'total_amount' => round($clientHourly * $hours, 2)
-                + $reimbursement
-                + $bonus
-                + $tip,
+        ];
+
+        // Pricing computations
+        $hours = $source['total_hours_number'] ?? 0;
+        $clientHourly = $source['client_job_hourly_rate_number'] ?? 0;
+        $cgHourly = $source['job_cg_hourly_rate_number'] ?? 0;
+        $swHourly = $source['job_agency_hourly_rate_number'] ?? 0;
+        $tip = $source['cg_tip_number'] ?? 0;
+        $bonus = $source['bonus_number'] ?? 0;
+        $reimbursement = $source['check_out_reimbursement_number'] ?? 0;
+
+        $isInvoiced = $serviceType === ServiceType::CorporateInvoiced->value || $serviceType === ServiceType::GroupChildcareInvoiced->value;
+
+        // Booking data — per-date fields only
+        $bookingData = [
+            'bubble_id' => $externalId,
+            'caregiver_id' => $caregiver?->id,
+            'confirmed_at' => $caregiver ? ($this->timestampToDateTime($source['confirmed_at_date'] ?? null) ?? now()) : null,
+            'start_datetime' => $this->timestampToDateTime($source['start_date_date'] ?? null),
+            'end_datetime' => $this->timestampToDateTime($source['end_date_date'] ?? null),
+            'status' => $status->value,
+            'total_working_hour' => $hours,
+            'charge_to_client_hourly' => $clientHourly,
+            'paid_to_caregiver_hourly' => $cgHourly,
+            'sitterwise_cut_hourly' => $swHourly,
+            'charge_to_client' => round($clientHourly * $hours, 2),
+            'paid_to_caregiver' => $isInvoiced ? 0 : round($cgHourly * $hours, 2),
+            'sitterwise_cut' => round($swHourly * $hours, 2),
+            'tip' => $tip,
+            'bonus' => $bonus,
+            'reimbursement' => $reimbursement,
+            'reimbursement_description' => $source['check_out_reimbursement_description_text'] ?? null,
+            'hotel_fee' => $source['job_hotel_booking_fee_number'] ?? 0,
+            'payment_status' => $bubbleStatus === 'paid' ? 'paid' : 'unpaid',
+            'stripe_payment_intent_id' => $source['payment_intent_id_text'] ?? null,
+            'cancelled_at' => $this->timestampToDateTime($source['cancellation_date_date'] ?? null),
+            'cancellation_reason' => $source['cancellation_reason_text'] ?? null,
+            'paid_to_caregiver_total' => round($cgHourly * $hours, 2) + $reimbursement + $bonus + $tip,
+            'total_service_amount' => round($clientHourly * $hours, 2) + $reimbursement + $bonus,
+            'total_amount' => round($clientHourly * $hours, 2) + $reimbursement + $bonus + $tip,
         ];
 
         // 1. Update Client Bio with House Notes
@@ -1465,25 +1476,9 @@ class ImportBubbleDatabase extends Command
             }
         }
 
-        if ($client) {
-            $group = $client->bookingGroups()->firstOrCreate(
-                ['submission_type' => 'import'],
-                [
-                    'submitted_at' => now(),
-                ]
-            );
-            $bookingData['booking_group_id'] = $group->id;
-        } else {
-            $group = BookingGroup::firstOrCreate(
-                ['submission_type' => 'import'],
-                [
-                    'client_id' => ClientModel::first()?->id ?? 1,
-                    'submitted_at' => now(),
-                ]
-            );
-            $bookingData['booking_group_id'] = $group->id;
-            $bookingData['client_id'] = $group->client_id;
-        }
+        // Create a new BookingGroup per job (not firstOrCreate — each Bubble job is its own group)
+        $group = BookingGroup::create($groupData);
+        $bookingData['booking_group_id'] = $group->id;
 
         foreach ($bookingData as $k => $v) {
             if (is_array($v)) {
@@ -1701,7 +1696,7 @@ class ImportBubbleDatabase extends Command
         }
 
         // Find the booking
-        $booking = Booking::whereHas('client.user', fn ($q) => $q->where('email', $clientEmail))
+        $booking = Booking::whereHas('bookingGroup.client.user', fn ($q) => $q->where('email', $clientEmail))
             ->whereBetween('start_datetime', [
                 Carbon::parse($date)->subMinutes(5),
                 Carbon::parse($date)->addMinutes(5),
@@ -1715,7 +1710,7 @@ class ImportBubbleDatabase extends Command
 
         if (! $booking) {
             // Fallback: Find MOST RECENT booking for this client BEFORE this date
-            $booking = Booking::whereHas('client.user', fn ($q) => $q->where('email', $clientEmail))
+            $booking = Booking::whereHas('bookingGroup.client.user', fn ($q) => $q->where('email', $clientEmail))
                 ->where('start_datetime', '<=', $date)
                 ->orderBy('start_datetime', 'desc')
                 ->first();
@@ -1742,11 +1737,11 @@ class ImportBubbleDatabase extends Command
         if (! empty($source['review_for_client_boolean'])) {
             // Caregiver rating the Client
             $raterId = $booking->caregiver?->user_id;
-            $ratableId = $booking->client_id;
+            $ratableId = $booking->bookingGroup?->client_id;
             $ratableType = ClientModel::class;
         } else {
             // Client rating the Caregiver (Default)
-            $raterId = $booking->client?->user_id;
+            $raterId = $booking->bookingGroup?->client?->user_id;
             $ratableId = $booking->caregiver_id;
             $ratableType = Caregiver::class;
         }
@@ -1806,7 +1801,7 @@ class ImportBubbleDatabase extends Command
 
             // Only use Client ID if it looks like a Stripe Customer ID
             if ($clientStripeId && str_starts_with($clientStripeId, 'cus_')) {
-                $query->whereHas('client', fn ($q) => $q->where('stripe_customer_id', $clientStripeId));
+                $query->whereHas('bookingGroup.client', fn ($q) => $q->where('stripe_customer_id', $clientStripeId));
             }
 
             if ($caregiverStripeId) {
@@ -1841,7 +1836,7 @@ class ImportBubbleDatabase extends Command
                 ['bubble_id' => $externalId],
                 [
                     'booking_id' => $booking->id,
-                    'client_id' => $booking->client_id,
+                    'client_id' => $booking->bookingGroup?->client_id,
                     'amount' => $amount,
                     'status' => 'succeeded',
                     'provider' => 'stripe',
@@ -1928,15 +1923,27 @@ class ImportBubbleDatabase extends Command
 
     protected function importCertifications(Caregiver $caregiver, array $source): void
     {
-        $mappings = ['cpr_exp_date' => 'CPR', 'first_aid_exp_date' => 'First Aid', 'background_check_exp_date' => 'Background Check'];
-        foreach ($mappings as $field => $certName) {
-            if ($date = $this->timestampToDate($source[$field] ?? null)) {
-                if ($type = CertificationType::where('name', $certName)->first()) {
-                    $caregiver->certifications()->syncWithoutDetaching([$type->id => ['expiration_date' => $date, 'verified_at' => now()]]);
-                }
+        // CPR & First Aid: use the oldest expiration date from either field
+        $cprDate = $this->timestampToDate($source['cpr_exp_date'] ?? null);
+        $firstAidDate = $this->timestampToDate($source['first_aid_exp_date'] ?? null);
+        $combinedDate = $cprDate && $firstAidDate
+            ? min($cprDate, $firstAidDate)
+            : ($cprDate ?? $firstAidDate);
+
+        if ($combinedDate) {
+            if ($type = CertificationType::where('name', 'CPR & First Aid')->first()) {
+                $caregiver->certifications()->syncWithoutDetaching([$type->id => ['expiration_date' => $combinedDate, 'verified_at' => now()]]);
             }
         }
 
+        // Background Check
+        if ($date = $this->timestampToDate($source['background_check_exp_date'] ?? null)) {
+            if ($type = CertificationType::where('name', 'Background Check')->first()) {
+                $caregiver->certifications()->syncWithoutDetaching([$type->id => ['expiration_date' => $date, 'verified_at' => now()]]);
+            }
+        }
+
+        // Trustline
         $trustline = $source['trustline__text'] ?? null;
         if (in_array(strtolower($trustline ?? ''), ['yes', 'true', '1'])) {
             if ($type = CertificationType::where('name', 'Trustline')->first()) {

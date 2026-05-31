@@ -64,6 +64,15 @@ interface AdminDashboardProps {
         activeCaregivers?: number;
         totalClients?: number;
         totalBookings?: number;
+        thisMonthCompleted?: number;
+        thisMonthUpcoming?: number;
+        ytdCompleted?: number;
+        ytdUpcoming?: number;
+        ytdPercentChange?: number | null;
+        ytdLastYearLabel?: string;
+        troubledUnassigned?: number;
+        troubledMissingPayment?: number;
+        troubledAwaitingCheckout?: number;
     };
     admin?: {
         bookingsNeedingAttention: Booking[];

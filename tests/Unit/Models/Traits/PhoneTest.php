@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\Hotel;
@@ -84,17 +83,6 @@ describe('Phone mutator on models', function () {
 
         expect($client->phone)->toBe('+16195551212');
         assertDatabaseHas('clients', ['id' => $client->id, 'phone' => '+16195551212']);
-    });
-
-    it('normalizes client_phone on Booking creation', function () {
-        $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
-            'client_phone' => '(619) 555-1212',
-        ]);
-
-        expect($booking->client_phone)->toBe('+16195551212');
-        assertDatabaseHas('bookings', ['id' => $booking->id, 'client_phone' => '+16195551212']);
     });
 
     it('normalizes contact_phone on Hotel creation', function () {

@@ -37,38 +37,35 @@ class SearchController extends Controller
             return response()->json([]);
         }
 
-        $bookings = Booking::with('client')
+        $bookings = Booking::with('bookingGroup.client')
             ->where('caregiver_id', $caregiver->id)
             ->where(function ($q) use ($query) {
                 $q->where('ulid', 'like', "%{$query}%")
-                    ->orWhere('corporate_id', 'like', "%{$query}%")
-                    ->orWhere('address_line1', 'like', "%{$query}%")
-                    ->orWhere('address_city', 'like', "%{$query}%")
-                    ->orWhere('address_state', 'like', "%{$query}%")
-                    ->orWhere('address_zip', 'like', "%{$query}%")
-                    ->orWhereHas('client', function ($cq) use ($query) {
+                    ->searchGroupFields($query)
+                    ->orWhereHas('bookingGroup.client', function ($cq) use ($query) {
                         $cq->where('first_name', 'like', "%{$query}%")
                             ->orWhere('last_name', 'like', "%{$query}%");
                     })
-                    ->orWhereHas('hotel', function ($hq) use ($query) {
+                    ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");
                     });
             })
             ->limit(5)
             ->get()
             ->map(function ($booking) {
-                $clientName = $booking->client
-                    ? $booking->client->first_name.' '.$booking->client->last_name
+                $client = $booking->bookingGroup?->client;
+                $clientName = $client
+                    ? $client->first_name.' '.$client->last_name
                     : 'Unknown Client';
 
                 return [
                     'id' => $booking->id,
                     'name' => $clientName,
-                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
+                    'subtitle' => ($booking->service_type_label ?? $booking->bookingGroup?->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('jobs.show', $booking),
                     'ulid' => $booking->ulid,
-                    'corporate_id' => $booking->corporate_id,
+                    'corporate_id' => $booking->bookingGroup?->corporate_id,
                 ];
             });
 
@@ -84,19 +81,15 @@ class SearchController extends Controller
         }
 
         $bookings = Booking::with('caregiver')
-            ->where('client_id', $client->id)
+            ->whereHas('bookingGroup', fn ($q) => $q->where('client_id', $client->id))
             ->where(function ($q) use ($query) {
                 $q->where('ulid', 'like', "%{$query}%")
-                    ->orWhere('corporate_id', 'like', "%{$query}%")
-                    ->orWhere('address_line1', 'like', "%{$query}%")
-                    ->orWhere('address_city', 'like', "%{$query}%")
-                    ->orWhere('address_state', 'like', "%{$query}%")
-                    ->orWhere('address_zip', 'like', "%{$query}%")
+                    ->searchGroupFields($query)
                     ->orWhereHas('caregiver', function ($cq) use ($query) {
                         $cq->where('first_name', 'like', "%{$query}%")
                             ->orWhere('last_name', 'like', "%{$query}%");
                     })
-                    ->orWhereHas('hotel', function ($hq) use ($query) {
+                    ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");
                     });
             })
@@ -110,11 +103,11 @@ class SearchController extends Controller
                 return [
                     'id' => $booking->id,
                     'name' => $caregiverName,
-                    'subtitle' => ($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
+                    'subtitle' => ($booking->service_type_label ?? $booking->bookingGroup?->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('bookings.show', $booking),
                     'ulid' => $booking->ulid,
-                    'corporate_id' => $booking->corporate_id,
+                    'corporate_id' => $booking->bookingGroup?->corporate_id,
                 ];
             });
 
@@ -126,15 +119,11 @@ class SearchController extends Controller
         $terms = array_filter(explode(' ', $query));
 
         // Priority 1: Bookings
-        $bookings = Booking::with(['client', 'caregiver'])
+        $bookings = Booking::with(['bookingGroup.client', 'caregiver'])
             ->where(function ($q) use ($query) {
                 $q->where('ulid', 'like', "%{$query}%")
-                    ->orWhere('corporate_id', 'like', "%{$query}%")
-                    ->orWhere('address_line1', 'like', "%{$query}%")
-                    ->orWhere('address_city', 'like', "%{$query}%")
-                    ->orWhere('address_state', 'like', "%{$query}%")
-                    ->orWhere('address_zip', 'like', "%{$query}%")
-                    ->orWhereHas('client', function ($cq) use ($query) {
+                    ->searchGroupFields($query)
+                    ->orWhereHas('bookingGroup.client', function ($cq) use ($query) {
                         $cq->where('first_name', 'like', "%{$query}%")
                             ->orWhere('last_name', 'like', "%{$query}%");
                     })
@@ -142,25 +131,26 @@ class SearchController extends Controller
                         $cq->where('first_name', 'like', "%{$query}%")
                             ->orWhere('last_name', 'like', "%{$query}%");
                     })
-                    ->orWhereHas('hotel', function ($hq) use ($query) {
+                    ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");
                     });
             })
             ->limit(5)
             ->get()
             ->map(function ($booking) {
-                $clientName = $booking->client
-                    ? $booking->client->first_name.' '.$booking->client->last_name
+                $client = $booking->bookingGroup?->client;
+                $clientName = $client
+                    ? $client->first_name.' '.$client->last_name
                     : 'Unknown Client';
 
                 return [
                     'id' => $booking->id,
-                    'name' => $booking->corporate_id ?? $booking->ulid,
-                    'subtitle' => $clientName.' — '.($booking->service_type_label ?? $booking->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
+                    'name' => $booking->bookingGroup?->corporate_id ?? $booking->ulid,
+                    'subtitle' => $clientName.' — '.($booking->service_type_label ?? $booking->bookingGroup?->service_type).' — '.$booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('D, M j, Y'),
                     'type' => 'booking',
                     'url' => route('bookings.show', $booking),
                     'ulid' => $booking->ulid,
-                    'corporate_id' => $booking->corporate_id,
+                    'corporate_id' => $booking->bookingGroup?->corporate_id,
                 ];
             });
 

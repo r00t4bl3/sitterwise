@@ -410,14 +410,14 @@ return;
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen bg-background py-12">
             <div className="mx-auto max-w-3xl px-4">
                 {/* Header */}
                 <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-bold text-navy">
+                    <h1 className="text-3xl font-bold text-foreground">
                         Join the Sitterwise Team
                     </h1>
-                    <p className="my-8 text-gray-600">
+                    <p className="my-8 text-muted-foreground">
                         We hire on a referral basis only. Complete this
                         application to begin your journey with San Diego's most
                         trusted childcare agency.
@@ -437,30 +437,30 @@ return;
                                         ? 'bg-coral text-white'
                                         : step < currentStep
                                           ? 'bg-teal-500 text-white'
-                                          : 'bg-gray-300 text-gray-600'
+                                          : 'bg-muted text-muted-foreground'
                                 }`}
                             >
                                 {step}
                             </button>
                         ))}
                     </div>
-                    <div className="h-2 w-full rounded-full bg-gray-200">
+                    <div className="h-2 w-full rounded-full bg-muted">
                         <div
                             className="h-2 rounded-full bg-coral transition-all"
                             style={{ width: `${(currentStep / 8) * 100}%` }}
                         />
                     </div>
-                    <p className="mt-2 text-center text-sm text-gray-600">
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
                         Step {currentStep} of 8
                     </p>
                 </div>
 
                 <form
                     onSubmit={(e) => e.preventDefault()}
-                    className="rounded-lg bg-white p-6 shadow"
+                    className="rounded-lg border border-border bg-card p-6 shadow-xs"
                 >
                     {Object.keys(form.errors).length > 0 && (
-                        <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        <div className="mb-6 flex items-start gap-3 rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
                             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                             <div>
                                 <p className="mb-1 font-medium">
@@ -488,7 +488,7 @@ return;
                                 <h3 className="mb-2 text-lg font-semibold">
                                     Sponsor Information
                                 </h3>
-                                <p className="mb-4 text-sm text-gray-600">
+                                <p className="mb-4 text-sm text-muted-foreground">
                                     Who referred you to Sitterwise? This person
                                     will also serve as a reference.
                                 </p>
@@ -496,7 +496,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="sponsor-first-name">
                                             First Name{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -516,7 +516,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="sponsor-last-name">
                                             Last Name{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -536,7 +536,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="sponsor-email">
                                             Email{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -590,7 +590,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="personal-first-name">
                                             First Name{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -612,7 +612,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="personal-last-name">
                                             Last Name{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -647,7 +647,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="personal-email">
                                             Email{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -667,7 +667,7 @@ return;
                                     <div className="space-y-2">
                                         <Label>
                                             Date of Birth{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -721,7 +721,7 @@ return;
                                 <h3 className="mb-3 text-lg font-semibold">
                                     Position
                                 </h3>
-                                <p className="mb-3 text-sm text-gray-600">
+                                <p className="mb-3 text-sm text-muted-foreground">
                                     What are you applying for? Check all that
                                     apply.
                                 </p>
@@ -734,7 +734,7 @@ return;
                                 ).map((pos) => (
                                     <label
                                         key={pos}
-                                        className={`mb-2 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.position[pos] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                        className={`mb-2 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.position[pos] ? 'border-accent bg-secondary' : 'bg-background'}`}
                                     >
                                         <Checkbox
                                             checked={form.data.position[pos]}
@@ -756,7 +756,7 @@ return;
                                 <h3 className="mb-3 text-lg font-semibold">
                                     Availability
                                 </h3>
-                                <p className="mb-3 text-sm text-gray-600">
+                                <p className="mb-3 text-sm text-muted-foreground">
                                     When are you generally available? Check all
                                     that apply.
                                 </p>
@@ -772,7 +772,7 @@ return;
                                     ).map((avail) => (
                                         <label
                                             key={avail}
-                                            className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.availability[avail] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                            className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.availability[avail] ? 'border-accent bg-secondary' : 'bg-background'}`}
                                         >
                                             <Checkbox
                                                 checked={
@@ -829,7 +829,7 @@ return;
                                     <div className="space-y-2">
                                         <Label htmlFor="education-level">
                                             Highest Level Completed{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -1014,7 +1014,7 @@ return;
                             <h2 className="mb-6 text-2xl font-bold">
                                 Employment & Experience
                             </h2>
-                            <p className="mb-4 text-gray-600">
+                            <p className="mb-4 text-muted-foreground">
                                 Add your childcare experience (at least one
                                 entry required)
                             </p>
@@ -1022,7 +1022,7 @@ return;
                             <div className="mb-6 space-y-2">
                                 <Label htmlFor="employment-status">
                                     Are you currently employed?{' '}
-                                    <span className="text-red-500">*</span>
+                                    <span className="text-destructive">*</span>
                                 </Label>
                                 <Select
                                     value={form.data.employment_status ?? ''}
@@ -1054,7 +1054,7 @@ return;
                                 <div className="mb-6 space-y-2">
                                     <Label htmlFor="current-employer">
                                         Current Employer{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Input
                                         id="current-employer"
@@ -1096,7 +1096,7 @@ return;
                                         <div className="space-y-2">
                                             <Label>
                                                 Start Date{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -1478,7 +1478,7 @@ return;
                                             ) : (
                                                 <div className="space-y-2">
                                                     <Label>End Date</Label>
-                                                    <div className="flex h-11 items-center rounded-[3px] border border-input bg-gray-100 px-3 text-sm text-muted-foreground">
+                                                    <div className="flex h-11 items-center rounded-[3px] border border-input bg-muted px-3 text-sm text-muted-foreground">
                                                         Present
                                                     </div>
                                                 </div>
@@ -1519,7 +1519,7 @@ return;
                                                         );
                                                     }}
                                                 />
-                                                <span className="text-xs text-gray-600">
+                                                <span className="text-xs text-muted-foreground">
                                                     I currently work here
                                                 </span>
                                             </label>
@@ -1577,7 +1577,7 @@ return;
                                                 htmlFor={`exp-desc-${index}`}
                                             >
                                                 Description{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -1602,7 +1602,7 @@ return;
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
                                             <Label>Ages Served</Label>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 Select all age groups you worked
                                                 with in this role.
                                             </p>
@@ -1616,7 +1616,7 @@ return;
                                                 ).map((ageKey) => (
                                                     <label
                                                         key={ageKey}
-                                                        className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${exp.ages_served.includes(ageKey) ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                                        className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${exp.ages_served.includes(ageKey) ? 'border-accent bg-secondary' : 'bg-background'}`}
                                                     >
                                                         <Checkbox
                                                             checked={exp.ages_served.includes(
@@ -1696,7 +1696,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Authorized to work in the U.S.?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.authorized_to_work ?? ''}
@@ -1715,7 +1715,7 @@ return;
                                         </div>
                                     </RadioGroup>
                                     {form.data.authorized_to_work === 'no' && (
-                                        <div className="mt-2 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                                        <div className="mt-2 rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                                             Sitterwise is required by federal
                                             law to verify work authorization for
                                             all employees. If you are not
@@ -1732,7 +1732,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Do you smoke?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.smokes ?? ''}
@@ -1756,7 +1756,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Do you drink alcohol?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Select
                                         value={form.data.alcohol ?? ''}
@@ -1785,7 +1785,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Substance abuse history?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Textarea
                                         rows={3}
@@ -1804,7 +1804,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Physical/psychological limitations?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Textarea
                                         rows={3}
@@ -1823,7 +1823,7 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Allergic to dogs or cats?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.allergic_to_pets ?? ''}
@@ -1851,7 +1851,7 @@ form.setData('allergic_to_what', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Allergic to which?{' '}
-                                            <span className="text-red-500">*</span>
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
                                             value={form.data.allergic_to_what ?? ''}
@@ -1869,7 +1869,7 @@ form.setData('allergic_to_what', '');
                                             </SelectContent>
                                         </Select>
                                         {form.errors.allergic_to_what && (
-                                            <p className="text-sm text-red-500">{form.errors.allergic_to_what}</p>
+                                            <p className="text-sm text-destructive">{form.errors.allergic_to_what}</p>
                                         )}
                                     </div>
                                 )}
@@ -1878,7 +1878,7 @@ form.setData('allergic_to_what', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Visible tattoos?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.visible_tattoos ?? ''}
@@ -1906,7 +1906,7 @@ form.setData('tattoo_description', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Please describe location and whether they can be covered with standard work attire{' '}
-                                            <span className="text-red-500">*</span>
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Textarea
                                             rows={2}
@@ -1917,7 +1917,7 @@ form.setData('tattoo_description', '');
                                             }
                                         />
                                         {form.errors.tattoo_description && (
-                                            <p className="text-sm text-red-500">{form.errors.tattoo_description}</p>
+                                            <p className="text-sm text-destructive">{form.errors.tattoo_description}</p>
                                         )}
                                     </div>
                                 )}
@@ -1926,7 +1926,7 @@ form.setData('tattoo_description', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Reliable vehicle?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.reliable_vehicle ?? ''}
@@ -1946,11 +1946,11 @@ form.setData('tattoo_description', '');
                                     </RadioGroup>
                                 </div>
 
-                                {/* CPR certified? */}
+                                {/* CPR & First Aid certified? */}
                                 <div className="space-y-2">
                                     <Label>
-                                        CPR certified?{' '}
-                                        <span className="text-red-500">*</span>
+                                        CPR & First Aid certified?{' '}
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.cpr_certified ?? ''}
@@ -1970,12 +1970,12 @@ form.setData('tattoo_description', '');
                                     </RadioGroup>
                                 </div>
 
-                                {/* CPR Expiration Date (conditional) */}
+                                {/* CPR & First Aid Expiration Date (conditional) */}
                                 {form.data.cpr_certified === 'yes' && (
                                     <div className="space-y-2">
                                         <Label>
-                                            CPR Expiration Date{' '}
-                                            <span className="text-red-500">*</span>
+                                            CPR & First Aid Expiration Date{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <DatePicker
                                             value={form.data.cpr_expiration}
@@ -1989,12 +1989,12 @@ form.setData('tattoo_description', '');
                                     </div>
                                 )}
 
-                                {/* CPR Card Upload (conditional) */}
+                                {/* CPR & First Aid Card Upload (conditional) */}
                                 {form.data.cpr_certified === 'yes' && (
                                     <div className="space-y-2">
                                         <Label>
-                                            CPR Card Upload{' '}
-                                            <span className="text-red-500">*</span>
+                                            CPR & First Aid Card Upload{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             type="file"
@@ -2010,7 +2010,7 @@ form.setData('tattoo_description', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Trustline certified?{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.trustline_certified ?? ''}
@@ -2035,7 +2035,7 @@ form.setData('tattoo_description', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Trustline Upload{' '}
-                                            <span className="text-red-500">*</span>
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             type="file"
@@ -2089,7 +2089,7 @@ form.setData('children_ages', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Children ages{' '}
-                                            <span className="text-red-500">*</span>
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             type="text"
@@ -2100,7 +2100,7 @@ form.setData('children_ages', '');
                                             }
                                         />
                                         {form.errors.children_ages && (
-                                            <p className="text-sm text-red-500">{form.errors.children_ages}</p>
+                                            <p className="text-sm text-destructive">{form.errors.children_ages}</p>
                                         )}
                                     </div>
                                 )}
@@ -2116,7 +2116,7 @@ form.setData('children_ages', '');
                             <h2 className="mb-6 text-2xl font-bold">
                                 Additional References
                             </h2>
-                            <p className="mb-4 text-gray-600">
+                            <p className="mb-4 text-muted-foreground">
                                 Provide 3 additional references (plus your
                                 sponsor = 4 total)
                             </p>
@@ -2135,7 +2135,7 @@ form.setData('children_ages', '');
                                                 htmlFor={`ref-first-name-${index}`}
                                             >
                                                 First Name{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2162,7 +2162,7 @@ form.setData('children_ages', '');
                                                 htmlFor={`ref-last-name-${index}`}
                                             >
                                                 Last Name{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2189,7 +2189,7 @@ form.setData('children_ages', '');
                                                 htmlFor={`ref-email-${index}`}
                                             >
                                                 Email{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2228,7 +2228,7 @@ form.setData('children_ages', '');
                                                 htmlFor={`ref-relationship-${index}`}
                                             >
                                                 Relationship{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2257,7 +2257,7 @@ form.setData('children_ages', '');
                                                 htmlFor={`ref-years-known-${index}`}
                                             >
                                                 Years Known{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2316,7 +2316,7 @@ form.setData('children_ages', '');
                                 <h3 className="mb-3 text-lg font-semibold">
                                     Location Preferences
                                 </h3>
-                                <p className="mb-3 text-sm text-gray-600">
+                                <p className="mb-3 text-sm text-muted-foreground">
                                     Where are you willing to work?
                                 </p>
                                 {(
@@ -2328,7 +2328,7 @@ form.setData('children_ages', '');
                                 ).map((loc) => (
                                     <label
                                         key={loc}
-                                        className={`mb-2 flex cursor-pointer items-start gap-2 rounded border p-3 transition-colors ${form.data.location[loc] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                        className={`mb-2 flex cursor-pointer items-start gap-2 rounded border p-3 transition-colors ${form.data.location[loc] ? 'border-accent bg-secondary' : 'bg-background'}`}
                                     >
                                         <Checkbox
                                             checked={form.data.location[loc]}
@@ -2343,7 +2343,7 @@ form.setData('children_ages', '');
                                             <span className="font-medium">
                                                 {locationLabels[loc]}
                                             </span>
-                                            <p className="mt-1 text-sm text-gray-600">
+                                            <p className="mt-1 text-sm text-muted-foreground">
                                                 {locationDescriptions[loc]}
                                             </p>
                                         </div>
@@ -2355,7 +2355,7 @@ form.setData('children_ages', '');
                                 <h3 className="mb-3 text-lg font-semibold">
                                     Age Groups
                                 </h3>
-                                <p className="mb-3 text-sm text-gray-600">
+                                <p className="mb-3 text-sm text-muted-foreground">
                                     Check each age group you feel comfortable
                                     caring for. By checking, you're agreeing
                                     with the statement below.
@@ -2370,7 +2370,7 @@ form.setData('children_ages', '');
                                 ).map((age) => (
                                     <label
                                         key={age}
-                                        className={`mb-2 flex cursor-pointer items-start gap-2 rounded border p-3 transition-colors ${form.data.age_groups[age] ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                        className={`mb-2 flex cursor-pointer items-start gap-2 rounded border p-3 transition-colors ${form.data.age_groups[age] ? 'border-accent bg-secondary' : 'bg-background'}`}
                                     >
                                         <Checkbox
                                             checked={form.data.age_groups[age]}
@@ -2388,7 +2388,7 @@ form.setData('children_ages', '');
                                                         .slice(1)
                                                         .replace('_', ' ')}
                                             </span>
-                                            <p className="mt-1 text-sm text-gray-600">
+                                            <p className="mt-1 text-sm text-muted-foreground">
                                                 {ageGroupDescriptions[age]}
                                             </p>
                                         </div>
@@ -2457,7 +2457,7 @@ form.setData('children_ages', '');
                                         ).map(([key, label, description]) => (
                                             <label
                                                 key={key}
-                                                className={`flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors ${(form.data.qualifications?.[key] ?? false) ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                                className={`flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors ${(form.data.qualifications?.[key] ?? false) ? 'border-accent bg-secondary' : 'bg-background'}`}
                                             >
                                                 <Checkbox
                                                     checked={
@@ -2486,7 +2486,7 @@ form.setData('children_ages', '');
                                                     <span className="font-medium">
                                                         {label}
                                                     </span>
-                                                    <p className="mt-1 text-sm text-gray-600">
+                                                    <p className="mt-1 text-sm text-muted-foreground">
                                                         {description}
                                                     </p>
                                                 </div>
@@ -2526,7 +2526,7 @@ form.setData('children_ages', '');
                                         <div className="space-y-2">
                                             <Label htmlFor="bio">
                                                 Bio{' '}
-                                                <span className="text-red-500">
+                                                <span className="text-destructive">
                                                     *
                                                 </span>
                                             </Label>
@@ -2577,7 +2577,7 @@ form.setData('children_ages', '');
                                 <h3 className="mb-2 text-lg font-semibold">
                                     Caregiver Statement of Verification
                                 </h3>
-                                <p className="mb-4 text-sm text-gray-600">
+                                <p className="mb-4 text-sm text-muted-foreground">
                                     I certify under penalty of perjury that the
                                     answers given herein are true and complete
                                     to the best of my knowledge. I authorize the
@@ -2590,7 +2590,7 @@ form.setData('children_ages', '');
                                     <div className="space-y-2">
                                         <Label htmlFor="verification-signature">
                                             Typed Signature{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -2611,7 +2611,7 @@ form.setData('children_ages', '');
                                         {form.data.verification.signature &&
                                             form.data.verification.signature !==
                                                 expectedSignature && (
-                                                <p className="text-xs text-amber-600">
+                                                <p className="text-xs text-yellow-600 dark:text-yellow-400">
                                                     Signature must match your
                                                     full name (
                                                     {expectedSignature})
@@ -2631,7 +2631,7 @@ form.setData('children_ages', '');
                                     </div>
                                 </div>
                                 <label
-                                    className={`mt-4 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.verification.agree ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                    className={`mt-4 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.verification.agree ? 'border-accent bg-secondary' : 'bg-background'}`}
                                 >
                                     <Checkbox
                                         checked={form.data.verification.agree}
@@ -2654,7 +2654,7 @@ form.setData('children_ages', '');
                                 <h3 className="mb-2 text-lg font-semibold">
                                     Conditional Offer Acknowledgment
                                 </h3>
-                                <p className="mb-4 text-sm text-gray-600">
+                                <p className="mb-4 text-sm text-muted-foreground">
                                     I understand that this application does not
                                     constitute an offer of employment. If
                                     Sitterwise extends an offer, I will receive
@@ -2674,7 +2674,7 @@ form.setData('children_ages', '');
                                     <div className="space-y-2">
                                         <Label htmlFor="agreement-signature">
                                             Typed Signature{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
@@ -2695,7 +2695,7 @@ form.setData('children_ages', '');
                                         {form.data.agreement.signature &&
                                             form.data.agreement.signature !==
                                                 expectedSignature && (
-                                                <p className="text-xs text-amber-600">
+                                                <p className="text-xs text-yellow-600 dark:text-yellow-400">
                                                     Signature must match your
                                                     full name (
                                                     {expectedSignature})
@@ -2715,7 +2715,7 @@ form.setData('children_ages', '');
                                     </div>
                                 </div>
                                 <label
-                                    className={`mt-4 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.agreement.agree ? 'border-teal-500 bg-teal-50' : 'bg-gray-50'}`}
+                                    className={`mt-4 flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${form.data.agreement.agree ? 'border-accent bg-secondary' : 'bg-background'}`}
                                 >
                                     <Checkbox
                                         checked={form.data.agreement.agree}

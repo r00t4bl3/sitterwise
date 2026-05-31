@@ -23,9 +23,7 @@ beforeEach(function () {
     ]);
     $this->caregiver = Caregiver::factory()->create();
     $this->client = Client::factory()->create();
-    $this->booking = Booking::factory()->create([
-        'client_id' => $this->client->id,
-    ]);
+    $this->booking = Booking::factory()->forClient($this->client)->create();
 });
 
 describe('Booking - Caregiver', function () {
@@ -50,8 +48,8 @@ describe('Booking - Caregiver', function () {
         $caregiver1 = $this->caregiver;
         $caregiver2 = Caregiver::factory()->create();
 
-        $booking1 = Booking::factory()->create(['client_id' => $this->client->id]);
-        $booking2 = Booking::factory()->create(['client_id' => $this->client->id]);
+        $booking1 = Booking::factory()->forClient($this->client)->create();
+        $booking2 = Booking::factory()->forClient($this->client)->create();
 
         // Notify only caregiver1 about booking1
         BookingCaregiverNotification::create([
@@ -84,8 +82,7 @@ describe('Booking - Caregiver', function () {
     test('caregiver can reserve a booking', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 
@@ -112,8 +109,7 @@ describe('Booking - Caregiver', function () {
     test('only notified caregiver can reserve booking', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 
@@ -131,8 +127,7 @@ describe('Booking - Caregiver', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 
@@ -163,8 +158,7 @@ describe('Booking - Caregiver', function () {
     test('caregiver can confirm reserved booking', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
@@ -193,8 +187,7 @@ describe('Booking - Caregiver', function () {
     test('cannot confirm expired reservation', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->subMinute(), // Expired
@@ -215,8 +208,7 @@ describe('Booking - Caregiver', function () {
     });
 
     test('caregiver can release reservation', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
+        $booking = Booking::factory()->forClient($this->client)->create([
             'status' => 'reserved',
             'reserved_by' => $this->caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
@@ -238,8 +230,7 @@ describe('Booking - Caregiver', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver1->id,
             'reservation_expires_at' => now()->addMinute(),
@@ -259,8 +250,7 @@ describe('Booking - Caregiver', function () {
     test('notification marked as claimed on confirmation', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->addMinute(),
@@ -286,8 +276,7 @@ describe('Booking - Caregiver', function () {
     test('confirmed booking not shown in list', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'confirmed',
             'caregiver_id' => $caregiver->id,
         ]);
@@ -314,8 +303,7 @@ describe('Booking - Caregiver', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver1->id,
             'reservation_expires_at' => now()->addMinute(),
@@ -341,8 +329,7 @@ describe('Booking - Caregiver', function () {
     test('expired reservation returns to open on access', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'reserved',
             'reserved_by' => $caregiver->id,
             'reservation_expires_at' => now()->subSecond(),
@@ -364,8 +351,7 @@ describe('Booking - Caregiver', function () {
     test('reservation sets correct expiration time', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 
@@ -390,8 +376,7 @@ describe('Booking - Caregiver', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();
         $client = Client::factory()->create();
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'status' => 'received',
         ]);
 

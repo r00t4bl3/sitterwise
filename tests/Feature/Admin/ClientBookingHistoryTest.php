@@ -42,9 +42,7 @@ describe('Client Booking History', function () {
     });
 
     test('admin users can view booking history', function () {
-        Booking::factory()->count(3)->create([
-            'client_id' => $this->client->id,
-        ]);
+        Booking::factory()->count(3)->forClient($this->client)->create();
 
         $this->actingAs($this->admin);
 
@@ -60,8 +58,8 @@ describe('Client Booking History', function () {
 
     test('booking history shows only bookings for the given client', function () {
         $otherClient = Client::factory()->create();
-        Booking::factory()->count(2)->create(['client_id' => $this->client->id]);
-        Booking::factory()->count(3)->create(['client_id' => $otherClient->id]);
+        Booking::factory()->count(2)->forClient($this->client)->create();
+        Booking::factory()->count(3)->forClient($otherClient)->create();
 
         $this->actingAs($this->admin);
 
@@ -74,9 +72,9 @@ describe('Client Booking History', function () {
     });
 
     test('booking history can be filtered by status', function () {
-        Booking::factory()->create(['client_id' => $this->client->id, 'status' => 'confirmed']);
-        Booking::factory()->create(['client_id' => $this->client->id, 'status' => 'completed']);
-        Booking::factory()->create(['client_id' => $this->client->id, 'status' => 'cancelled']);
+        Booking::factory()->forClient($this->client)->create(['status' => 'confirmed']);
+        Booking::factory()->forClient($this->client)->create(['status' => 'completed']);
+        Booking::factory()->forClient($this->client)->create(['status' => 'cancelled']);
 
         $this->actingAs($this->admin);
 
@@ -89,7 +87,7 @@ describe('Client Booking History', function () {
     });
 
     test('booking history returns empty when status filter matches nothing', function () {
-        Booking::factory()->create(['client_id' => $this->client->id, 'status' => 'confirmed']);
+        Booking::factory()->forClient($this->client)->create(['status' => 'confirmed']);
 
         $this->actingAs($this->admin);
 
@@ -105,12 +103,10 @@ describe('Client Booking History', function () {
         $caregiver = Caregiver::factory()->create();
         $caregiver->user->update(['name' => 'SearchableCaregiver']);
 
-        Booking::factory()->create([
-            'client_id' => $this->client->id,
+        Booking::factory()->forClient($this->client)->create([
             'caregiver_id' => $caregiver->id,
         ]);
-        Booking::factory()->create([
-            'client_id' => $this->client->id,
+        Booking::factory()->forClient($this->client)->create([
             'caregiver_id' => null,
         ]);
 
@@ -125,7 +121,7 @@ describe('Client Booking History', function () {
     });
 
     test('booking history paginates results', function () {
-        Booking::factory()->count(25)->create(['client_id' => $this->client->id]);
+        Booking::factory()->count(25)->forClient($this->client)->create();
 
         $this->actingAs($this->admin);
 
@@ -140,8 +136,8 @@ describe('Client Booking History', function () {
     });
 
     test('booking history persists filter in pagination links', function () {
-        Booking::factory()->count(25)->create(['client_id' => $this->client->id, 'status' => 'confirmed']);
-        Booking::factory()->count(5)->create(['client_id' => $this->client->id, 'status' => 'completed']);
+        Booking::factory()->count(25)->forClient($this->client)->create(['status' => 'confirmed']);
+        Booking::factory()->count(5)->forClient($this->client)->create(['status' => 'completed']);
 
         $this->actingAs($this->admin);
 

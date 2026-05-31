@@ -8,6 +8,7 @@ use App\Enums\PetType;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Events\BookingCreated;
+use App\Events\BookingGroupCreated;
 use App\Events\GuestAccountSetup;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -104,6 +105,9 @@ class GuestBookingService
             'location_type' => 'required|string',
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after:start_datetime',
+            'dates' => 'nullable|array|min:1',
+            'dates.*.start_datetime' => 'required|date',
+            'dates.*.end_datetime' => 'required|date|after:dates.*.start_datetime',
             'address_line1' => 'required|string|max:500',
             'address_line2' => 'nullable|string|max:500',
             'address_city' => 'required|string|max:255',
@@ -132,11 +136,20 @@ class GuestBookingService
             'new_pets.*.notes' => 'nullable|string',
         ]);
 
-        $startDate = new \DateTime($validated['start_datetime']);
-        $endDate = new \DateTime($validated['end_datetime']);
-        $diffHours = $startDate->diff($endDate)->h + ($startDate->diff($endDate)->days * 24);
-        if ($diffHours < 4) {
-            return back()->withErrors(['end_datetime' => 'Booking must be at least 4 hours long.'])->withInput();
+        // Validate each date has minimum 4-hour duration
+        $datesToValidate = $validated['dates'] ?? [
+            ['start_datetime' => $validated['start_datetime'], 'end_datetime' => $validated['end_datetime']],
+        ];
+
+        foreach ($datesToValidate as $i => $dateEntry) {
+            $startDate = new \DateTime($dateEntry['start_datetime']);
+            $endDate = new \DateTime($dateEntry['end_datetime']);
+            $diffHours = $startDate->diff($endDate)->h + ($startDate->diff($endDate)->days * 24);
+            if ($diffHours < 4) {
+                $field = count($datesToValidate) > 1 ? "dates.{$i}.end_datetime" : 'end_datetime';
+
+                return back()->withErrors([$field => 'Booking must be at least 4 hours long.'])->withInput();
+            }
         }
 
         $paymentToken = Str::ulid();
@@ -217,16 +230,8 @@ class GuestBookingService
                 'client_id' => $client->id,
                 'submitted_at' => now(),
                 'submission_type' => 'guest',
-                'is_split' => false,
-            ]);
-
-            $booking = Booking::create([
-                'booking_group_id' => $bookingGroup->id,
-                'client_id' => $client->id,
                 'service_type' => $pendingData['service_type'],
                 'location_type' => $pendingData['location_type'],
-                'start_datetime' => $pendingData['start_datetime'],
-                'end_datetime' => $pendingData['end_datetime'],
                 'address_line1' => $pendingData['address_line1'],
                 'address_line2' => $pendingData['address_line2'] ?? null,
                 'address_city' => $pendingData['address_city'],
@@ -246,10 +251,7 @@ class GuestBookingService
                 'client_last_name' => $pendingData['client_last_name'],
                 'client_phone' => $pendingData['client_phone'],
                 'client_email' => $pendingData['client_email'],
-                'status' => 'received',
-                'payment_status' => 'pending',
                 'requires_payment' => true,
-                'total_amount' => 0,
                 'children' => array_map(fn ($child) => [
                     'name' => $child['name'] ?? null,
                     'gender' => $child['gender'] ?? null,
@@ -264,6 +266,25 @@ class GuestBookingService
                     'notes' => $pet['notes'] ?? null,
                 ], $pendingData['new_pets'] ?? []),
             ]);
+
+            // Create bookings for each date
+            $dates = $pendingData['dates'] ?? [
+                ['start_datetime' => $pendingData['start_datetime'], 'end_datetime' => $pendingData['end_datetime']],
+            ];
+
+            $bookings = [];
+            foreach ($dates as $dateEntry) {
+                $bookings[] = Booking::create([
+                    'booking_group_id' => $bookingGroup->id,
+                    'start_datetime' => $dateEntry['start_datetime'],
+                    'end_datetime' => $dateEntry['end_datetime'],
+                    'status' => 'received',
+                    'payment_status' => 'pending',
+                    'total_amount' => 0,
+                ]);
+            }
+
+            $booking = $bookings[0]; // Return first booking for backward compatibility
 
             if (! empty($pendingData['new_children'])) {
                 foreach ($pendingData['new_children'] as $childData) {
@@ -298,6 +319,12 @@ class GuestBookingService
         });
 
         event(new BookingCreated($result['booking']));
+
+        // Fire group event if multi-date
+        $dates = $pendingData['dates'] ?? null;
+        if ($dates && count($dates) > 1) {
+            event(new BookingGroupCreated($result['booking']->bookingGroup));
+        }
 
         if ($result['isNewUser'] && $result['resetToken']) {
             event(new GuestAccountSetup($result['booking'], $result['resetToken']));

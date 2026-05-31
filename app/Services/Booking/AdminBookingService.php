@@ -14,6 +14,7 @@ use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingAccepted;
 use App\Events\BookingCreated;
+use App\Events\BookingGroupCreated;
 use App\Events\BookingInvitationSent;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -53,11 +54,11 @@ class AdminBookingService implements BookingServiceInterface
         $endDate = $startDate->endOfMonth();
 
         $query = Booking::with([
-            'client.user',
-            'client.children',
-            'client.pets',
-            'hotel',
-            'address',
+            'bookingGroup.client.user',
+            'bookingGroup.client.children',
+            'bookingGroup.client.pets',
+            'bookingGroup.hotel',
+            'bookingGroup.address',
             'caregiver.user',
             'caregiverNotifications',
         ]);
@@ -73,14 +74,15 @@ class AdminBookingService implements BookingServiceInterface
             ->orderBy('start_datetime', 'asc')
             ->get()
             ->map(function (Booking $booking) {
-                if ($booking->client) {
-                    $booking->client->setAttribute('children', $booking->client->children->map(fn ($c) => [
+                $groupClient = $booking->bookingGroup?->client;
+                if ($groupClient) {
+                    $groupClient->setAttribute('children', $groupClient->children->map(fn ($c) => [
                         'name' => $c['name'],
                         'gender' => $c['gender'],
                         'birth_month' => $c['birth_month'],
                         'birth_year' => $c['birth_year'],
                     ]));
-                    $booking->client->setAttribute('pets', $booking->client->pets->map(fn ($p) => [
+                    $groupClient->setAttribute('pets', $groupClient->pets->map(fn ($p) => [
                         // 'id' => $p->id,
                         'name' => $p['name'],
                         'type' => $p['type'],
@@ -315,15 +317,8 @@ class AdminBookingService implements BookingServiceInterface
             'client_id' => $clientId,
             'submitted_at' => now(),
             'submission_type' => 'admin',
-            'is_split' => false,
-        ]);
-
-        $booking = Booking::create([
-            'booking_group_id' => $bookingGroup->id,
-            'client_id' => $clientId,
-            'caregiver_id' => $validated['caregiver_id'] ?? null,
-            'availability_id' => null,
-            'hotel_id' => $validated['hotel_id'] ?? null,
+            'service_type' => $validated['service_type'],
+            'location_type' => $validated['location_type'],
             'address_id' => $addressId,
             'address_line1' => $validated['address_line1'] ?? null,
             'address_line2' => $validated['address_line2'] ?? null,
@@ -337,12 +332,8 @@ class AdminBookingService implements BookingServiceInterface
             'children' => $childrenSnapshot,
             'children_notes' => $isGroupBooking ? ($validated['children_notes'] ?? null) : null,
             'pets' => $petsSnapshot,
-            'service_type' => $validated['service_type'],
-            'location_type' => $validated['location_type'],
+            'hotel_id' => $validated['hotel_id'] ?? null,
             'rental_platform' => $validated['rental_platform'] ?? null,
-            'start_datetime' => $validated['start_datetime'],
-            'end_datetime' => $validated['end_datetime'],
-            'status' => $validated['status'],
             'caregiver_notes' => $validated['caregiver_notes'] ?? null,
             'notes_to_sitterwise' => $validated['notes_to_sitterwise'] ?? null,
             'admin_notes' => $validated['admin_notes'] ?? null,
@@ -351,12 +342,37 @@ class AdminBookingService implements BookingServiceInterface
             'other_adults_present' => $validated['other_adults_present'] ?? null,
             'special_needs_notes' => $validated['special_needs_notes'] ?? null,
             'emergency_instructions' => $validated['emergency_instructions'] ?? null,
-            'total_amount' => 0,
-            'payment_status' => $validated['payment_status'],
             'requires_payment' => $validated['requires_payment'] ?? true,
         ]);
 
-        event(new BookingCreated($booking));
+        // Create bookings for each date
+        $dates = $validated['dates'] ?? [
+            ['start_datetime' => $validated['start_datetime'], 'end_datetime' => $validated['end_datetime']],
+        ];
+
+        $bookings = [];
+        foreach ($dates as $dateEntry) {
+            $bookings[] = Booking::create([
+                'booking_group_id' => $bookingGroup->id,
+                'caregiver_id' => $validated['caregiver_id'] ?? null,
+                'availability_id' => null,
+                'start_datetime' => $dateEntry['start_datetime'],
+                'end_datetime' => $dateEntry['end_datetime'],
+                'status' => $validated['status'],
+                'total_amount' => 0,
+                'payment_status' => $validated['payment_status'],
+            ]);
+        }
+
+        $booking = $bookings[0]; // First booking for event dispatch
+
+        // Fire the correct event based on number of dates
+        $dates = $validated['dates'] ?? null;
+        if ($dates && count($dates) > 1) {
+            event(new BookingGroupCreated($bookingGroup));
+        } else {
+            event(new BookingCreated($booking));
+        }
 
         if ($booking->caregiver_id) {
             event(new BookingAccepted($booking));
@@ -398,7 +414,22 @@ class AdminBookingService implements BookingServiceInterface
             BookingStatus::cases()
         );
 
-        $booking->load('caregiver.user', 'clientRating', 'caregiverRating');
+        $booking->load('caregiver.user', 'clientRating', 'caregiverRating', 'bookingGroup.bookings.caregiver');
+
+        $group = $booking->bookingGroup;
+        $siblingBookings = $group?->bookings
+            ->filter(fn ($b) => $b->id !== $booking->id)
+            ->values()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'ulid' => $b->ulid,
+                'start_datetime' => $b->start_datetime,
+                'end_datetime' => $b->end_datetime,
+                'status' => $b->status,
+                'caregiver_name' => $b->caregiver
+                    ? $b->caregiver->first_name.' '.$b->caregiver->last_name
+                    : null,
+            ]);
 
         return Inertia::render('admin/bookings/show', [
             'booking_statuses' => $bookingStatuses,
@@ -441,6 +472,11 @@ class AdminBookingService implements BookingServiceInterface
                 'pets' => $booking->pets,
                 'client_rating' => $booking->client_rating,
                 'caregiver_rating' => $booking->caregiver_rating,
+                'booking_group' => $group ? [
+                    'id' => $group->id,
+                    'bookings_count' => $group->bookings->count(),
+                    'sibling_bookings' => $siblingBookings,
+                ] : null,
             ],
         ]);
     }
@@ -536,21 +572,55 @@ class AdminBookingService implements BookingServiceInterface
             $this->saveClientAddress($booking->client_id, $validated);
         }
 
-        $updateData = [
-            ...collect($validated)->except(['special_considerations', 'hotel_id', 'children_notes'])->toArray(),
-            'hotel_id' => $validated['hotel_id'] ?? $booking->hotel_id,
-            'address_id' => $addressId,
-            'client_first_name' => $client?->first_name,
-            'client_last_name' => $client?->last_name,
-            'client_phone' => $client?->phone,
-            'client_email' => $client?->user?->email,
-            'children' => $childrenSnapshot,
-            'children_notes' => $isGroupBooking ? ($validated['children_notes'] ?? null) : null,
-            'pets' => $petsSnapshot,
+        $groupOnlyFields = [
+            'client_id', 'service_type', 'location_type', 'rental_platform',
+            'client_first_name', 'client_last_name', 'client_phone', 'client_email',
+            'address_line1', 'address_line2', 'address_city', 'address_state', 'address_zip',
+            'hotel_name', 'children', 'pets',
+            'sitter_preferences', 'other_adults_present', 'special_needs_notes',
+            'emergency_instructions', 'how_did_you_hear',
+            'caregiver_notes', 'notes_to_sitterwise', 'admin_notes', 'corporate_id',
+            'special_considerations',
         ];
 
+        $nonColumnFields = [
+            'new_children', 'new_pets',
+            'deleted_child_ids', 'deleted_pet_ids',
+            'child_ids', 'pet_ids',
+            'save_children_pets_to_profile',
+        ];
+
+        $updateData = [
+            ...collect($validated)->except([
+                ...$groupOnlyFields,
+                ...$nonColumnFields,
+            ])->toArray(),
+            'hotel_id' => $validated['hotel_id'] ?? $booking->hotel_id,
+            'address_id' => $addressId,
+            'children_notes' => $isGroupBooking ? ($validated['children_notes'] ?? null) : null,
+        ];
+
+        $groupUpdateData = collect($validated)->only([
+            ...$groupOnlyFields,
+            'hotel_id', 'requires_payment',
+        ])->toArray();
+        $groupUpdateData['client_first_name'] = $client?->first_name;
+        $groupUpdateData['client_last_name'] = $client?->last_name;
+        $groupUpdateData['client_phone'] = $client?->phone;
+        $groupUpdateData['client_email'] = $client?->user?->email;
+        $groupUpdateData['children'] = $childrenSnapshot;
+        $groupUpdateData['pets'] = $petsSnapshot;
+        $groupUpdateData['children_notes'] = $isGroupBooking ? ($validated['children_notes'] ?? null) : null;
+
         $oldCaregiverId = $booking->caregiver_id;
+
+        if (! empty($groupUpdateData)) {
+            $booking->bookingGroup->update($groupUpdateData);
+        }
+
         $booking->update($updateData);
+
+        $booking->load('bookingGroup');
 
         if ($booking->caregiver_id && $booking->caregiver_id != $oldCaregiverId) {
             event(new BookingAccepted($booking));

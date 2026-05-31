@@ -4,20 +4,20 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
-use App\Enums\SitterPreference;
-use App\Enums\SpecialConsideration;
+use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class Booking extends Model
 {
-    use HasFactory, Phone, SoftDeletes;
+    use HasFactory, HasGroupFields, Phone, SoftDeletes;
 
     protected static function boot(): void
     {
@@ -28,9 +28,7 @@ class Booking extends Model
                 $booking->ulid = Str::ulid();
             }
             $booking->calculateTotalWorkingHours();
-            $booking->calculateHourlyRate();
             $booking->calculateTotalAmount();
-            $booking->calculateSpecialConsiderations();
         });
 
         static::updating(function (Booking $booking) {
@@ -38,15 +36,7 @@ class Booking extends Model
                 $booking->calculateTotalWorkingHours();
             }
 
-            if ($booking->isDirty(['service_type', 'children', 'pets'])) {
-                $booking->calculateHourlyRate();
-            }
-
             $booking->calculateTotalAmount();
-
-            if ($booking->isDirty(['sitter_preferences', 'pets', 'other_adults_present'])) {
-                $booking->calculateSpecialConsiderations();
-            }
         });
     }
 
@@ -59,16 +49,22 @@ class Booking extends Model
         }
     }
 
-    private function calculateHourlyRate(): void
+    public function calculateHourlyRate(?BookingGroup $group = null): void
     {
-        $maxChildren = PricingRule::where('service_type', $this->service_type)->max('number_of_children');
-        $numberOfChildren = min(count($this->children ?? []), $maxChildren ?? 0);
+        $group ??= $this->bookingGroup;
 
-        $query = PricingRule::where('service_type', $this->service_type)
+        if (! $group) {
+            return;
+        }
+
+        $maxChildren = PricingRule::where('service_type', $group->service_type)->max('number_of_children');
+        $numberOfChildren = min(count($group->children ?? []), $maxChildren ?? 0);
+
+        $query = PricingRule::where('service_type', $group->service_type)
             ->where('number_of_children', $numberOfChildren);
 
-        if ($this->service_type === 'petsitter') {
-            $query->where('is_for_pets', ! empty($this->pets));
+        if ($group->service_type === 'petsitter') {
+            $query->where('is_for_pets', ! empty($group->pets));
         }
 
         $pricingRule = $query->first();
@@ -84,7 +80,7 @@ class Booking extends Model
         }
     }
 
-    private function calculateTotalAmount(): void
+    public function calculateTotalAmount(): void
     {
         if ($this->status === BookingStatus::Cancelled->value) {
             $this->charge_to_client = 0;
@@ -106,33 +102,6 @@ class Booking extends Model
 
         $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
-    }
-
-    public function calculateSpecialConsiderations(): void
-    {
-        $considerations = collect();
-
-        foreach ($this->sitter_preferences ?? [] as $value) {
-            $preference = SitterPreference::tryFrom($value);
-            if ($preference) {
-                $considerations->push($preference->toSpecialConsideration()->value);
-            }
-        }
-
-        foreach ($this->pets ?? [] as $pet) {
-            $type = strtolower($pet['type'] ?? '');
-            if ($type === 'dog') {
-                $considerations->push(SpecialConsideration::FamilyHasDogsOnsite->value);
-            } elseif ($type === 'cat') {
-                $considerations->push(SpecialConsideration::FamilyHasCatsOnsite->value);
-            }
-        }
-
-        if (! empty($this->other_adults_present)) {
-            $considerations->push(SpecialConsideration::ParentWillBePresent->value);
-        }
-
-        $this->special_considerations = $considerations->unique()->values()->toArray();
     }
 
     public function resolveRouteBinding($value, $field = null)
@@ -195,11 +164,6 @@ class Booking extends Model
             'last_charge_attempt_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'checkout_at' => 'datetime',
-            'special_considerations' => 'array',
-            'sitter_preferences' => 'array',
-            'children' => 'array',
-            'pets' => 'array',
-            'children_notes' => 'string',
             'total_amount' => 'decimal:2',
             'caregiver_amount' => 'decimal:2',
             'reimbursement' => 'decimal:2',
@@ -208,7 +172,6 @@ class Booking extends Model
             'tip' => 'decimal:2',
             'actual_amount' => 'decimal:2',
             'charge_attempt_count' => 'integer',
-            'requires_payment' => 'boolean',
             'charge_to_client_hourly' => 'decimal:2',
             'paid_to_caregiver_hourly' => 'decimal:2',
             'sitterwise_cut_hourly' => 'decimal:2',
@@ -280,9 +243,45 @@ class Booking extends Model
         return $this->belongsTo(BookingGroup::class);
     }
 
-    public function client()
+    public function getClientIdAttribute(): ?int
     {
-        return $this->belongsTo(Client::class);
+        return $this->bookingGroup?->client_id;
+    }
+
+    public function client(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Client::class,
+            BookingGroup::class,
+            'id',
+            'id',
+            'booking_group_id',
+            'client_id'
+        );
+    }
+
+    public function hotel(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Hotel::class,
+            BookingGroup::class,
+            'id',
+            'id',
+            'booking_group_id',
+            'hotel_id'
+        );
+    }
+
+    public function address(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            ClientAddress::class,
+            BookingGroup::class,
+            'id',
+            'id',
+            'booking_group_id',
+            'address_id'
+        );
     }
 
     public function caregiver()
@@ -293,16 +292,6 @@ class Booking extends Model
     public function availability()
     {
         return $this->belongsTo(Availability::class);
-    }
-
-    public function hotel()
-    {
-        return $this->belongsTo(Hotel::class);
-    }
-
-    public function address()
-    {
-        return $this->belongsTo(ClientAddress::class, 'address_id');
     }
 
     public function payments()
@@ -359,20 +348,32 @@ class Booking extends Model
         return $query->whereBetween('start_datetime', [now()->startOfDay(), now()->endOfDay()]);
     }
 
+    public function scopeSearchGroupFields($query, string $search)
+    {
+        return $query->whereHas('bookingGroup', function ($q) use ($search) {
+            $q->where('corporate_id', 'like', "%{$search}%")
+                ->orWhere('address_line1', 'like', "%{$search}%")
+                ->orWhere('address_city', 'like', "%{$search}%")
+                ->orWhere('address_state', 'like', "%{$search}%")
+                ->orWhere('address_zip', 'like', "%{$search}%");
+        });
+    }
+
     public function getServiceTypeLabelAttribute(): ?string
     {
-        if (! $this->service_type) {
+        $serviceType = $this->bookingGroup?->service_type;
+
+        if (! $serviceType) {
             return null;
         }
 
-        return ServiceType::tryFrom($this->service_type)?->label() ?? $this->service_type;
+        return ServiceType::tryFrom($serviceType)?->label() ?? $serviceType;
     }
 
-    /**
-     * Get the dynamic data for SendGrid email templates.
-     */
     public function toEmailData(): array
     {
+        $group = $this->bookingGroup;
+
         $start = $this->start_datetime instanceof Carbon
             ? $this->start_datetime->copy()->setTimezone('America/Los_Angeles')
             : Carbon::parse($this->start_datetime)->setTimezone('America/Los_Angeles');
@@ -380,21 +381,21 @@ class Booking extends Model
             ? $this->end_datetime->copy()->setTimezone('America/Los_Angeles')
             : Carbon::parse($this->end_datetime)->setTimezone('America/Los_Angeles');
 
-        $childrenCount = count($this->children ?? []);
-        $childrenSummary = collect($this->children ?? [])
+        $childrenCount = count($group->children ?? []);
+        $childrenSummary = collect($group->children ?? [])
             ->map(fn ($c) => ($c['name'] ?? 'Child').' ('.(isset($c['birth_year']) ? now()->year - $c['birth_year'] : '?').'yr)')
             ->join(', ');
 
-        $clientName = ($this->client?->first_name ?? $this->client_first_name).' '.($this->client?->last_name ?? $this->client_last_name);
+        $clientName = ($group->client?->first_name ?? $group->client_first_name).' '.($group->client?->last_name ?? $group->client_last_name);
 
         return [
             'booking_id' => $this->id,
             'job_id' => $this->id,
             'ulid' => $this->ulid,
-            'client_first_name' => $this->client?->first_name ?? $this->client_first_name,
+            'client_first_name' => $group->client?->first_name ?? $group->client_first_name,
             'client_name' => $clientName,
-            'client_email' => $this->client?->user?->email ?? $this->client_email,
-            'client_phone' => $this->client?->phone ?? $this->client_phone,
+            'client_email' => $group->client?->user?->email ?? $group->client_email,
+            'client_phone' => $group->client?->phone ?? $group->client_phone,
             'service_requested' => $this->service_type_label,
             'service_name' => $this->service_type_label,
             'date' => $start->format('l, F j, Y'),
@@ -406,17 +407,17 @@ class Booking extends Model
             'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
-            'location' => $this->hotel_name ?? $this->hotel?->name ?? $this->address_line1,
-            'address' => trim($this->address_line1.' '.$this->address_line2.', '.$this->address_city.', '.$this->address_state.' '.$this->address_zip),
-            'hotel_name' => $this->hotel_name ?? $this->hotel?->name ?? 'N/A',
-            'service_hotel' => $this->hotel_name ?? $this->hotel?->name ?? 'N/A',
-            'is_hotel' => $this->location_type === 'hotel' ? ($this->hotel_name ?? $this->hotel?->name) : false,
-            'is_hotel_text' => $this->location_type === 'hotel' ? ($this->hotel_name ?? $this->hotel?->name).' Booking' : 'Private Residence',
-            'special_considerations' => collect($this->special_considerations ?? [])->join(', ') ?: 'None',
-            'notes' => $this->caregiver_notes,
-            'notes_to_sitter' => $this->caregiver_notes,
-            'notes_for_sitter' => $this->caregiver_notes,
-            'notes_to_admin' => $this->notes_to_sitterwise,
+            'location' => $group->hotel_name ?? $group->hotel?->name ?? $group->address_line1,
+            'address' => trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip),
+            'hotel_name' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
+            'service_hotel' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
+            'is_hotel' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name) : false,
+            'is_hotel_text' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name).' Booking' : 'Private Residence',
+            'special_considerations' => collect($group->special_considerations ?? [])->join(', ') ?: 'None',
+            'notes' => $group->caregiver_notes,
+            'notes_to_sitter' => $group->caregiver_notes,
+            'notes_for_sitter' => $group->caregiver_notes,
+            'notes_to_admin' => $group->notes_to_sitterwise,
             'hourly_rate' => number_format($this->charge_to_client_hourly, 2),
             'admin_booking_url' => route('bookings.index', ['month' => $start->month, 'year' => $start->year]),
             'caregiver_first_name' => $this->caregiver?->first_name ?? 'Sitter',
@@ -435,12 +436,11 @@ class Booking extends Model
             'platform_fee' => $this->sitterwise_cut ?? 0.00,
             'total_amount' => $this->total_service_amount ?? 0.00,
             'total_hours' => $this->total_working_hour ?? 0,
-
         ];
     }
 
     protected function getPhoneColumns(): array
     {
-        return ['client_phone'];
+        return [];
     }
 }

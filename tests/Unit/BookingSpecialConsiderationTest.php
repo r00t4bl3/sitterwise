@@ -3,6 +3,7 @@
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Models\Booking;
+use App\Models\BookingGroup;
 
 describe('SitterPreference toSpecialConsideration mapping', function () {
     it('maps BabySpecialist to InfantCare', function () {
@@ -26,98 +27,122 @@ describe('SitterPreference toSpecialConsideration mapping', function () {
     });
 });
 
-describe('Booking calculateSpecialConsiderations', function () {
+describe('BookingGroup calculateSpecialConsiderations', function () {
     it('calculates InfantCare from BabySpecialist sitter preference', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['baby_specialist'];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['baby_specialist'];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('infant_care');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates SpecialNeedsCare from SpecialNeedsCare sitter preference', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['special_needs_care'];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['special_needs_care'];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('special_needs_care');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates SwimmingRequested from WillingToSwim sitter preference', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['willing_to_swim'];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['willing_to_swim'];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('swimming_requested');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates ChildIsSick from ChildIsSick sitter preference', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['child_is_sick'];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['child_is_sick'];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('child_is_sick');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates FamilyHasDogsOnsite from dog pet', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [['name' => 'Buddy', 'type' => 'dog', 'breed' => 'Golden Retriever']];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [['name' => 'Buddy', 'type' => 'dog', 'breed' => 'Golden Retriever']];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('family_has_dogs_onsite');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates FamilyHasCatsOnsite from cat pet', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [['name' => 'Whiskers', 'type' => 'cat', 'breed' => 'Persian']];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [['name' => 'Whiskers', 'type' => 'cat', 'breed' => 'Persian']];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('family_has_cats_onsite');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates ParentWillBePresent from other_adults_present', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [];
-        $booking->other_adults_present = 'Grandparents';
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = 'Grandparents';
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('parent_will_be_present');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('calculates multiple considerations from multiple sitter preferences', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['baby_specialist', 'willing_to_swim'];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['baby_specialist', 'willing_to_swim'];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('infant_care');
         expect($booking->special_considerations)->toContain('swimming_requested');
@@ -125,15 +150,18 @@ describe('Booking calculateSpecialConsiderations', function () {
     });
 
     it('calculates all 7 considerations when all inputs are present', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['baby_specialist', 'special_needs_care', 'willing_to_swim', 'child_is_sick'];
-        $booking->pets = [
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['baby_specialist', 'special_needs_care', 'willing_to_swim', 'child_is_sick'];
+        $bookingGroup->pets = [
             ['name' => 'Buddy', 'type' => 'dog'],
             ['name' => 'Whiskers', 'type' => 'cat'],
         ];
-        $booking->other_adults_present = 'Parent';
+        $bookingGroup->other_adults_present = 'Parent';
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('infant_care');
         expect($booking->special_considerations)->toContain('special_needs_care');
@@ -146,15 +174,18 @@ describe('Booking calculateSpecialConsiderations', function () {
     });
 
     it('deduplicates considerations', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['baby_specialist'];
-        $booking->pets = [
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['baby_specialist'];
+        $bookingGroup->pets = [
             ['name' => 'Buddy', 'type' => 'dog'],
             ['name' => 'Max', 'type' => 'dog'],
         ];
-        $booking->other_adults_present = 'Parent';
+        $bookingGroup->other_adults_present = 'Parent';
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('infant_care');
         expect($booking->special_considerations)->toContain('family_has_dogs_onsite');
@@ -163,26 +194,32 @@ describe('Booking calculateSpecialConsiderations', function () {
     });
 
     it('returns empty array when no inputs trigger considerations', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toBe([]);
     });
 
     it('handles case-insensitive pet types', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [
             ['name' => 'Buddy', 'type' => 'Dog'],
             ['name' => 'Whiskers', 'type' => 'CAT'],
         ];
-        $booking->other_adults_present = null;
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('family_has_dogs_onsite');
         expect($booking->special_considerations)->toContain('family_has_cats_onsite');
@@ -190,61 +227,76 @@ describe('Booking calculateSpecialConsiderations', function () {
     });
 
     it('ignores non-dog and non-cat pet types', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [
             ['name' => 'Nemo', 'type' => 'fish'],
             ['name' => 'Tweety', 'type' => 'bird'],
         ];
-        $booking->other_adults_present = null;
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toBe([]);
     });
 
     it('handles null pets gracefully', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = ['baby_specialist'];
-        $booking->pets = null;
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = ['baby_specialist'];
+        $bookingGroup->pets = null;
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('infant_care');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('handles null sitter_preferences gracefully', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = null;
-        $booking->pets = [['name' => 'Buddy', 'type' => 'dog']];
-        $booking->other_adults_present = null;
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = null;
+        $bookingGroup->pets = [['name' => 'Buddy', 'type' => 'dog']];
+        $bookingGroup->other_adults_present = null;
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('family_has_dogs_onsite');
         expect($booking->special_considerations)->toHaveCount(1);
     });
 
     it('ignores empty string other_adults_present', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [];
-        $booking->other_adults_present = '';
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = '';
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toBe([]);
     });
 
     it('calculates ParentWillBePresent for any non-empty other_adults_present', function () {
-        $booking = new Booking;
-        $booking->sitter_preferences = [];
-        $booking->pets = [];
-        $booking->other_adults_present = '1';
+        $bookingGroup = new BookingGroup;
+        $bookingGroup->sitter_preferences = [];
+        $bookingGroup->pets = [];
+        $bookingGroup->other_adults_present = '1';
 
-        $booking->calculateSpecialConsiderations();
+        $booking = new Booking;
+        $booking->setRelation('bookingGroup', $bookingGroup);
+
+        $bookingGroup->calculateSpecialConsiderations();
 
         expect($booking->special_considerations)->toContain('parent_will_be_present');
         expect($booking->special_considerations)->toHaveCount(1);
@@ -252,12 +304,15 @@ describe('Booking calculateSpecialConsiderations', function () {
 
     it('maps all 4 sitter preferences to correct special considerations', function () {
         foreach (SitterPreference::cases() as $preference) {
-            $booking = new Booking;
-            $booking->sitter_preferences = [$preference->value];
-            $booking->pets = [];
-            $booking->other_adults_present = null;
+            $bookingGroup = new BookingGroup;
+            $bookingGroup->sitter_preferences = [$preference->value];
+            $bookingGroup->pets = [];
+            $bookingGroup->other_adults_present = null;
 
-            $booking->calculateSpecialConsiderations();
+            $booking = new Booking;
+            $booking->setRelation('bookingGroup', $bookingGroup);
+
+            $bookingGroup->calculateSpecialConsiderations();
 
             expect($booking->special_considerations)->toContain(
                 $preference->toSpecialConsideration()->value

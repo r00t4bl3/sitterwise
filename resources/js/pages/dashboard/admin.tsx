@@ -107,7 +107,7 @@ interface AdminDashboardProps {
             colors: { bg: string; text: string; border: string };
         }>;
         needsAttention: NeedsAttentionItem[];
-        clients?: Array<{ id: number; name: number; [key: string]: unknown }>;
+        clients?: Array<{ id: number; name: string; [key: string]: unknown }>;
         hotels?: Array<{
             id: number;
             name: string;

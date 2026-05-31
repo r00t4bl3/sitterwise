@@ -34,8 +34,8 @@ class OnboardingChecklistItem extends Model
             ],
             [
                 'item_key' => 'cpr_uploaded',
-                'label' => 'CPR Uploaded',
-                'description' => 'CPR certification uploaded and valid. We\'ll remind you 90 days before renewal.',
+                'label' => 'CPR & First Aid Uploaded',
+                'description' => 'CPR & First Aid certification uploaded and valid. We\'ll remind you 90 days before renewal.',
             ],
             [
                 'item_key' => 'trustline_submitted',

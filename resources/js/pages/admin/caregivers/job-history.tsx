@@ -434,8 +434,8 @@ return;
                                                 <span
                                                     className="inline-block rounded-[3px] px-2 py-0.5 text-[10px] font-semibold"
                                                     style={{
-                                                        backgroundColor: `${booking.assignment_resolution_color}20`,
-                                                        color: booking.assignment_resolution_color,
+                                                        backgroundColor: `${booking.assignment_resolution_color ?? '#6b7280'}20`,
+                                                        color: booking.assignment_resolution_color ?? '#6b7280',
                                                     }}
                                                 >
                                                     {booking.assignment_resolution_label}

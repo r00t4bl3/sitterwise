@@ -105,13 +105,11 @@ describe('Caregiver Job History', function () {
         $client = Client::factory()->create();
         $client->user->update(['name' => 'SearchableClient']);
 
-        Booking::factory()->create([
+        Booking::factory()->forClient($client)->create([
             'caregiver_id' => $this->caregiver->id,
-            'client_id' => $client->id,
         ]);
-        Booking::factory()->create([
+        Booking::factory()->forClient(Client::factory()->create())->create([
             'caregiver_id' => $this->caregiver->id,
-            'client_id' => Client::factory(),
         ]);
 
         $this->actingAs($this->admin);

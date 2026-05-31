@@ -101,8 +101,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
 
         // Create 3 completed bookings for caregiver1
-        Booking::factory()->count(3)->create([
-            'client_id' => $client->id,
+        Booking::factory()->count(3)->forClient($client)->create([
             'caregiver_id' => $caregiver1->id,
             'status' => 'completed',
         ]);
@@ -171,8 +170,7 @@ describe('Recommendation Service - Caregiver', function () {
             'rating' => 4.0,
         ]);
 
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'caregiver_id' => null,
         ]);
 
@@ -196,8 +194,7 @@ describe('Recommendation Service - Caregiver', function () {
             'rating' => 4.0,
         ]);
 
-        $booking = Booking::factory()->create([
-            'client_id' => $client->id,
+        $booking = Booking::factory()->forClient($client)->create([
             'caregiver_id' => null,
         ]);
 
@@ -247,10 +244,10 @@ describe('Recommendation Service - Caregiver', function () {
             'time_slots' => ['morning', 'afternoon', 'evening'],
         ]);
 
-        $booking = new Booking;
-        $booking->service_type = 'babysitter';
-        $booking->start_datetime = $bookingDate->toISOString();
-        $booking->end_datetime = (clone $bookingDate)->setHour(13)->toISOString();
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $bookingDate,
+            'end_datetime' => (clone $bookingDate)->setHour(13),
+        ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
 

@@ -228,14 +228,14 @@ export function PersonalInfoSection({
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
                         <p className="font-semibold">
-                            {editingBooking.client.first_name}{' '}
-                            {editingBooking.client.last_name} -{' '}
-                            {(editingBooking.client.phone && (
+                            {editingBooking.booking_group?.client?.first_name}{' '}
+                            {editingBooking.booking_group?.client?.last_name} -{' '}
+                            {(editingBooking.booking_group?.client?.phone && (
                                 <a
-                                    href={`tel:${editingBooking.client.phone}`}
+                                    href={`tel:${editingBooking.booking_group?.client?.phone}`}
                                     className="text-primary hover:underline"
                                 >
-                                    {formatPhoneDisplay(editingBooking.client.phone)}
+                                    {formatPhoneDisplay(editingBooking.booking_group?.client?.phone)}
                                 </a>
                             )) ||
                                 'No phone'}
@@ -272,11 +272,11 @@ export function PersonalInfoSection({
                             })()}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            {editingBooking.children_notes
-                                ? editingBooking.children_notes
-                                : editingBooking.children &&
-                                    editingBooking.children.length > 0
-                                  ? editingBooking.children.map(
+                            {editingBooking.booking_group?.children_notes
+                                ? editingBooking.booking_group?.children_notes
+                                : editingBooking.booking_group?.children &&
+                                    editingBooking.booking_group?.children.length > 0
+                                  ? editingBooking.booking_group?.children.map(
                                         (child, index) => (
                                             <span key={`child-${index}`}>
                                                 {child.name}
@@ -288,7 +288,7 @@ export function PersonalInfoSection({
                                                       )})`
                                                     : ''}
                                                 {index <
-                                                editingBooking.children!
+                                                editingBooking.booking_group?.children!
                                                     .length -
                                                     1
                                                     ? ', '
@@ -297,9 +297,9 @@ export function PersonalInfoSection({
                                         ),
                                     )
                                   : '(No children)'}
-                            {editingBooking.pets &&
-                                editingBooking.pets.length > 0 &&
-                                ` • ${editingBooking.pets.length} pet${editingBooking.pets.length > 1 ? 's' : ''}`}
+                            {editingBooking.booking_group?.pets &&
+                                editingBooking.booking_group?.pets.length > 0 &&
+                                ` • ${editingBooking.booking_group?.pets.length} pet${editingBooking.booking_group?.pets.length > 1 ? 's' : ''}`}
                         </p>
                     </div>
                     {form.data.status === 'received' &&
@@ -323,7 +323,7 @@ export function PersonalInfoSection({
             )}
 
             {editingBooking && (
-                <ClientInfoPanel client={editingBooking.client} />
+                <ClientInfoPanel client={(editingBooking.client ?? editingBooking.booking_group?.client) as any} />
             )}
 
             <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>

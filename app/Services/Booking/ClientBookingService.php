@@ -10,6 +10,7 @@ use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingCreated;
+use App\Events\BookingGroupCreated;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingGroup;
@@ -178,14 +179,6 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             }
         }
 
-        // Create booking group
-        $bookingGroup = BookingGroup::create([
-            'client_id' => $client->id,
-            'submitted_at' => now(),
-            'submission_type' => 'client',
-            'is_split' => false,
-        ]);
-
         // Refresh client data to include updated children and pets for snapshot
         $client->load(['children', 'pets', 'user']);
 
@@ -205,16 +198,14 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             $addressId = $clientAddress->id;
         }
 
-        $booking = Booking::create([
-            'booking_group_id' => $bookingGroup->id,
+        // Create booking group with shared fields
+        $bookingGroup = BookingGroup::create([
             'client_id' => $client->id,
+            'submitted_at' => now(),
+            'submission_type' => 'client',
             'service_type' => $request->service_type,
             'location_type' => $request->location_type,
-            'start_datetime' => $request->start_datetime,
-            'end_datetime' => $request->end_datetime,
             'address_id' => $addressId,
-            'hotel_id' => $request->hotel_id,
-            'rental_platform' => $request->rental_platform,
             'address_line1' => $request->address_line1,
             'address_line2' => $request->address_line2,
             'address_city' => $request->address_city,
@@ -236,6 +227,8 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'breed' => $pet->breed,
                 'notes' => $pet->notes,
             ])->toArray(),
+            'hotel_id' => $request->hotel_id,
+            'rental_platform' => $request->rental_platform,
             'caregiver_notes' => $request->caregiver_notes,
             'notes_to_sitterwise' => $request->notes_to_sitterwise,
             'sitter_preferences' => $request->sitter_preferences,
@@ -243,13 +236,35 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'emergency_instructions' => $request->emergency_instructions,
             'special_needs_notes' => $request->special_needs_notes,
             'how_did_you_hear' => $request->how_did_you_hear,
-            'status' => 'received',
-            'payment_status' => 'pending',
             'requires_payment' => true,
-            'total_amount' => 0,
         ]);
 
-        event(new BookingCreated($booking));
+        // Create bookings for each date
+        $dates = $request->dates ?? [
+            ['start_datetime' => $request->start_datetime, 'end_datetime' => $request->end_datetime],
+        ];
+
+        $bookings = [];
+        foreach ($dates as $dateEntry) {
+            $bookings[] = Booking::create([
+                'booking_group_id' => $bookingGroup->id,
+                'start_datetime' => $dateEntry['start_datetime'],
+                'end_datetime' => $dateEntry['end_datetime'],
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'total_amount' => 0,
+            ]);
+        }
+
+        $booking = $bookings[0]; // Return first booking for backward compatibility
+
+        // Fire the correct event based on number of dates
+        $dates = $request->dates ?? null;
+        if ($dates && count($dates) > 1) {
+            event(new BookingGroupCreated($bookingGroup));
+        } else {
+            event(new BookingCreated($booking));
+        }
 
         return redirect('/bookings');
     }
