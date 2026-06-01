@@ -198,6 +198,15 @@ class ImportBubbleProfilePictures extends Command
                 return true;
             }
 
+            $token = substr(hash('xxh3', $user->email.config('app.key')), 0, 12);
+            $existingFiles = Storage::disk($disk)->files('profile-photos');
+            $prefix = "{$token}-";
+            foreach ($existingFiles as $file) {
+                if (str_starts_with(basename($file), $prefix)) {
+                    Storage::disk($disk)->delete($file);
+                }
+            }
+
             $response = Http::timeout(30)->get($url);
 
             if ($response->failed()) {
@@ -220,7 +229,7 @@ class ImportBubbleProfilePictures extends Command
 
             $img->scale(width: 1200, height: 1200);
 
-            $filename = 'user-'.$user->id.'-'.time().'.jpg';
+            $filename = $token.'-'.time().'.jpg';
             $path = 'profile-photos/'.$filename;
 
             $quality = 85;

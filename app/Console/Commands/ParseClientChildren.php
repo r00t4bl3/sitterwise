@@ -462,7 +462,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
                 $formattedChildren[] = [
                     'name' => $name,
-                    'gender' => $child['gender'] ?: null,
+                    'gender' => ($child['gender'] ?? null) ?: null,
                     'birth_month' => $birthMonth,
                     'birth_year' => $birthYear,
                 ];
@@ -525,7 +525,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
             $client->children()->create([
                 'name' => $name,
                 'birth_date' => $birthDate,
-                'gender' => $child['gender'] ?: null,
+                'gender' => ($child['gender'] ?? null) ?: null,
             ]);
         }
 
