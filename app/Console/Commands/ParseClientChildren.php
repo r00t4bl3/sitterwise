@@ -468,8 +468,12 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
                 ];
             }
 
-            $booking->children = $formattedChildren;
-            Booking::withoutEvents(fn () => $booking->save());
+            $group = $booking->bookingGroup;
+
+            if ($group) {
+                $group->children = $formattedChildren;
+                $group->save();
+            }
 
             return "booking {$externalId}";
         }
@@ -495,7 +499,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
             return null;
         }
 
-        if ($client->bookings()->where('service_type', 'group_childcare_invoiced')->exists()) {
+        if ($client->bookingGroups()->where('service_type', 'group_childcare_invoiced')->exists()) {
             return null;
         }
 

@@ -16,7 +16,7 @@ class ConvertPhoneNumbersToE164 extends Command
     {
         $tables = [
             ['table' => 'clients', 'column' => 'phone', 'label' => 'Clients'],
-            ['table' => 'bookings', 'column' => 'client_phone', 'label' => 'Bookings'],
+            ['table' => 'booking_groups', 'column' => 'client_phone', 'label' => 'Booking Groups'],
             ['table' => 'caregivers', 'column' => 'phone', 'label' => 'Caregivers'],
             ['table' => 'hotels', 'column' => 'contact_phone', 'label' => 'Hotels'],
         ];
