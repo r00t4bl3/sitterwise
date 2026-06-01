@@ -337,13 +337,11 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
                 updatedAddresses[idx] = updatedAddress;
                 currentForm.setData('addresses', updatedAddresses);
             } else {
-                currentForm.setData({
-                    [`${prefix}line1`]: line1 || '',
-                    [`${prefix}line2`]: line2 || '',
-                    [`${prefix}city`]: city || '',
-                    [`${prefix}state`]: state || '',
-                    [`${prefix}zip`]: zip || '',
-                });
+                currentForm.setData(`${prefix}line1`, line1 || '');
+                currentForm.setData(`${prefix}line2`, line2 || '');
+                currentForm.setData(`${prefix}city`, city || '');
+                currentForm.setData(`${prefix}state`, state || '');
+                currentForm.setData(`${prefix}zip`, zip || '');
             }
 
             const fullAddress =

@@ -228,17 +228,18 @@ export function PersonalInfoSection({
                 <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
                     <div>
                         <p className="font-semibold">
-                            {editingBooking.booking_group?.client?.first_name}{' '}
-                            {editingBooking.booking_group?.client?.last_name} -{' '}
-                            {(editingBooking.booking_group?.client?.phone && (
+                            {(() => {
+                                const client = editingBooking.client ?? editingBooking.booking_group?.client;
+                                return `${client?.first_name ?? ''} ${client?.last_name ?? ''} - `;
+                            })()}
+                            {(editingBooking.client ?? editingBooking.booking_group?.client)?.phone ? (
                                 <a
-                                    href={`tel:${editingBooking.booking_group?.client?.phone}`}
+                                    href={`tel:${(editingBooking.client ?? editingBooking.booking_group?.client)?.phone}`}
                                     className="text-primary hover:underline"
                                 >
-                                    {formatPhoneDisplay(editingBooking.booking_group?.client?.phone)}
+                                    {formatPhoneDisplay((editingBooking.client ?? editingBooking.booking_group?.client)?.phone ?? '')}
                                 </a>
-                            )) ||
-                                'No phone'}
+                            ) : 'No phone'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                             {(() => {
