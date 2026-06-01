@@ -133,11 +133,10 @@ class ImportStagedData extends Command
         $service->passCaregiverAttributes($hits, $usersByBubbleId);
         $this->info('  Done. ('.$this->elapsed($timer).')');
 
-        // Pass 10 — Client Addresses & Pets
+        // Pass 10 — Client Addresses
         $timer = microtime(true);
-        $this->info("Pass 10/10: Client Addresses & Pets ($total records)...");
+        $this->info("Pass 10/10: Client Addresses ($total records)...");
         $service->passClientAddresses($hits, $usersByBubbleId);
-        $service->passClientPets($hits, $usersByBubbleId);
         $this->info('  Done. ('.$this->elapsed($timer).')');
 
         // Finalize temporary caregiver slugs

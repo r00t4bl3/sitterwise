@@ -885,71 +885,6 @@ class ImportUserService
     }
 
     // ------------------------------------------------------------------
-    // Pass 11 — Client Pets
-    // ------------------------------------------------------------------
-
-    public function passClientPets(array $hits, array $usersByBubbleId, ?\Closure $onProgress = null): void
-    {
-        $clientsByUserId = ClientModel::query()->get()->keyBy('user_id');
-        $batch = [];
-        $clientIds = [];
-        $now = now();
-
-        foreach ($hits as $hit) {
-            if ($onProgress) {
-                $onProgress();
-            }
-            $source = $hit['source'];
-            $role = $source['role_permissions_option_role'] ?? 'caregiver';
-            if ($role !== 'client') {
-                continue;
-            }
-            $text = $source['pets_in_the_home_text'] ?? null;
-            if (! $text) {
-                continue;
-            }
-            $user = $usersByBubbleId[$hit['id']] ?? null;
-            if (! $user) {
-                continue;
-            }
-            $client = $clientsByUserId[$user->id] ?? null;
-            if (! $client) {
-                continue;
-            }
-
-            $lower = strtolower($text);
-            if (in_array(trim($lower), ['no', 'none', 'n/a', 'na', 'no pets', 'no pet', 'no animals', 'none at this time'])) {
-                continue;
-            }
-
-            $clientIds[] = $client->id;
-            $pets = [];
-            if (str_contains($lower, 'dog')) {
-                $pets[] = 'dog';
-            }
-            if (str_contains($lower, 'cat')) {
-                $pets[] = 'cat';
-            }
-
-            if (empty($pets)) {
-                $batch[] = ['client_id' => $client->id, 'name' => 'Other', 'type' => 'other', 'notes' => $text, 'created_at' => $now, 'updated_at' => $now];
-            } else {
-                foreach ($pets as $type) {
-                    $batch[] = ['client_id' => $client->id, 'name' => ucfirst($type), 'type' => $type, 'notes' => $text, 'created_at' => $now, 'updated_at' => $now];
-                }
-            }
-        }
-
-        if (! empty($clientIds)) {
-            DB::table('client_pets')->whereIn('client_id', array_unique($clientIds))->delete();
-        }
-        foreach (array_chunk($batch, 100) as $chunk) {
-            file_put_contents('php://stdout', 'Inserting chunk of '.count($chunk)." client_pets\n");
-            DB::table('client_pets')->insert($chunk);
-        }
-    }
-
-    // ------------------------------------------------------------------
     // Static data extraction helpers
     // ------------------------------------------------------------------
 
@@ -1262,6 +1197,10 @@ class ImportUserService
                 continue;
             }
 
+            if (! ($source['start_date_date'] ?? null) || ! ($source['end_date_date'] ?? null)) {
+                continue;
+            }
+
             $statusMapping = [
                 'paid' => BookingStatus::Paid,
                 'completed' => BookingStatus::Completed,
@@ -1339,8 +1278,8 @@ class ImportUserService
                 'bubble_id' => $externalId,
                 'caregiver_id' => $caregiver?->id,
                 'confirmed_at' => $caregiver ? (self::timestampToDateTime($source['confirmed_at_date'] ?? null) ?? $now) : null,
-                'start_datetime' => self::timestampToDateTime($source['start_date_date'] ?? null) ?? $now,
-                'end_datetime' => self::timestampToDateTime($source['end_date_date'] ?? null) ?? $now,
+                'start_datetime' => self::timestampToDateTime($source['start_date_date'] ?? null),
+                'end_datetime' => self::timestampToDateTime($source['end_date_date'] ?? null),
                 'status' => $status->value,
                 'total_working_hour' => $hours,
                 'charge_to_client_hourly' => $clientHourly,
