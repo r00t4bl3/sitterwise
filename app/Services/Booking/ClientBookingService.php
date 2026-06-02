@@ -42,17 +42,27 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
     {
         $client = $request->user()->client;
 
-        $bookings = $client->bookings()->with('caregiver.user')->paginate(15)->through(function ($booking) {
-            return [
-                'id' => $booking->id,
-                'ulid' => $booking->ulid,
-                'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
-                'caregiver_name' => $booking->caregiver ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name : null,
-                'start_datetime' => $booking->start_datetime,
-                'end_datetime' => $booking->end_datetime,
-                'status' => $booking->status,
-            ];
-        });
+        $bookings = $client->bookings()
+            ->with(['caregiver.user'])
+            ->with(['bookingGroup' => fn ($q) => $q->withCount('bookings')])
+            ->paginate(15)
+            ->through(function ($booking) {
+                $group = $booking->bookingGroup;
+
+                return [
+                    'id' => $booking->id,
+                    'ulid' => $booking->ulid,
+                    'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
+                    'caregiver_name' => $booking->caregiver ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name : null,
+                    'start_datetime' => $booking->start_datetime,
+                    'end_datetime' => $booking->end_datetime,
+                    'status' => $booking->status,
+                    'booking_group' => $group ? [
+                        'id' => $group->id,
+                        'bookings_count' => $group->bookings_count,
+                    ] : null,
+                ];
+            });
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -280,7 +290,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             abort(403, 'Unauthorized');
         }
 
-        $booking->load('bookingGroup', 'caregiver.user', 'caregiverRating');
+        $booking->load('bookingGroup.bookings.caregiver', 'caregiver.user', 'caregiverRating');
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -290,6 +300,21 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             ],
             BookingStatus::cases()
         );
+
+        $group = $booking->bookingGroup;
+        $siblingBookings = $group?->bookings
+            ->filter(fn ($b) => $b->id !== $booking->id)
+            ->values()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'ulid' => $b->ulid,
+                'start_datetime' => $b->start_datetime,
+                'end_datetime' => $b->end_datetime,
+                'status' => $b->status,
+                'caregiver_name' => $b->caregiver
+                    ? $b->caregiver->first_name.' '.$b->caregiver->last_name
+                    : null,
+            ]);
 
         return Inertia::render('client/bookings/show', [
             'booking_statuses' => $bookingStatuses,
@@ -331,6 +356,11 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
+                'booking_group' => $group ? [
+                    'id' => $group->id,
+                    'bookings_count' => $group->bookings->count(),
+                    'sibling_bookings' => $siblingBookings,
+                ] : null,
             ],
         ]);
     }

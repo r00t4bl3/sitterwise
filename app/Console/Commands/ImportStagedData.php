@@ -8,15 +8,38 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('import:staged {type : The Bubble data type to import (user, jobs, rating, transactions)} {--force : Overwrite existing records} {--dry-run : Preview without saving} {--limit= : Limit number of records}')]
+#[Signature('import:staged {type? : The Bubble data type to import (user, jobs, rating, transactions)} {--force : Overwrite existing records} {--dry-run : Preview without saving} {--limit= : Limit number of records}')]
 #[Description('Import data from local staging database with pass-based bulk operations')]
 class ImportStagedData extends Command
 {
+    protected const TYPES = ['user', 'jobs', 'transactions', 'rating'];
+
     protected ?\PDO $sqlite = null;
 
     public function handle(): int
     {
         $type = $this->argument('type');
+
+        if ($type) {
+            return $this->processType($type);
+        }
+
+        $exitCode = Command::SUCCESS;
+
+        foreach (self::TYPES as $processType) {
+            $this->newLine();
+            $this->info("=== Processing [{$processType}] ===");
+
+            if ($this->processType($processType) === Command::FAILURE) {
+                $exitCode = Command::FAILURE;
+            }
+        }
+
+        return $exitCode;
+    }
+
+    protected function processType(string $type): int
+    {
         $force = $this->option('force');
         $dryRun = $this->option('dry-run');
         $limit = $this->option('limit');

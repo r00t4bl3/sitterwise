@@ -20,6 +20,7 @@ use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
 use App\Models\Hotel;
 use App\Models\SpecialtyType;
+use App\Models\Traits\Phone;
 use App\Models\User;
 use App\Services\ImportUserService;
 use Carbon\Carbon;
@@ -940,17 +941,7 @@ class ImportBubbleDatabase extends Command
 
     protected function formatPhone(?string $phone): ?string
     {
-        if (! $phone) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D/', '', $phone);
-
-        if (strlen($digits) === 10) {
-            return '('.substr($digits, 0, 3).') '.substr($digits, 3, 3).'-'.substr($digits, 6);
-        }
-
-        return $phone;
+        return Phone::normalizePhone($phone);
     }
 
     protected function parsePhotoUrl(?string $url): ?string
@@ -1052,7 +1043,7 @@ class ImportBubbleDatabase extends Command
             'first_name' => $names['first'],
             'last_name' => $names['last'],
             'biography' => $bio,
-            'phone' => $this->formatPhone($source['phone_text'] ?? 'N/A'), // phone is NOT NULL in DB
+            'phone' => $this->formatPhone($source['phone_text'] ?? null),
             'client_type' => $this->mapClientType($source),
             'how_did_you_hear' => $source['how_did_you_hear_about_us_text'] ?? null,
             'notes' => $source['internal_notes_text'] ?? null,

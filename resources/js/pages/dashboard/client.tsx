@@ -292,15 +292,15 @@ export default function ClientDashboard({
                         <h3 className="text-lg leading-none font-semibold tracking-tight">
                             Upcoming Bookings
                         </h3>
-                        <div className="col-span-3 rounded-xl border border-border bg-card text-card-foreground shadow">
-                            <div className="flex h-[200px] flex-col items-center justify-center text-center">
-                                {upcomingBookings.length > 0 ? (
+                        <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
+                            {upcomingBookings.length > 0 ? (
+                                <div className="p-6">
                                     <div className="space-y-2">
                                         {upcomingBookings.map((booking) => (
                                             <Link
                                                 key={booking.id}
                                                 href={`/bookings/${booking.ulid}`}
-                                                className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
@@ -323,17 +323,17 @@ export default function ClientDashboard({
                                             </Link>
                                         ))}
                                     </div>
-                                ) : (
-                                    <>
-                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                            <Activity className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                        <h3 className="mb-4 text-lg font-medium">
-                                            No upcoming bookings.
-                                        </h3>
-                                    </>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="flex h-[200px] flex-col items-center justify-center text-center">
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                        <Activity className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="mb-4 text-lg font-medium">
+                                        No upcoming bookings.
+                                    </h3>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

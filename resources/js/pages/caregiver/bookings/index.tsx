@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -24,9 +24,19 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface SiblingDate {
+    id: number;
+    ulid: string;
+    start_datetime: string;
+    end_datetime: string;
+    status: string;
+}
+
 interface Booking {
     id: number;
     ulid: string;
+    booking_group_id: number | null;
+    group_size: number;
     client_name: string;
     start_datetime: string;
     end_datetime: string;
@@ -35,6 +45,7 @@ interface Booking {
     reservation_expires_at: string | null;
     notified_at: string;
     viewed_at: string | null;
+    sibling_dates: SiblingDate[];
 }
 
 interface Props {
@@ -130,6 +141,25 @@ export default function CaregiverBookings() {
         );
     };
 
+    const groupedBookings = bookings.data.reduce<Record<string, Booking[]>>(
+        (acc, booking) => {
+            const key = booking.booking_group_id
+                ? `group-${booking.booking_group_id}`
+                : `single-${booking.id}`;
+
+            if (!acc[key]) {
+acc[key] = [];
+}
+
+            acc[key].push(booking);
+
+            return acc;
+        },
+        {},
+    );
+
+    const groups = Object.values(groupedBookings);
+
     if (bookings.data.length === 0) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
@@ -182,57 +212,144 @@ export default function CaregiverBookings() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {bookings.data.map((booking) => (
-                            <div
-                                key={booking.id}
-                                className="rounded-lg border border-border bg-card p-6"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4 text-muted-foreground" />
-                                            <span className="font-medium text-foreground">
-                                                {booking.client_name}
-                                            </span>
+                        {groups.map((group) => {
+                            const first = group[0];
+                            const isGroup =
+                                first.group_size > 1 &&
+                                first.booking_group_id !== null;
+
+                            if (!isGroup) {
+                                const booking = first;
+
+                                return (
+                                    <div
+                                        key={booking.id}
+                                        className="rounded-lg border border-border bg-card p-6"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <User className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="font-medium text-foreground">
+                                                        {booking.client_name}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {formatDisplayDateTimeInPT(
+                                                            booking.start_datetime,
+                                                        )}{' '}
+                                                        -{' '}
+                                                        {formatDisplayDateTimeInPT(
+                                                            booking.end_datetime,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Notified{' '}
+                                                        {new Date(
+                                                            booking.notified_at,
+                                                        ).toLocaleDateString('en-US', {
+                                                            timeZone: 'America/Los_Angeles',
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4">
+                                                {getStatusBadge(booking)}
+                                                <Link
+                                                    href={`/bookings/${booking.ulid}`}
+                                                >
+                                                    <Button size="sm">
+                                                        View Details
+                                                    </Button>
+                                                </Link>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm text-muted-foreground">
-                                                {formatDisplayDateTimeInPT(
-                                                    booking.start_datetime,
-                                                )}{' '}
-                                                -{' '}
-                                                {formatDisplayDateTimeInPT(
-                                                    booking.end_datetime,
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-xs text-muted-foreground">
-                                                Notified{' '}
-                                                {new Date(
-                                                    booking.notified_at,
-                                                ).toLocaleDateString('en-US', {
-                                                    timeZone: 'America/Los_Angeles',
-                                                })}
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div
+                                    key={`group-${first.booking_group_id}`}
+                                    className="rounded-lg border border-border bg-card"
+                                >
+                                    <div className="border-b border-border px-6 py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-medium text-foreground">
+                                                    {first.client_name}
+                                                </span>
+                                            </div>
+                                            <span className="rounded-[3px] bg-logo-teal/10 px-2 py-0.5 text-xs font-medium text-logo-teal">
+                                                {first.group_size} dates
                                             </span>
                                         </div>
                                     </div>
+                                    <div className="divide-y divide-border">
+                                        {group.map((booking) => {
+                                            const secondsLeft =
+                                                countdowns[booking.id] ?? 0;
 
-                                    <div className="flex items-center gap-4">
-                                        {getStatusBadge(booking)}
-                                        <Link
-                                            href={`/bookings/${booking.ulid}`}
-                                        >
-                                            <Button size="sm">
-                                                View Details
-                                            </Button>
-                                        </Link>
+                                            return (
+                                                <div
+                                                    key={booking.id}
+                                                    className="flex items-center justify-between px-6 py-3"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                        <span className="text-sm text-foreground">
+                                                            {formatDisplayDateTimeInPT(
+                                                                booking.start_datetime,
+                                                            )}{' '}
+                                                            -{' '}
+                                                            {formatDisplayDateTimeInPT(
+                                                                booking.end_datetime,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        {secondsLeft > 0 ? (
+                                                            <div className="flex items-center gap-1 text-yellow-600">
+                                                                <Clock className="h-3.5 w-3.5" />
+                                                                <span className="text-xs font-medium">
+                                                                    {secondsLeft}s
+                                                                </span>
+                                                            </div>
+                                                        ) : booking.status ===
+                                                          'received' ? (
+                                                            <span className="text-xs font-medium text-green-600">
+                                                                Available
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs font-medium text-muted-foreground">
+                                                                {booking.status}
+                                                            </span>
+                                                        )}
+                                                        <Link
+                                                            href={`/bookings/${booking.ulid}`}
+                                                        >
+                                                            <Button
+                                                                size="xs"
+                                                                variant="outline"
+                                                            >
+                                                                View
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 

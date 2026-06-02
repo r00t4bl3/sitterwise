@@ -40,6 +40,19 @@ export default function GuestBookingConfirmation() {
 
     const hasSiblings = booking.booking_group && booking.booking_group.bookings_count > 1;
 
+    const allDates = hasSiblings
+        ? [
+            {
+                id: booking.id,
+                ulid: booking.ulid,
+                start_datetime: booking.start_datetime,
+                end_datetime: booking.end_datetime,
+                status: booking.status,
+            },
+            ...booking.booking_group!.sibling_bookings,
+        ]
+        : [];
+
     return (
         <GuestLayout>
             <Head title="Booking Confirmed" />
@@ -93,19 +106,23 @@ export default function GuestBookingConfirmation() {
                                 {booking.service_type}
                             </span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Date</span>
-                            <span className="font-medium">
-                                {formatDisplayDateInPT(booking.start_datetime)}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Time</span>
-                            <span className="font-medium">
-                                {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
-                                {formatDisplayTimeInPT(booking.end_datetime)}
-                            </span>
-                        </div>
+                        {!hasSiblings && (
+                            <>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Date</span>
+                                    <span className="font-medium">
+                                        {formatDisplayDateInPT(booking.start_datetime)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Time</span>
+                                    <span className="font-medium">
+                                        {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
+                                        {formatDisplayTimeInPT(booking.end_datetime)}
+                                    </span>
+                                </div>
+                            </>
+                        )}
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">
                                 Location
@@ -125,27 +142,22 @@ export default function GuestBookingConfirmation() {
                     </div>
 
                     {hasSiblings && (
-                        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                            <h3 className="text-sm font-medium text-blue-800 mb-2">
-                                This is a group booking ({booking.booking_group!.bookings_count} dates)
-                            </h3>
-                            <div className="space-y-1.5">
-                                {booking.booking_group!.sibling_bookings.map((sibling) => (
-                                    <div
-                                        key={sibling.id}
-                                        className="flex items-center justify-between rounded border border-blue-100 bg-white px-3 py-2 text-xs"
-                                    >
-                                        <span className="text-foreground">
-                                            {formatDisplayDateInPT(sibling.start_datetime)}
-                                            {' '}
-                                            {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
-                                        </span>
-                                        <span className="capitalize text-muted-foreground">
-                                            {sibling.status}
-                                        </span>
-                                    </div>
-                                ))}
+                        <div className="mt-4 space-y-4 rounded-lg bg-muted p-4">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Date</span>
+                                <span className="text-muted-foreground">Time</span>
                             </div>
+                            {allDates.map((d) => (
+                                <div key={d.id} className="flex justify-between">
+                                    <span className="font-medium">
+                                        {formatDisplayDateInPT(d.start_datetime)}
+                                    </span>
+                                    <span className="font-medium">
+                                        {formatDisplayTimeInPT(d.start_datetime)} -{' '}
+                                        {formatDisplayTimeInPT(d.end_datetime)}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     )}
 
@@ -167,14 +179,14 @@ export default function GuestBookingConfirmation() {
                     </div>
 
                     {passwordSetupUrl && (
-                        <div className="mt-6 rounded-lg border border-navy/20 bg-navy/[0.03] p-5 text-center">
+                        <div className="mt-6 rounded-lg border border-border bg-card p-5 text-center">
                             <p className="mb-3 text-sm text-muted-foreground">
                                 Set up your account now to track bookings,
                                 manage preferences, and book faster next time.
                             </p>
                             <Link
                                 href={passwordSetupUrl}
-                                className="inline-flex h-11 items-center justify-center rounded-[3px] bg-navy px-6 text-sm font-semibold text-white transition-colors hover:bg-navy-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
+                                className="inline-flex h-11 items-center justify-center rounded-[3px] bg-table-header px-6 text-sm font-semibold text-white transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Set Your Password
                             </Link>

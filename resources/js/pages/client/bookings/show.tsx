@@ -23,6 +23,15 @@ import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 
+interface SiblingBooking {
+    id: number;
+    ulid: string;
+    start_datetime: string;
+    end_datetime: string;
+    status: string;
+    caregiver_name: string | null;
+}
+
 interface Booking {
     id: number;
     ulid: string;
@@ -65,6 +74,11 @@ interface Booking {
         breed: string | null;
         notes: string | null;
     }> | null;
+    booking_group: {
+        id: number;
+        bookings_count: number;
+        sibling_bookings: SiblingBooking[];
+    } | null;
 }
 
 interface BookingStatus {
@@ -186,6 +200,11 @@ export default function BookingDetail({
                                         status={booking.status}
                                         bookingStatuses={booking_statuses}
                                     />
+                                    {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                        <Badge variant="outline" className="text-xs">
+                                            Group ({booking.booking_group.bookings_count})
+                                        </Badge>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -204,6 +223,32 @@ export default function BookingDetail({
                                         )}
                                     </span>
                                 </div>
+
+                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
+                                        {booking.booking_group.sibling_bookings.map((sibling) => (
+                                            <Link
+                                                key={sibling.id}
+                                                href={`/bookings/${sibling.ulid}`}
+                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
+                                            >
+                                                <span className="text-muted-foreground">
+                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
+                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {sibling.caregiver_name && (
+                                                        <span className="text-muted-foreground">{sibling.caregiver_name}</span>
+                                                    )}
+                                                    <StatusBadge
+                                                        status={sibling.status}
+                                                        bookingStatuses={booking_statuses}
+                                                    />
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
 
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
@@ -376,7 +421,7 @@ export default function BookingDetail({
                                                             <Badge
                                                                 key={i}
                                                                 variant="outline"
-                                                                className="border-yellow-500 text-yellow-700"
+                                                                className="border-yellow-600/30 text-yellow-600 dark:text-yellow-400"
                                                             >
                                                                 {consideration}
                                                             </Badge>

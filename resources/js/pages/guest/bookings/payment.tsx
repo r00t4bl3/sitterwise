@@ -1,3 +1,4 @@
+import { Head } from '@inertiajs/react';
 import {
     EmbeddedCheckoutProvider,
     EmbeddedCheckout,
@@ -5,6 +6,7 @@ import {
 import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
 import BookingProgress from '@/components/booking-progress';
+import GuestLayout from '@/layouts/guest-layout';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
 const stripePromise = loadStripe(
@@ -95,15 +97,17 @@ export default function PaymentPage({
     }, [token]);
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 py-12">
-            <div className="mx-auto max-w-2xl">
+        <GuestLayout>
+            <Head title="Complete Your Booking" />
+            <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <BookingProgress currentStep={2} />
 
-                <h1 className="mb-8 text-center text-3xl font-bold text-foreground">
-                    Complete Your Booking
-                </h1>
+                <div className="mx-auto w-full max-w-2xl">
+                    <h1 className="mb-8 text-center text-3xl font-bold text-foreground">
+                        Complete Your Booking
+                    </h1>
 
-                <div className="mb-6 rounded-lg bg-card p-6 shadow-xs border border-border">
+                    <div className="mb-6 rounded-lg bg-card p-6 shadow-xs border border-border">
                     <h2 className="mb-4 text-lg font-semibold text-foreground">
                         Booking Summary
                     </h2>
@@ -188,10 +192,11 @@ export default function PaymentPage({
                     )}
                 </div>
 
-                <p className="mt-6 text-center text-sm text-gray-500">
+                <p className="mt-6 text-center text-sm text-muted-foreground">
                     Your payment information is securely processed by Stripe.
                 </p>
             </div>
         </div>
+    </GuestLayout>
     );
 }

@@ -1,7 +1,36 @@
 # Guest Group Booking Implementation Plan
 
 ## Goal
-Allow guests to submit multiple dates in a single booking form. Each submission creates one `BookingGroup` containing multiple `Booking` records (one per date). The `BookingGroup` acts as a normalized header record — shared fields live on the group, per-date fields on the booking. Admin dashboard shows group context, emails are per-group (one email with all dates), and caregiver notification is per-group (all-or-nothing).
+Implement group booking: multi-date bookings with a `BookingGroup` header record (30 shared fields) + per-date `Booking` records. Allows guests, clients, and admins to submit multiple dates in a single form. Admin dashboard shows group context, emails are per-group (one email with all dates), and caregiver notification is per-group (all-or-nothing).
+
+---
+
+## Current State
+
+### ✅ Completed
+- Schema: BookingGroup table (30 shared fields), Bookings table (per-date fields only)
+- Models: BookingGroup, Booking (HasGroupFields trait, scopeSearchGroupFields, client proxy), Client (bookingGroups, bookings via hasManyThrough)
+- Services: Guest/Client/Admin all create BookingGroup + N Bookings, fire correct event
+- Events/Mail: BookingGroupCreated, SendBookingGroupCreatedNotifications listener, Blade templates (replacing SendGrid) for both client + admin group emails
+- Import command: per-job BookingGroup + Booking creation
+- SearchController: uses scopeSearchGroupFields
+- CaregiverRecommendationService: uses whereHas('bookingGroup')
+- Guest booking create: multi-date form with dates[] array
+- Guest booking confirmation: redesigned dates panel (Date | Time, no status, matching info panel style)
+- Client booking create: multi-date support
+- Caregiver bookings index: grouped card display
+- Admin booking show: compact `[Group (N)]` badge + sibling dates with left-border indent
+- Admin booking-sheet: group context panel
+- 34 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup filters)
+- Fixed pre-existing parse error in tests/Feature/Admin/StripeWebhookTest.php
+
+### 🔲 Gaps Remaining
+| Gap | Description | Priority |
+|-----|-------------|----------|
+| **A** | Admin Split — splitGroup() backend, route, controller, frontend dialog, tests | High |
+| **B** | Atomic Caregiver Ops — withGroupLock() helper, refactor reserve/confirm/release | High |
+| **C** | Admin Index Group Badge — eager load bookings_count, calendar/table view badges | Low |
+| **D** | Client + Caregiver Show/Index — group context, dark mode, remove hardcoded colors | High |
 
 ---
 
@@ -12,6 +41,10 @@ Allow guests to submit multiple dates in a single booking form. Each submission 
 3. **Booking ULID as URL entry point** — no new URL scheme. `/bookings/{id}` loads single booking detail + loads group context via `bookingGroup` relationship. The page shows "Part of group (N dates)" with sibling links.
 4. **All-or-nothing caregiver** — when unsplit, reserving/confirming one booking reserves/confirms all in the group. Split creates a new group; both groups become independent.
 5. **Strict normalization** — `client_id` removed from `bookings`. Access via `$booking->bookingGroup->client_id`.
+6. **Group booking emails use Blade templates, not SendGrid** — switched from SendGrid dynamic templates to `resources/views/emails/client-group-booking-created.blade.php` and `admin-group-booking-created.blade.php`, matching confirmation page layout with Date | Time table.
+7. **Dark-mode compatible UIs** — avoid hardcoded blue backgrounds. Use `bg-muted`, `border-border`, `Badge variant="outline"` for group indicators. No hardcoded color values.
+8. **Compact layouts** — admin show uses inline `[Group (N)]` badge + `border-l-2 border-border` indent for sibling dates rather than a separate blue panel.
+9. **Guest confirmation dates panel** — styled like info panel (`rounded-lg bg-muted p-4`), Date | Time columns, same font color for both, no status column.
 
 ---
 
@@ -67,37 +100,41 @@ flowchart TB
         W --> X
         X --> Y["status: back to received<br/>(auto-cleanup command)"]
         Y --> C1{"Admin needs to<br/>split group?"}
-        C1 -- "Yes" --> C2["Create new BookingGroup<br/>reassign bookings"]
-        C2 --> S
+        C1 -- "Yes" --> C2["lockForUpdate extracted<br/>BookingGroup::replicate()"]
+        C2 --> C3["Reset to received<br/>Clear caregiver fields"]
+        C3 --> C4["BookingGroupSplit event<br/>Redirect to first booking"]
+        C4 --> S
         C1 -- "No" --> S
         V --> Z["Caregiver confirms<br/>(atomic for group)"]
         W --> Z
         Z --> AA["status: confirmed<br/>CaregiverAssignment created"]
         AA --> AB{"Admin needs to<br/>split group?"}
-        AB -- "Yes" --> AC["Create new BookingGroup<br/>reassign bookings"]
-        AC --> AD["Each sub-group<br/>continues independently"]
-        AB -- "No" --> AD
-        AD --> AE["Caregiver checks out<br/>(per-date, different end times)"]
-        AE --> AF["status: completed<br/>Assignment resolved"]
+        AB -- "Yes" --> AC["lockForUpdate extracted<br/>BookingGroup::replicate()"]
+        AC --> AD["Reset to received<br/>Clear caregiver fields"]
+        AD --> AE["BookingGroupSplit event<br/>Redirect to first booking"]
+        AE --> AF["Each sub-group<br/>continues independently<br/>new group: fresh status<br/>old group: retains confirmed dates"]
+        AB -- "No" --> AF
+        AF --> AG["Caregiver checks out<br/>(per-date, different end times)"]
+        AG --> AH["status: completed<br/>Assignment resolved"]
     end
 
     subgraph Payment["Payment"]
-        AF --> AG["Admin processes payment<br/>(per-booking)"]
-        AG --> AH{"requires_payment<br/>= true?"}
-        AH -- "No (comped)" --> AI["status: paid<br/>skipped charge"]
-        AH -- "Yes" --> AJ["JobBillingService::charge()<br/>one PI per booking"]
-        AJ --> AK{"Charge succeeds?"}
-        AK -- "Yes" --> AL["status: paid<br/>payment_status: charged<br/>BookingReceipt event"]
-        AK -- "No" --> AM["payment_status: failed<br/>charge_attempt_count++<br/>PaymentFailureHandler"]
-        AM --> AN["Retry with backoff<br/>(1h, 1d, 3d, then permanent)"]
-        AN --> AJ
-        AI --> AO["All bookings in group paid?"]
-        AL --> AO
-AO -- "No" --> AE
-AO -- "Yes" --> AP["All siblings paid<br/>(BookingGroupFullyPaid if per-group)"]
+        AH --> AI["Admin processes payment<br/>(per-booking)"]
+        AI --> AJ{"requires_payment<br/>= true?"}
+        AJ -- "No (comped)" --> AK["status: paid<br/>skipped charge"]
+        AJ -- "Yes" --> AL["JobBillingService::charge()<br/>one PI per booking"]
+        AL --> AM{"Charge succeeds?"}
+        AM -- "Yes" --> AN["status: paid<br/>payment_status: charged<br/>BookingReceipt event"]
+        AM -- "No" --> AO["payment_status: failed<br/>charge_attempt_count++<br/>PaymentFailureHandler"]
+        AO --> AP["Retry with backoff<br/>(1h, 1d, 3d, then permanent)"]
+        AP --> AL
+        AK --> AQ["All bookings in group paid?"]
+        AN --> AQ
+AQ -- "No" --> AG
+AQ -- "Yes" --> AR["All siblings paid<br/>(BookingGroupFullyPaid if per-group)"]
     end
 
-    AP --> AQ["Tip + Review<br/>(TBD: per-booking or per-group)"]
+    AR --> AS["Tip + Review<br/>(TBD: per-booking or per-group)"]
 ```
 
 ## Database Schema
@@ -539,7 +576,311 @@ BookingGroup (1 per job, shared fields here)
 
 ---
 
-## Testing Strategy
+---
+
+## Remaining Gaps
+
+The following items from the original plan were not implemented. Each gap has its own implementation plan below.
+
+### Gap A: Admin Split (Section 2.5)
+
+**Status:** Not implemented
+
+#### Edge Cases & Decisions
+
+| # | Edge Case | Decision | Rationale |
+|---|-----------|----------|-----------|
+| 1 | **Caregiver assignment** — extracted bookings may have `reserved_by`, `confirmed_by`, `caregiver_id` set from prior group reservation | **Reset to `received`** — clear `caregiver_id`, `reserved_by`, `reservation_expires_at`, `confirmed_by`, `confirmed_at`, set `status = 'received'` | Caregiver agreed to the entire group, not a subset. New group starts fresh; admin reassigns explicitly if needed. |
+| 2 | **Race condition** — two admins split the same group simultaneously | **`lockForUpdate()`** on extracted bookings inside the `DB::transaction` | Prevents overlapping updates where both admins move the same bookings. |
+| 3 | **Soft-deleted siblings** — `$group->bookings` may include trashed records | **No change needed** — Eloquent's `SoftDeletes` automatically adds `whereNull('deleted_at')` | Already handled by default. |
+| 4 | **Payment status** — splitting a booking that's already paid/charged | **Allowed** — `stripe_payment_intent_id` and payment fields stay per-booking, group reference is just metadata | No payment data lost; each booking retains its own payment history. |
+| 5 | **Booking-sheet redirect** — after split from sidebar, the user needs to see the new group | **Always redirect** to the first extracted booking's detail page (`redirect()->to('/bookings/{firstUlid}')`) | Consistent behavior from both the show page and the booking-sheet. Admin sees the split result immediately. |
+| 6 | **No event fired** — listeners can't react to a split (e.g. notify affected caregiver) | **Fire `BookingGroupSplit`** event with original group, new group, and extracted IDs | Future-proofing — no listeners wired yet, but available for notifications, audit logs, etc. |
+
+**Resets applied to extracted bookings:**
+```php
+'status' => 'received',
+'caregiver_id' => null,
+'reserved_by' => null,
+'reservation_expires_at' => null,
+'confirmed_by' => null,
+'confirmed_at' => null,
+```
+
+**Backend — `AdminBookingService::splitGroup()`**
+
+```php
+public function splitGroup(Request $request, BookingGroup $group): RedirectResponse
+{
+    $validated = $request->validate([
+        'booking_ids' => ['required', 'array', 'min:1'],
+        'booking_ids.*' => ['required', 'integer', 'exists:bookings,id'],
+    ]);
+
+    $extractedIds = $validated['booking_ids'];
+
+    // Verify all booking IDs belong to this group
+    $group->loadMissing('bookings');
+    $groupBookingIds = $group->bookings->pluck('id')->toArray();
+    $invalidIds = array_diff($extractedIds, $groupBookingIds);
+
+    if (! empty($invalidIds)) {
+        return back()->with('error', 'Some booking IDs do not belong to this group.');
+    }
+
+    if (count($extractedIds) >= $group->bookings->count()) {
+        return back()->with('error', 'Cannot move all bookings — group would be empty.');
+    }
+
+    $firstBooking = null;
+
+    DB::transaction(function () use ($group, $extractedIds, &$firstBooking) {
+        // Lock extracted bookings to prevent race conditions
+        Booking::whereIn('id', $extractedIds)
+            ->lockForUpdate()
+            ->get();
+
+        $newGroup = $group->replicate();
+        $newGroup->submitted_at = now();
+        $newGroup->submission_type = 'admin';
+        $newGroup->save();
+
+        // Reset caregiver fields + move to new group
+        Booking::whereIn('id', $extractedIds)->update([
+            'booking_group_id' => $newGroup->id,
+            'status' => 'received',
+            'caregiver_id' => null,
+            'reserved_by' => null,
+            'reservation_expires_at' => null,
+            'confirmed_by' => null,
+            'confirmed_at' => null,
+        ]);
+
+        $firstBooking = Booking::find($extractedIds[0]);
+    });
+
+    event(new BookingGroupSplit($group, BookingGroup::find($firstBooking->booking_group_id), $extractedIds));
+
+    return redirect()->to('/bookings/'.$firstBooking->ulid)
+        ->with('success', 'Group split successfully.');
+}
+```
+
+**Route:**
+
+```php
+// web.php — inside the 'auth' + 'verified' + 'admin' middleware group
+Route::post('bookings/groups/{bookingGroup}/split', [BookingController::class, 'splitGroup'])->name('bookings.groups.split');
+```
+
+**Controller — `BookingController::splitGroup()`:**
+
+```php
+public function splitGroup(Request $request, BookingGroup $bookingGroup)
+{
+    abort_unless($request->user()->isAdmin(), 403);
+
+    return app(AdminBookingService::class)->splitGroup($request, $bookingGroup);
+}
+```
+
+**Event — `App\Events\BookingGroupSplit`:**
+
+```php
+class BookingGroupSplit
+{
+    public function __construct(
+        public BookingGroup $originalGroup,
+        public BookingGroup $newGroup,
+        public array $extractedBookingIds,
+    ) {}
+}
+```
+
+No listeners wired yet — purely for future-proofing.
+
+**Frontend — Split dialog in admin show / booking-sheet:**
+
+- In `admin/bookings/show.tsx`, add a "Split Group" button to the group context. Visible only when `bookings_count > 1`.
+- Button opens a dialog/modal with a list of sibling bookings, each with a checkbox. The current booking is pre-checked and disabled (cannot be unchecked — the non-split side always keeps the current booking).
+- On confirm, POST to `/bookings/groups/{id}/split` with `{ booking_ids: [...] }`.
+- On success, the backend redirects to the first extracted booking's detail page (handled by Inertia automatically).
+- Same dialog reused inline in `admin/bookings/booking-sheet.tsx`.
+
+**Tests:**
+
+| Test | What to assert |
+|------|---------------|
+| Splits a group of 3 into 2+1 | Original group has 2 bookings, new group has 1 |
+| Copying shared fields | New group has same `client_id`, `service_type`, etc. |
+| Resets caregiver fields | Extracted bookings have `status=received`, `caregiver_id=null`, `reserved_by=null`, etc. |
+| Fails when trying to move all bookings | Validation error, no group created |
+| Fails when booking IDs don't belong to group | Validation error |
+| `BookingGroupSplit` event fires | `Event::assertDispatched(BookingGroupSplit::class)` |
+
+---
+
+### Gap B: Atomic Group Operations (Section 2.6)
+
+**Status:** Not implemented. `reserve()`, `confirm()`, and `release()` in `CaregiverBookingService` operate on individual bookings only — no sibling awareness, no `lockForUpdate()`.
+
+**Goal:** When a booking belongs to a group with multiple unsplit siblings, reserve/confirm/release must be all-or-nothing across ALL dates in that group.
+
+**Implementation — extract a shared helper:**
+
+Create a private helper method that groups can opt into:
+
+```php
+private function withGroupLock(Booking $booking, Closure $callback): mixed
+{
+    $group = $booking->bookingGroup;
+
+    // Single-booking group — skip locking, behave as before
+    if (! $group || $group->bookings()->count() <= 1) {
+        return $callback(collect([$booking]));
+    }
+
+    return DB::transaction(function () use ($group, $callback) {
+        $siblings = Booking::where('booking_group_id', $group->id)
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->get();
+
+        // Validate all siblings are in the expected state
+        foreach ($siblings as $sibling) {
+            if ($sibling->status !== 'received') {
+                logger()->warning('Group reservation conflict', [
+                    'group_id' => $group->id,
+                    'conflicting_booking' => $sibling->id,
+                    'conflicting_status' => $sibling->status,
+                ]);
+                throw new \Exception('One or more dates in this group are no longer available.');
+            }
+        }
+
+        return $callback($siblings);
+    });
+}
+```
+
+**Refactored `reserve()`:**
+
+```php
+public function reserve(Request $request, Booking $booking)
+{
+    $caregiver = $request->user()->caregiver;
+
+    $notification = BookingCaregiverNotification::where('booking_id', $booking->id)
+        ->where('caregiver_id', $caregiver->id)
+        ->first();
+
+    if (! $notification) {
+        return back()->with('error', 'You were not notified for this booking');
+    }
+
+    if (! $notification->viewed_at) {
+        $notification->update(['viewed_at' => now()]);
+    }
+
+    $expiresIn = 60;
+
+    try {
+        $this->withGroupLock($booking, function ($bookings) use ($caregiver, $expiresIn) {
+            $expiresAt = now()->addSeconds($expiresIn);
+
+            $updated = Booking::whereIn('id', $bookings->pluck('id'))
+                ->whereIn('status', ['received', 'reserved'])
+                ->where(function ($query) {
+                    $query->whereNull('reserved_by')
+                        ->orWhere('reservation_expires_at', '<', now());
+                })
+                ->update([
+                    'reserved_by' => $caregiver->id,
+                    'reservation_expires_at' => $expiresAt,
+                    'status' => 'reserved',
+                ]);
+
+            if ($updated === 0) {
+                throw new \Exception('Booking is no longer available');
+            }
+        });
+    } catch (\Exception $e) {
+        return back()->with('error', $e->getMessage());
+    }
+
+    broadcast(new JobReserved($booking->id, $caregiver->id, $expiresIn))->toOthers();
+
+    return back()->with('expires_in', $expiresIn);
+}
+```
+
+**Same pattern for `confirm()` and `release()`** — both use `withGroupLock()` to atomically update all siblings.
+
+**Key design decisions:**
+- `withGroupLock()` only activates for groups with >1 booking. Single-booking groups pass through unchanged (no transaction overhead).
+- `lockForUpdate()` prevents two caregivers from simultaneously reserving different dates in the same group.
+- The validation inside the lock checks that ALL siblings are in `received` status. If any sibling has moved past `received`, the entire operation fails.
+- Group size limit of 14 per group is already enforced at the validation layer (`StoreBookingRequest`).
+
+**Tests — update `tests/Feature/Caregiver/BookingTest.php`:**
+
+| Test | What to assert |
+|------|---------------|
+| Reserve single-booking group | Unchanged behavior |
+| Reserve multi-date group — all siblings become reserved | All bookings in group have `reserved_by` and `reservation_expires_at` set |
+| Reserve multi-date group — one sibling already reserved by another caregiver | Fails with error, no sibling status changes |
+| Confirm multi-date group — all siblings confirmed | All bookings have `status=confirmed`, `caregiver_id` set |
+| Confirm single-booking group | Unchanged behavior |
+| Release multi-date group — all siblings released | All bookings back to `status=received` |
+
+---
+
+### Gap C: Admin Index Group Badge (Phase 3)
+
+**Status:** Not implemented. Admin show and booking-sheet correctly show group context, but the main index (both calendar view and table view) lacks any visual indicator when a booking belongs to a multi-date group.
+
+**Goal:** Show a visual badge on the admin index that a booking is part of a multi-date group.
+
+**Data needed:** `bookings_count` from the `booking_group` relation.
+
+The `AdminBookingService::index()` already loads `bookingGroup` — but it doesn't eager load the `bookings` count. Add a subquery count:
+
+```php
+// In AdminBookingService::index(), add to the ->with() chain:
+'bookingGroup' => function ($q) {
+    $q->withCount('bookings');
+},
+```
+
+Or load it on the existing maps. Either way, ensure `booking_group.bookings_count` is available on every booking object.
+
+**Calendar view** (`app/Services/Booking/AdminBookingService.php` maps booking → array):
+
+Booking data already accessible. Each booking card in the calendar cell (line ~588) should show a badge when `booking.booking_group.bookings_count > 1`.
+
+In `resources/js/pages/admin/bookings/index.tsx`, add after the time display (~line 620):
+
+```tsx
+{booking.booking_group?.bookings_count > 1 && (
+    <span className="ml-auto rounded-[2px] bg-logo-teal/10 px-1 py-0.5 text-[9px] font-medium text-logo-teal whitespace-nowrap">
+        +{booking.booking_group.bookings_count - 1} more
+    </span>
+)}
+```
+
+**Table view** (~line 787, client name column):
+
+Add a small "Group" badge next to the client name:
+
+```tsx
+{booking.booking_group?.bookings_count > 1 && (
+    <span className="ml-1.5 rounded-[2px] bg-blue-100 px-1 py-0.5 text-[10px] font-medium text-blue-700">
+        Group
+    </span>
+)}
+```
+
+---
 
 ### Factory Updates
 
@@ -622,10 +963,100 @@ php artisan test --compact
 
 ---
 
+### Gap D: Client + Caregiver Show/Index — Group Context, Dark Mode
+
+**Status:** Not implemented. Client pages and caregiver show page have no group booking awareness (no badge, no sibling dates). Caregiver show has hardcoded `text-blue-500` and `bg-red-50`/`bg-green-50` classes. Client show has hardcoded `border-yellow-500 text-yellow-700`.
+
+**Goal:** Add group context (badge + sibling dates) to client index, client show, and caregiver show. Make all pages dark-mode compatible by using theme tokens (`text-foreground`, `text-muted-foreground`, `text-primary`, `bg-card`, `border-border`, `bg-destructive/10`, `text-destructive`) instead of hardcoded colors.
+
+#### Backend — `ClientBookingService`
+
+| Method | Change |
+|--------|--------|
+| `index()` | Add `->with(['bookingGroup' => fn($q) => $q->withCount('bookings')])`. Include `booking_group: { id, bookings_count }` in mapped output. |
+| `show()` | Load `bookingGroup.bookings.caregiver`. Build `sibling_bookings` array (id, ulid, start_datetime, end_datetime, status, caregiver_name). Include `booking_group` in Inertia props matching admin show pattern. |
+
+#### Backend — `CaregiverBookingService`
+
+| Method | Change |
+|--------|--------|
+| `show()` | Load `bookingGroup.bookings` (add `.bookings` to existing load). Build `sibling_bookings` array. Include `booking_group` in Inertia props. |
+
+#### Frontend — `client/bookings/index.tsx`
+
+| Change | Detail |
+|--------|--------|
+| `Booking` interface | Add `booking_group: { id: number; bookings_count: number } \| null` |
+| Group badge | After `StatusBadge`, show `Badge variant="outline"` with "Group (N)" when `bookings_count > 1` |
+| Dark mode | Remove `bg-table-header text-white` from pagination active state — use theme classes instead |
+
+#### Frontend — `client/bookings/show.tsx`
+
+| Change | Detail |
+|--------|--------|
+| `Booking` interface | Add `booking_group` with `id`, `bookings_count`, `sibling_bookings` array |
+| Group badge | Next to `service_type`, same pattern as admin: `Badge variant="outline"` with `Group (N)` |
+| Sibling dates | Below current date, `border-l-2 border-border` indent with link rows showing date/time/caregiver/status |
+| Dark mode | Replace `border-yellow-500 text-yellow-700` with `border-yellow-600/30 text-yellow-600 dark:text-yellow-400` |
+
+#### Frontend — `caregiver/bookings/show.tsx`
+
+| Change | Detail |
+|--------|--------|
+| `Booking` interface | Add `booking_group` with `id`, `bookings_count`, `sibling_bookings` array |
+| Group badge | Next to `service_type`, same pattern |
+| Sibling dates | Below current date, `border-l-2 border-border` indent with link rows |
+| Dark mode | Replace `text-blue-500` → `text-primary`. Replace `bg-red-50 border-red-200 text-red-800` → `bg-destructive/10 border-destructive/20 text-destructive`. Replace `bg-green-50 border-green-200 text-green-800` → `bg-success/10 border-success/20 text-success`. Replace `bg-yellow-100 text-yellow-800` special consideration pills → `bg-yellow-600/10 text-yellow-600 dark:text-yellow-400`. |
+
+#### Tests
+
+No new tests needed — group context is passive display. Existing tests verify page loads. Run `php artisan test --compact --filter=Booking` to confirm no regressions.
+
+---
+
+## Critical Context
+
+- **Pre-existing test failures** (unrelated to group booking): `StripeWebhookTest` (3 failures) and `CleanupExpiredReservationsTest` (BookingStatus::Reserved enum case mismatch) — these existed before our changes.
+- **Run group-booking tests only**: `php artisan test --compact --filter="BookingGroup|BookingCreated|SendBookingGroup"`
+
 ## Next Steps
 
-1. ~~Review this plan~~
-2. Phase 1: Write + run migrations
-3. Phase 2: Update factories, models, services, events, mailers, notifications
-4. Phase 2b: Update existing tests + write new tests
-5. Phase 3: Update frontend types and components
+### 🔲 Gap A: Admin Split
+
+| Step | File(s) |
+|------|---------|
+| Event: `BookingGroupSplit` event class | `app/Events/BookingGroupSplit.php` |
+| Backend: `AdminBookingService::splitGroup()` | `app/Services/Booking/AdminBookingService.php` |
+| Route: `POST /bookings/groups/{bookingGroup}/split` | `routes/web.php` |
+| Controller: `BookingController::splitGroup()` | `app/Http/Controllers/BookingController.php` |
+| Frontend: Split button + dialog (admin show page) | `resources/js/pages/admin/bookings/show.tsx` |
+| Frontend: Split button + dialog (booking sheet) | `resources/js/pages/admin/bookings/booking-sheet.tsx` |
+| Tests: Split feature tests (6 cases) | `tests/Feature/Admin/BookingTest.php` |
+
+### 🔲 Gap B: Atomic Group Operations
+
+| Step | File(s) |
+|------|---------|
+| Backend: `withGroupLock()` helper | `app/Services/Booking/CaregiverBookingService.php` |
+| Backend: Refactor `reserve()` to use group lock | `app/Services/Booking/CaregiverBookingService.php` |
+| Backend: Refactor `confirm()` to use group lock | `app/Services/Booking/CaregiverBookingService.php` |
+| Backend: Refactor `release()` to use group lock | `app/Services/Booking/CaregiverBookingService.php` |
+| Tests: Update caregiver booking tests | `tests/Feature/Caregiver/BookingTest.php` |
+
+### 🔲 Gap C: Admin Index Group Badge
+
+| Step | File(s) |
+|------|---------|
+| Backend: Eager load `bookings_count` on group | `app/Services/Booking/AdminBookingService.php` |
+| Frontend: Badge in calendar view | `resources/js/pages/admin/bookings/index.tsx` |
+| Frontend: Badge in table view | `resources/js/pages/admin/bookings/index.tsx` |
+
+### ✅ Gap D: Client + Caregiver Show/Index — Group Context, Dark Mode
+
+| Step | File(s) |
+|------|---------|
+| Backend: ClientBookingService index + show | `app/Services/Booking/ClientBookingService.php` |
+| Backend: CaregiverBookingService show | `app/Services/Booking/CaregiverBookingService.php` |
+| Frontend: Client index — group badge + dark mode | `resources/js/pages/client/bookings/index.tsx` |
+| Frontend: Client show — group badge + sibling dates + dark mode | `resources/js/pages/client/bookings/show.tsx` |
+| Frontend: Caregiver show — group badge + sibling dates + dark mode | `resources/js/pages/caregiver/bookings/show.tsx` |

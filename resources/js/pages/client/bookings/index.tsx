@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTimeInPT } from '@/lib/datetime';
@@ -26,6 +27,10 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
+    booking_group: {
+        id: number;
+        bookings_count: number;
+    } | null;
 }
 
 interface Props {
@@ -116,6 +121,11 @@ export default function ClientBookingsIndex() {
                                                         bookingStatuses
                                                     }
                                                 />
+                                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        Group ({booking.booking_group.bookings_count})
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </div>
 
@@ -158,7 +168,7 @@ export default function ClientBookingsIndex() {
                                                 href={link.url || '#'}
                                                 className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
                                                     link.active
-                                                        ? 'bg-table-header text-white'
+                                                        ? 'bg-primary text-primary-foreground'
                                                         : 'border border-border text-muted-foreground hover:bg-accent'
                                                 } ${
                                                     !link.url

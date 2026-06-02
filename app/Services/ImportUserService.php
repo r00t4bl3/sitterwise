@@ -16,6 +16,7 @@ use App\Models\CaregiverPayout;
 use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
 use App\Models\Hotel;
+use App\Models\Traits\Phone as PhoneTrait;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -968,7 +969,7 @@ class ImportUserService
             'first_name' => $names['first'],
             'last_name' => $names['last'],
             'biography' => $bio,
-            'phone' => self::formatPhone($source['phone_text'] ?? 'N/A'),
+            'phone' => self::formatPhone($source['phone_text'] ?? null),
             'client_type' => self::mapClientType($source),
             'how_did_you_hear' => $source['how_did_you_hear_about_us_text'] ?? null,
             'notes' => $source['internal_notes_text'] ?? null,
@@ -1013,17 +1014,7 @@ class ImportUserService
 
     public static function formatPhone(?string $phone): ?string
     {
-        if (! $phone) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D/', '', $phone);
-
-        if (strlen($digits) === 10) {
-            return '('.substr($digits, 0, 3).') '.substr($digits, 3, 3).'-'.substr($digits, 6);
-        }
-
-        return $phone;
+        return PhoneTrait::normalizePhone($phone);
     }
 
     public static function parsePhotoUrl(?string $url): ?string

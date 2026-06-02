@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingAccepted;
@@ -34,7 +35,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         $caregiver = $request->user()->caregiver;
 
         $bookings = $caregiver->bookingNotifications()
-            ->with(['booking.client', 'booking.client.user'])
+            ->with(['booking.bookingGroup.bookings', 'booking.client', 'booking.client.user'])
             ->where('claimed', false)
             ->whereHas('booking', function ($query) {
                 $query->where('status', '!=', 'confirmed');
@@ -42,6 +43,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->paginate(5)
             ->through(function ($notification) {
                 $booking = $notification->booking;
+                $group = $booking->bookingGroup;
 
                 // Lazy expiration check
                 if ($booking->reservation_expires_at && now()->gt($booking->reservation_expires_at)) {
@@ -52,9 +54,15 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     ]);
                 }
 
+                $siblings = $group
+                    ? $group->bookings->where('id', '!=', $booking->id)->values()
+                    : collect();
+
                 return [
                     'id' => $booking->id,
                     'ulid' => $booking->ulid,
+                    'booking_group_id' => $group?->id,
+                    'group_size' => $group ? $group->bookings->count() : 1,
                     'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                     'start_datetime' => $booking->start_datetime,
                     'end_datetime' => $booking->end_datetime,
@@ -63,6 +71,13 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     'reservation_expires_at' => $booking->reservation_expires_at,
                     'notified_at' => $notification->notified_at,
                     'viewed_at' => $notification->viewed_at,
+                    'sibling_dates' => $siblings->map(fn ($s) => [
+                        'id' => $s->id,
+                        'ulid' => $s->ulid,
+                        'start_datetime' => $s->start_datetime,
+                        'end_datetime' => $s->end_datetime,
+                        'status' => $s->status,
+                    ]),
                 ];
             });
 
@@ -93,7 +108,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         }
 
         // Get booking details
-        $booking->load('bookingGroup', 'client.user');
+        $booking->load('bookingGroup.bookings', 'client.user');
 
         if (! $booking) {
             abort(404);
@@ -114,7 +129,29 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ]);
         }
 
+        $group = $booking->bookingGroup;
+        $siblingBookings = $group?->bookings
+            ->filter(fn ($b) => $b->id !== $booking->id)
+            ->values()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'ulid' => $b->ulid,
+                'start_datetime' => $b->start_datetime,
+                'end_datetime' => $b->end_datetime,
+                'status' => $b->status,
+            ]);
+
+        $bookingStatuses = array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'colors' => $case->colors(),
+            ],
+            BookingStatus::cases()
+        );
+
         return Inertia::render('caregiver/bookings/show', [
+            'booking_statuses' => $bookingStatuses,
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
@@ -144,6 +181,11 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
+                'booking_group' => $group ? [
+                    'id' => $group->id,
+                    'bookings_count' => $group->bookings->count(),
+                    'sibling_bookings' => $siblingBookings,
+                ] : null,
             ],
         ]);
     }

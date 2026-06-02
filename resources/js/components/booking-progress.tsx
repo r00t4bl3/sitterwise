@@ -22,7 +22,7 @@ export default function BookingProgress({
                                 className={cn(
                                     'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors',
                                     s.step === currentStep &&
-                                        'bg-navy text-white',
+                                        'bg-table-header text-white ring-2 ring-primary',
                                     s.step < currentStep &&
                                         'bg-logo-teal text-white',
                                     s.step > currentStep &&

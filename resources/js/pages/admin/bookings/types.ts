@@ -85,6 +85,15 @@ export interface BookingGroup {
     corporate_id: string | null;
     requires_payment: boolean;
     special_considerations: string[] | null;
+    bookings_count?: number;
+    sibling_bookings?: Array<{
+        id: number;
+        ulid: string;
+        start_datetime: string;
+        end_datetime: string;
+        status: string;
+        caregiver_name: string | null;
+    }>;
     client?: {
         id: number;
         first_name: string;

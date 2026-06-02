@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { StatusBadge } from '@/components/status-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -31,8 +33,17 @@ import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 
+interface SiblingBooking {
+    id: number;
+    ulid: string;
+    start_datetime: string;
+    end_datetime: string;
+    status: string;
+}
+
 interface Booking {
     id: number;
+    ulid: string;
     service_type: string;
     client_name: string;
     client_phone: string | null;
@@ -67,10 +78,26 @@ interface Booking {
         breed: string | null;
         notes: string | null;
     }> | null;
+    booking_group: {
+        id: number;
+        bookings_count: number;
+        sibling_bookings: SiblingBooking[];
+    } | null;
+}
+
+interface BookingStatus {
+    value: string;
+    label: string;
+    colors: {
+        bg: string;
+        text: string;
+        border: string;
+    };
 }
 
 interface PageProps {
     booking: Booking;
+    booking_statuses: BookingStatus[];
     flash: {
         success: string | null;
         error: string | null;
@@ -93,7 +120,7 @@ const getBreadcrumbTitle = (clientName: string) => [
     },
 ];
 
-export default function BookingDetail({ booking }: PageProps) {
+export default function BookingDetail({ booking, booking_statuses }: PageProps) {
     const [error, setError] = useState<string | null>(null);
     const [showConfirmSheet, setShowConfirmSheet] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -271,10 +298,10 @@ export default function BookingDetail({ booking }: PageProps) {
                 </div>
 
                 {error && (
-                    <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-                        <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
+                    <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+                        <AlertCircle className="mt-0.5 h-5 w-5 text-destructive" />
                         <div>
-                            <p className="text-sm font-medium text-red-800">
+                            <p className="text-sm font-medium text-destructive">
                                 {error}
                             </p>
                         </div>
@@ -282,10 +309,10 @@ export default function BookingDetail({ booking }: PageProps) {
                 )}
 
                 {confirmed && (
-                    <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
-                        <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
+                    <div className="flex items-start gap-3 rounded-lg border border-success/20 bg-success/10 p-4">
+                        <CheckCircle className="mt-0.5 h-5 w-5 text-success" />
                         <div>
-                            <p className="text-sm font-medium text-green-800">
+                            <p className="text-sm font-medium text-success">
                                 Booking confirmed! Redirecting to dashboard...
                             </p>
                         </div>
@@ -312,7 +339,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                         <span className="text-sm text-muted-foreground">
                                             <a
                                                 href={`sms:${booking.client_phone}`}
-                                                className="text-blue-500 hover:underline"
+                                                className="text-primary hover:underline"
                                             >
                                                 {formatPhoneDisplay(booking.client_phone)}
                                             </a>
@@ -331,9 +358,14 @@ export default function BookingDetail({ booking }: PageProps) {
                                 {booking.service_type && (
                                     <div className="flex items-center gap-2">
                                         <Heart className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
+                                        <span className="text-sm text-foreground">
                                             {booking.service_type}
                                         </span>
+                                        {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                            <Badge variant="outline" className="text-xs">
+                                                Group ({booking.booking_group.bookings_count})
+                                            </Badge>
+                                        )}
                                     </div>
                                 )}
 
@@ -353,6 +385,27 @@ export default function BookingDetail({ booking }: PageProps) {
                                         )}
                                     </span>
                                 </div>
+
+                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
+                                        {booking.booking_group.sibling_bookings.map((sibling) => (
+                                            <Link
+                                                key={sibling.id}
+                                                href={`/bookings/${sibling.ulid}`}
+                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
+                                            >
+                                                <span className="text-muted-foreground">
+                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
+                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
+                                                </span>
+                                                <StatusBadge
+                                                    status={sibling.status}
+                                                    bookingStatuses={booking_statuses}
+                                                />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {booking.hotel_name && (
                                     <div className="flex items-center gap-2">
@@ -376,7 +429,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-blue-500 hover:underline"
+                                            className="text-primary hover:underline"
                                         >
                                             {booking.address_line1 && (
                                                 <span>
@@ -493,7 +546,7 @@ export default function BookingDetail({ booking }: PageProps) {
                                                         (consideration, i) => (
                                                             <span
                                                                 key={i}
-                                                                className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
+                                                                className="inline-flex items-center rounded-full bg-yellow-600/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400"
                                                             >
                                                                 {consideration}
                                                             </span>

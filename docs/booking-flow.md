@@ -200,3 +200,56 @@ erDiagram
     Booking ||--o{ ClientPayment : payments
     Booking ||--o{ BookingRating : ratings
 ```
+
+## Group Booking
+
+A single multi-date request creates one **BookingGroup** (header with shared fields) containing multiple **Bookings** (one per date/time slot). The `HasGroupFields` trait on `Booking` transparently delegates reads of shared fields (`service_type`, `children`, `pets`, `address`, etc.) to the parent group.
+
+### Creation
+
+```mermaid
+flowchart TD
+    A[Guest/Client/Admin submits form<br/>with dates array] --> B[Create BookingGroup<br/>shared fields: client, location,<br/>service_type, children, pets]
+    B --> C[Create Booking per date<br/>per-date fields: start/end,<br/>caregiver, financials, status]
+    C --> D{dates count > 1?}
+    D -->|No| E[Fire BookingCreated<br/>single-date email]
+    D -->|Yes| F[Fire BookingGroupCreated<br/>group email with all dates]
+```
+
+### Caregiver Assignment (All-or-Nothing)
+
+```mermaid
+flowchart TD
+    A[Admin notifies caregivers] --> B{Group has >1 booking?}
+    B -->|No| C[Caregiver reserves single booking<br/>60s TTL]
+    B -->|Yes| D[Caregiver reserves ALL bookings<br/>in group atomically<br/>60s TTL]
+    C --> E{Confirm within TTL?}
+    D --> E
+    E -->|Yes| F[All bookings confirmed<br/>CaregiverAssignment per booking]
+    E -->|No| G[All bookings revert to received]
+```
+
+### Splitting
+
+Admin can split a group — move some bookings to a new `BookingGroup`. After splitting, each sub-group operates independently (separate caregiver assignments, separate lifecycle).
+
+```mermaid
+flowchart LR
+    subgraph Before["Before Split"]
+        BG1[BookingGroup<br/>3 bookings] --> B1[Booking 1]
+        BG1 --> B2[Booking 2]
+        BG1 --> B3[Booking 3]
+    end
+
+    subgraph After["After Split"]
+        BG2[BookingGroup A<br/>2 bookings] --> B4[Booking 1]
+        BG2 --> B5[Booking 2]
+        BG3[BookingGroup B<br/>1 booking] --> B6[Booking 3]
+    end
+
+    Before -->|Admin splits| After
+```
+
+### Payment
+
+Payment is **per-booking**, not per-group. Each booking is charged independently via `JobBillingService::charge()`. A group is fully paid when all its child bookings reach `status = paid`.

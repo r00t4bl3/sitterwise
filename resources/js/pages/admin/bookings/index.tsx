@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayTimeInPT, formatDisplayDateShortInPT } from '@/lib/datetime';
+import { formatDisplayTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 import { BookingSheet } from './booking-sheet';
 import { ExportSheet } from './export-sheet';
@@ -37,13 +37,18 @@ import { useBookingSheet } from './use-booking-sheet';
 
 const getPTDate = (str: string): Date | null => {
     const d = new Date(str.replace(/\.\d+Z$/, 'Z'));
-    if (isNaN(d.getTime())) return null;
+
+    if (isNaN(d.getTime())) {
+return null;
+}
+
     const parts = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Los_Angeles',
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', hour12: false,
     }).formatToParts(d);
     const g = (t: string) => parseInt(parts.find(x => x.type === t)!.value, 10);
+
     return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
 };
 
@@ -768,7 +773,12 @@ export default function Bookings() {
                                                     <tr
                                                         key={booking.id}
                                                         data-date={rowIso}
-                                                        className="border-b border-border transition hover:bg-blush"
+                                                        onClick={() =>
+                                                            router.visit(
+                                                                `/bookings/${booking.ulid}`,
+                                                            )
+                                                        }
+                                                        className="cursor-pointer border-b border-border transition hover:bg-blush"
                                                     >
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                             {rowDate}
@@ -776,6 +786,9 @@ export default function Bookings() {
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
                                                             <Link
                                                                 href={`/clients/${booking.booking_group?.client?.id}`}
+                                                                onClick={(e) =>
+                                                                    e.stopPropagation()
+                                                                }
                                                                 className="hover:underline"
                                                             >
                                                                 {
@@ -803,6 +816,9 @@ export default function Bookings() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
+                                                                    onClick={(e) =>
+                                                                        e.stopPropagation()
+                                                                    }
                                                                     className="text-ring hover:underline"
                                                                     title={
                                                                         addressQuery
@@ -828,6 +844,9 @@ export default function Bookings() {
                                                             {booking.caregiver ? (
                                                                 <Link
                                                                     href={`/caregivers/${booking.caregiver.id}`}
+                                                                    onClick={(e) =>
+                                                                        e.stopPropagation()
+                                                                    }
                                                                     className="font-medium text-ring hover:underline"
                                                                 >
                                                                     {
@@ -871,32 +890,35 @@ export default function Bookings() {
                                                                             variant="ghost"
                                                                             size="icon"
                                                                             className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                                            onClick={() =>
-                                                                                (window.location.href =
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                window.location.href =
                                                                                     '/admin/bookings/charge?booking_id=' +
-                                                                                    booking.id)
-                                                                            }
+                                                                                    booking.id;
+                                                                            }}
                                                                             title="Charge"
                                                                         >
                                                                             <CreditCard className="h-4 w-4" />
                                                                         </Button>
                                                                     )}
                                                                 <Button
-                                                                    onClick={() =>
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         sheet.openDuplicateSheet(
                                                                             booking as unknown as FullBooking,
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                     variant="outline"
                                                                 >
                                                                     Duplicate
                                                                 </Button>
                                                                 <Button
-                                                                    onClick={() =>
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         sheet.openEditSheet(
                                                                             booking as unknown as FullBooking,
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                 >
                                                                     Edit
                                                                 </Button>

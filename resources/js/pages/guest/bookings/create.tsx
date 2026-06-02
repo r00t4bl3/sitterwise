@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { ChevronDown, Plus } from 'lucide-react';
+import { AlertCircle, ChevronDown, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import BookingProgress from '@/components/booking-progress';
@@ -115,6 +115,26 @@ function validateForm(formData: Record<string, any>, isAddressLocked: boolean = 
         if (diffHours < 4) {
             errors.end_datetime = 'Booking must be at least 4 hours long.';
         }
+    }
+
+    const dateEntries = formData.dates || [];
+
+    for (let i = 0; i < dateEntries.length; i++) {
+        for (let j = i + 1; j < dateEntries.length; j++) {
+            const aStart = new Date(dateEntries[i].start_datetime).getTime();
+            const aEnd = new Date(dateEntries[i].end_datetime).getTime();
+            const bStart = new Date(dateEntries[j].start_datetime).getTime();
+            const bEnd = new Date(dateEntries[j].end_datetime).getTime();
+
+            if (aStart < bEnd && bStart < aEnd) {
+                errors.dates = `Date ${i + 1} overlaps with Date ${j + 1}. Please adjust the times.`;
+                break;
+            }
+        }
+
+        if (errors.dates) {
+break;
+}
     }
 
     if (formData.location_type === 'hotel') {
@@ -323,7 +343,7 @@ export default function GuestBookingCreate() {
 
             const next = { ...d, [field]: value };
 
-            if (field === 'start_datetime' && id === dates[0]?.id) {
+            if (field === 'start_datetime') {
                 next.end_datetime = autoSetEndDateTime(value);
             }
 
@@ -431,11 +451,7 @@ export default function GuestBookingCreate() {
         });
     };
 
-    const isFormIncomplete =
-        !form.data.client_first_name?.trim() ||
-        !form.data.client_last_name?.trim() ||
-        !form.data.client_email?.trim() ||
-        !form.data.client_phone?.trim();
+    const isFormIncomplete = Object.keys(validateForm(form.data, isAddressLocked)).length > 0;
 
     const hasNewChildren = form.data.new_children.length > 0;
     const hasNewPets = form.data.new_pets.length > 0;
@@ -464,6 +480,24 @@ export default function GuestBookingCreate() {
                 </div>
 
                 <BookingProgress currentStep={1} />
+
+                {Object.keys(form.errors).length > 0 && (
+                    <div className="flex items-start gap-3 rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
+                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                        <div>
+                            <p className="mb-1 font-medium">
+                                Please fix the following errors before continuing:
+                            </p>
+                            <ul className="list-inside list-disc space-y-0.5">
+                                {Object.entries(form.errors).map(
+                                    ([key, message]) => (
+                                        <li key={key}>{message as string}</li>
+                                    ),
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                )}
 
                 {/* CARD 1: ABOUT YOU */}
                 <div className="overflow-hidden rounded-[3px] border border-border bg-card">
@@ -995,6 +1029,15 @@ export default function GuestBookingCreate() {
                                     <p className="mt-2 text-sm text-destructive">
                                         {datetimeError}
                                     </p>
+                                )}
+                                {(validationErrors.dates ||
+                                    form.errors.dates) && (
+                                    <InputError
+                                        message={
+                                            validationErrors.dates ||
+                                            form.errors.dates
+                                        }
+                                    />
                                 )}
                                 {(validationErrors.end_datetime ||
                                     form.errors.end_datetime) && (

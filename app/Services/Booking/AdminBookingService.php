@@ -15,6 +15,7 @@ use App\Enums\SpecialConsideration;
 use App\Events\BookingAccepted;
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
+use App\Events\BookingGroupSplit;
 use App\Events\BookingInvitationSent;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
@@ -31,7 +32,9 @@ use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use OpenSpout\Common\Entity\Row;
@@ -396,6 +399,7 @@ class AdminBookingService implements BookingServiceInterface
                 'address',
                 'caregiver.user',
                 'caregiverNotifications',
+                'bookingGroup.bookings.caregiver',
             ]);
 
             $booking->client->setRelation(
@@ -403,7 +407,29 @@ class AdminBookingService implements BookingServiceInterface
                 $booking->client->previousCaregivers()->with('user')->get()
             );
 
-            return response()->json($booking);
+            $group = $booking->bookingGroup;
+            $siblingBookings = $group?->bookings
+                ->filter(fn ($b) => $b->id !== $booking->id)
+                ->values()
+                ->map(fn ($b) => [
+                    'id' => $b->id,
+                    'ulid' => $b->ulid,
+                    'start_datetime' => $b->start_datetime,
+                    'end_datetime' => $b->end_datetime,
+                    'status' => $b->status,
+                    'caregiver_name' => $b->caregiver
+                        ? $b->caregiver->first_name.' '.$b->caregiver->last_name
+                        : null,
+                ]);
+
+            $data = $booking->toArray();
+            $data['booking_group'] = $group ? [
+                'id' => $group->id,
+                'bookings_count' => $group->bookings->count(),
+                'sibling_bookings' => $siblingBookings,
+            ] : null;
+
+            return response()->json($data);
         }
 
         $bookingStatuses = array_map(
@@ -893,6 +919,58 @@ class AdminBookingService implements BookingServiceInterface
     public function release(Request $request, Booking $booking)
     {
         abort(403, 'Admin cannot release bookings');
+    }
+
+    public function splitGroup(Request $request, BookingGroup $group): RedirectResponse
+    {
+        $validated = $request->validate([
+            'booking_ids' => ['required', 'array', 'min:1'],
+            'booking_ids.*' => ['required', 'integer', 'exists:bookings,id'],
+        ]);
+
+        $extractedIds = $validated['booking_ids'];
+
+        $group->loadMissing('bookings');
+        $groupBookingIds = $group->bookings->pluck('id')->toArray();
+        $invalidIds = array_diff($extractedIds, $groupBookingIds);
+
+        if (! empty($invalidIds)) {
+            return back()->with('error', 'Some booking IDs do not belong to this group.');
+        }
+
+        if (count($extractedIds) >= $group->bookings->count()) {
+            return back()->with('error', 'Cannot move all bookings — group would be empty.');
+        }
+
+        $firstBooking = null;
+
+        DB::transaction(function () use ($group, $extractedIds, &$firstBooking) {
+            Booking::whereIn('id', $extractedIds)
+                ->lockForUpdate()
+                ->get();
+
+            $newGroup = $group->replicate();
+            $newGroup->submitted_at = now();
+            $newGroup->submission_type = 'admin';
+            $newGroup->save();
+
+            Booking::whereIn('id', $extractedIds)->update([
+                'booking_group_id' => $newGroup->id,
+                'status' => 'received',
+                'caregiver_id' => null,
+                'reserved_by' => null,
+                'reservation_expires_at' => null,
+                'confirmed_by' => null,
+                'confirmed_at' => null,
+            ]);
+
+            $firstBooking = Booking::find($extractedIds[0]);
+        });
+
+        event(new BookingGroupSplit($group, BookingGroup::find($firstBooking->booking_group_id), $extractedIds));
+
+        return redirect()->to('/bookings/'.$firstBooking->ulid)
+            ->with('success', 'Group split successfully.');
     }
 
     public function export(Request $request)

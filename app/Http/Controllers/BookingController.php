@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Booking;
+use App\Models\BookingGroup;
+use App\Services\Booking\AdminBookingService;
 use App\Services\Booking\BookingServiceFactory;
 use Illuminate\Http\Request;
 
@@ -75,6 +77,13 @@ class BookingController extends Controller
     public function processPayment(Request $request, Booking $booking)
     {
         return $this->service->processPayment($request, $booking);
+    }
+
+    public function splitGroup(Request $request, BookingGroup $bookingGroup)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        return app(AdminBookingService::class)->splitGroup($request, $bookingGroup);
     }
 
     public function export(Request $request)

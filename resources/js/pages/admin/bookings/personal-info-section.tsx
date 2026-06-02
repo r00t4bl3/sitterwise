@@ -230,6 +230,7 @@ export function PersonalInfoSection({
                         <p className="font-semibold">
                             {(() => {
                                 const client = editingBooking.client ?? editingBooking.booking_group?.client;
+
                                 return `${client?.first_name ?? ''} ${client?.last_name ?? ''} - `;
                             })()}
                             {(editingBooking.client ?? editingBooking.booking_group?.client)?.phone ? (

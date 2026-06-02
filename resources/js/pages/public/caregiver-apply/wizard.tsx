@@ -310,7 +310,7 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 email: verifiedEmail,
             });
         }
-    }, [verifiedEmail]);
+    }, [verifiedEmail, form]);
 
     useEffect(() => {
         const isEmployed =
@@ -354,34 +354,42 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 form.setError('sponsor.first_name', 'Sponsor first name is required.');
                 hasError = true;
             }
+
             if (!data.sponsor.last_name?.trim()) {
                 form.setError('sponsor.last_name', 'Sponsor last name is required.');
                 hasError = true;
             }
+
             if (!data.sponsor.email?.trim()) {
                 form.setError('sponsor.email', 'Sponsor email is required.');
                 hasError = true;
             }
+
             if (!data.personal.first_name?.trim()) {
                 form.setError('personal.first_name', 'First name is required.');
                 hasError = true;
             }
+
             if (!data.personal.last_name?.trim()) {
                 form.setError('personal.last_name', 'Last name is required.');
                 hasError = true;
             }
+
             if (!data.personal.phone?.trim()) {
                 form.setError('personal.phone', 'Phone number is required.');
                 hasError = true;
             }
+
             if (!data.personal.email?.trim()) {
                 form.setError('personal.email', 'Email is required.');
                 hasError = true;
             }
+
             if (!data.personal.dob) {
                 form.setError('personal.dob', 'Date of birth is required.');
                 hasError = true;
             }
+
             if (!data.personal.address_line1?.trim()) {
                 form.setError('personal.address_line1', 'Address is required.');
                 hasError = true;
@@ -400,19 +408,23 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 form.setError('employment_status', 'Employment status is required.');
                 hasError = true;
             }
+
             if ((data.employment_status === 'full_time' || data.employment_status === 'part_time') && !data.current_employer?.trim()) {
                 form.setError('current_employer', 'Current employer is required.');
                 hasError = true;
             }
+
             data.experiences.forEach((exp, index) => {
                 if (!exp.start_date || exp.start_date.length < 7) {
                     form.setError(`experiences.${index}.start_date`, 'Start date is required.');
                     hasError = true;
                 }
+
                 if (!exp.description?.trim()) {
                     form.setError(`experiences.${index}.description`, 'Description is required.');
                     hasError = true;
                 }
+
                 if (exp.ages_served.length === 0) {
                     form.setError(`experiences.${index}.ages_served`, 'Please select at least one age group.');
                     hasError = true;
@@ -441,6 +453,7 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                     form.setError('cpr_expiration', 'CPR expiration date is required.');
                     hasError = true;
                 }
+
                 if (!data.cpr_card) {
                     form.setError('cpr_card', 'CPR card upload is required.');
                     hasError = true;
@@ -454,22 +467,27 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                     form.setError(`references.${index}.first_name`, 'Reference first name is required.');
                     hasError = true;
                 }
+
                 if (!ref.last_name?.trim()) {
                     form.setError(`references.${index}.last_name`, 'Reference last name is required.');
                     hasError = true;
                 }
+
                 if (!ref.email?.trim()) {
                     form.setError(`references.${index}.email`, 'Reference email is required.');
                     hasError = true;
                 }
+
                 if (!ref.phone?.trim()) {
                     form.setError(`references.${index}.phone`, 'Reference phone is required.');
                     hasError = true;
                 }
+
                 if (!ref.relationship?.trim()) {
                     form.setError(`references.${index}.relationship`, 'Relationship is required.');
                     hasError = true;
                 }
+
                 if (!ref.years_known) {
                     form.setError(`references.${index}.years_known`, 'Years known is required.');
                     hasError = true;
@@ -496,14 +514,17 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 form.setError('verification.signature', 'Signature is required.');
                 hasError = true;
             }
+
             if (!data.verification.agree) {
                 form.setError('verification.agree', 'You must agree to proceed.');
                 hasError = true;
             }
+
             if (!data.agreement.signature?.trim()) {
                 form.setError('agreement.signature', 'Signature is required.');
                 hasError = true;
             }
+
             if (!data.agreement.agree) {
                 form.setError('agreement.agree', 'You must agree to proceed.');
                 hasError = true;
@@ -514,7 +535,10 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
     };
 
     const nextStep = () => {
-        if (!validateStep(currentStep)) return;
+        if (!validateStep(currentStep)) {
+return;
+}
+
         saveDraft();
         setCurrentStep((prev) => Math.min(prev + 1, 8));
     };
@@ -525,12 +549,19 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
     };
 
     const goToStep = (step: number) => {
-        if (step > currentStep && !validateStep(currentStep)) return;
+        if (step > currentStep && !validateStep(currentStep)) {
+return;
+}
+
         saveDraft();
         setCurrentStep(step);
     };
 
     const handleSubmit = () => {
+        if (!validateStep(8)) {
+return;
+}
+
         sessionStorage.removeItem('caregiver_application_draft');
         form.post('/caregiver/apply/submit');
     };

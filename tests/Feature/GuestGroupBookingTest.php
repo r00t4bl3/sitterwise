@@ -6,7 +6,6 @@ use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
 use App\Models\Booking;
 use App\Models\BookingGroup;
-use App\Models\PricingRule;
 use App\Services\Booking\GuestBookingService;
 use Database\Seeders\PricingRulesTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

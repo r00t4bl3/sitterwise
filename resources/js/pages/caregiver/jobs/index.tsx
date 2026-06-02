@@ -158,6 +158,7 @@ function parsePT(value: string): Date {
     });
     const parts = formatter.formatToParts(date);
     const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? '0', 10);
+
     return new Date(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
 }
 

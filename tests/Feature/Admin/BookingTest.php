@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CaregiverStatus;
+use App\Events\BookingGroupSplit;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
@@ -16,6 +17,7 @@ use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -1411,6 +1413,157 @@ describe('Booking - Admin', function () {
 
         expect($booking->children_notes)->toBe('12 children, ages 5-12');
         expect($booking->children)->toBe([]);
+    });
+
+    describe('split group', function () {
+        test('splits a group of 3 into 2+1', function () {
+            $this->actingAs($this->user);
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+            ]);
+
+            $bookings = Booking::factory()->count(3)->create([
+                'booking_group_id' => $group->id,
+                'status' => 'received',
+            ]);
+
+            $idsToExtract = [$bookings[0]->id, $bookings[1]->id];
+
+            $response = $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => $idsToExtract,
+            ]);
+
+            $response->assertRedirect();
+            $group->refresh();
+
+            expect($group->bookings()->count())->toBe(1);
+            expect(BookingGroup::count())->toBe(2);
+        });
+
+        test('copies shared fields to new group', function () {
+            $this->actingAs($this->user);
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+                'service_type' => 'petsitter',
+                'location_type' => 'hotel',
+            ]);
+
+            $bookings = Booking::factory()->count(2)->create([
+                'booking_group_id' => $group->id,
+                'status' => 'received',
+            ]);
+
+            $response = $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => [$bookings[1]->id],
+            ]);
+
+            $response->assertRedirect();
+            $newGroup = BookingGroup::where('id', '!=', $group->id)->first();
+
+            expect($newGroup->client_id)->toBe($this->client->id);
+            expect($newGroup->service_type)->toBe('petsitter');
+            expect($newGroup->location_type)->toBe('hotel');
+        });
+
+        test('resets caregiver fields on extracted bookings', function () {
+            $this->actingAs($this->user);
+
+            $caregiver = Caregiver::factory()->create();
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+            ]);
+
+            $bookings = Booking::factory()->count(2)->create([
+                'booking_group_id' => $group->id,
+                'status' => 'reserved',
+                'caregiver_id' => $caregiver->id,
+                'reserved_by' => $caregiver->id,
+                'reservation_expires_at' => now()->addMinutes(5),
+            ]);
+
+            $response = $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => [$bookings[0]->id],
+            ]);
+
+            $response->assertRedirect();
+            $bookings[0]->refresh();
+
+            expect($bookings[0]->status)->toBe('received');
+            expect($bookings[0]->caregiver_id)->toBeNull();
+            expect($bookings[0]->reserved_by)->toBeNull();
+            expect($bookings[0]->reservation_expires_at)->toBeNull();
+            expect($bookings[0]->confirmed_by)->toBeNull();
+            expect($bookings[0]->confirmed_at)->toBeNull();
+        });
+
+        test('fails when trying to move all bookings', function () {
+            $this->actingAs($this->user);
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+            ]);
+
+            $bookings = Booking::factory()->count(2)->create([
+                'booking_group_id' => $group->id,
+                'status' => 'received',
+            ]);
+
+            $response = $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => [$bookings[0]->id, $bookings[1]->id],
+            ]);
+
+            $response->assertSessionHas('error');
+            expect(BookingGroup::count())->toBe(1);
+        });
+
+        test('fails when booking IDs do not belong to group', function () {
+            $this->actingAs($this->user);
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+            ]);
+
+            $otherGroup = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+            ]);
+
+            $otherBooking = Booking::factory()->create([
+                'booking_group_id' => $otherGroup->id,
+                'status' => 'received',
+            ]);
+
+            $response = $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => [$otherBooking->id],
+            ]);
+
+            $response->assertSessionHas('error');
+            expect(BookingGroup::count())->toBe(2);
+        });
+
+        test('BookingGroupSplit event fires on split', function () {
+            $this->actingAs($this->user);
+
+            Event::fake();
+
+            $group = BookingGroup::factory()->create([
+                'client_id' => $this->client->id,
+            ]);
+
+            $bookings = Booking::factory()->count(2)->create([
+                'booking_group_id' => $group->id,
+                'status' => 'received',
+            ]);
+
+            $this->post(route('bookings.groups.split', $group), [
+                'booking_ids' => [$bookings[1]->id],
+            ]);
+
+            Event::assertDispatched(BookingGroupSplit::class);
+        });
     });
 
     describe('export', function () {

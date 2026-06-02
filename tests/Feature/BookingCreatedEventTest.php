@@ -2,12 +2,9 @@
 
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
-use App\Models\Booking;
 use App\Models\Client;
-use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\Hotel;
-use App\Models\PricingRule;
 use App\Models\User;
 use App\Services\Booking\GuestBookingService;
 use Database\Seeders\PricingRulesTableSeeder;

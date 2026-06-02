@@ -1,4 +1,4 @@
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, useForm } from '@inertiajs/react';
 import {
     Calendar,
     ExternalLink,
@@ -13,11 +13,23 @@ import {
     Home,
     Building2,
     PartyPopper,
+    Split,
 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
@@ -122,6 +134,31 @@ export default function BookingDetail({
     booking,
     booking_statuses,
 }: PageProps) {
+    const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+
+    const currentSiblingIds = booking.booking_group
+        ? [booking.id, ...booking.booking_group.sibling_bookings.map((s) => s.id)]
+        : [];
+
+    const splitForm = useForm({
+        booking_ids: [booking.id],
+    });
+
+    const toggleSplitBooking = (id: number) => {
+        const current = splitForm.data.booking_ids;
+
+        if (current.includes(id)) {
+            splitForm.setData('booking_ids', current.filter((i) => i !== id));
+        } else {
+            splitForm.setData('booking_ids', [...current, id]);
+        }
+    };
+
+    const submitSplit = () => {
+        splitForm.post(`/bookings/groups/${booking.booking_group?.id}/split`, {
+            preserveScroll: true,
+        });
+    };
     const buildGoogleMapsUrl = () => {
         const parts = [
             booking.address_line1,
@@ -207,42 +244,12 @@ export default function BookingDetail({
                                         status={booking.status}
                                         bookingStatuses={booking_statuses}
                                     />
+                                    {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                        <Badge variant="outline" className="text-xs">
+                                            Group ({booking.booking_group.bookings_count})
+                                        </Badge>
+                                    )}
                                 </div>
-
-                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Calendar className="h-4 w-4 text-blue-600" />
-                                            <span className="text-sm font-medium text-blue-800">
-                                                Part of a group booking ({booking.booking_group.bookings_count} dates)
-                                            </span>
-                                        </div>
-                                        <div className="space-y-1">
-                                            {booking.booking_group.sibling_bookings.map((sibling) => (
-                                                <Link
-                                                    key={sibling.id}
-                                                    href={`/bookings/${sibling.ulid}`}
-                                                    className="flex items-center justify-between rounded border border-blue-100 bg-white px-2 py-1.5 text-xs hover:bg-blue-50 transition-colors"
-                                                >
-                                                    <span className="text-foreground">
-                                                        {formatDisplayDateInPT(sibling.start_datetime)}
-                                                        {' '}
-                                                        {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
-                                                    </span>
-                                                    <div className="flex items-center gap-2">
-                                                        {sibling.caregiver_name && (
-                                                            <span className="text-muted-foreground">{sibling.caregiver_name}</span>
-                                                        )}
-                                                        <StatusBadge
-                                                            status={sibling.status}
-                                                            bookingStatuses={booking_statuses}
-                                                        />
-                                                    </div>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
 
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -260,6 +267,106 @@ export default function BookingDetail({
                                         )}
                                     </span>
                                 </div>
+
+                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
+                                        {booking.booking_group.sibling_bookings.map((sibling) => (
+                                            <Link
+                                                key={sibling.id}
+                                                href={`/bookings/${sibling.ulid}`}
+                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
+                                            >
+                                                <span className="text-muted-foreground">
+                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
+                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {sibling.caregiver_name && (
+                                                        <span className="text-muted-foreground">{sibling.caregiver_name}</span>
+                                                    )}
+                                                    <StatusBadge
+                                                        status={sibling.status}
+                                                        bookingStatuses={booking_statuses}
+                                                    />
+                                                </div>
+                                            </Link>
+                                        ))}
+                                        <Dialog open={splitDialogOpen} onOpenChange={setSplitDialogOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="mt-2 text-xs"
+                                                >
+                                                    <Split className="mr-1 h-3 w-3" />
+                                                    Split Group
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Split Group</DialogTitle>
+                                                    <DialogDescription>
+                                                        Select which dates to move to a new group. The current booking cannot be unchecked.
+                                                        Extracted bookings will reset to "received" status and clear caregiver assignment.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="space-y-3 py-4">
+                                                    {currentSiblingIds.map((id) => {
+                                                        const isCurrent = id === booking.id;
+                                                        const sib = id === booking.id
+                                                            ? null
+                                                            : booking.booking_group?.sibling_bookings.find((s) => s.id === id);
+
+                                                        return (
+                                                            <div key={id} className="flex items-center gap-3">
+                                                                <Checkbox
+                                                                    id={`split-${id}`}
+                                                                    checked={splitForm.data.booking_ids.includes(id)}
+                                                                    disabled={isCurrent}
+                                                                    onCheckedChange={() => toggleSplitBooking(id)}
+                                                                />
+                                                                <Label
+                                                                    htmlFor={`split-${id}`}
+                                                                    className={`text-sm ${isCurrent ? 'font-medium' : 'text-muted-foreground'}`}
+                                                                >
+                                                                    {isCurrent ? (
+                                                                        <span>
+                                                                            {formatDisplayDateInPT(booking.start_datetime)}{' '}
+                                                                            {formatDisplayTimeInPT(booking.start_datetime)} - {formatDisplayTimeInPT(booking.end_datetime)}
+                                                                            <span className="ml-2 text-xs text-muted-foreground">(this booking)</span>
+                                                                        </span>
+                                                                    ) : sib ? (
+                                                                        <span>
+                                                                            {formatDisplayDateInPT(sib.start_datetime)}{' '}
+                                                                            {formatDisplayTimeInPT(sib.start_datetime)} - {formatDisplayTimeInPT(sib.end_datetime)}
+                                                                            {sib.caregiver_name && (
+                                                                                <span className="ml-2 text-xs text-muted-foreground">({sib.caregiver_name})</span>
+                                                                            )}
+                                                                        </span>
+                                                                    ) : null}
+                                                                </Label>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => setSplitDialogOpen(false)}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        onClick={submitSplit}
+                                                        disabled={splitForm.processing || splitForm.data.booking_ids.length === 0}
+                                                    >
+                                                        {splitForm.processing ? 'Splitting...' : 'Split Group'}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />

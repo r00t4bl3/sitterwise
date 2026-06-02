@@ -46,12 +46,48 @@ interface Child {
     birth_year: string;
 }
 
+interface DateEntry {
+    id: string;
+    start_datetime: string;
+    end_datetime: string;
+}
+
 interface Pet {
     id: number | string;
     name: string;
     type: string;
     breed: string;
     notes: string;
+}
+
+function generateDateId(): string {
+    return `date-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
+    const overlaps: Record<string, string[]> = {};
+
+    for (let i = 0; i < dates.length; i++) {
+        for (let j = i + 1; j < dates.length; j++) {
+            const a = dates[i];
+            const b = dates[j];
+
+            if (a.start_datetime < b.end_datetime && b.start_datetime < a.end_datetime) {
+                if (!overlaps[a.id]) {
+overlaps[a.id] = [];
+}
+
+                if (!overlaps[b.id]) {
+overlaps[b.id] = [];
+}
+
+                overlaps[a.id].push(`Date ${j + 1}`);
+                overlaps[b.id].push(`Date ${i + 1}`);
+            }
+        }
+    }
+
+    return overlaps;
 }
 
 function formatDateTimeLocal(date: Date): string {
@@ -167,13 +203,17 @@ export default function ClientBookingCreate() {
     const initialChildren: Child[] = children.map(convertChildToEditable);
     const initialPets: Pet[] = pets.map(convertPetToEditable);
 
+    const defaultStartStr = formatDateTimeLocal(tomorrow);
+    const defaultEndStr = formatDateTimeLocal(defaultEnd);
+
     const form = useForm({
         service_type: 'babysitter',
         location_type: 'private_home',
         new_children: initialChildren as Child[],
         new_pets: initialPets as Pet[],
-        start_datetime: formatDateTimeLocal(tomorrow),
-        end_datetime: formatDateTimeLocal(defaultEnd),
+        start_datetime: defaultStartStr,
+        end_datetime: defaultEndStr,
+        dates: [{ start_datetime: defaultStartStr, end_datetime: defaultEndStr }] as Array<{ start_datetime: string; end_datetime: string }>,
         address_id: null as number | null,
         hotel_id: null as number | null,
         rental_platform: '',
@@ -191,6 +231,14 @@ export default function ClientBookingCreate() {
         how_did_you_hear: '',
         save_children_pets_to_profile: true,
     });
+
+    const [dates, setDates] = useState<DateEntry[]>([
+        {
+            id: generateDateId(),
+            start_datetime: defaultStartStr,
+            end_datetime: defaultEndStr,
+        },
+    ]);
 
     const [isPersonalInfoOpen, setIsPersonalInfoOpen] = useState(true);
     const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(true);
@@ -285,6 +333,56 @@ export default function ClientBookingCreate() {
 
     const handleSubmit = () => {
         form.post('/bookings');
+    };
+
+    const dateOverlaps = findDateOverlaps(dates);
+
+    const syncDatesToForm = (allDates: DateEntry[]) => {
+        if (allDates.length > 0) {
+            form.setData('start_datetime', allDates[0].start_datetime);
+            form.setData('end_datetime', allDates[0].end_datetime);
+            form.setData(
+                'dates',
+                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+            );
+        }
+    };
+
+    const handleAddDate = () => {
+        const nextDate = new Date(tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000);
+        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const newEntry: DateEntry = {
+            id: generateDateId(),
+            start_datetime: formatDateTimeLocal(nextDate),
+            end_datetime: formatDateTimeLocal(endDate),
+        };
+        const updated = [...dates, newEntry];
+        setDates(updated);
+        syncDatesToForm(updated);
+    };
+
+    const handleRemoveDate = (id: string) => {
+        const updated = dates.filter((d) => d.id !== id);
+        setDates(updated);
+        syncDatesToForm(updated);
+    };
+
+    const handleUpdateDate = (id: string, field: 'start_datetime' | 'end_datetime', value: string) => {
+        const updated = dates.map((d) => {
+            if (d.id !== id) {
+return d;
+}
+
+            const next = { ...d, [field]: value };
+
+            if (field === 'start_datetime' && id === dates[0]?.id) {
+                next.end_datetime = autoSetEndDateTime(value);
+            }
+
+            return next;
+        });
+        setDates(updated);
+        syncDatesToForm(updated);
     };
 
     const hasChildren = form.data.new_children.length > 0;
@@ -1159,49 +1257,69 @@ export default function ClientBookingCreate() {
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label>
-                                        Start DateTime{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <DateTimePicker
-                                        value={form.data.start_datetime}
-                                        onChange={(datetime) => {
-                                            form.setData(
-                                                'start_datetime',
-                                                datetime,
-                                            );
+                            <div className="space-y-3">
+                                {dates.map((dateEntry, index) => (
+                                    <div
+                                        key={dateEntry.id}
+                                        className="rounded-[4px] border border-border bg-card p-[14px]"
+                                    >
+                                        <div className="mb-[10px] flex items-center justify-between">
+                                            <span className="text-xs font-semibold tracking-[0.5px] text-foreground uppercase">
+                                                Date {index + 1}
+                                            </span>
+                                            {index > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveDate(dateEntry.id)}
+                                                    className="cursor-pointer border-none bg-none p-0 text-xs text-primary"
+                                                >
+                                                    × Remove
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <Label>Start Date/Time <span className="text-primary">*</span></Label>
+                                                <DateTimePicker
+                                                    value={dateEntry.start_datetime}
+                                                    onChange={(value) => {
+                                                        if (value) {
+                                                            handleUpdateDate(dateEntry.id, 'start_datetime', value);
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>End Date/Time <span className="text-primary">*</span></Label>
+                                                <DateTimePicker
+                                                    value={dateEntry.end_datetime}
+                                                    startTime={dateEntry.start_datetime}
+                                                    onChange={(value) => {
+                                                        if (value) {
+                                                            handleUpdateDate(dateEntry.id, 'end_datetime', value);
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {dateOverlaps[dateEntry.id]?.length > 0 && (
+                                            <p className="mt-2 text-xs text-amber-700">
+                                                ⚠ This overlaps with {dateOverlaps[dateEntry.id].join(', ')}.
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
 
-                                            if (datetime) {
-                                                form.setData(
-                                                    'end_datetime',
-                                                    autoSetEndDateTime(
-                                                        datetime,
-                                                    ),
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label>
-                                        End DateTime{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <DateTimePicker
-                                        value={form.data.end_datetime}
-                                        startTime={form.data.start_datetime}
-                                        onChange={(datetime) => {
-                                            form.setData(
-                                                'end_datetime',
-                                                datetime,
-                                            );
-                                        }}
-                                    />
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleAddDate}
+                                    className="w-full cursor-pointer rounded-[4px] border border-dashed border-logo-teal bg-card py-3 text-sm font-medium text-foreground transition-[background] duration-150 hover:bg-teal-bg"
+                                >
+                                    + Add another date
+                                </button>
+
                                 {datetimeError && (
-                                    <div className="col-span-1 text-sm text-destructive sm:col-span-2">
+                                    <div className="text-sm text-destructive">
                                         {datetimeError}
                                     </div>
                                 )}

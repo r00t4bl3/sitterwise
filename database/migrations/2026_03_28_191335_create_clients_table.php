@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->text('biography')->nullable();
-            $table->string('phone');
+            $table->string('phone')->nullable();
             $table->string('client_type')->default('vacationer');
             $table->string('corporate_id')->nullable();
             $table->string('stripe_customer_id')->nullable();
