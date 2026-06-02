@@ -280,7 +280,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             abort(403, 'Unauthorized');
         }
 
-        $booking->load('caregiver.user', 'caregiverRating');
+        $booking->load('bookingGroup', 'caregiver.user', 'caregiverRating');
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -321,7 +321,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'reserved_by' => $booking->reserved_by,
                 'reservation_expires_at' => $booking->reservation_expires_at,
                 'hotel_id' => $booking->hotel_id,
-                'hotel_name' => $booking->hotel_name ?? $booking->hotel?->name,
+                'hotel_name' => $booking->bookingGroup->hotel_name ?? $booking->hotel?->name,
                 'location_type' => $booking->location_type,
                 'charge_to_client' => $booking->charge_to_client,
                 'paid_to_caregiver' => $booking->paid_to_caregiver,

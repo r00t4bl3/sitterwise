@@ -181,6 +181,40 @@ describe('Booking - Admin', function () {
         ]);
     });
 
+    test('admin can create a booking with unlisted hotel name', function () {
+        $this->actingAs($this->user);
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id' => null,
+            'hotel_name' => 'My Unlisted Hotel',
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'child_ids' => [$child->id],
+            'address_line1' => '123 Unlisted Hotel Rd',
+            'address_line2' => '',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'hotel_id' => null,
+            'hotel_name' => 'My Unlisted Hotel',
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+        ]);
+    });
+
     test('admin can create a booking with vacation rental and save rental platform', function () {
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);

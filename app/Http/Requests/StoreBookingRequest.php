@@ -61,6 +61,7 @@ class StoreBookingRequest extends FormRequest
             'dates.*.start_datetime' => ['required', 'date'],
             'dates.*.end_datetime' => ['required', 'date', 'after:dates.*.start_datetime'],
             'hotel_id' => ['nullable', 'exists:hotels,id'],
+            'hotel_name' => ['nullable', 'string', 'max:255'],
             'address_id' => ['nullable', 'exists:client_addresses,id'],
             'caregiver_id' => ['nullable', 'exists:caregivers,id'],
             'caregiver_notes' => ['nullable', 'string'],

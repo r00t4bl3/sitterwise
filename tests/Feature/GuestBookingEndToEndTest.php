@@ -358,6 +358,55 @@ describe('Guest Booking Workflow', function () {
         expect($booking->client_phone)->toBe('+16195551212');
     });
 
+    test('stores hotel_name for unlisted hotel', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $pendingData = [
+            'client_first_name' => 'Unlisted',
+            'client_last_name' => 'Hotel',
+            'client_email' => 'unlisted.hotel@example.com',
+            'client_phone' => '+15551112222',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::Hotel->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '100 Unlisted Blvd',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'hotel_id' => null,
+            'hotel_name' => 'My Unlisted Hotel',
+            'new_children' => [
+                ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
+            ],
+        ];
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        $booking = $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
+        $booking->load('bookingGroup');
+
+        expect($booking->bookingGroup->hotel_name)->toBe('My Unlisted Hotel');
+        expect($booking->bookingGroup->hotel_id)->toBeNull();
+
+        // Verify the resolution fallback works: bookingGroup->hotel_name should be used
+        // since there's no hotel record (hotel_id is null)
+        expect($booking->bookingGroup->hotel_name ?? $booking->hotel?->name)->toBe('My Unlisted Hotel');
+    });
+
     test('stores international phone in E.164 format', function () {
         $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
         $end = (clone $start)->addHours(4);

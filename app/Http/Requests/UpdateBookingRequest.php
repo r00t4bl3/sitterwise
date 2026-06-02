@@ -58,6 +58,7 @@ class UpdateBookingRequest extends FormRequest
             'start_datetime' => ['required', 'date'],
             'end_datetime' => ['required', 'date', 'after:start_datetime', new MinimumBookingDuration],
             'hotel_id' => ['nullable', 'exists:hotels,id'],
+            'hotel_name' => ['nullable', 'string', 'max:255'],
             'address_id' => ['nullable', 'exists:client_addresses,id'],
             'caregiver_id' => ['nullable', 'exists:caregivers,id'],
             'caregiver_notes' => ['nullable', 'string'],
