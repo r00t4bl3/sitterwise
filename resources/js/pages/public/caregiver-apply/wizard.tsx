@@ -92,17 +92,19 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
+// Covers experience dates from last ~31 years (age ~18 to ~49)
 const years = Array.from({ length: 31 }, (_, i) =>
     String(currentYear - 30 + i),
 );
 
-const startYear = 1960;
+// Covers graduation from ~18yo to ~83yo
+const startYear = currentYear - 65;
 const graduationYears = Array.from(
     { length: currentYear - startYear + 1 },
     (_, i) => String(startYear + i),
 );
 
-export default function Wizard({ verifiedEmail }: { verifiedEmail?: string }) {
+export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEmail?: string; foreignLanguages?: Record<string, string> }) {
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
 
@@ -194,7 +196,7 @@ export default function Wizard({ verifiedEmail }: { verifiedEmail?: string }) {
         cpr_card: null as File | null,
         trustline_certified: '',
         trustline_upload: null as File | null,
-        languages: '',
+        languages: [] as string[],
         has_children: '',
         children_ages: '',
         qualifications: {
@@ -2241,14 +2243,40 @@ form.setData('tattoo_description', '');
                                 {/* Languages */}
                                 <div className="space-y-2">
                                     <Label>Languages (other than English)</Label>
-                                    <Input
-                                        type="text"
-                                        placeholder="e.g. Spanish, Tagalog, ASL"
-                                        value={form.data.languages}
-                                        onChange={(e) =>
-                                            form.setData('languages', e.target.value)
-                                        }
-                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Check all that apply.
+                                    </p>
+                                    <div className="grid gap-2 md:grid-cols-2">
+                                        {foreignLanguages &&
+                                            Object.entries(foreignLanguages).map(
+                                                ([value, label]) => (
+                                                    <label
+                                                        key={value}
+                                                        className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${(form.data.languages as string[]).includes(value) ? 'border-accent bg-secondary' : 'bg-background'}`}
+                                                    >
+                                                        <Checkbox
+                                                            checked={(form.data.languages as string[]).includes(value)}
+                                                            onCheckedChange={(checked) => {
+                                                                const current = form.data.languages as string[];
+                                                                form.setData(
+                                                                    'languages',
+                                                                    checked
+                                                                        ? [...current, value]
+                                                                        : current.filter(
+                                                                              (l) =>
+                                                                                  l !==
+                                                                                  value,
+                                                                          ),
+                                                                );
+                                                            }}
+                                                        />
+                                                        <span className="text-sm">
+                                                            {label}
+                                                        </span>
+                                                    </label>
+                                                ),
+                                            )}
+                                    </div>
                                 </div>
 
                                 {/* Do you have children of your own? */}

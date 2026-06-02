@@ -276,7 +276,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
     {
         $client = $request->user()->client;
 
-        if ($booking->client_id !== $client->id) {
+        if ($booking->bookingGroup->client_id !== $client->id) {
             abort(403, 'Unauthorized');
         }
 

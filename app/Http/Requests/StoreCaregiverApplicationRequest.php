@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ForeignLanguage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreCaregiverApplicationRequest extends FormRequest
 {
@@ -77,7 +79,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'cpr_card' => 'nullable|required_if:cpr_certified,yes|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'trustline_certified' => 'required|in:yes,no',
             'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
-            'languages' => 'nullable|string|max:500',
+            'languages' => 'nullable|array',
+            'languages.*' => ['required', new Enum(ForeignLanguage::class)],
             'has_children' => 'nullable|in:yes,no',
             'children_ages' => 'nullable|required_if:has_children,yes|string|max:255',
 

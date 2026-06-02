@@ -54,6 +54,11 @@ class UpdateCaregiverRequest extends FormRequest
             'certifications.*.notes' => 'nullable|string',
             'cert_files' => 'nullable|array',
             'cert_files.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'educations' => 'nullable|array',
+            'educations.*.education_type' => 'required|string',
+            'educations.*.school_name' => 'required|string',
+            'educations.*.graduation_year' => 'nullable|integer|min:1900|max:2099',
+            'educations.*.degree' => 'nullable|string',
         ];
 
         return $rules;

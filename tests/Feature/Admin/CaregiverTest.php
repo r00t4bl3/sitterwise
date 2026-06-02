@@ -224,6 +224,36 @@ describe('Caregiver - Admin', function () {
         expect($caregiver->first_name)->toBe('UpdatedFirstName');
     });
 
+    test('admin users can update caregiver educations', function () {
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create();
+
+        $response = $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'educations' => [
+                [
+                    'education_type' => 'high_school',
+                    'school_name' => 'San Diego High School',
+                    'graduation_year' => 2020,
+                    'degree' => null,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('caregiver_educations', [
+            'caregiver_id' => $caregiver->id,
+            'education_type' => 'high_school',
+            'school_name' => 'San Diego High School',
+            'graduation_year' => 2020,
+        ]);
+    });
+
     test('admin users can search caregivers', function () {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);

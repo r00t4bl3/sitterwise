@@ -16,6 +16,81 @@ All wizard-to-relational-record mappings implemented in `CaregiverApplicationCon
 
 Admin specialty/location/education/attribute sections now populate immediately on submission.
 
+#### Wizard → Database Field Mapping
+
+| Wizard Step | Form Field | Destination Table | Destination Column |
+|---|---|---|---|
+| **Step 1** | `sponsor.first_name` | `reference_requests` | `reference_name` (as "First Last") |
+| | `sponsor.last_name` | `reference_requests` | `reference_name` (as "First Last") |
+| | `sponsor.email` | `reference_requests` | `reference_email` |
+| | `sponsor.phone` | `caregiver_applications.data` | `data->sponsor.phone` |
+| | `sponsor.relationship` | `reference_requests` | `relationship` |
+| | `personal.first_name` | `caregivers` | `first_name` |
+| | | `users` | `name` (as "First Last") |
+| | `personal.last_name` | `caregivers` | `last_name` |
+| | | `users` | `name` (as "First Last") |
+| | `personal.email` | `caregiver_applications.data` | `data->personal.email` (session email used for `users.email`) |
+| | `personal.phone` | `caregivers` | `phone` |
+| | `personal.dob` | `caregivers` | `date_of_birth` |
+| | `personal.photo` | Storage `photos/` | path stored in `caregiver_applications.data->personal.photo` (frontend upload disabled, backend logic intact) |
+| | `personal.address_line1` | `caregivers` | `address_line1` |
+| | `personal.address_line2` | `caregivers` | `address_line2` |
+| | `personal.address_city` | `caregivers` | `address_city` |
+| | `personal.address_state` | `caregivers` | `address_state` |
+| | `personal.address_zip` | `caregivers` | `address_zip` |
+| **Step 2** | `position.babysitting` | `caregiver_applications.data` | `data->position.babysitting` |
+| | `position.petsitting` | `entity_attribute_values` | `attribute_definition_id=1` (pet_sitting) |
+| | `position.group_events` | `caregiver_applications.data` | `data->position.group_events` |
+| | `availability.*` | `caregivers` | `metadata->availability` (JSON) |
+| | `availability.notes` | `caregivers` | `metadata->availability.notes` (JSON) |
+| | `education.level` | `caregiver_educations` | `education_type` |
+| | | `caregivers` | `education_level` |
+| | `education.college` | `caregiver_educations` | `school_name` (when level != high_school) |
+| | `education.graduation_year` | `caregiver_educations` | `graduation_year` (when level != high_school) |
+| | `education.degree` | `caregiver_educations` | `degree` (when level != high_school) |
+| | `education.high_school_name` | `caregiver_educations` | `school_name` (when level = high_school) |
+| | `education.high_school_graduation_year` | `caregiver_educations` | `graduation_year` (when level = high_school) |
+| **Step 3** | `employment_status` | `caregivers` | `metadata->employment_status` (JSON) |
+| | `current_employer` | `caregivers` | `metadata->current_employer` (JSON) |
+| | `experiences[*].*` | `caregiver_applications.data` | `data->experiences[*]` (JSON — not stored as relational records) |
+| **Step 4** | `smokes` | `caregivers` | `metadata->smokes` (JSON) |
+| | | `entity_attribute_values` | `attribute_definition_id=4` (non_smoker, when smokes=no) |
+| | `alcohol` | `caregivers` | `metadata->alcohol` (JSON) |
+| | `substance_abuse` | `caregivers` | `metadata->substance_abuse` (JSON) |
+| | `limitations` | `caregivers` | `metadata->limitations` (JSON) |
+| | `allergic_to_pets` | `caregivers` | `metadata->allergic_to_pets` (JSON) |
+| | `allergic_to_what` | `caregiver_applications.data` | `data->allergic_to_what` |
+| | `visible_tattoos` | `caregivers` | `metadata->visible_tattoos` (JSON) |
+| | `tattoo_description` | `caregiver_applications.data` | `data->tattoo_description` |
+| | `authorized_to_work` | `caregivers` | `metadata->authorized_to_work` (JSON) |
+| | `reliable_vehicle` | `caregivers` | `metadata->reliable_vehicle` (JSON) |
+| | `cpr_certified` | `caregivers` | `metadata->cpr_certified` (JSON) |
+| | `cpr_expiration` | `caregiver_certifications` | `expiration_date` (certification_type = CPR) |
+| | | `caregivers` | `metadata->cpr_expiration` (JSON) |
+| | `cpr_card` | Storage `cpr-cards/` | path stored in `caregiver_certifications.file_path` + `caregiver_applications.data->cpr_card` |
+| | `trustline_certified` | `caregivers` | `metadata->trustline_certified` (JSON) |
+| | `trustline_upload` | Storage `trustline-uploads/` | path stored in `caregiver_certifications.file_path` (certification_type = Trustline) |
+| | `languages` | `caregivers` | `languages` (JSON) |
+| | `has_children` | `caregivers` | `metadata->has_children` (JSON) |
+| | `children_ages` | `caregiver_applications.data` | `data->children_ages` |
+| **Step 5** | `references[*].*` | `reference_requests` | one record per reference with `first_name`, `last_name`, `email`, `relationship`, `years_known` |
+| **Step 6** | `location.north_county` | `caregiver_locations` | `location_id=2` (North County) |
+| | `location.south_east_county` | `caregiver_locations` | `location_id=1` (South County) |
+| | `location.flexible` | `caregivers` | `metadata->location_flexible` (JSON) |
+| | `age_groups.babies` | `caregiver_specialties` | `specialty_type_id=1` |
+| | `age_groups.toddlers` | `caregiver_specialties` | `specialty_type_id=2` |
+| | `age_groups.preschool` | `caregiver_specialties` | `specialty_type_id=3` |
+| | `age_groups.school_age` | `caregiver_specialties` | `specialty_type_id=4` |
+| **Step 7** | `qualifications.*` | `caregiver_applications.data` | `data->qualifications` (JSON) |
+| | `qualifications.driving` | `entity_attribute_values` | `attribute_definition_id=3` (has_vehicle) |
+| | `things_i_bring` | `caregivers` | `metadata->things_i_bring` (JSON) |
+| | `bio` | `caregivers` | `biography` |
+| | `interests` | `caregivers` | `metadata->interests` (JSON) |
+| **Step 8** | `verification.signature` | `caregiver_agreements` | signed PDF stored; name stored in `caregiver_applications.data` |
+| | `verification.agree` | `caregiver_agreements` | `type=verification`, `signed_at` set |
+| | `agreement.signature` | `caregiver_agreements` | signed PDF stored; name stored in `caregiver_applications.data` |
+| | `agreement.agree` | `caregiver_agreements` | `type=agreement`, `signed_at` set |
+
 ### 2. Expand reference form to spec
 
 - Migration: added 6 rating columns + strengths/concerns/additional_comments, dropped old rating/feedback
@@ -96,6 +171,42 @@ Standardized footer across all 17 email templates:
 - `Sitterwise — San Diego's most trusted childcare agency.`
 
 Each template had existing content preserved (reference-specific, booking-specific text) with missing lines appended. `reference-completed` had old copy replaced with standardized version.
+
+### Wizard frontend validation + CPR enforcement — ✅ Completed
+
+Implemented comprehensive frontend validation across all 8 wizard steps, blocking forward navigation (Next button + step number clicks) when required fields are empty:
+
+**`validateStep()` function** (`wizard.tsx`):
+- Step 1: sponsor first/last/email, personal first/last/phone/email/dob/address — all checked
+- Step 2: at least one position required
+- Step 3: employment status, current employer (if employed), start date/description/ages_served per experience
+- Step 4: existing conditional checks + **new** `cpr_expiration` and `cpr_card` required when `cpr_certified = yes`
+- Step 5: all 6 fields per reference required
+- Step 6: at least one location required
+- Step 7: bio required
+- Step 8: both signatures + both agree checkboxes required
+
+**`goToStep()` and `nextStep()`** — both call `validateStep()` before forward navigation; backward navigation unrestricted
+
+**Inline errors** — 24 `<p className="text-sm text-destructive">` tags added beneath every validated field across all 8 steps
+
+**`*` markers added:**
+- Step 2 — Position group label
+- Step 3 — Ages served label
+- Step 6 — Location group label
+
+**Backend (`StoreCaregiverApplicationRequest.php`):**
+- `cpr_expiration`: added `required_if:cpr_certified,yes`
+- `cpr_card`: added `required_if:cpr_certified,yes`
+- Location: added `withValidator` check requiring at least one location
+
+**Tests:**
+- Added `cpr_card` fake file to test helper
+- 3 new validation tests: cpr_card required, cpr_expiration required, location required
+- Updated existing CPR=no test to also unset cpr_card
+- 821 tests passing (1 pre-existing failure, 6 skipped)
+
+**ConvertPhoneNumbersToE164 fix:** replaced `bookings.client_phone` entry (column migrated to `booking_groups`) with `booking_groups.client_phone`
 
 ## Caregiver Lifecycle Flow
 

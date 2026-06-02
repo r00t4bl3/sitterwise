@@ -81,7 +81,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
         'cpr_expiration' => '2026-06-15',
         'cpr_card' => UploadedFile::fake()->image('cpr.jpeg', 100, 100),
         'trustline_certified' => 'yes',
-        'languages' => 'Spanish',
+        'languages' => ['spanish'],
         'has_children' => 'no',
         'skills' => [
             'special_needs' => false,
@@ -467,6 +467,70 @@ describe('Caregiver Application - Validation Rules', function () {
         $response->assertSessionHasErrors('personal.dob');
     });
 
+    it('validates sponsor last name is required', function () {
+        Session::put('verified_email', 'no-sponsor-last@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-sponsor-last@example.com');
+        unset($data['sponsor']['last_name']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('sponsor.last_name');
+    });
+
+    it('validates personal last name is required', function () {
+        Session::put('verified_email', 'no-personal-last@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-personal-last@example.com');
+        unset($data['personal']['last_name']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('personal.last_name');
+    });
+
+    it('validates personal date of birth is required', function () {
+        Session::put('verified_email', 'no-dob@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-dob@example.com');
+        unset($data['personal']['dob']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('personal.dob');
+    });
+
+    it('validates personal address is required', function () {
+        Session::put('verified_email', 'no-address@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-address@example.com');
+        unset($data['personal']['address_line1']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('personal.address_line1');
+    });
+
+    it('validates at least one position is required', function () {
+        Session::put('verified_email', 'no-position@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-position@example.com');
+        $data['position'] = [
+            'babysitting' => false,
+            'petsitting' => false,
+            'group_events' => false,
+        ];
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('position');
+    });
+
     it('validates at least one experience entry required', function () {
         Session::put('verified_email', 'no-experience@example.com');
         Session::put('verified_at', now());
@@ -702,6 +766,18 @@ describe('Caregiver Application - Step 3 Validation', function () {
         $this->assertDatabaseHas('users', ['email' => 'present-exp@example.com']);
     });
 
+    it('validates experience start date is required', function () {
+        Session::put('verified_email', 'no-start-date@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-start-date@example.com');
+        unset($data['experiences'][0]['start_date']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('experiences.0.start_date');
+    });
+
     it('validates employment_status must be valid value', function () {
         Session::put('verified_email', 'bad-employment@example.com');
         Session::put('verified_at', now());
@@ -870,6 +946,45 @@ describe('Caregiver Application - Step 4 Validation', function () {
         $response = $this->post('/caregiver/apply/submit', $data);
 
         $response->assertSessionHasErrors('has_children');
+    });
+
+    it('validates allergic_to_what is required when allergic_to_pets = yes', function () {
+        Session::put('verified_email', 'no-allergic-what@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-allergic-what@example.com');
+        $data['allergic_to_pets'] = 'yes';
+        unset($data['allergic_to_what']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('allergic_to_what');
+    });
+
+    it('validates tattoo_description is required when visible_tattoos = yes', function () {
+        Session::put('verified_email', 'no-tattoo-desc@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-tattoo-desc@example.com');
+        $data['visible_tattoos'] = 'yes';
+        unset($data['tattoo_description']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('tattoo_description');
+    });
+
+    it('validates children_ages is required when has_children = yes', function () {
+        Session::put('verified_email', 'no-children-ages@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-children-ages@example.com');
+        $data['has_children'] = 'yes';
+        unset($data['children_ages']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('children_ages');
     });
 
     it('accepts submission with cpr_certified = no without conditional fields', function () {
@@ -1097,7 +1212,7 @@ describe('Caregiver Application - Submission Edge Cases', function () {
         $data['education']['degree'] = '';
         $data['education']['high_school_name'] = '';
         $data['education']['high_school_graduation_year'] = '';
-        $data['languages'] = '';
+        $data['languages'] = [];
         $data['has_children'] = '';
         $data['things_i_bring'] = '';
         $data['interests'] = '';

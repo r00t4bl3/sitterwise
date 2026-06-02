@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CaregiverStatus;
+use App\Enums\ForeignLanguage;
 use App\Http\Requests\StoreCaregiverApplicationRequest;
 use App\Mail\AdminNewApplicationMail;
 use App\Mail\ApplicantConfirmationMail;
@@ -100,6 +101,8 @@ class CaregiverApplicationController extends Controller
     {
         return inertia('public/caregiver-apply/wizard', [
             'verifiedEmail' => Session::get('verified_email'),
+            'foreignLanguages' => collect(ForeignLanguage::cases())
+                ->mapWithKeys(fn ($lang) => [$lang->value => $lang->label()]),
         ]);
     }
 

@@ -75,9 +75,9 @@ System to track and nudge incomplete caregiver applications.
 - **Snapshot Pattern** — Bookings snapshot client/children/pets at creation for historical accuracy
 - **Atomic Reservation** — Optimistic locking prevents race conditions on caregiver booking claims
 
-### Models (36)
+### Models (37)
 
-Core: `User`, `Caregiver`, `Client`, `Booking`, `BookingGroup`, `BookingRating`, `CaregiverAssignment`, `OnboardingChecklistItem`, `CaregiverInterview`, `IncompleteApplication`, `ClientTypeChange`, `BroadcastMessage`, `SmsBroadcast`, `ClientPayment`, `CaregiverPayoutMethod`
+Core: `User`, `Caregiver`, `CaregiverPause`, `Client`, `Booking`, `BookingGroup`, `BookingRating`, `CaregiverAssignment`, `OnboardingChecklistItem`, `CaregiverInterview`, `IncompleteApplication`, `ClientTypeChange`, `BroadcastMessage`, `SmsBroadcast`, `ClientPayment`, `CaregiverPayoutMethod`
 
 Supporting: `CaregiverStatus`, `SpecialtyType`, `CertificationType`, `Location`, `Hotel`, `Availability`, `PricingRule`, `AttributeDefinition`, `ClientChild`, `ClientPet`, `ClientAddress`, `ClientPaymentMethod`, `CaregiverPayout`, `BookingCaregiverNotification`, `QuickLink`, `ReferenceRequest`, `CaregiverApplication`, `CaregiverAgreement`, `CaregiverEducation`, `CaregiverExperience`, `CaregiverReference`, `CaregiverSponsor`, `ClientBlockedCaregiver`
 
@@ -93,7 +93,6 @@ resources/js/
     auth/           — Login, register, password reset, 2FA
     guest/          — Guest booking flow
     public/         — Caregiver bio, application wizard, reference portal
-    applications/   — Admin application list and detail views
     settings/       — Profile, security, appearance
   components/
     ui/             — Radix UI primitives (shadcn-style)
@@ -169,16 +168,16 @@ app/
   Http/
     Controllers/   — 30 controllers
     Middleware/     — 7 middleware classes (role gates)
-    Requests/      — 37 Form Request validation classes
-  Models/          — 36 Eloquent models
-  Services/        — 20 service classes (Booking, Billing, Payments, Webhooks, Availability, CaregiverPayout, CaregiverRecommendation, ClientPayment, TwilioService)
-  Events/          — 9 booking lifecycle events
-  Listeners/       — 7 notification handlers
-  Mail/            — 21 mailable classes
+    Requests/      — 34 Form Request validation classes
+  Models/          — 37 Eloquent models
+  Services/        — 21 service classes (Booking, Billing, Payments, Webhooks, Availability, CaregiverPayout, CaregiverRecommendation, ClientPayment, TwilioService, ImportUserService)
+  Events/          — 10 booking lifecycle events
+  Listeners/       — 8 notification handlers
+  Mail/            — 27 mailable classes
   Notifications/   — 8 notification classes
   database/
     factories/       — Model factories
-    migrations/      — 62 migration files
+    migrations/      — 46 migration files
     seeders/         — Database seeders
 tests/
   Feature/         — Auth, Admin, Client, Caregiver, Guest, Settings

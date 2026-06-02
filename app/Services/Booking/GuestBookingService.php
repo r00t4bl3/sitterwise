@@ -318,12 +318,11 @@ class GuestBookingService
             ];
         });
 
-        event(new BookingCreated($result['booking']));
-
-        // Fire group event if multi-date
         $dates = $pendingData['dates'] ?? null;
         if ($dates && count($dates) > 1) {
             event(new BookingGroupCreated($result['booking']->bookingGroup));
+        } else {
+            event(new BookingCreated($result['booking']));
         }
 
         if ($result['isNewUser'] && $result['resetToken']) {

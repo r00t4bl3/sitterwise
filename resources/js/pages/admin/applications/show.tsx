@@ -94,7 +94,7 @@ interface ApplicationData {
     cpr_certified?: string;
     cpr_expiration?: string;
     trustline_certified?: string;
-    languages?: string;
+    languages?: string[];
     has_children?: string;
     children_ages?: string;
     qualifications?: Record<string, boolean>;
@@ -713,7 +713,20 @@ next.add(id);
                                             Languages
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.languages || '-'}
+                                            {data.languages?.length
+                                                ? data.languages.map((lang) => (
+                                                      <span
+                                                          key={lang}
+                                                          className="mr-1 inline-block rounded bg-secondary px-2 py-0.5 text-xs"
+                                                      >
+                                                          {lang
+                                                              .replace(/_/g, ' ')
+                                                              .replace(/\b\w/g, (l) =>
+                                                                  l.toUpperCase(),
+                                                              )}
+                                                      </span>
+                                                  ))
+                                                : '-'}
                                         </p>
                                     </div>
                                     <div>
