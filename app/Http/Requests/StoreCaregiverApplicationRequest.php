@@ -73,8 +73,8 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'authorized_to_work' => 'required|in:yes,no',
             'reliable_vehicle' => 'required|in:yes,no',
             'cpr_certified' => 'required|in:yes,no',
-            'cpr_expiration' => 'nullable|date',
-            'cpr_card' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
+            'cpr_expiration' => 'nullable|required_if:cpr_certified,yes|date',
+            'cpr_card' => 'nullable|required_if:cpr_certified,yes|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'trustline_certified' => 'required|in:yes,no',
             'trustline_upload' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'languages' => 'nullable|string|max:500',
@@ -155,6 +155,13 @@ class StoreCaregiverApplicationRequest extends FormRequest
             $selectedPositions = array_filter($positions);
             if (count($selectedPositions) === 0) {
                 $validator->errors()->add('position', 'Please select at least one position.');
+            }
+
+            // Gap 2: At least one location required
+            $location = $this->input('location', []);
+            $selectedLocations = array_filter($location);
+            if (count($selectedLocations) === 0) {
+                $validator->errors()->add('location', 'Please select at least one location.');
             }
 
             // Gap 2: Work authorization hard gate

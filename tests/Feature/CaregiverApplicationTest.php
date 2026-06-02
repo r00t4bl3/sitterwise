@@ -79,6 +79,7 @@ function caregiverApplicationGetValidApplicationData(string $applicantEmail = 't
         'reliable_vehicle' => 'yes',
         'cpr_certified' => 'yes',
         'cpr_expiration' => '2026-06-15',
+        'cpr_card' => UploadedFile::fake()->image('cpr.jpeg', 100, 100),
         'trustline_certified' => 'yes',
         'languages' => 'Spanish',
         'has_children' => 'no',
@@ -878,10 +879,51 @@ describe('Caregiver Application - Step 4 Validation', function () {
         $data = caregiverApplicationGetValidApplicationData('cpr-no@example.com');
         $data['cpr_certified'] = 'no';
         unset($data['cpr_expiration']);
+        unset($data['cpr_card']);
 
         $this->post('/caregiver/apply/submit', $data);
 
         $this->assertDatabaseHas('users', ['email' => 'cpr-no@example.com']);
+    });
+
+    it('validates cpr_card is required when cpr_certified = yes', function () {
+        Session::put('verified_email', 'no-cpr-card@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-cpr-card@example.com');
+        unset($data['cpr_card']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('cpr_card');
+    });
+
+    it('validates cpr_expiration is required when cpr_certified = yes', function () {
+        Session::put('verified_email', 'no-cpr-exp@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-cpr-exp@example.com');
+        unset($data['cpr_expiration']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('cpr_expiration');
+    });
+
+    it('validates at least one location is required', function () {
+        Session::put('verified_email', 'no-location@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('no-location@example.com');
+        $data['location'] = [
+            'north_county' => false,
+            'south_east_county' => false,
+            'flexible' => false,
+        ];
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('location');
     });
 
     it('accepts submission with trustline_certified = no without conditional fields', function () {

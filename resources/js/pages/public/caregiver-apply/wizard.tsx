@@ -342,12 +342,83 @@ export default function Wizard({ verifiedEmail }: { verifiedEmail?: string }) {
         }).catch(() => {});
     };
 
-    const nextStep = () => {
-        if (currentStep === 4) {
-            form.clearErrors();
-            const data = form.data;
-            let hasError = false;
+    const validateStep = (step: number): boolean => {
+        form.clearErrors();
+        const data = form.data;
+        let hasError = false;
 
+        if (step === 1) {
+            if (!data.sponsor.first_name?.trim()) {
+                form.setError('sponsor.first_name', 'Sponsor first name is required.');
+                hasError = true;
+            }
+            if (!data.sponsor.last_name?.trim()) {
+                form.setError('sponsor.last_name', 'Sponsor last name is required.');
+                hasError = true;
+            }
+            if (!data.sponsor.email?.trim()) {
+                form.setError('sponsor.email', 'Sponsor email is required.');
+                hasError = true;
+            }
+            if (!data.personal.first_name?.trim()) {
+                form.setError('personal.first_name', 'First name is required.');
+                hasError = true;
+            }
+            if (!data.personal.last_name?.trim()) {
+                form.setError('personal.last_name', 'Last name is required.');
+                hasError = true;
+            }
+            if (!data.personal.phone?.trim()) {
+                form.setError('personal.phone', 'Phone number is required.');
+                hasError = true;
+            }
+            if (!data.personal.email?.trim()) {
+                form.setError('personal.email', 'Email is required.');
+                hasError = true;
+            }
+            if (!data.personal.dob) {
+                form.setError('personal.dob', 'Date of birth is required.');
+                hasError = true;
+            }
+            if (!data.personal.address_line1?.trim()) {
+                form.setError('personal.address_line1', 'Address is required.');
+                hasError = true;
+            }
+        }
+
+        if (step === 2) {
+            if (!data.position.babysitting && !data.position.petsitting && !data.position.group_events) {
+                form.setError('position', 'Please select at least one position.');
+                hasError = true;
+            }
+        }
+
+        if (step === 3) {
+            if (!data.employment_status) {
+                form.setError('employment_status', 'Employment status is required.');
+                hasError = true;
+            }
+            if ((data.employment_status === 'full_time' || data.employment_status === 'part_time') && !data.current_employer?.trim()) {
+                form.setError('current_employer', 'Current employer is required.');
+                hasError = true;
+            }
+            data.experiences.forEach((exp, index) => {
+                if (!exp.start_date || exp.start_date.length < 7) {
+                    form.setError(`experiences.${index}.start_date`, 'Start date is required.');
+                    hasError = true;
+                }
+                if (!exp.description?.trim()) {
+                    form.setError(`experiences.${index}.description`, 'Description is required.');
+                    hasError = true;
+                }
+                if (exp.ages_served.length === 0) {
+                    form.setError(`experiences.${index}.ages_served`, 'Please select at least one age group.');
+                    hasError = true;
+                }
+            });
+        }
+
+        if (step === 4) {
             if (data.allergic_to_pets === 'yes' && !data.allergic_to_what) {
                 form.setError('allergic_to_what', 'Please select which pet you are allergic to.');
                 hasError = true;
@@ -363,11 +434,85 @@ export default function Wizard({ verifiedEmail }: { verifiedEmail?: string }) {
                 hasError = true;
             }
 
-            if (hasError) {
-return;
-}
+            if (data.cpr_certified === 'yes') {
+                if (!data.cpr_expiration) {
+                    form.setError('cpr_expiration', 'CPR expiration date is required.');
+                    hasError = true;
+                }
+                if (!data.cpr_card) {
+                    form.setError('cpr_card', 'CPR card upload is required.');
+                    hasError = true;
+                }
+            }
         }
 
+        if (step === 5) {
+            data.references.forEach((ref, index) => {
+                if (!ref.first_name?.trim()) {
+                    form.setError(`references.${index}.first_name`, 'Reference first name is required.');
+                    hasError = true;
+                }
+                if (!ref.last_name?.trim()) {
+                    form.setError(`references.${index}.last_name`, 'Reference last name is required.');
+                    hasError = true;
+                }
+                if (!ref.email?.trim()) {
+                    form.setError(`references.${index}.email`, 'Reference email is required.');
+                    hasError = true;
+                }
+                if (!ref.phone?.trim()) {
+                    form.setError(`references.${index}.phone`, 'Reference phone is required.');
+                    hasError = true;
+                }
+                if (!ref.relationship?.trim()) {
+                    form.setError(`references.${index}.relationship`, 'Relationship is required.');
+                    hasError = true;
+                }
+                if (!ref.years_known) {
+                    form.setError(`references.${index}.years_known`, 'Years known is required.');
+                    hasError = true;
+                }
+            });
+        }
+
+        if (step === 6) {
+            if (!data.location.north_county && !data.location.south_east_county && !data.location.flexible) {
+                form.setError('location', 'Please select at least one location.');
+                hasError = true;
+            }
+        }
+
+        if (step === 7) {
+            if (!data.bio?.trim()) {
+                form.setError('bio', 'Bio is required.');
+                hasError = true;
+            }
+        }
+
+        if (step === 8) {
+            if (!data.verification.signature?.trim()) {
+                form.setError('verification.signature', 'Signature is required.');
+                hasError = true;
+            }
+            if (!data.verification.agree) {
+                form.setError('verification.agree', 'You must agree to proceed.');
+                hasError = true;
+            }
+            if (!data.agreement.signature?.trim()) {
+                form.setError('agreement.signature', 'Signature is required.');
+                hasError = true;
+            }
+            if (!data.agreement.agree) {
+                form.setError('agreement.agree', 'You must agree to proceed.');
+                hasError = true;
+            }
+        }
+
+        return !hasError;
+    };
+
+    const nextStep = () => {
+        if (!validateStep(currentStep)) return;
         saveDraft();
         setCurrentStep((prev) => Math.min(prev + 1, 8));
     };
@@ -378,6 +523,7 @@ return;
     };
 
     const goToStep = (step: number) => {
+        if (step > currentStep && !validateStep(currentStep)) return;
         saveDraft();
         setCurrentStep(step);
     };
@@ -512,6 +658,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['sponsor.first_name'] && (
+                                            <p className="text-sm text-destructive">{form.errors['sponsor.first_name']}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="sponsor-last-name">
@@ -532,6 +681,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['sponsor.last_name'] && (
+                                            <p className="text-sm text-destructive">{form.errors['sponsor.last_name']}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="sponsor-email">
@@ -552,6 +704,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['sponsor.email'] && (
+                                            <p className="text-sm text-destructive">{form.errors['sponsor.email']}</p>
+                                        )}
                                     </div>
                                     <PhoneInput
                                         value={form.data.sponsor.phone}
@@ -608,6 +763,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['personal.first_name'] && (
+                                            <p className="text-sm text-destructive">{form.errors['personal.first_name']}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="personal-last-name">
@@ -628,6 +786,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['personal.last_name'] && (
+                                            <p className="text-sm text-destructive">{form.errors['personal.last_name']}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
                                         <AddressAutocomplete
@@ -663,6 +824,9 @@ return;
                                                 })
                                             }
                                         />
+                                        {form.errors['personal.email'] && (
+                                            <p className="text-sm text-destructive">{form.errors['personal.email']}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>
@@ -685,6 +849,9 @@ return;
                                                 new Date().getFullYear() - 18
                                             }
                                         />
+                                        {form.errors['personal.dob'] && (
+                                            <p className="text-sm text-destructive">{form.errors['personal.dob']}</p>
+                                        )}
                                     </div>
                                     {/* Profile Photo upload disabled */}
                                     {/* <div className="space-y-2">
@@ -723,7 +890,7 @@ return;
                                 </h3>
                                 <p className="mb-3 text-sm text-muted-foreground">
                                     What are you applying for? Check all that
-                                    apply.
+                                    apply. <span className="text-destructive">*</span>
                                 </p>
                                 {(
                                     [
@@ -750,6 +917,9 @@ return;
                                         </span>
                                     </label>
                                 ))}
+                                {form.errors.position && (
+                                    <p className="text-sm text-destructive">{form.errors.position}</p>
+                                )}
                             </div>
 
                             <div className="mb-6">
@@ -1046,6 +1216,9 @@ return;
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {form.errors.employment_status && (
+                                    <p className="text-sm text-destructive">{form.errors.employment_status}</p>
+                                )}
                             </div>
 
                             {(form.data.employment_status === 'full_time' ||
@@ -1068,6 +1241,9 @@ return;
                                             )
                                         }
                                     />
+                                    {form.errors.current_employer && (
+                                        <p className="text-sm text-destructive">{form.errors.current_employer}</p>
+                                    )}
                                 </div>
                             )}
 
@@ -1226,6 +1402,9 @@ return;
                                                     </SelectContent>
                                                 </Select>
                                             </div>
+                                            {form.errors[`experiences.${index}.start_date`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.start_date`]}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             {!exp.present ? (
@@ -1599,9 +1778,12 @@ return;
                                                     );
                                                 }}
                                             />
+                                            {form.errors[`experiences.${index}.description`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.description`]}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label>Ages Served</Label>
+                                            <Label>Ages Served <span className="text-destructive">*</span></Label>
                                             <p className="text-sm text-muted-foreground">
                                                 Select all age groups you worked
                                                 with in this role.
@@ -1668,6 +1850,9 @@ return;
                                                     </label>
                                                 ))}
                                             </div>
+                                            {form.errors[`experiences.${index}.ages_served`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.ages_served`]}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1986,6 +2171,9 @@ form.setData('tattoo_description', '');
                                             toYear={currentYear + 10}
                                             placeholder="Select expiration date"
                                         />
+                                        {form.errors.cpr_expiration && (
+                                            <p className="text-sm text-destructive">{form.errors.cpr_expiration}</p>
+                                        )}
                                     </div>
                                 )}
 
@@ -2003,6 +2191,9 @@ form.setData('tattoo_description', '');
                                                 form.setData('cpr_card', e.target.files?.[0] || null)
                                             }
                                         />
+                                        {form.errors.cpr_card && (
+                                            <p className="text-sm text-destructive">{form.errors.cpr_card}</p>
+                                        )}
                                     </div>
                                 )}
 
@@ -2156,6 +2347,9 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
+                                            {form.errors[`references.${index}.first_name`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.first_name`]}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label
@@ -2183,6 +2377,9 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
+                                            {form.errors[`references.${index}.last_name`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.last_name`]}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label
@@ -2210,6 +2407,9 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
+                                            {form.errors[`references.${index}.email`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.email`]}</p>
+                                            )}
                                         </div>
                                         <PhoneInput
                                             value={ref.phone}
@@ -2251,6 +2451,9 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
+                                            {form.errors[`references.${index}.relationship`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.relationship`]}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
                                             <Label
@@ -2298,6 +2501,9 @@ form.setData('children_ages', '');
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {form.errors[`references.${index}.years_known`] && (
+                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.years_known`]}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -2317,7 +2523,7 @@ form.setData('children_ages', '');
                                     Location Preferences
                                 </h3>
                                 <p className="mb-3 text-sm text-muted-foreground">
-                                    Where are you willing to work?
+                                    Where are you willing to work? <span className="text-destructive">*</span>
                                 </p>
                                 {(
                                     [
@@ -2349,6 +2555,9 @@ form.setData('children_ages', '');
                                         </div>
                                     </label>
                                 ))}
+                                {form.errors.location && (
+                                    <p className="text-sm text-destructive">{form.errors.location}</p>
+                                )}
                             </div>
 
                             <div>
@@ -2542,6 +2751,9 @@ form.setData('children_ages', '');
                                                     )
                                                 }
                                             />
+                                            {form.errors.bio && (
+                                                <p className="text-sm text-destructive">{form.errors.bio}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="interests">
@@ -2608,6 +2820,9 @@ form.setData('children_ages', '');
                                                 })
                                             }
                                         />
+                                        {form.errors['verification.signature'] && (
+                                            <p className="text-sm text-destructive">{form.errors['verification.signature']}</p>
+                                        )}
                                         {form.data.verification.signature &&
                                             form.data.verification.signature !==
                                                 expectedSignature && (
@@ -2648,6 +2863,9 @@ form.setData('children_ages', '');
                                         equivalent of a physical signature.
                                     </span>
                                 </label>
+                                {form.errors['verification.agree'] && (
+                                    <p className="text-sm text-destructive">{form.errors['verification.agree']}</p>
+                                )}
                             </div>
 
                             <div className="mb-6 border-l-4 border-coral pl-4">
@@ -2692,6 +2910,9 @@ form.setData('children_ages', '');
                                                 })
                                             }
                                         />
+                                        {form.errors['agreement.signature'] && (
+                                            <p className="text-sm text-destructive">{form.errors['agreement.signature']}</p>
+                                        )}
                                         {form.data.agreement.signature &&
                                             form.data.agreement.signature !==
                                                 expectedSignature && (
@@ -2732,6 +2953,9 @@ form.setData('children_ages', '');
                                         equivalent of a physical signature.
                                     </span>
                                 </label>
+                                {form.errors['agreement.agree'] && (
+                                    <p className="text-sm text-destructive">{form.errors['agreement.agree']}</p>
+                                )}
                             </div>
                         </div>
                     )}

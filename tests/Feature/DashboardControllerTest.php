@@ -69,6 +69,8 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->where('caregiver.status.value', CaregiverStatus::Active->value)
         ->has('stats', fn ($page) => $page
             ->where('completed_jobs', 1)
+            ->where('total_earned', 100)
+            ->where('rating', '4.50')
         )
         ->has('caregiver.nextJob')
         ->has('caregiver.newInvites')
