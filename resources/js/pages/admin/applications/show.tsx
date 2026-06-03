@@ -1,10 +1,11 @@
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, usePage, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -13,6 +14,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Tooltip,
     TooltipContent,
@@ -215,6 +226,43 @@ function getActions(status: string, caregiverStatuses: Array<{ value: string; la
     return actions;
 }
 
+function StarRating({
+    value,
+    onChange,
+}: {
+    value: number | null;
+    onChange: (val: number | null) => void;
+}) {
+    const [hovered, setHovered] = useState(0);
+
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    type="button"
+                    onClick={() => onChange(star === value ? null : star)}
+                    onMouseEnter={() => setHovered(star)}
+                    onMouseLeave={() => setHovered(0)}
+                    className="cursor-pointer"
+                >
+                    <svg
+                        className={`h-7 w-7 transition-colors ${
+                            (hovered || (value ?? 0)) >= star
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-300 hover:text-amber-300'
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                </button>
+            ))}
+        </div>
+    );
+}
+
 export default function ApplicationShow() {
     const { application, references, certifications, checklistItems, caregiverStatuses } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
@@ -263,6 +311,54 @@ next.add(id);
                 );
             },
         });
+    }
+
+    const editForm = useForm({
+        reference_name: '',
+        reference_email: '',
+        relationship: '',
+        years_known: '',
+        is_sponsor: false,
+        rating_reliability: null as number | null,
+        rating_trustworthiness: null as number | null,
+        rating_maturity: null as number | null,
+        rating_communication: null as number | null,
+        rating_warmth: null as number | null,
+        rating_overall_recommendation: null as number | null,
+        strengths: '',
+        concerns: '',
+        additional_comments: '',
+    });
+
+    const [editingRefId, setEditingRefId] = useState<number | null>(null);
+
+    function openEditDialog(ref: ReferenceInfo) {
+        editForm.setData('reference_name', ref.reference_name);
+        editForm.setData('reference_email', ref.reference_email);
+        editForm.setData('relationship', ref.relationship ?? '');
+        editForm.setData('years_known', ref.years_known ?? '');
+        editForm.setData('is_sponsor', ref.is_sponsor);
+        editForm.setData('rating_reliability', ref.rating_reliability);
+        editForm.setData('rating_trustworthiness', ref.rating_trustworthiness);
+        editForm.setData('rating_maturity', ref.rating_maturity);
+        editForm.setData('rating_communication', ref.rating_communication);
+        editForm.setData('rating_warmth', ref.rating_warmth);
+        editForm.setData('rating_overall_recommendation', ref.rating_overall_recommendation);
+        editForm.setData('strengths', ref.strengths ?? '');
+        editForm.setData('concerns', ref.concerns ?? '');
+        editForm.setData('additional_comments', ref.additional_comments ?? '');
+        setEditingRefId(ref.id);
+    }
+
+    function handleSaveEdit() {
+        if (!editingRefId) {
+return;
+}
+
+        editForm.patch(
+            `/applications/${application.id}/references/${editingRefId}`,
+            { preserveScroll: true, onSuccess: () => setEditingRefId(null) },
+        );
     }
 
     function handleToggleChecklistItem(itemId: number) {
@@ -1045,7 +1141,7 @@ next.add(id);
                                             key={ref.id}
                                             className={`rounded-lg border p-4 ${
                                                 isCompleted
-                                                    ? 'border-green-200 bg-green-50'
+                                                    ? 'border-border bg-card border-l-4 border-l-green-500'
                                                     : 'border-border bg-card'
                                             }`}
                                         >
@@ -1055,20 +1151,20 @@ next.add(id);
                                                         <span className="truncate text-sm font-medium text-foreground">
                                                             {ref.reference_name}
                                                         </span>
-                                                        {ref.is_sponsor && (
-                                                            <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
-                                                                Sponsor
-                                                            </span>
-                                                        )}
-                                                        {isCompleted ? (
-                                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
-                                                                Completed
-                                                            </span>
-                                                        ) : (
-                                                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                                                                Pending
-                                                            </span>
-                                                        )}
+{ref.is_sponsor && (
+                                                             <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                                                                 Sponsor
+                                                             </span>
+                                                         )}
+                                                         {isCompleted ? (
+                                                             <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                                                                 Completed
+                                                             </span>
+                                                         ) : (
+                                                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                                                                 Pending
+                                                             </span>
+                                                         )}
                                                     </div>
                                                     <p className="mt-1 truncate text-xs text-muted-foreground">
                                                         {ref.reference_email}
@@ -1082,7 +1178,7 @@ next.add(id);
                                                     )}
                                                     {isCompleted && avg && (
                                                         <div className="mt-2 flex items-center gap-2">
-                                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
                                                                 {avg}/5
                                                             </span>
                                                             <button
@@ -1200,23 +1296,34 @@ next.add(id);
                                                             </div>
                                                         )}
                                                 </div>
-                                                {!isCompleted && (
+                                                <div className="ml-4 flex shrink-0 gap-1">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() =>
-                                                            handleResend(ref.id)
+                                                            openEditDialog(ref)
                                                         }
-                                                        disabled={
-                                                            resending === ref.id
-                                                        }
-                                                        className="ml-4 shrink-0"
                                                     >
-                                                        {resending === ref.id
-                                                            ? 'Resending...'
-                                                            : 'Resend'}
+                                                        Edit
                                                     </Button>
-                                                )}
+                                                    {!isCompleted && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handleResend(ref.id)
+                                                            }
+                                                            disabled={
+                                                                resending ===
+                                                                ref.id
+                                                            }
+                                                        >
+                                                            {resending === ref.id
+                                                                ? 'Resending...'
+                                                                : 'Resend'}
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -1375,7 +1482,7 @@ handleToggleChecklistItem(item.id);
                                                     )}
                                                 </div>
                                                 {item.completed_at && (
-                                                    <Badge className="mt-1 bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                                    <Badge className="mt-1 bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
                                                         Done · {format(new Date(item.completed_at), 'MMM d')}
                                                     </Badge>
                                                 )}
@@ -1422,11 +1529,11 @@ handleToggleChecklistItem(item.id);
                                             )}
                                         </div>
                                         {cert.verified_at ? (
-                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
                                                 Verified
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
                                                 Unverified
                                             </span>
                                         )}
@@ -1456,6 +1563,219 @@ handleToggleChecklistItem(item.id);
                         </Button>
                         <Button onClick={confirmDialog.onConfirm}>
                             Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={editingRefId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+setEditingRefId(null);
+}
+                }}
+            >
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Edit Reference</DialogTitle>
+                        <DialogDescription>
+                            Update reference details. Ratings and feedback can
+                            be entered on behalf of the reference if they
+                            submitted via a different channel.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-1">
+                                <Label htmlFor="ref-name">Name</Label>
+                                <Input
+                                    id="ref-name"
+                                    value={editForm.data.reference_name}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            'reference_name',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                                {editForm.errors.reference_name && (
+                                    <p className="text-sm text-destructive">
+                                        {editForm.errors.reference_name}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="ref-email">Email</Label>
+                                <Input
+                                    id="ref-email"
+                                    value={editForm.data.reference_email}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            'reference_email',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                                {editForm.errors.reference_email && (
+                                    <p className="text-sm text-destructive">
+                                        {editForm.errors.reference_email}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-1">
+                                <Label htmlFor="ref-relationship">
+                                    Relationship
+                                </Label>
+                                <Input
+                                    id="ref-relationship"
+                                    value={editForm.data.relationship}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            'relationship',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="ref-years-known">
+                                    Years Known
+                                </Label>
+                                <Select
+                                    value={editForm.data.years_known || undefined}
+                                    onValueChange={(value) =>
+                                        editForm.setData('years_known', value)
+                                    }
+                                >
+                                    <SelectTrigger id="ref-years-known">
+                                        <SelectValue placeholder="Select years known" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {[
+                                            { value: '<1', label: 'Less than 1 year' },
+                                            { value: '1-3', label: '1-3 years' },
+                                            { value: '3-5', label: '3-5 years' },
+                                            { value: '5-10', label: '5-10 years' },
+                                            { value: '10+', label: '10+ years' },
+                                        ].map((option) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <label className="flex items-center gap-2">
+                            <Checkbox
+                                checked={editForm.data.is_sponsor}
+                                onCheckedChange={(checked) =>
+                                    editForm.setData(
+                                        'is_sponsor',
+                                        checked === true,
+                                    )
+                                }
+                            />
+                            <span className="text-sm">This is the sponsor</span>
+                        </label>
+
+                        <div>
+                            <h4 className="mb-2 text-sm font-medium">
+                                Ratings
+                            </h4>
+                            <div className="space-y-2">
+                                {([
+                                    ['rating_reliability', 'Reliability & Dependability'],
+                                    ['rating_trustworthiness', 'Trustworthiness'],
+                                    ['rating_maturity', 'Maturity'],
+                                    ['rating_communication', 'Communication'],
+                                    ['rating_warmth', 'Warmth & Compassion'],
+                                    [
+                                        'rating_overall_recommendation',
+                                        'Overall Recommendation',
+                                    ],
+                                ] as const).map(([key, label]) => (
+                                    <div key={key}>
+                                        <Label className="text-xs font-normal">
+                                            {label}
+                                        </Label>
+                                        <StarRating
+                                            value={editForm.data[key as keyof typeof editForm.data] as number | null}
+                                            onChange={(val) =>
+                                                editForm.setData(
+                                                    key as keyof typeof editForm.data,
+                                                    val,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label htmlFor="ref-strengths">Strengths</Label>
+                            <Textarea
+                                id="ref-strengths"
+                                rows={2}
+                                value={editForm.data.strengths}
+                                onChange={(e) =>
+                                    editForm.setData('strengths', e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label htmlFor="ref-concerns">Concerns</Label>
+                            <Textarea
+                                id="ref-concerns"
+                                rows={2}
+                                value={editForm.data.concerns}
+                                onChange={(e) =>
+                                    editForm.setData('concerns', e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label htmlFor="ref-additional-comments">
+                                Additional Comments
+                            </Label>
+                            <Textarea
+                                id="ref-additional-comments"
+                                rows={2}
+                                value={editForm.data.additional_comments}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        'additional_comments',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setEditingRefId(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveEdit}
+                            disabled={editForm.processing}
+                        >
+                            {editForm.processing ? 'Saving...' : 'Save'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

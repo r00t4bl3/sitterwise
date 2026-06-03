@@ -63,6 +63,11 @@ class DatabaseSeeder extends Seeder
             'user_id' => $client->id,
         ]);
 
+        // Seed a test applicant for development/staging
+        $this->call([
+            ApplicantSeeder::class,
+        ]);
+
         // Run caregiver booking seeder after users are created
         $this->call([
             // CaregiverBookingSeeder::class,

@@ -230,9 +230,9 @@ class Caregiver extends Model
         return $this->hasMany(BookingCaregiverNotification::class);
     }
 
-    public function applications(): HasMany
+    public function application(): HasOne
     {
-        return $this->hasMany(CaregiverApplication::class);
+        return $this->hasOne(CaregiverApplication::class);
     }
 
     public function caregiverPauses(): HasMany

@@ -225,6 +225,60 @@ describe('Application Management - Resend Reference', function () {
     });
 });
 
+describe('Application Management - Update Reference', function () {
+    it('clears is_sponsor on other references when marking one as sponsor', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $data = applicationManagementCreateApplication();
+        $refs = ReferenceRequest::where('caregiver_id', $data['caregiver']->id)->get();
+
+        $first = $refs->first();
+        $second = $refs->last();
+
+        $first->update(['is_sponsor' => true]);
+
+        $response = $this->patch(route('applications.references.update', [
+            'application' => $data['application']->id,
+            'referenceRequest' => $second->id,
+        ]), [
+            'reference_name' => $second->reference_name,
+            'reference_email' => $second->reference_email,
+            'is_sponsor' => true,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $first->refresh();
+        expect($first->is_sponsor)->toBeFalse();
+
+        $second->refresh();
+        expect($second->is_sponsor)->toBeTrue();
+    });
+
+    it('does not affect is_sponsor when updating without sponsor flag', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $data = applicationManagementCreateApplication();
+        $ref = ReferenceRequest::where('caregiver_id', $data['caregiver']->id)->first();
+        $ref->update(['is_sponsor' => true]);
+
+        $response = $this->patch(route('applications.references.update', [
+            'application' => $data['application']->id,
+            'referenceRequest' => $ref->id,
+        ]), [
+            'reference_name' => $ref->reference_name,
+            'reference_email' => $ref->reference_email,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $ref->refresh();
+        expect($ref->is_sponsor)->toBeTrue();
+    });
+});
+
 describe('Application Management - Dashboard Counts', function () {
     it('includes pending applications count in admin dashboard', function () {
         $admin = User::factory()->create(['role' => 'admin']);

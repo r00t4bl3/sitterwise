@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CaregiverStatus;
 use App\Http\Requests\ApplicationActionRequest;
+use App\Http\Requests\UpdateReferenceRequest;
 use App\Mail\ApplicantDeclinedMail;
 use App\Mail\ApplicantHiredMail;
 use App\Mail\ReferenceRequestMail;
@@ -159,6 +160,43 @@ class ApplicationController extends Controller
         ));
 
         return back()->with('success', 'Reference request resent to '.$referenceRequest->reference_email);
+    }
+
+    public function updateReference(CaregiverApplication $application, ReferenceRequest $referenceRequest, UpdateReferenceRequest $request)
+    {
+        if ($referenceRequest->caregiver_id !== $application->caregiver_id) {
+            abort(404);
+        }
+
+        $validated = $request->validated();
+
+        $ratingFields = [
+            'rating_reliability',
+            'rating_trustworthiness',
+            'rating_maturity',
+            'rating_communication',
+            'rating_warmth',
+            'rating_overall_recommendation',
+            'strengths',
+            'concerns',
+            'additional_comments',
+        ];
+
+        $hasResponseData = collect($ratingFields)->contains(fn ($field) => ! empty($validated[$field]));
+
+        $referenceRequest->update(array_merge(
+            $validated,
+            $hasResponseData && ! $referenceRequest->submitted_at ? ['submitted_at' => now()] : [],
+        ));
+
+        if (! empty($validated['is_sponsor'])) {
+            $application->caregiver->referenceRequests()
+                ->where('id', '!=', $referenceRequest->id)
+                ->where('is_sponsor', true)
+                ->update(['is_sponsor' => false]);
+        }
+
+        return back()->with('success', 'Reference updated successfully.');
     }
 
     public function approve(CaregiverApplication $application, ApplicationActionRequest $request)

@@ -121,7 +121,7 @@ class CaregiverController extends Controller
 
     public function show(Caregiver $caregiver)
     {
-        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'applications', 'agreements', 'referenceRequests']);
+        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'application', 'agreements', 'referenceRequests']);
 
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,

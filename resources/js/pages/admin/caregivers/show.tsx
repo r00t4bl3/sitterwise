@@ -207,7 +207,7 @@ interface Caregiver {
     certifications: Certification[];
     attributes: Attribute[];
     educations: Education[];
-    applications: CaregiverApplication[];
+    application: CaregiverApplication | null;
     agreements: Agreement[];
     reference_requests: ReferenceRequest[];
 }
@@ -554,27 +554,27 @@ export default function CaregiverShow() {
 
                         {/* Application tab */}
                         {activeTab === 'application' && (
-                            caregiver.applications.length > 0 ? caregiver.applications.map((app) => (
-                                <div key={app.id} className="border border-border bg-card p-6">
+                            caregiver.application ? (
+                                <div key={caregiver.application.id} className="border border-border bg-card p-6">
                                     <div className="mb-4 flex items-center justify-between">
                                         <h2 className="font-serif text-lg font-semibold text-foreground">Application</h2>
-                                        <Link href={`/applications/${app.id}`} className="text-sm text-primary hover:underline">View Application</Link>
+                                        <Link href={`/applications/${caregiver.application.id}`} className="text-sm text-primary hover:underline">View Application</Link>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">Submitted: {app.submitted_at}</p>
-                                    {app.data && (
+                                    <p className="text-sm text-muted-foreground">Submitted: {caregiver.application.submitted_at}</p>
+                                    {caregiver.application.data && (
                                         <div className="mt-4 space-y-4">
-                                            {app.data.personal && (
+                                            {caregiver.application.data.personal && (
                                                 <div>
                                                     <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Personal Info</p>
-                                                    <p className="text-sm font-medium text-foreground">{app.data.personal.first_name} {app.data.personal.last_name}</p>
-                                                    <p className="text-sm text-muted-foreground">{app.data.personal.address}</p>
+                                                    <p className="text-sm font-medium text-foreground">{caregiver.application.data.personal.first_name} {caregiver.application.data.personal.last_name}</p>
+                                                    <p className="text-sm text-muted-foreground">{caregiver.application.data.personal.address}</p>
                                                 </div>
                                             )}
-                                            {app.data.sponsor && (
+                                            {caregiver.application.data.sponsor && (
                                                 <div>
                                                     <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Sponsor</p>
-                                                    <p className="text-sm font-medium text-foreground">{app.data.sponsor.first_name} {app.data.sponsor.last_name}</p>
-                                                    <p className="text-sm text-muted-foreground">{app.data.sponsor.email}</p>
+                                                    <p className="text-sm font-medium text-foreground">{caregiver.application.data.sponsor.first_name} {caregiver.application.data.sponsor.last_name}</p>
+                                                    <p className="text-sm text-muted-foreground">{caregiver.application.data.sponsor.email}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -593,7 +593,7 @@ export default function CaregiverShow() {
                                         </div>
                                     )}
                                 </div>
-                            )) : (
+                            ) : (
                                 <div className="border border-border bg-card p-6">
                                     <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Application</h2>
                                     <p className="text-sm text-muted-foreground">No application submitted.</p>

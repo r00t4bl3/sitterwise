@@ -73,7 +73,7 @@ class NudgePendingReferences extends Command
                     continue;
                 }
 
-                $application = $caregiver->applications()->latest('submitted_at')->first();
+                $application = $caregiver->application;
                 if (! $application || ! $application->submitted_at) {
                     continue;
                 }

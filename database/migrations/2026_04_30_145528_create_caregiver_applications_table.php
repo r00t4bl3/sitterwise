@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('caregiver_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('caregiver_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('caregiver_id')->nullable()->unique()->constrained()->nullOnDelete();
             $table->json('data');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();

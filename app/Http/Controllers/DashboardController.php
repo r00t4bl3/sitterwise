@@ -243,10 +243,10 @@ class DashboardController extends Controller
                         'key' => 'applications_ready',
                         'label' => 'Applications ready to review',
                         'count' => Caregiver::where('status', CaregiverStatus::Applicant)
-                            ->whereHas('applications', fn ($q) => $q->whereNotNull('submitted_at'))
+                            ->whereHas('application', fn ($q) => $q->whereNotNull('submitted_at'))
                             ->where(function ($q) {
                                 $q->whereHas('referenceRequests', fn ($q) => $q->completed(), '>=', 2)
-                                    ->orWhereHas('applications', fn ($q) => $q->where('submitted_at', '<', now()->subDays(14)));
+                                    ->orWhereHas('application', fn ($q) => $q->where('submitted_at', '<', now()->subDays(14)));
                             })
                             ->count(),
                         'href' => '/applications',
