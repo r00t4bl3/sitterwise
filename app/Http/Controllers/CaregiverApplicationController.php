@@ -46,6 +46,8 @@ class CaregiverApplicationController extends Controller
 
         // Check if email already exists
         if (User::where('email', $email)->exists()) {
+            Log::channel('submission')->warning('Email verification: already registered', ['email' => $email]);
+
             return back()->withErrors(['email' => 'This email is already registered. Please log in or use a different email.']);
         }
 
@@ -60,6 +62,8 @@ class CaregiverApplicationController extends Controller
             $message->to($email)
                 ->subject('Your Sitterwise Verification Code');
         });
+
+        Log::channel('submission')->info('Email verification: OTP sent', ['email' => $email]);
 
         return back()->with('success', 'Verification code sent to your email.');
     }
@@ -76,6 +80,8 @@ class CaregiverApplicationController extends Controller
 
         // Allow testing bypass in non-production environments
         if (app()->environment() !== 'production' && $otp === '000000') {
+            Log::channel('submission')->info('Email verification: bypass OTP used', ['email' => $email]);
+
             Session::put('verified_email', $email);
             Session::put('verified_at', now());
 
@@ -85,10 +91,14 @@ class CaregiverApplicationController extends Controller
         $storedOtp = Cache::get("otp_{$email}");
 
         if (! $storedOtp || $storedOtp !== $otp) {
+            Log::channel('submission')->warning('Email verification: invalid OTP attempt', ['email' => $email]);
+
             return back()->withErrors(['otp' => 'Invalid verification code. Please try again.']);
         }
 
         // Store verified email in session
+        Log::channel('submission')->info('Email verification: verified', ['email' => $email]);
+
         Session::put('verified_email', $email);
         Session::put('verified_at', now());
 

@@ -20,6 +20,7 @@ interface DatePickerProps {
   fromYear?: number
   toYear?: number
   disabled?: { before: Date } | { after: Date }
+  defaultMonth?: Date
 }
 
 export function DatePicker({
@@ -30,31 +31,27 @@ export function DatePicker({
   fromYear,
   toYear,
   disabled,
+  defaultMonth,
 }: DatePickerProps) {
-  const parsePT = React.useCallback((dateStr: string | null | undefined): Date | null => {
+  const parseDate = React.useCallback((dateStr: string | null | undefined): Date | null => {
     if (!dateStr) return null
-    const s = dateStr.replace(/\.(\d{3})\d*Z$/, '.$1Z')
-    const d = new Date(s)
+    const parts = dateStr.split('-').map(Number)
+    if (parts.length !== 3 || parts.some(isNaN)) return null
+    const d = new Date(parts[0], parts[1] - 1, parts[2])
     if (isNaN(d.getTime())) return null
-    const p = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Los_Angeles',
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', hour12: false,
-    }).formatToParts(d)
-    const g = (t: string) => parseInt(p.find(x => x.type === t)!.value, 10)
-    return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'))
+    return d
   }, [])
 
   const startMonth = fromYear ? new Date(fromYear, 0) : undefined
   const endMonth = toYear ? new Date(toYear, 11) : undefined
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? parsePT(value) ?? undefined : undefined
+    value ? parseDate(value) ?? undefined : undefined
   )
   const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (value) {
-      setDate(parsePT(value) ?? undefined)
+      setDate(parseDate(value) ?? undefined)
     }
   }, [value])
 
@@ -83,7 +80,7 @@ export function DatePicker({
           mode="single"
           selected={date}
           onSelect={handleSelect}
-          defaultMonth={date}
+          defaultMonth={defaultMonth ?? date}
           captionLayout="dropdown"
           startMonth={startMonth}
           endMonth={endMonth}

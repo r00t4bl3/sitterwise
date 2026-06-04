@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { AlertCircle, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -104,7 +104,10 @@ const graduationYears = Array.from(
     (_, i) => String(startYear + i),
 );
 
+const maxDob = new Date(currentYear - 18, new Date().getMonth(), new Date().getDate());
+
 export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEmail?: string; foreignLanguages?: Record<string, string> }) {
+    const validatedRef = useRef(false);
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
 
@@ -302,28 +305,40 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Clear validation errors when user edits any field
+    useEffect(() => {
+        if (Object.keys(form.errors).length > 0) {
+            form.clearErrors();
+        }
+    }, [form.data]);
+
     // Sync employment status with first experience's "present" checkbox
     useEffect(() => {
-        if (verifiedEmail && !form.data.personal.email) {
-            form.setData('personal', {
-                ...form.data.personal,
-                email: verifiedEmail,
-            });
+        if (verifiedEmail) {
+            form.setData((prev) => ({
+                ...prev,
+                personal: {
+                    ...prev.personal,
+                    email: prev.personal.email || verifiedEmail,
+                },
+            }));
         }
-    }, [verifiedEmail, form]);
+    }, [verifiedEmail]);
 
     useEffect(() => {
         const isEmployed =
             form.data.employment_status === 'full_time' ||
             form.data.employment_status === 'part_time';
 
-        const newExp = [...form.data.experiences];
-        newExp[0] = {
-            ...newExp[0],
-            present: isEmployed,
-            end_date: isEmployed ? '' : newExp[0].end_date,
-        };
-        form.setData('experiences', newExp);
+        form.setData((prev) => {
+            const newExp = [...prev.experiences];
+            newExp[0] = {
+                ...newExp[0],
+                present: isEmployed,
+                end_date: isEmployed ? '' : newExp[0].end_date,
+            };
+            return { ...prev, experiences: newExp };
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.employment_status]);
 
@@ -337,9 +352,11 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
             }),
         );
 
+        const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+
         fetch('/caregiver/apply/save-progress', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (window as any).csrfToken || '' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
             body: JSON.stringify({ step: currentStep }),
         }).catch(() => {});
     };
@@ -388,6 +405,17 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
             if (!data.personal.dob) {
                 form.setError('personal.dob', 'Date of birth is required.');
                 hasError = true;
+            } else {
+                const birthDate = new Date(data.personal.dob);
+                let age = currentYear - birthDate.getFullYear();
+                const monthDiff = new Date().getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                if (age < 18) {
+                    form.setError('personal.dob', 'You must be at least 18 years old to apply.');
+                    hasError = true;
+                }
             }
 
             if (!data.personal.address_line1?.trim()) {
@@ -536,9 +564,11 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
 
     const nextStep = () => {
         if (!validateStep(currentStep)) {
+            validatedRef.current = true;
 return;
 }
 
+        validatedRef.current = false;
         saveDraft();
         setCurrentStep((prev) => Math.min(prev + 1, 8));
     };
@@ -562,8 +592,11 @@ return;
 return;
 }
 
-        sessionStorage.removeItem('caregiver_application_draft');
-        form.post('/caregiver/apply/submit');
+        form.post('/caregiver/apply/submit', {
+            onSuccess: () => {
+                sessionStorage.removeItem('caregiver_application_draft');
+            },
+        });
     };
 
     const addExperience = () => {
@@ -881,6 +914,8 @@ return;
                                             toYear={
                                                 new Date().getFullYear() - 18
                                             }
+                                            disabled={{ after: maxDob }}
+                                            defaultMonth={maxDob}
                                         />
                                         {form.errors['personal.dob'] && (
                                             <p className="text-sm text-destructive">{form.errors['personal.dob']}</p>
@@ -3037,8 +3072,10 @@ form.setData('children_ages', '');
                                 type="button"
                                 onClick={nextStep}
                                 disabled={
-                                    currentStep === 4 &&
-                                    form.data.authorized_to_work === 'no'
+                                    (currentStep === 4 &&
+                                        form.data.authorized_to_work === 'no') ||
+                                    (validatedRef.current &&
+                                        Object.keys(form.errors).length > 0)
                                 }
                                 className="hover:bg-coral-dark rounded bg-coral px-4 py-2 text-white disabled:opacity-50"
                             >
