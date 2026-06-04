@@ -137,263 +137,263 @@ class CaregiverApplicationController extends Controller
                         'error' => $e->getMessage(),
                     ]);
                 }
-            $validated['personal']['photo'] = $photo->store('photos', 'public');
-        } else {
-            unset($validated['personal']['photo']);
-        }
-
-        if ($cprCard = $request->file('cpr_card')) {
-            $validated['cpr_card'] = $cprCard->store('cpr-cards', 'public');
-        } else {
-            unset($validated['cpr_card']);
-        }
-
-        if ($trustlineUpload = $request->file('trustline_upload')) {
-            $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'public');
-        } else {
-            unset($validated['trustline_upload']);
-        }
-
-        // Create User
-        $user = User::create([
-            'name' => "{$validated['personal']['first_name']} {$validated['personal']['last_name']}",
-            'email' => $email,
-            'password' => bcrypt(Str::random(32)), // Random password
-            'role' => 'caregiver',
-        ]);
-
-        // Create Caregiver
-        $caregiver = Caregiver::create([
-            'user_id' => $user->id,
-            'status' => CaregiverStatus::Applicant->value,
-            'status_token' => Str::random(32),
-            'first_name' => $validated['personal']['first_name'],
-            'last_name' => $validated['personal']['last_name'],
-            'phone' => $validated['personal']['phone'],
-            'date_of_birth' => $validated['personal']['dob'],
-            'address_line1' => $validated['personal']['address_line1'] ?? null,
-            'address_line2' => $validated['personal']['address_line2'] ?? null,
-            'address_city' => $validated['personal']['address_city'] ?? null,
-            'address_state' => $validated['personal']['address_state'] ?? null,
-            'address_zip' => $validated['personal']['address_zip'] ?? null,
-        ]);
-
-        // Store education records
-        $education = $validated['education'] ?? null;
-        if ($education && $education['level'] !== 'high_school') {
-            $caregiver->educations()->create([
-                'education_type' => $education['level'],
-                'school_name' => $education['college'] ?? null,
-                'graduation_year' => $education['graduation_year'] ?? null,
-                'degree' => $education['degree'] ?? null,
-            ]);
-        }
-        if ($education && $education['level'] === 'high_school') {
-            $caregiver->educations()->create([
-                'education_type' => 'high_school',
-                'school_name' => $education['high_school_name'] ?? null,
-                'graduation_year' => $education['high_school_graduation_year'] ?? null,
-            ]);
-        }
-
-        // Store certifications (caregiver_certifications pivot)
-        if (($validated['cpr_certified'] ?? '') === 'yes') {
-            $cprType = CertificationType::where('name', 'CPR')->first();
-            if ($cprType) {
-                $caregiver->certifications()->syncWithoutDetaching([
-                    $cprType->id => [
-                        'expiration_date' => $validated['cpr_expiration'] ?? null,
-                        'file_path' => $validated['cpr_card'] ?? null,
-                    ],
-                ]);
-            }
-        }
-
-        if (($validated['trustline_certified'] ?? '') === 'yes') {
-            $trustlineType = CertificationType::where('name', 'Trustline')->first();
-            if ($trustlineType) {
-                $caregiver->certifications()->syncWithoutDetaching([
-                    $trustlineType->id => [
-                        'file_path' => $validated['trustline_upload'] ?? null,
-                    ],
-                ]);
-            }
-        }
-
-        // Update Caregiver model columns
-        $caregiver->update([
-            'education_level' => $education['level'] ?? null,
-            'biography' => $validated['bio'] ?? null,
-            'languages' => $validated['languages'] ?? null,
-            'metadata' => [
-                'smokes' => $validated['smokes'] ?? null,
-                'alcohol' => $validated['alcohol'] ?? null,
-                'substance_abuse' => $validated['substance_abuse'] ?? null,
-                'limitations' => $validated['limitations'] ?? null,
-                'allergic_to_pets' => $validated['allergic_to_pets'] ?? null,
-                'visible_tattoos' => $validated['visible_tattoos'] ?? null,
-                'authorized_to_work' => $validated['authorized_to_work'] ?? null,
-                'reliable_vehicle' => $validated['reliable_vehicle'] ?? null,
-                'cpr_certified' => $validated['cpr_certified'] ?? null,
-                'cpr_expiration' => $validated['cpr_expiration'] ?? null,
-                'trustline_certified' => $validated['trustline_certified'] ?? null,
-                'has_children' => $validated['has_children'] ?? null,
-                'employment_status' => $validated['employment_status'] ?? null,
-                'current_employer' => $validated['current_employer'] ?? null,
-                'things_i_bring' => $validated['things_i_bring'] ?? null,
-                'interests' => $validated['interests'] ?? null,
-                'availability' => $validated['availability'] ?? [],
-                'location_flexible' => $validated['location']['flexible'] ?? false,
-            ],
-        ]);
-
-        // Sync specialty types (age_groups → specialty_types)
-        $ageGroupMap = [
-            'babies' => 1,
-            'toddlers' => 2,
-            'preschool' => 3,
-            'school_age' => 4,
-        ];
-        $specialtyIds = [];
-        foreach ($ageGroupMap as $wizardKey => $specialtyTypeId) {
-            if (! empty($validated['age_groups'][$wizardKey])) {
-                $specialtyIds[] = $specialtyTypeId;
-            }
-        }
-        if (! empty($specialtyIds)) {
-            $existingSpecialtyIds = SpecialtyType::whereIn('id', $specialtyIds)->pluck('id')->toArray();
-            if (! empty($existingSpecialtyIds)) {
-                $caregiver->specialtyTypes()->sync($existingSpecialtyIds);
-            }
-        }
-
-        // Sync locations
-        $northSelected = ! empty($validated['location']['north_county']);
-        $southSelected = ! empty($validated['location']['south_east_county']);
-        $flexible = ! empty($validated['location']['flexible']);
-        $locationSync = [];
-
-        if ($flexible) {
-            if ($northSelected && $southSelected) {
-                $locationSync[1] = ['is_preferred' => false]; // South
-                $locationSync[2] = ['is_preferred' => false]; // North
-            } elseif ($northSelected && ! $southSelected) {
-                $locationSync[1] = ['is_preferred' => false]; // South
-                $locationSync[2] = ['is_preferred' => true]; // North
-            } elseif (! $northSelected && $southSelected) {
-                $locationSync[1] = ['is_preferred' => true]; // South
-                $locationSync[2] = ['is_preferred' => false]; // North
+                $validated['personal']['photo'] = $photo->store('photos', 'public');
             } else {
-                $locationSync[1] = ['is_preferred' => false]; // South
-                $locationSync[2] = ['is_preferred' => false]; // North
+                unset($validated['personal']['photo']);
             }
-        } else {
-            if ($northSelected) {
-                $locationSync[2] = ['is_preferred' => false]; // North
+
+            if ($cprCard = $request->file('cpr_card')) {
+                $validated['cpr_card'] = $cprCard->store('cpr-cards', 'public');
+            } else {
+                unset($validated['cpr_card']);
             }
-            if ($southSelected) {
-                $locationSync[1] = ['is_preferred' => false]; // South
+
+            if ($trustlineUpload = $request->file('trustline_upload')) {
+                $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'public');
+            } else {
+                unset($validated['trustline_upload']);
             }
-        }
-        if (! empty($locationSync)) {
-            $existingLocationIds = Location::whereIn('id', array_keys($locationSync))->pluck('id')->toArray();
-            if (! empty($existingLocationIds)) {
-                $caregiver->locations()->sync(
-                    array_intersect_key($locationSync, array_flip($existingLocationIds))
-                );
-            }
-        }
 
-        // Sync attributes
-        $attributeSync = [];
-        if (! empty($validated['position']['petsitting'])) {
-            $attributeSync[1] = ['value' => 'true']; // pet_sitting
-        }
-        if (! empty($validated['qualifications']['driving'])) {
-            $attributeSync[3] = ['value' => 'true']; // has_vehicle
-        }
-        if (($validated['smokes'] ?? '') === 'no') {
-            $attributeSync[4] = ['value' => 'true']; // non_smoker
-        }
-        if (! empty($attributeSync)) {
-            $existingAttributeIds = AttributeDefinition::whereIn('id', array_keys($attributeSync))->pluck('id')->toArray();
-            if (! empty($existingAttributeIds)) {
-                $caregiver->attributes()->syncWithoutDetaching(
-                    array_intersect_key($attributeSync, array_flip($existingAttributeIds))
-                );
-            }
-        }
-
-        // Store application snapshot
-        $application = CaregiverApplication::create([
-            'caregiver_id' => $caregiver->id,
-            'data' => $validated,
-            'submitted_at' => now(),
-        ]);
-
-        // Generate generic PDFs (placeholder for now)
-        $this->generateAgreements($caregiver, $validated);
-
-        $applicantName = $validated['personal']['first_name'].' '.$validated['personal']['last_name'];
-
-        // Send applicant confirmation email
-        Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName, $caregiver->status_token));
-
-        // Send admin notification
-        $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
-        foreach ($adminEmails as $adminEmail) {
-            Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email, $application->id));
-        }
-
-        // Send reference request emails and persist records
-        foreach ($validated['references'] as $reference) {
-            $token = Str::random(32);
-            ReferenceRequest::create([
-                'token' => $token,
-                'caregiver_id' => $caregiver->id,
-                'reference_name' => $reference['first_name'].' '.$reference['last_name'],
-                'reference_email' => $reference['email'],
-                'relationship' => $reference['relationship'],
-                'years_known' => $reference['years_known'],
-                'is_sponsor' => false,
+            // Create User
+            $user = User::create([
+                'name' => "{$validated['personal']['first_name']} {$validated['personal']['last_name']}",
+                'email' => $email,
+                'password' => bcrypt(Str::random(32)), // Random password
+                'role' => 'caregiver',
             ]);
-            Mail::to($reference['email'])->queue(new ReferenceRequestMail(
-                $reference['first_name'].' '.$reference['last_name'],
+
+            // Create Caregiver
+            $caregiver = Caregiver::create([
+                'user_id' => $user->id,
+                'status' => CaregiverStatus::Applicant->value,
+                'status_token' => Str::random(32),
+                'first_name' => $validated['personal']['first_name'],
+                'last_name' => $validated['personal']['last_name'],
+                'phone' => $validated['personal']['phone'],
+                'date_of_birth' => $validated['personal']['dob'],
+                'address_line1' => $validated['personal']['address_line1'] ?? null,
+                'address_line2' => $validated['personal']['address_line2'] ?? null,
+                'address_city' => $validated['personal']['address_city'] ?? null,
+                'address_state' => $validated['personal']['address_state'] ?? null,
+                'address_zip' => $validated['personal']['address_zip'] ?? null,
+            ]);
+
+            // Store education records
+            $education = $validated['education'] ?? null;
+            if ($education && $education['level'] !== 'high_school') {
+                $caregiver->educations()->create([
+                    'education_type' => $education['level'],
+                    'school_name' => $education['college'] ?? null,
+                    'graduation_year' => $education['graduation_year'] ?? null,
+                    'degree' => $education['degree'] ?? null,
+                ]);
+            }
+            if ($education && $education['level'] === 'high_school') {
+                $caregiver->educations()->create([
+                    'education_type' => 'high_school',
+                    'school_name' => $education['high_school_name'] ?? null,
+                    'graduation_year' => $education['high_school_graduation_year'] ?? null,
+                ]);
+            }
+
+            // Store certifications (caregiver_certifications pivot)
+            if (($validated['cpr_certified'] ?? '') === 'yes') {
+                $cprType = CertificationType::where('name', 'CPR')->first();
+                if ($cprType) {
+                    $caregiver->certifications()->syncWithoutDetaching([
+                        $cprType->id => [
+                            'expiration_date' => $validated['cpr_expiration'] ?? null,
+                            'file_path' => $validated['cpr_card'] ?? null,
+                        ],
+                    ]);
+                }
+            }
+
+            if (($validated['trustline_certified'] ?? '') === 'yes') {
+                $trustlineType = CertificationType::where('name', 'Trustline')->first();
+                if ($trustlineType) {
+                    $caregiver->certifications()->syncWithoutDetaching([
+                        $trustlineType->id => [
+                            'file_path' => $validated['trustline_upload'] ?? null,
+                        ],
+                    ]);
+                }
+            }
+
+            // Update Caregiver model columns
+            $caregiver->update([
+                'education_level' => $education['level'] ?? null,
+                'biography' => $validated['bio'] ?? null,
+                'languages' => $validated['languages'] ?? null,
+                'metadata' => [
+                    'smokes' => $validated['smokes'] ?? null,
+                    'alcohol' => $validated['alcohol'] ?? null,
+                    'substance_abuse' => $validated['substance_abuse'] ?? null,
+                    'limitations' => $validated['limitations'] ?? null,
+                    'allergic_to_pets' => $validated['allergic_to_pets'] ?? null,
+                    'visible_tattoos' => $validated['visible_tattoos'] ?? null,
+                    'authorized_to_work' => $validated['authorized_to_work'] ?? null,
+                    'reliable_vehicle' => $validated['reliable_vehicle'] ?? null,
+                    'cpr_certified' => $validated['cpr_certified'] ?? null,
+                    'cpr_expiration' => $validated['cpr_expiration'] ?? null,
+                    'trustline_certified' => $validated['trustline_certified'] ?? null,
+                    'has_children' => $validated['has_children'] ?? null,
+                    'employment_status' => $validated['employment_status'] ?? null,
+                    'current_employer' => $validated['current_employer'] ?? null,
+                    'things_i_bring' => $validated['things_i_bring'] ?? null,
+                    'interests' => $validated['interests'] ?? null,
+                    'availability' => $validated['availability'] ?? [],
+                    'location_flexible' => $validated['location']['flexible'] ?? false,
+                ],
+            ]);
+
+            // Sync specialty types (age_groups → specialty_types)
+            $ageGroupMap = [
+                'babies' => 1,
+                'toddlers' => 2,
+                'preschool' => 3,
+                'school_age' => 4,
+            ];
+            $specialtyIds = [];
+            foreach ($ageGroupMap as $wizardKey => $specialtyTypeId) {
+                if (! empty($validated['age_groups'][$wizardKey])) {
+                    $specialtyIds[] = $specialtyTypeId;
+                }
+            }
+            if (! empty($specialtyIds)) {
+                $existingSpecialtyIds = SpecialtyType::whereIn('id', $specialtyIds)->pluck('id')->toArray();
+                if (! empty($existingSpecialtyIds)) {
+                    $caregiver->specialtyTypes()->sync($existingSpecialtyIds);
+                }
+            }
+
+            // Sync locations
+            $northSelected = ! empty($validated['location']['north_county']);
+            $southSelected = ! empty($validated['location']['south_east_county']);
+            $flexible = ! empty($validated['location']['flexible']);
+            $locationSync = [];
+
+            if ($flexible) {
+                if ($northSelected && $southSelected) {
+                    $locationSync[1] = ['is_preferred' => false]; // South
+                    $locationSync[2] = ['is_preferred' => false]; // North
+                } elseif ($northSelected && ! $southSelected) {
+                    $locationSync[1] = ['is_preferred' => false]; // South
+                    $locationSync[2] = ['is_preferred' => true]; // North
+                } elseif (! $northSelected && $southSelected) {
+                    $locationSync[1] = ['is_preferred' => true]; // South
+                    $locationSync[2] = ['is_preferred' => false]; // North
+                } else {
+                    $locationSync[1] = ['is_preferred' => false]; // South
+                    $locationSync[2] = ['is_preferred' => false]; // North
+                }
+            } else {
+                if ($northSelected) {
+                    $locationSync[2] = ['is_preferred' => false]; // North
+                }
+                if ($southSelected) {
+                    $locationSync[1] = ['is_preferred' => false]; // South
+                }
+            }
+            if (! empty($locationSync)) {
+                $existingLocationIds = Location::whereIn('id', array_keys($locationSync))->pluck('id')->toArray();
+                if (! empty($existingLocationIds)) {
+                    $caregiver->locations()->sync(
+                        array_intersect_key($locationSync, array_flip($existingLocationIds))
+                    );
+                }
+            }
+
+            // Sync attributes
+            $attributeSync = [];
+            if (! empty($validated['position']['petsitting'])) {
+                $attributeSync[1] = ['value' => 'true']; // pet_sitting
+            }
+            if (! empty($validated['qualifications']['driving'])) {
+                $attributeSync[3] = ['value' => 'true']; // has_vehicle
+            }
+            if (($validated['smokes'] ?? '') === 'no') {
+                $attributeSync[4] = ['value' => 'true']; // non_smoker
+            }
+            if (! empty($attributeSync)) {
+                $existingAttributeIds = AttributeDefinition::whereIn('id', array_keys($attributeSync))->pluck('id')->toArray();
+                if (! empty($existingAttributeIds)) {
+                    $caregiver->attributes()->syncWithoutDetaching(
+                        array_intersect_key($attributeSync, array_flip($existingAttributeIds))
+                    );
+                }
+            }
+
+            // Store application snapshot
+            $application = CaregiverApplication::create([
+                'caregiver_id' => $caregiver->id,
+                'data' => $validated,
+                'submitted_at' => now(),
+            ]);
+
+            // Generate generic PDFs (placeholder for now)
+            $this->generateAgreements($caregiver, $validated);
+
+            $applicantName = $validated['personal']['first_name'].' '.$validated['personal']['last_name'];
+
+            // Send applicant confirmation email
+            Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName, $caregiver->status_token));
+
+            // Send admin notification
+            $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
+            foreach ($adminEmails as $adminEmail) {
+                Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email, $application->id));
+            }
+
+            // Send reference request emails and persist records
+            foreach ($validated['references'] as $reference) {
+                $token = Str::random(32);
+                ReferenceRequest::create([
+                    'token' => $token,
+                    'caregiver_id' => $caregiver->id,
+                    'reference_name' => $reference['first_name'].' '.$reference['last_name'],
+                    'reference_email' => $reference['email'],
+                    'relationship' => $reference['relationship'],
+                    'years_known' => $reference['years_known'],
+                    'is_sponsor' => false,
+                ]);
+                Mail::to($reference['email'])->queue(new ReferenceRequestMail(
+                    $reference['first_name'].' '.$reference['last_name'],
+                    $applicantName,
+                    $token,
+                ));
+            }
+
+            // Send reference request to sponsor
+            $sponsorToken = Str::random(32);
+            ReferenceRequest::create([
+                'token' => $sponsorToken,
+                'caregiver_id' => $caregiver->id,
+                'reference_name' => $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
+                'reference_email' => $validated['sponsor']['email'],
+                'relationship' => $validated['sponsor']['relationship'] ?? null,
+                'years_known' => null,
+                'is_sponsor' => true,
+            ]);
+            Mail::to($validated['sponsor']['email'])->queue(new ReferenceRequestMail(
+                $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
                 $applicantName,
-                $token,
+                $sponsorToken,
             ));
-        }
 
-        // Send reference request to sponsor
-        $sponsorToken = Str::random(32);
-        ReferenceRequest::create([
-            'token' => $sponsorToken,
-            'caregiver_id' => $caregiver->id,
-            'reference_name' => $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
-            'reference_email' => $validated['sponsor']['email'],
-            'relationship' => $validated['sponsor']['relationship'] ?? null,
-            'years_known' => null,
-            'is_sponsor' => true,
-        ]);
-        Mail::to($validated['sponsor']['email'])->queue(new ReferenceRequestMail(
-            $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
-            $applicantName,
-            $sponsorToken,
-        ));
+            // Clear incomplete application tracking
+            IncompleteApplication::where('email', $email)->delete();
 
-        // Clear incomplete application tracking
-        IncompleteApplication::where('email', $email)->delete();
+            // Clear session
+            Session::forget(['verified_email', 'verified_at']);
 
-        // Clear session
-        Session::forget(['verified_email', 'verified_at']);
+            Log::channel('submission')->info('Application submission completed', [
+                'email' => $email,
+                'caregiver_id' => $caregiver->id,
+                'application_id' => $application->id,
+            ]);
 
-        Log::channel('submission')->info('Application submission completed', [
-            'email' => $email,
-            'caregiver_id' => $caregiver->id,
-            'application_id' => $application->id,
-        ]);
-
-        return redirect()->route('caregiver.apply.thank-you');
+            return redirect()->route('caregiver.apply.thank-you');
         } catch (\Throwable $e) {
             Log::channel('submission')->error('Application submission failed', [
                 'email' => $email,
