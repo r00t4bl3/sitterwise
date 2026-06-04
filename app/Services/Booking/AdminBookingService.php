@@ -57,6 +57,7 @@ class AdminBookingService implements BookingServiceInterface
         $endDate = $startDate->endOfMonth();
 
         $query = Booking::with([
+            'bookingGroup.bookings',
             'bookingGroup.client.user',
             'bookingGroup.client.children',
             'bookingGroup.client.pets',
@@ -77,7 +78,12 @@ class AdminBookingService implements BookingServiceInterface
             ->orderBy('start_datetime', 'asc')
             ->get()
             ->map(function (Booking $booking) {
-                $groupClient = $booking->bookingGroup?->client;
+                $group = $booking->bookingGroup;
+                if ($group) {
+                    $group->setAttribute('bookings_count', $group->bookings->count());
+                }
+
+                $groupClient = $group?->client;
                 if ($groupClient) {
                     $groupClient->setAttribute('children', $groupClient->children->map(fn ($c) => [
                         'name' => $c['name'],

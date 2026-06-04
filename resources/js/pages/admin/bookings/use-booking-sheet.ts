@@ -586,6 +586,10 @@ export function useBookingSheet({
                 }>);
             }
 
+            if (fullBooking.client) {
+                setSelectedClientType(fullBooking.client.client_type || null);
+            }
+
             if (fullBooking.client?.addresses) {
                 setClientAddresses(
                     fullBooking.client.addresses.map((addr: any) => ({
@@ -777,7 +781,7 @@ export function useBookingSheet({
 
             const formData = {
                 client_id: fullBooking.client_id,
-                service_type: 'babysitter',
+                service_type: fullBooking.service_type,
                 location_type: fullBooking.location_type,
                 start_datetime: fullBooking.start_datetime,
                 end_datetime: fullBooking.end_datetime,

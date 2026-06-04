@@ -2,6 +2,7 @@
 
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
+use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use Database\Seeders\AttributeDefinitionSeeder;
@@ -402,5 +403,112 @@ describe('Booking - Caregiver', function () {
         $booking->refresh();
         expect($booking->reserved_by)->toBe($caregiver1->id);
         expect($booking->status)->toBe('reserved');
+    });
+
+    test('caregiver can reserve a group — siblings reserved atomically', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $group = BookingGroup::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+        ]);
+        $bookings = Booking::factory()->count(3)->create([
+            'booking_group_id' => $group->id,
+            'status' => 'received',
+        ]);
+
+        foreach ($bookings as $b) {
+            BookingCaregiverNotification::create([
+                'booking_id' => $b->id,
+                'caregiver_id' => $caregiver->id,
+                'notified_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->post(route('bookings.reserve', $bookings[0]));
+
+        $response->assertSessionHas('expires_in');
+
+        $bookings[0]->refresh();
+        $bookings[1]->refresh();
+        $bookings[2]->refresh();
+        expect($bookings[0]->status)->toBe('reserved');
+        expect($bookings[1]->status)->toBe('reserved');
+        expect($bookings[2]->status)->toBe('reserved');
+        expect($bookings[0]->reserved_by)->toBe($caregiver->id);
+        expect($bookings[1]->reserved_by)->toBe($caregiver->id);
+        expect($bookings[2]->reserved_by)->toBe($caregiver->id);
+    });
+
+    test('caregiver can confirm a group — siblings confirmed atomically', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $group = BookingGroup::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+        ]);
+        $bookings = Booking::factory()->count(3)->create([
+            'booking_group_id' => $group->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
+            'reservation_expires_at' => now()->addMinute(),
+        ]);
+
+        foreach ($bookings as $b) {
+            BookingCaregiverNotification::create([
+                'booking_id' => $b->id,
+                'caregiver_id' => $caregiver->id,
+                'notified_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->post(route('bookings.confirm', $bookings[0]));
+
+        $response->assertRedirect(route('jobs.index'));
+
+        $bookings[0]->refresh();
+        $bookings[1]->refresh();
+        $bookings[2]->refresh();
+        expect($bookings[0]->status)->toBe('confirmed');
+        expect($bookings[1]->status)->toBe('confirmed');
+        expect($bookings[2]->status)->toBe('confirmed');
+        expect($bookings[0]->caregiver_id)->toBe($caregiver->id);
+        expect($bookings[1]->caregiver_id)->toBe($caregiver->id);
+        expect($bookings[2]->caregiver_id)->toBe($caregiver->id);
+    });
+
+    test('caregiver can release a group — siblings released atomically', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $group = BookingGroup::factory()->create([
+            'client_id' => $client->id,
+            'service_type' => 'babysitter',
+        ]);
+        $bookings = Booking::factory()->count(3)->create([
+            'booking_group_id' => $group->id,
+            'status' => 'reserved',
+            'reserved_by' => $caregiver->id,
+            'reservation_expires_at' => now()->addMinute(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->post(route('bookings.release', $bookings[0]));
+
+        $response->assertStatus(302);
+
+        $bookings[0]->refresh();
+        $bookings[1]->refresh();
+        $bookings[2]->refresh();
+        expect($bookings[0]->status)->toBe('received');
+        expect($bookings[1]->status)->toBe('received');
+        expect($bookings[2]->status)->toBe('received');
+        expect($bookings[0]->reserved_by)->toBeNull();
+        expect($bookings[1]->reserved_by)->toBeNull();
+        expect($bookings[2]->reserved_by)->toBeNull();
     });
 });

@@ -52,6 +52,7 @@ interface ApplicationData {
         address_line1?: string;
         address_city?: string;
         address_state?: string;
+        address_zip?: string | null;
     };
     sponsor?: {
         first_name: string;
@@ -263,6 +264,48 @@ function StarRating({
     );
 }
 
+function CollapsibleSection({
+    title,
+    defaultOpen = true,
+    children,
+}: {
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    return (
+        <div className="border border-border bg-card p-6">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="flex w-full cursor-pointer items-center justify-between"
+            >
+                <h2 className="font-serif text-lg font-semibold text-foreground">
+                    {title}
+                </h2>
+                <svg
+                    className={`h-5 w-5 text-muted-foreground transition-transform ${
+                        open ? '' : '-rotate-90'
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                    />
+                </svg>
+            </button>
+            {open && <div className="mt-4">{children}</div>}
+        </div>
+    );
+}
+
 export default function ApplicationShow() {
     const { application, references, certifications, checklistItems, caregiverStatuses } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
@@ -441,10 +484,7 @@ return;
                     {/* Application details */}
                     <div className="space-y-6 lg:col-span-2">
                         {/* Applicant Info */}
-                        <div className="border border-border bg-card p-6">
-                            <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                Applicant Information
-                            </h2>
+                        <CollapsibleSection title="Applicant Information">
                             {application.photo_url && (
                                 <div className="mb-4">
                                     <img
@@ -488,6 +528,7 @@ return;
                                             personal.address_line1,
                                             personal.address_city,
                                             personal.address_state,
+                                            personal.address_zip,
                                         ]
                                             .filter(Boolean)
                                             .join(', ') || '-'}
@@ -560,14 +601,11 @@ return;
                                     </p>
                                 )}
                             </div>
-                        </div>
+                        </CollapsibleSection>
 
                         {/* Education */}
                         {data.education && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Education
-                                </h2>
+                            <CollapsibleSection title="Education">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -632,15 +670,12 @@ return;
                                         </>
                                     )}
                                 </div>
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* Experience */}
                         {data.experiences && data.experiences.length > 0 && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Experience ({data.experiences.length})
-                                </h2>
+                            <CollapsibleSection title={`Experience (${data.experiences.length})`}>
                                 {data.experiences.map((exp, index) => (
                                     <div key={index} className={index > 0 ? 'mt-4 border-t border-border pt-4' : ''}>
                                         <div className="grid gap-4 sm:grid-cols-2">
@@ -689,15 +724,12 @@ return;
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* Screening Questions */}
                         {data.authorized_to_work && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Screening Questions
-                                </h2>
+                            <CollapsibleSection title="Screening Questions">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -868,15 +900,12 @@ return;
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* Position & Availability */}
                         {data.position && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Position & Availability
-                                </h2>
+                            <CollapsibleSection title="Position & Availability">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -959,15 +988,12 @@ return;
                                         )}
                                     </>
                                 )}
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* Qualifications & Activities */}
                         {data.qualifications && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Qualifications & Activities
-                                </h2>
+                            <CollapsibleSection title="Qualifications & Activities">
                                 <div className="space-y-3">
                                     {(() => {
                                         const labels: Record<string, string> = {
@@ -1027,15 +1053,12 @@ return;
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* Location & Age Groups */}
                         {data.location && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Location & Age Groups
-                                </h2>
+                            <CollapsibleSection title="Location & Age Groups">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -1098,14 +1121,11 @@ return;
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </CollapsibleSection>
                         )}
 
                         {/* References */}
-                        <div className="border border-border bg-card p-6">
-                            <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                References ({completedRefs.length}/{references.length} completed)
-                            </h2>
+                        <CollapsibleSection title={`References (${completedRefs.length}/${references.length} completed)`}>
                             <div className="space-y-3">
                                 {references.length === 0 && (
                                     <p className="text-sm text-muted-foreground">
@@ -1188,9 +1208,9 @@ return;
                                                                         ref.id,
                                                                     )
                                                                 }
-                                                                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-                                                            >
-                                                                Details
+                                                                className="inline-flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                                             >
+                                                                 Details
                                                                 <svg
                                                                     className={`h-3 w-3 transition-transform ${
                                                                         expanded
@@ -1329,7 +1349,7 @@ return;
                                     );
                                 })}
                             </div>
-                        </div>
+                        </CollapsibleSection>
                     </div>
 
                     {/* Sidebar */}

@@ -21,16 +21,13 @@ Implement group booking: multi-date bookings with a `BookingGroup` header record
 - Caregiver bookings index: grouped card display
 - Admin booking show: compact `[Group (N)]` badge + sibling dates with left-border indent
 - Admin booking-sheet: group context panel
-- 34 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup filters)
-- Fixed pre-existing parse error in tests/Feature/Admin/StripeWebhookTest.php
+- **Gap A** — Admin Split: BookingGroupSplit event, splitGroup() backend, route, controller, frontend dialog (admin show + booking-sheet), 6 tests
+- **Gap B** — Atomic Caregiver Ops: isGroupBooking() helper, reserve/confirm/release refactored to lock+update all siblings in transaction, broadcasts per-sibling (Option A), 3 tests
+- **Gap C** — Admin Index Group Badge: bookings_count eager-loaded, calendar view Users icon below service icon, table view `[Group]` badge inline after client name
+- **Gap D** — Client + Caregiver Show/Index: group context, dark mode, all hardcoded colors removed
+- 58 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup, split group, Booking - Caregiver)
 
-### 🔲 Gaps Remaining
-| Gap | Description | Priority |
-|-----|-------------|----------|
-| **A** | Admin Split — splitGroup() backend, route, controller, frontend dialog, tests | High |
-| **B** | Atomic Caregiver Ops — withGroupLock() helper, refactor reserve/confirm/release | High |
-| **C** | Admin Index Group Badge — eager load bookings_count, calendar/table view badges | Low |
-| **D** | Client + Caregiver Show/Index — group context, dark mode, remove hardcoded colors | High |
+### 🔲 No remaining gaps — group booking implementation complete
 
 ---
 
@@ -45,6 +42,9 @@ Implement group booking: multi-date bookings with a `BookingGroup` header record
 7. **Dark-mode compatible UIs** — avoid hardcoded blue backgrounds. Use `bg-muted`, `border-border`, `Badge variant="outline"` for group indicators. No hardcoded color values.
 8. **Compact layouts** — admin show uses inline `[Group (N)]` badge + `border-l-2 border-border` indent for sibling dates rather than a separate blue panel.
 9. **Guest confirmation dates panel** — styled like info panel (`rounded-lg bg-muted p-4`), Date | Time columns, same font color for both, no status column.
+10. **Split edge cases** — extracted bookings reset to `received` with caregiver fields cleared; `lockForUpdate()` inside transaction prevents races; always redirect to first extracted booking; `BookingGroupSplit` event fired; paid bookings can be split (payment fields are per-booking).
+11. **Atomic caregiver Ops (Gap B)** — `isGroupBooking()` checks `bookings()->count() > 1`; group paths use `DB::transaction()` with `lockForUpdate()` on all siblings; broadcasts fire per-sibling (Option A, no new events); all sibling notifications marked claimed on group confirm.
+12. **Admin index group badge (Gap C)** — calendar view: `Users` icon stacked below service icon when group; table view: `[Group]` badge inline after client name; no separate column needed.
 
 ---
 

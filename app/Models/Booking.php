@@ -117,6 +117,33 @@ class Booking extends Model
 
     protected $appends = [
         'service_type_label',
+        'service_type',
+        'location_type',
+        'children',
+        'pets',
+        'sitter_preferences',
+        'other_adults_present',
+        'special_considerations',
+        'client_first_name',
+        'client_last_name',
+        'client_phone',
+        'client_email',
+        'address_line1',
+        'address_line2',
+        'address_city',
+        'address_state',
+        'address_zip',
+        'hotel_name',
+        'hotel_id',
+        'address_id',
+        'rental_platform',
+        'caregiver_notes',
+        'notes_to_sitterwise',
+        'admin_notes',
+        'corporate_id',
+        'children_notes',
+        'requires_payment',
+        'client_id',
     ];
 
     public function setStartDatetimeAttribute($value): void

@@ -226,10 +226,45 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             $notification->update(['viewed_at' => now()]);
         }
 
-        // Atomic reservation update
-        $expiresIn = 60; // 1 minute TTL
+        $expiresIn = 60;
         $expiresAt = now()->addSeconds($expiresIn);
 
+        $booking->load('bookingGroup');
+
+        // Group path — lock & reserve all siblings atomically
+        if ($this->isGroupBooking($booking)) {
+            return DB::transaction(function () use ($booking, $caregiver, $expiresIn, $expiresAt) {
+                $siblingIds = $booking->bookingGroup->bookings()
+                    ->lockForUpdate()
+                    ->pluck('id')
+                    ->toArray();
+
+                $updated = DB::table('bookings')
+                    ->whereIn('id', $siblingIds)
+                    ->whereIn('status', ['received', 'reserved'])
+                    ->where(function ($query) {
+                        $query->whereNull('reserved_by')
+                            ->orWhere('reservation_expires_at', '<', now());
+                    })
+                    ->update([
+                        'reserved_by' => $caregiver->id,
+                        'reservation_expires_at' => $expiresAt,
+                        'status' => 'reserved',
+                    ]);
+
+                if ($updated !== count($siblingIds)) {
+                    throw new \RuntimeException('Booking is no longer available');
+                }
+
+                foreach ($siblingIds as $id) {
+                    broadcast(new JobReserved($id, $caregiver->id, $expiresIn))->toOthers();
+                }
+
+                return back()->with('expires_in', $expiresIn);
+            });
+        }
+
+        // Single-booking path (existing logic)
         $updated = DB::table('bookings')
             ->where('id', $booking->id)
             ->whereIn('status', ['received', 'reserved'])
@@ -259,7 +294,48 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     {
         $caregiver = $request->user()->caregiver;
 
-        // Atomic confirmation
+        $booking->load('bookingGroup');
+
+        // Group path — confirm all siblings atomically
+        if ($this->isGroupBooking($booking)) {
+            return DB::transaction(function () use ($booking, $caregiver) {
+                $siblingIds = $booking->bookingGroup->bookings()
+                    ->lockForUpdate()
+                    ->pluck('id')
+                    ->toArray();
+
+                $updated = DB::table('bookings')
+                    ->whereIn('id', $siblingIds)
+                    ->where('reserved_by', $caregiver->id)
+                    ->where('reservation_expires_at', '>', now())
+                    ->update([
+                        'status' => 'confirmed',
+                        'caregiver_id' => $caregiver->id,
+                        'confirmed_by' => $caregiver->id,
+                        'confirmed_at' => now(),
+                        'reserved_by' => null,
+                        'reservation_expires_at' => null,
+                    ]);
+
+                if ($updated !== count($siblingIds)) {
+                    throw new \RuntimeException('Reservation expired or invalid');
+                }
+
+                BookingCaregiverNotification::whereIn('booking_id', $siblingIds)
+                    ->where('caregiver_id', $caregiver->id)
+                    ->update(['claimed' => true, 'responded_at' => now()]);
+
+                foreach ($siblingIds as $id) {
+                    broadcast(new JobConfirmed($id, $caregiver->id))->toOthers();
+                }
+
+                event(new BookingAccepted($booking));
+
+                return to_route('jobs.index')->with('success', 'Booking confirmed successfully');
+            });
+        }
+
+        // Single-booking path (existing logic)
         $updated = DB::table('bookings')
             ->where('id', $booking->id)
             ->where('reserved_by', $caregiver->id)
@@ -277,7 +353,6 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             return back()->with('error', 'Reservation expired or invalid');
         }
 
-        // Mark notification as claimed
         BookingCaregiverNotification::where('booking_id', $booking->id)
             ->where('caregiver_id', $caregiver->id)
             ->update(['claimed' => true, 'responded_at' => now()]);
@@ -296,7 +371,34 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
     {
         $caregiver = $request->user()->caregiver;
 
-        // Atomic release
+        $booking->load('bookingGroup');
+
+        // Group path — release all siblings atomically
+        if ($this->isGroupBooking($booking)) {
+            return DB::transaction(function () use ($booking, $caregiver) {
+                $siblingIds = $booking->bookingGroup->bookings()
+                    ->lockForUpdate()
+                    ->pluck('id')
+                    ->toArray();
+
+                DB::table('bookings')
+                    ->whereIn('id', $siblingIds)
+                    ->where('reserved_by', $caregiver->id)
+                    ->update([
+                        'reserved_by' => null,
+                        'reservation_expires_at' => null,
+                        'status' => 'received',
+                    ]);
+
+                foreach ($siblingIds as $id) {
+                    broadcast(new JobReleased($id, $caregiver->id))->toOthers();
+                }
+
+                return back();
+            });
+        }
+
+        // Single-booking path (existing logic)
         DB::table('bookings')
             ->where('id', $booking->id)
             ->where('reserved_by', $caregiver->id)
@@ -309,6 +411,16 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         broadcast(new JobReleased($booking->id, $caregiver->id))->toOthers();
 
         return back();
+    }
+
+    /**
+     * Check if the booking belongs to a multi-booking group.
+     */
+    private function isGroupBooking(Booking $booking): bool
+    {
+        $group = $booking->bookingGroup;
+
+        return $group && $group->bookings()->count() > 1;
     }
 
     public function processPayment(Request $request, Booking $booking)

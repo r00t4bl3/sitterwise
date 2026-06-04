@@ -125,4 +125,19 @@ trait HasGroupFields
     {
         return $this->bookingGroup?->requires_payment ?? true;
     }
+
+    public function getHotelIdAttribute(): ?int
+    {
+        return $this->bookingGroup?->hotel_id;
+    }
+
+    public function getAddressIdAttribute(): ?int
+    {
+        return $this->bookingGroup?->address_id;
+    }
+
+    public function getRentalPlatformAttribute(): ?string
+    {
+        return $this->bookingGroup?->rental_platform;
+    }
 }

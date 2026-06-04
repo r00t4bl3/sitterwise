@@ -93,7 +93,7 @@
         </div>
         <div class="detail-row">
             <span class="label">Date</span>
-            <span class="value">{{ $booking->start_datetime?->format('M j, Y') ?? '—' }}</span>
+            <span class="value">{{ $booking->start_datetime?->setTimezone('America/Los_Angeles')->format('M j, Y') ?? '—' }}</span>
         </div>
         <div class="detail-row">
             <span class="label">Attempt</span>

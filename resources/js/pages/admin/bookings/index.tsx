@@ -10,6 +10,7 @@ import {
     User,
     Building,
     Users,
+    Layers,
     CreditCard,
     Grid3X3,
     List,
@@ -552,7 +553,7 @@ export default function Bookings() {
                                         className={`flex min-h-30 flex-col gap-1 border p-2 ${
                                             isCurrentMonth
                                                 ? 'border-border bg-background'
-                                                : 'border-dashed border-gray-300 bg-white'
+                                                : 'border-dashed border-border bg-card opacity-60'
                                         } ${isToday ? 'bg-blush' : ''}`}
                                     >
                                         <span
@@ -561,7 +562,7 @@ export default function Bookings() {
                                                     ? 'font-bold text-foreground'
                                                     : isCurrentMonth
                                                       ? 'font-medium text-foreground'
-                                                      : 'text-gray-300'
+                                                      : 'font-medium text-muted-foreground'
                                             }`}
                                         >
                                             {day}
@@ -596,40 +597,45 @@ export default function Bookings() {
                                                     className="group relative"
                                                 >
                                                     <button
-                                                        onClick={() =>
-                                                            sheet.openEditSheet(
-                                                                booking as unknown as FullBooking,
-                                                            )
-                                                        }
-                                                        className={`flex w-full cursor-pointer items-start gap-2 rounded-[3px] border px-1.5 py-1 text-xs transition-colors hover:brightness-95 ${
-                                                            colors?.bg ||
-                                                            'bg-blue-100'
-                                                        } ${
-                                                            colors?.text ||
-                                                            'text-blue-800'
-                                                        } ${
-                                                            colors?.border ||
-                                                            'border-blue-300'
-                                                        }`}
-                                                    >
-                                                        <ServiceIcon className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-90" />
-                                                        <div className="flex min-w-0 flex-col items-start text-left">
-                                                            <span className="text-[10px] leading-tight opacity-80">
-                                                                {formatDisplayTimeInPT(
-                                                                    booking.start_datetime,
-                                                                )}
-                                                                -
-                                                                {formatDisplayTimeInPT(
-                                                                    booking.end_datetime,
-                                                                )}
-                                                            </span>
-                                                            <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
-622|                                                                {booking.booking_group?.client?.user?.name ||
-                                                                    `${booking.booking_group?.client?.first_name || ''} ${booking.booking_group?.client?.last_name || ''}`.trim() ||
-                                                                    'Unknown Client'}
-                                                            </span>
-                                                        </div>
-                                                    </button>
+                                                         onClick={() =>
+                                                             sheet.openEditSheet(
+                                                                 booking as unknown as FullBooking,
+                                                             )
+                                                         }
+                                                          className={`flex w-full cursor-pointer items-start gap-2 rounded-[3px] border px-1.5 py-1 text-xs transition-colors hover:brightness-95 ${
+                                                              colors?.bg ||
+                                                              'bg-primary/10'
+                                                          } ${
+                                                              colors?.text ||
+                                                              'text-primary'
+                                                          } ${
+                                                              colors?.border ||
+                                                              'border-primary/20'
+                                                          }`}
+                                                     >
+                                                         <div className="flex flex-col items-center gap-0.5">
+                                                             <ServiceIcon className="h-4 w-4 flex-shrink-0 opacity-90" />
+                                                             {(booking.booking_group?.bookings_count ?? 0) > 1 && (
+                                                                 <Layers className="h-3 w-3 text-muted-foreground/70" />
+                                                             )}
+                                                         </div>
+                                                         <div className="flex min-w-0 flex-col items-start text-left">
+                                                             <span className="text-[10px] leading-tight opacity-80">
+                                                                 {formatDisplayTimeInPT(
+                                                                     booking.start_datetime,
+                                                                 )}
+                                                                 -
+                                                                 {formatDisplayTimeInPT(
+                                                                     booking.end_datetime,
+                                                                 )}
+                                                             </span>
+                                                             <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
+                                                                 {booking.booking_group?.client?.user?.name ||
+                                                                     `${booking.booking_group?.client?.first_name || ''} ${booking.booking_group?.client?.last_name || ''}`.trim() ||
+                                                                     'Unknown Client'}
+                                                             </span>
+                                                         </div>
+                                                     </button>
                                                     {/* eslint-disable-next-line no-constant-binary-expression */}
                                                     {false && canCharge && (
                                                         <button
@@ -798,6 +804,9 @@ export default function Bookings() {
                                                                     booking.booking_group?.client?.last_name
                                                                 }
                                                             </Link>
+                                                            {(booking.booking_group?.bookings_count ?? 0) > 1 && (
+                                                                <Layers className="ml-1.5 inline h-3 w-3 text-muted-foreground/70" />
+                                                            )}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                             {formatDisplayTimeInPT(
@@ -984,9 +993,9 @@ export default function Bookings() {
                                             );
                                         }}
                                         className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border p-3 text-left transition hover:brightness-95 ${
-                                            colors?.bg || 'bg-blue-100'
-                                        } ${colors?.text || 'text-blue-800'} ${
-                                            colors?.border || 'border-blue-300'
+                                            colors?.bg || 'bg-primary/10'
+                                        } ${colors?.text || 'text-primary'} ${
+                                            colors?.border || 'border-primary/20'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
