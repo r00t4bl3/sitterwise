@@ -10,7 +10,7 @@ import {
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeInPT } from '@/lib/datetime';
+import { formatDisplayDateTimeRangeInPT, formatDisplayDateShortInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -237,11 +237,8 @@ acc[key] = [];
                                                 <div className="flex items-center gap-2">
                                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                                     <span className="text-sm text-muted-foreground">
-                                                        {formatDisplayDateTimeInPT(
+                                                        {formatDisplayDateTimeRangeInPT(
                                                             booking.start_datetime,
-                                                        )}{' '}
-                                                        -{' '}
-                                                        {formatDisplayDateTimeInPT(
                                                             booking.end_datetime,
                                                         )}
                                                     </span>
@@ -250,11 +247,9 @@ acc[key] = [];
                                                     <Clock className="h-4 w-4 text-muted-foreground" />
                                                     <span className="text-xs text-muted-foreground">
                                                         Notified{' '}
-                                                        {new Date(
+                                                        {formatDisplayDateShortInPT(
                                                             booking.notified_at,
-                                                        ).toLocaleDateString('en-US', {
-                                                            timeZone: 'America/Los_Angeles',
-                                                        })}
+                                                        )}
                                                     </span>
                                                 </div>
                                             </div>
@@ -305,11 +300,8 @@ acc[key] = [];
                                                     <div className="flex items-center gap-3">
                                                         <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                                         <span className="text-sm text-foreground">
-                                                            {formatDisplayDateTimeInPT(
+                                                            {formatDisplayDateTimeRangeInPT(
                                                                 booking.start_datetime,
-                                                            )}{' '}
-                                                            -{' '}
-                                                            {formatDisplayDateTimeInPT(
                                                                 booking.end_datetime,
                                                             )}
                                                         </span>

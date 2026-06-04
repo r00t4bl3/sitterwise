@@ -46,6 +46,21 @@ export const formatUtcStringFromPt = (ptDate: Date): string => {
 };
 
 /**
+ * Formats a Date object to a datetime-local input value (YYYY-MM-DDTHH:mm).
+ * Uses the browser's local timezone getters — the caller is responsible for
+ * constructing the Date with the desired timezone context.
+ */
+export const formatDateTimeLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+/**
  * Formats a UTC ISO datetime string to a date in America/Los_Angeles.
  * Output example: "Monday, October 27, 2023"
  */
@@ -147,6 +162,31 @@ export const formatDisplayDateTimeInPT = (
         minute: '2-digit',
         hour12: true,
     });
+};
+
+/**
+ * Formats a UTC start/end datetime pair as a date range in America/Los_Angeles.
+ * If both fall on the same calendar date, shows "Date Time - Time".
+ * Otherwise shows "StartDate StartTime - EndDate EndTime".
+ * Examples: "May 31, 2026 3:15 PM - 7:15 PM"
+ *           "May 31, 2026 3:15 PM - Jun 1, 2026 1:15 AM"
+ */
+export const formatDisplayDateTimeRangeInPT = (
+    startStr: string | null | undefined,
+    endStr: string | null | undefined,
+): string => {
+    if (!startStr || !endStr) return '';
+
+    const startShort = formatDisplayDateShortInPT(startStr);
+    const endShort = formatDisplayDateShortInPT(endStr);
+    const startTime = formatDisplayTimeInPT(startStr);
+    const endTime = formatDisplayTimeInPT(endStr);
+
+    if (startShort === endShort) {
+        return `${startShort} ${startTime} - ${endTime}`;
+    }
+
+    return `${startShort} ${startTime} - ${endShort} ${endTime}`;
 };
 
 /**

@@ -28,21 +28,14 @@ import { getChildBirthYearOptions } from '@/lib/age';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { ClientInfoPanel } from './client-info-panel';
 import type { Booking } from './types';
+import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 
+const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
 const MONTH_ABBR = [
     '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    ...Array.from({ length: 12 }, (_, i) =>
+        monthFormatter.format(new Date(2000, i)),
+    ),
 ];
 
 interface NewChild {
@@ -243,35 +236,10 @@ export function PersonalInfoSection({
                             ) : 'No phone'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            {(() => {
-                                const start = new Date(
-                                    form.data.start_datetime,
-                                );
-                                const end = new Date(form.data.end_datetime);
-                                const isSameDay =
-                                    start.getFullYear() === end.getFullYear() &&
-                                    start.getMonth() === end.getMonth() &&
-                                    start.getDate() === end.getDate();
-
-                                const dateOptions: Intl.DateTimeFormatOptions =
-                                    {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                    };
-                                const timeOptions: Intl.DateTimeFormatOptions =
-                                    {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true,
-                                    };
-
-                                if (isSameDay) {
-                                    return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                                }
-
-                                return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                            })()}
+                            {formatDisplayDateTimeRangeInPT(
+                                form.data.start_datetime,
+                                form.data.end_datetime,
+                            )}
                         </p>
                         <p className="text-sm text-muted-foreground">
                             {editingBooking.booking_group?.children_notes

@@ -2,6 +2,7 @@ import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, MapPin, Building, Star, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
+import { formatDateTimeLocal } from '@/lib/datetime';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
@@ -35,6 +36,7 @@ import { calculateAge } from '@/lib/age';
 import {
     formatDisplayDateInPT,
     formatDisplayDateTimeInPT,
+    formatDisplayDateTimeRangeInPT,
     formatDisplayTimeInPT,
     autoSetEndDateTime,
 } from '@/lib/datetime';
@@ -136,16 +138,6 @@ interface Props {
     service_types: ServiceType[];
     location_types: LocationType[];
     filters: Filters;
-}
-
-function formatDateTimeLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function parsePT(value: string): Date {
@@ -745,42 +737,10 @@ return;
                                         {selectedJob.client?.user.name}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                        {(() => {
-                                            const start = new Date(
-                                                selectedJob.start_datetime,
-                                            );
-                                            const end = new Date(
-                                                selectedJob.end_datetime,
-                                            );
-                                            const isSameDay =
-                                                start.getFullYear() ===
-                                                    end.getFullYear() &&
-                                                start.getMonth() ===
-                                                    end.getMonth() &&
-                                                start.getDate() ===
-                                                    end.getDate();
-
-                                            const dateOptions: Intl.DateTimeFormatOptions =
-                                                {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    timeZone: 'America/Los_Angeles',
-                                                };
-                                            const timeOptions: Intl.DateTimeFormatOptions =
-                                                {
-                                                    hour: 'numeric',
-                                                    minute: '2-digit',
-                                                    hour12: true,
-                                                    timeZone: 'America/Los_Angeles',
-                                                };
-
-                                            if (isSameDay) {
-                                                return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                                            }
-
-                                            return `${start.toLocaleDateString('en-US', dateOptions)} ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleDateString('en-US', dateOptions)} ${end.toLocaleTimeString('en-US', timeOptions)}`;
-                                        })()}
+                                        {formatDisplayDateTimeRangeInPT(
+                                            selectedJob.start_datetime,
+                                            selectedJob.end_datetime,
+                                        )}
                                     </p>
                                     {selectedJob.client.children &&
                                     selectedJob.client.children.length > 0 ? (

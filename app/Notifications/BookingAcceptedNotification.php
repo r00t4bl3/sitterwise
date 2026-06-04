@@ -11,13 +11,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class BookingAcceptedNotification extends BaseNotification implements ShouldQueue
+class BookingAcceptedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(public Booking $booking) {}
 
-    protected function channels(object $notifiable): array
+    public function via(object $notifiable): array
     {
         $channels = ['database', 'mail'];
 
@@ -30,15 +30,17 @@ class BookingAcceptedNotification extends BaseNotification implements ShouldQueu
 
     public function toMail(object $notifiable)
     {
+        $address = $notifiable->routeNotificationFor('mail', $this);
+
         if ($notifiable->isAdmin()) {
-            return new AdminBookingAcceptedMail($this->booking);
+            return (new AdminBookingAcceptedMail($this->booking))->to($address);
         }
 
         if ($notifiable->isCaregiver()) {
-            return new CaregiverBookingAcceptedMail($this->booking);
+            return (new CaregiverBookingAcceptedMail($this->booking))->to($address);
         }
 
-        return new ClientBookingAcceptedMail($this->booking);
+        return (new ClientBookingAcceptedMail($this->booking))->to($address);
     }
 
     /**

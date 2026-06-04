@@ -253,3 +253,74 @@ flowchart LR
 ### Payment
 
 Payment is **per-booking**, not per-group. Each booking is charged independently via `JobBillingService::charge()`. A group is fully paid when all its child bookings reach `status = paid`.
+
+## Notifications
+
+Each booking lifecycle event triggers notifications to specific recipients via configured channels.
+
+```mermaid
+sequenceDiagram
+    participant Guest as Guest/Client/Admin
+    participant System
+    participant Caregiver as Caregiver
+    participant Client as Client
+    participant Admin as Admin
+
+    Note over Guest,Admin: CREATION
+    Guest->>System: Submit booking
+
+    alt Single date
+        System->>System: Fire BookingCreated
+        System->>Client: Email + DB notification (1×)
+        System->>Admin: Email + DB notification (1× per admin)
+    else Multi-date (N dates)
+        System->>System: Fire BookingGroupCreated
+        System->>Client: Email with all dates listed (1× only)
+        System->>Admin: Email with all dates listed (1× per admin)
+    end
+
+    Note over Guest,Admin: CAREGIVER INVITATION
+    Admin->>System: Notify caregiver(s)
+    System->>System: Create N BookingCaregiverNotification records
+    System->>Caregiver: Email + SMS + DB notification (1×)
+
+    Note over Caregiver: Caregiver sees N notification records<br/>grouped in UI by booking_group_id
+
+    Note over Guest,Admin: RESERVATION & CONFIRM
+    Caregiver->>System: Reserve (atomic: all N bookings)
+    System-->>Caregiver: Countdown 60s
+
+    Caregiver->>System: Confirm (atomic: all N bookings)
+    System->>System: Fire BookingAccepted (1× only)
+    System->>Client: Email + SMS + DB notification (1×)
+    System->>Caregiver: Email + DB notification (1×)
+    System->>Admin: Email + DB notification (1× per admin)
+```
+
+### Notification Events
+
+For a group with **N dates**, `BookingInvitationSent` creates **N separate `BookingCaregiverNotification` records** (one per booking row). All other events fire **once** regardless of date count.
+
+| Event | Trigger | Fires | Recipients | Channels | Notes |
+|---|---|---|---|---|---|
+| `BookingCreated` | Single booking created | 1× per booking | Client, all admins | `database`, `mail` | Uses `BookingCreatedNotification` (SendGrid template) |
+| `BookingGroupCreated` | Multi-date group created | 1× per group | Client, all admins | `mail` only | Uses `ClientGroupBookingCreatedMail` / `AdminGroupBookingCreatedMail` — lists all dates |
+| `BookingInvitationSent` | Admin notifies caregiver(s) | 1× per caregiver | That caregiver | `database`, `mail`, SMS | Creates N `BookingCaregiverNotification` rows (one per booking date) |
+| `BookingAccepted` | Caregiver confirms | 1× per confirm action | Client, caregiver, all admins | `database`, `mail` (+ SMS for client) | Fires once from `CaregiverBookingService::confirm()` — all recipients notified simultaneously |
+
+### Notification Channels by Recipient
+
+| Channel | Client | Caregiver | Admin |
+|---|---|---|---|
+| `database` (in-app) | ✓ | ✓ | ✓ |
+| `mail` (SendGrid) | ✓ | ✓ | ✓ |
+| `Sms` (Twilio) | ✓ | ✗ | ✗ |
+
+### Environment Guards
+
+In non-production environments, notifications are guarded to prevent accidental delivery to real recipients:
+
+- **Mail:** If `config('mail.default')` is a deliverable driver (`sendgrid`, `ses`, `postmark`, `mailgun`, `resend`), it is overridden to `log`.
+- **SMS:** The `TwilioService` is replaced with a dry-run implementation that logs to the application log instead of sending via Twilio API.
+
+See `AppServiceProvider::guardMailInNonProduction()` and `AppServiceProvider::guardSmsInNonProduction()`. Both methods are no-ops in production.

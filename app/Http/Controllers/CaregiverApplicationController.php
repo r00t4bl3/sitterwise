@@ -21,6 +21,7 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -110,17 +111,32 @@ class CaregiverApplicationController extends Controller
     {
         $validated = $request->validated();
 
-        // Store uploaded files — replace UploadedFile objects with path strings
-        if ($photo = $request->file('personal.photo')) {
-            try {
-                $manager = new ImageManager(new Driver);
-                $resizedPath = $photo->getRealPath().'.'.($photo->getClientOriginalExtension() ?: 'jpg');
-                $manager->decodePath($photo->getRealPath())->scale(width: 1200)->save($resizedPath);
-                copy($resizedPath, $photo->getRealPath());
-                unlink($resizedPath);
-            } catch (\Exception $e) {
-                // Degrade gracefully if image processing fails
-            }
+        $email = Session::get('verified_email');
+        if (! $email && app()->environment() !== 'production') {
+            $email = 'test-applicant@example.com';
+            Session::put('verified_email', $email);
+        }
+
+        Log::channel('submission')->info('Application submission started', [
+            'email' => $email,
+            'experience_count' => count($request->input('experiences', [])),
+            'reference_count' => count($request->input('references', [])),
+        ]);
+
+        try {
+            // Store uploaded files — replace UploadedFile objects with path strings
+            if ($photo = $request->file('personal.photo')) {
+                try {
+                    $manager = new ImageManager(new Driver);
+                    $resizedPath = $photo->getRealPath().'.'.($photo->getClientOriginalExtension() ?: 'jpg');
+                    $manager->decodePath($photo->getRealPath())->scale(width: 1200)->save($resizedPath);
+                    copy($resizedPath, $photo->getRealPath());
+                    unlink($resizedPath);
+                } catch (\Exception $e) {
+                    Log::channel('submission')->warning('Photo resize failed, continuing with original', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             $validated['personal']['photo'] = $photo->store('photos', 'public');
         } else {
             unset($validated['personal']['photo']);
@@ -136,14 +152,6 @@ class CaregiverApplicationController extends Controller
             $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'public');
         } else {
             unset($validated['trustline_upload']);
-        }
-
-        // Get email from session or use test email in non-production
-        $email = Session::get('verified_email');
-        if (! $email && app()->environment() !== 'production') {
-            // Use a test email for non-production environments
-            $email = 'test-applicant@example.com';
-            Session::put('verified_email', $email);
         }
 
         // Create User
@@ -379,7 +387,22 @@ class CaregiverApplicationController extends Controller
         // Clear session
         Session::forget(['verified_email', 'verified_at']);
 
+        Log::channel('submission')->info('Application submission completed', [
+            'email' => $email,
+            'caregiver_id' => $caregiver->id,
+            'application_id' => $application->id,
+        ]);
+
         return redirect()->route('caregiver.apply.thank-you');
+        } catch (\Throwable $e) {
+            Log::channel('submission')->error('Application submission failed', [
+                'email' => $email,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
+        }
     }
 
     public function saveProgress(Request $request)

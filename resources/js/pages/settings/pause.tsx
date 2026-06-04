@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDisplayDateInPT } from '@/lib/datetime';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { pause as pauseRoute } from '@/routes/settings/caregiver';
@@ -48,16 +49,6 @@ export default function Pause() {
         setSubmitting(true);
         pauseForm.post(CaregiverPauseController.resume.url(), {
             onFinish: () => setSubmitting(false),
-        });
-    };
-
-    const formatPausedDate = (iso: string) => {
-        const date = new Date(iso);
-
-        return date.toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
         });
     };
 
@@ -175,7 +166,7 @@ export default function Pause() {
                                             Paused since
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {activePause ? formatPausedDate(activePause.paused_at) : '—'}
+                                            {activePause ? formatDisplayDateInPT(activePause.paused_at) : '—'}
                                         </p>
                                     </div>
                                     {activePause?.resume_by && (
@@ -184,7 +175,7 @@ export default function Pause() {
                                                 Expected back by
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {formatPausedDate(activePause.resume_by)}
+                                                {formatDisplayDateInPT(activePause.resume_by)}
                                             </p>
                                         </div>
                                     )}

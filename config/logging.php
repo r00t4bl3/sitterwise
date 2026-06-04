@@ -123,6 +123,13 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        'submission' => [
+            'driver' => env('SUBMISSION_LOG_CHANNEL', 'null'),
+            'path' => storage_path('logs/submission.log'),
+            'level' => 'debug',
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

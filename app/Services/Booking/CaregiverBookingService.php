@@ -253,7 +253,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     ]);
 
                 if ($updated !== count($siblingIds)) {
-                    throw new \RuntimeException('Booking is no longer available');
+                    return back()->with('error', 'This booking is no longer available — it may have been reserved by another caregiver.');
                 }
 
                 foreach ($siblingIds as $id) {
@@ -279,7 +279,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ]);
 
         if ($updated === 0) {
-            return back()->with('error', 'Booking is no longer available');
+            return back()->with('error', 'This booking is no longer available — it may have been reserved by another caregiver.');
         }
 
         broadcast(new JobReserved($booking->id, $caregiver->id, $expiresIn))->toOthers();
@@ -318,7 +318,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     ]);
 
                 if ($updated !== count($siblingIds)) {
-                    throw new \RuntimeException('Reservation expired or invalid');
+                    return back()->with('error', 'Your reservation has expired. Please try reserving the booking again.');
                 }
 
                 BookingCaregiverNotification::whereIn('booking_id', $siblingIds)
@@ -350,7 +350,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ]);
 
         if ($updated === 0) {
-            return back()->with('error', 'Reservation expired or invalid');
+            return back()->with('error', 'Your reservation has expired. Please try reserving the booking again.');
         }
 
         BookingCaregiverNotification::where('booking_id', $booking->id)

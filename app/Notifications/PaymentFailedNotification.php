@@ -6,8 +6,9 @@ use App\Mail\AdminPaymentFailedMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
 
-class PaymentFailedNotification extends BaseNotification implements ShouldQueue
+class PaymentFailedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -18,7 +19,7 @@ class PaymentFailedNotification extends BaseNotification implements ShouldQueue
         public string $recipientType
     ) {}
 
-    protected function channels(object $notifiable): array
+    public function via(object $notifiable): array
     {
         return ['database', 'mail'];
     }

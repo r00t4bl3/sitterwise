@@ -30,7 +30,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
-import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import { formatDisplayDateInPT, formatDisplayDateTimeRangeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 
 interface SiblingBooking {
@@ -597,31 +597,43 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                             <SheetTitle>Confirm Booking</SheetTitle>
                             <SheetDescription>
                                 You have {countdown} seconds to confirm this
-                                booking. Click "Confirm Booking" to accept, or
-                                "Cancel" to release the reservation and allow
-                                other caregivers to accept it.
+                                booking. Click "Confirm Booking" to accept
+                                {booking.booking_group && booking.booking_group.sibling_bookings.length > 0
+                                    ? <> <strong>all dates</strong></>
+                                    : null}
+                                , or "Cancel" to release the reservation and
+                                allow other caregivers to accept it.
                             </SheetDescription>
                         </SheetHeader>
 
                         <div className="mb-6 space-y-4 p-4">
                             <div className="mb-12 rounded-lg border border-border bg-muted p-4">
                                 <div className="flex items-center justify-between">
-                                    <div>
+                                    <div className="space-y-3">
                                         <p className="font-medium text-foreground">
                                             {booking.client_name}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            {formatDisplayDateInPT(
+                                            {formatDisplayDateTimeRangeInPT(
                                                 booking.start_datetime,
-                                            )}{' '}
-                                            {formatDisplayTimeInPT(
-                                                booking.start_datetime,
-                                            )}{' '}
-                                            -{' '}
-                                            {formatDisplayTimeInPT(
                                                 booking.end_datetime,
                                             )}
                                         </p>
+                                        {booking.booking_group && booking.booking_group.bookings_count > 1 && (
+                                            <div className="ml-4 border-l-2 border-border pl-3 space-y-1.5">
+                                                {booking.booking_group.sibling_bookings.map((sibling) => (
+                                                    <p
+                                                        key={sibling.id}
+                                                        className="text-xs text-muted-foreground"
+                                                    >
+                                                        {formatDisplayDateTimeRangeInPT(
+                                                            sibling.start_datetime,
+                                                            sibling.end_datetime,
+                                                        )}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="text-center">
                                         <div className="text-3xl font-bold text-foreground">

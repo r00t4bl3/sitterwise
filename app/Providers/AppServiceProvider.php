@@ -19,6 +19,7 @@ use App\Listeners\SendGuestAccountSetupNotification;
 use App\Listeners\UpdateLastLogin;
 use App\Models\BookingGroup;
 use App\Observers\BookingGroupObserver;
+use App\Services\TwilioService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
@@ -43,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->guardMailInNonProduction();
+        $this->guardSmsInNonProduction();
 
         BookingGroup::observe(BookingGroupObserver::class);
 
@@ -90,6 +93,38 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Configure default behaviors for production-ready applications.
      */
+    protected function guardMailInNonProduction(): void
+    {
+        if (app()->isProduction()) {
+            return;
+        }
+
+        $deliverableDrivers = ['sendgrid', 'ses', 'postmark', 'mailgun', 'resend'];
+
+        if (in_array(config('mail.default'), $deliverableDrivers)) {
+            config(['mail.default' => 'log']);
+        }
+    }
+
+    protected function guardSmsInNonProduction(): void
+    {
+        if (app()->isProduction()) {
+            return;
+        }
+
+        $this->app->extend(TwilioService::class, function () {
+            return new class extends TwilioService
+            {
+                public function send(string $to, string $message, array $options = []): array
+                {
+                    logger("SMS dry-run to {$to}: {$message}");
+
+                    return $this->sendDryRun($to, $message);
+                }
+            };
+        });
+    }
+
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);

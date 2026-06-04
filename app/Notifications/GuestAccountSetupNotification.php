@@ -6,8 +6,9 @@ use App\Mail\GuestAccountSetupMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
 
-class GuestAccountSetupNotification extends BaseNotification implements ShouldQueue
+class GuestAccountSetupNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -16,7 +17,7 @@ class GuestAccountSetupNotification extends BaseNotification implements ShouldQu
         public string $resetToken,
     ) {}
 
-    protected function channels(object $notifiable): array
+    public function via(object $notifiable): array
     {
         return ['database', 'mail'];
     }

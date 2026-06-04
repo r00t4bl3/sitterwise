@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDateShortInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 import type { BreadcrumbItem } from '@/types';
 
@@ -1178,9 +1179,9 @@ export default function ClientShow() {
                                                         </span>
                                                     </div>
                                                     <span className="text-xs text-muted-foreground">
-                                                        {new Date(
+                                                        {formatDisplayDateShortInPT(
                                                             tc.changed_at,
-                                                        ).toLocaleDateString()}
+                                                        )}
                                                     </span>
                                                 </div>
                                                 {tc.reason && (

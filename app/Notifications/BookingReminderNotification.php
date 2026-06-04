@@ -6,14 +6,15 @@ use App\Mail\CaregiverBookingReminderMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
 
-class BookingReminderNotification extends BaseNotification implements ShouldQueue
+class BookingReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(public Booking $booking) {}
 
-    protected function channels(object $notifiable): array
+    public function via(object $notifiable): array
     {
         return ['database', 'mail'];
     }

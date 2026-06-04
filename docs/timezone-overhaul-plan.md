@@ -18,6 +18,48 @@ When a user submits a booking at **9:00 AM PT** (e.g., via the guest or client b
 
 **The same bug exists in `ImportBubbleDatabase.php`:** `timestampToDateTime()` converts Bubble's Unix ms timestamps to PT strings, then MySQL stores those PT strings as-is in `timestamp` columns (treating them as UTC).
 
+### Bubble Data Timezone Handling
+
+Bubble.io stores **no timezone information** for date-related fields. All timestamps in Bubble's database are epoch milliseconds (integers) — absolute instants in time with no embedded timezone.
+
+**Data flow:**
+
+```
+Bubble Elasticsearch API response
+  │
+  │  hit['_source'] = {
+  │    "Modified Date": 1718092800000,          ← epoch ms (integer)
+  │    "start_date_date": 1718114400000,         ← epoch ms (integer)
+  │    "date_of_birth": 946684800000             ← epoch ms (integer)
+  │  }
+  │
+  ▼
+staged_records (SQLite)
+  │  raw_json stores timestamps as-is in JSON:  ← no timezone metadata saved
+  │  '{"Modified Date": 1718092800000, ...}'
+  │
+  ▼
+ImportStagedData / ImportUserService
+  │  Interprets epoch ms as America/Los_Angeles:
+  │    timestampToDate($t)     → Carbon::createFromTimestampMs($t, 'America/Los_Angeles')
+  │    timestampToDateTime($t) → Carbon::createFromTimestampMs($t, 'America/Los_Angeles')
+  │                                → setTimezone('UTC')
+  │
+  ▼
+App database (MySQL timestamp columns, stored as UTC)
+```
+
+**Assumption:** All Bubble timestamps represent `America/Los_Angeles` wall-clock time. This is a hardcoded assumption — there is no runtime configuration for this.
+
+**Two conversion methods** (duplicated in both `ImportBubbleDatabase.php` and `ImportUserService.php`):
+
+| Method | Interpretation | Output | Used for |
+|--------|--------------|--------|----------|
+| `timestampToDate(?int $t): ?string` | `America/Los_Angeles` | `Y-m-d` date string (LA local date) | `date_of_birth`, experience start/end, CPR/background check expirations |
+| `timestampToDateTime(?int $t): ?string` | `America/Los_Angeles` → UTC | `Y-m-d H:i:s` UTC string | `start_datetime`, `end_datetime`, `confirmed_at`, `cancelled_at`, rating/transaction dates |
+
+**Storage in staging DB:** The `staged_records` table has no timezone column. The `raw_json` field preserves the original epoch ms integers. Timezone interpretation happens at import time (when moving from staging to app DB), not at scrape time.
+
 ## Goal
 
 Make the application timezone-correct while keeping `app.timezone = 'UTC'`:

@@ -3,8 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Enums\ForeignLanguage;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\ValidationException;
 
 class StoreCaregiverApplicationRequest extends FormRequest
 {
@@ -115,6 +118,17 @@ class StoreCaregiverApplicationRequest extends FormRequest
             'agreement.signature' => 'required|string|max:255',
             'agreement.agree' => 'required|accepted',
         ];
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        Log::channel('submission')->warning('Application submission validation failed', [
+            'email' => $this->input('personal.email') ?? session('verified_email'),
+            'expired' => ! session()->has('verified_email'),
+            'errors' => $validator->errors()->toArray(),
+        ]);
+
+        throw (new ValidationException($validator));
     }
 
     public function messages(): array

@@ -10,6 +10,8 @@ class TwilioService
 
     private ?string $fromNumber = null;
 
+    private ?string $messagingServiceSid = null;
+
     public function __construct()
     {
         $this->fromNumber = config('services.twilio.phone_number');
