@@ -21,7 +21,9 @@ class BookingReceiptNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable)
     {
-        return new ClientReceiptMail($this->booking);
+        $address = $notifiable->routeNotificationFor('mail', $this);
+
+        return (new ClientReceiptMail($this->booking))->to($address);
     }
 
     public function toArray(object $notifiable): array

@@ -720,118 +720,14 @@ No listeners wired yet — purely for future-proofing.
 
 ---
 
-### Gap B: Atomic Group Operations (Section 2.6)
+### Gap B: Atomic Group Operations (Section 2.6) — ✅ Complete
 
-**Status:** Not implemented. `reserve()`, `confirm()`, and `release()` in `CaregiverBookingService` operate on individual bookings only — no sibling awareness, no `lockForUpdate()`.
+**Status:** Implemented. Extracted `withSiblingLock()` private helper in `CaregiverBookingService` that handles group-aware locking for `reserve()`, `confirm()`, and `release()`. Both single-booking and multi-date group paths go through the same helper, eliminating duplicate code.
 
-**Goal:** When a booking belongs to a group with multiple unsplit siblings, reserve/confirm/release must be all-or-nothing across ALL dates in that group.
-
-**Implementation — extract a shared helper:**
-
-Create a private helper method that groups can opt into:
-
-```php
-private function withGroupLock(Booking $booking, Closure $callback): mixed
-{
-    $group = $booking->bookingGroup;
-
-    // Single-booking group — skip locking, behave as before
-    if (! $group || $group->bookings()->count() <= 1) {
-        return $callback(collect([$booking]));
-    }
-
-    return DB::transaction(function () use ($group, $callback) {
-        $siblings = Booking::where('booking_group_id', $group->id)
-            ->whereNull('deleted_at')
-            ->lockForUpdate()
-            ->get();
-
-        // Validate all siblings are in the expected state
-        foreach ($siblings as $sibling) {
-            if ($sibling->status !== 'received') {
-                logger()->warning('Group reservation conflict', [
-                    'group_id' => $group->id,
-                    'conflicting_booking' => $sibling->id,
-                    'conflicting_status' => $sibling->status,
-                ]);
-                throw new \Exception('One or more dates in this group are no longer available.');
-            }
-        }
-
-        return $callback($siblings);
-    });
-}
-```
-
-**Refactored `reserve()`:**
-
-```php
-public function reserve(Request $request, Booking $booking)
-{
-    $caregiver = $request->user()->caregiver;
-
-    $notification = BookingCaregiverNotification::where('booking_id', $booking->id)
-        ->where('caregiver_id', $caregiver->id)
-        ->first();
-
-    if (! $notification) {
-        return back()->with('error', 'You were not notified for this booking');
-    }
-
-    if (! $notification->viewed_at) {
-        $notification->update(['viewed_at' => now()]);
-    }
-
-    $expiresIn = 60;
-
-    try {
-        $this->withGroupLock($booking, function ($bookings) use ($caregiver, $expiresIn) {
-            $expiresAt = now()->addSeconds($expiresIn);
-
-            $updated = Booking::whereIn('id', $bookings->pluck('id'))
-                ->whereIn('status', ['received', 'reserved'])
-                ->where(function ($query) {
-                    $query->whereNull('reserved_by')
-                        ->orWhere('reservation_expires_at', '<', now());
-                })
-                ->update([
-                    'reserved_by' => $caregiver->id,
-                    'reservation_expires_at' => $expiresAt,
-                    'status' => 'reserved',
-                ]);
-
-            if ($updated === 0) {
-                throw new \Exception('Booking is no longer available');
-            }
-        });
-    } catch (\Exception $e) {
-        return back()->with('error', $e->getMessage());
-    }
-
-    broadcast(new JobReserved($booking->id, $caregiver->id, $expiresIn))->toOthers();
-
-    return back()->with('expires_in', $expiresIn);
-}
-```
-
-**Same pattern for `confirm()` and `release()`** — both use `withGroupLock()` to atomically update all siblings.
-
-**Key design decisions:**
-- `withGroupLock()` only activates for groups with >1 booking. Single-booking groups pass through unchanged (no transaction overhead).
-- `lockForUpdate()` prevents two caregivers from simultaneously reserving different dates in the same group.
-- The validation inside the lock checks that ALL siblings are in `received` status. If any sibling has moved past `received`, the entire operation fails.
-- Group size limit of 14 per group is already enforced at the validation layer (`StoreBookingRequest`).
-
-**Tests — update `tests/Feature/Caregiver/BookingTest.php`:**
-
-| Test | What to assert |
-|------|---------------|
-| Reserve single-booking group | Unchanged behavior |
-| Reserve multi-date group — all siblings become reserved | All bookings in group have `reserved_by` and `reservation_expires_at` set |
-| Reserve multi-date group — one sibling already reserved by another caregiver | Fails with error, no sibling status changes |
-| Confirm multi-date group — all siblings confirmed | All bookings have `status=confirmed`, `caregiver_id` set |
-| Confirm single-booking group | Unchanged behavior |
-| Release multi-date group — all siblings released | All bookings back to `status=received` |
+All 3 group operations have existing tests in `tests/Feature/Caregiver/BookingTest.php`:
+- `caregiver can reserve a group — siblings reserved atomically`
+- `caregiver can confirm a group — siblings confirmed atomically`
+- `caregiver can release a group — siblings released atomically`
 
 ---
 

@@ -24,7 +24,9 @@ class GuestAccountSetupNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable)
     {
-        return new GuestAccountSetupMail($this->booking, $this->resetToken);
+        $address = $notifiable->routeNotificationFor('mail', $this);
+
+        return (new GuestAccountSetupMail($this->booking, $this->resetToken))->to($address);
     }
 
     public function toArray(object $notifiable): array

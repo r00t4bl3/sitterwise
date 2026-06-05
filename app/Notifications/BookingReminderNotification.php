@@ -21,7 +21,9 @@ class BookingReminderNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable)
     {
-        return new CaregiverBookingReminderMail($this->booking);
+        $address = $notifiable->routeNotificationFor('mail', $this);
+
+        return (new CaregiverBookingReminderMail($this->booking))->to($address);
     }
 
     public function toArray(object $notifiable): array

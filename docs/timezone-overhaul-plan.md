@@ -1,5 +1,8 @@
 # Timezone Overhaul Plan
 
+> **Status: ✅ Complete** — Model mutators, import command fix, frontend PT display functions all implemented.
+> Step 2 (data migration) was **skipped** — database was re-imported from Bubble with correct UTC values.
+
 ## Problem
 
 The application operates in **America/Los_Angeles** (PDT/PST) but `config/app.php` has `'timezone' => 'UTC'`.
@@ -214,9 +217,13 @@ Booking::withoutEvents(function () use ($externalId, $bookingData, $caregiver, $
 
 `caregiver_payouts.payout_date` is a `datetime` column (not `timestamp`). `datetime` columns store literal strings with no timezone conversion. After this fix it stores `"2022-09-16 21:00:00"` (UTC literal) instead of `"2022-09-16 14:00:00"` (PT literal). When displayed in a PT timezone context, the frontend should convert using `toLocaleString` with `timeZone: 'America/Los_Angeles'` if needed.
 
-### Step 2: Data Migration
+### ⏭️ Step 2: Data Migration — **Skipped**
 
-Create a migration to fix existing records. Existing records have values like `"2026-05-28 09:00:00"` stored in `timestamp` columns — MySQL treats them as UTC (which is the connection timezone). But the actual intended time was 09:00 PT = 16:00 UTC, so we need to add the DST offset.
+This step was skipped because the database was re-imported from Bubble with correct UTC values.
+
+The migration code is retained below for reference should it be needed in the future:
+
+> Create a migration to fix existing records. Existing records have values like `"2026-05-28 09:00:00"` stored in `timestamp` columns — MySQL treats them as UTC (which is the connection timezone). But the actual intended time was 09:00 PT = 16:00 UTC, so we need to add the DST offset.
 
 Fix all four Booking timestamp columns:
 

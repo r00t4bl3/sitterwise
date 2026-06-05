@@ -16,6 +16,7 @@ use App\Models\CaregiverPayout;
 use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
 use App\Models\Hotel;
+use App\Models\Location;
 use App\Models\Traits\Phone as PhoneTrait;
 use App\Models\User;
 use Carbon\Carbon;
@@ -254,6 +255,95 @@ class ImportUserService
                 Caregiver::where('id', $id)->update($updateData[$i]);
             }
             $updatedIds = $updateIds;
+        }
+
+        // Pass 2b — Caregiver service areas
+        $locations = Location::pluck('id', 'name')->all();
+        $normalizedLocations = [];
+        foreach ($locations as $name => $id) {
+            $normalizedLocations[strtolower(trim($name))] = $id;
+        }
+
+        $pivotInserts = [];
+        foreach ($hits as $hit) {
+            $source = $hit['source'];
+            $role = $source['role_permissions_option_role'] ?? 'caregiver';
+            if ($role !== 'caregiver' && $role !== 'caregiver_applicant') {
+                continue;
+            }
+
+            $user = $usersByBubbleId[$hit['id']] ?? null;
+            if (! $user) {
+                continue;
+            }
+
+            $caregiver = Caregiver::where('user_id', $user->id)->first();
+            if (! $caregiver) {
+                continue;
+            }
+
+            $serviceAreas = $source['service_areas_text'] ?? null;
+            if (empty($serviceAreas)) {
+                continue;
+            }
+
+            $matchedLocationIds = [];
+            $rawParts = explode(',', $serviceAreas);
+
+            foreach ($rawParts as $rawPart) {
+                $rawPart = trim($rawPart);
+                if ($rawPart === '') {
+                    continue;
+                }
+
+                $candidates = [strtolower($rawPart)];
+                if (str_contains($rawPart, '/')) {
+                    foreach (explode('/', $rawPart) as $sub) {
+                        $sub = trim($sub);
+                        if ($sub !== '') {
+                            $candidates[] = strtolower($sub);
+                        }
+                    }
+                }
+
+                foreach ($candidates as $candidate) {
+                    foreach ($normalizedLocations as $locationName => $locationId) {
+                        if (str_contains($locationName, $candidate) || str_contains($candidate, $locationName)) {
+                            $matchedLocationIds[$locationId] = true;
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            $isFirst = true;
+            foreach (array_keys($matchedLocationIds) as $locId) {
+                $pivotInserts[] = [
+                    'caregiver_id' => $caregiver->id,
+                    'location_id' => $locId,
+                    'is_preferred' => $isFirst ? 1 : 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+                $isFirst = false;
+            }
+        }
+
+        if (! empty($pivotInserts)) {
+            $uniqueInserts = [];
+            foreach ($pivotInserts as $insert) {
+                $key = $insert['caregiver_id'].'_'.$insert['location_id'];
+                if (! isset($uniqueInserts[$key])) {
+                    $uniqueInserts[$key] = $insert;
+                } elseif ($insert['is_preferred']) {
+                    $uniqueInserts[$key]['is_preferred'] = 1;
+                }
+            }
+
+            foreach (array_chunk(array_values($uniqueInserts), 100) as $chunk) {
+                DB::table('caregiver_locations')->upsert($chunk, ['caregiver_id', 'location_id'], ['is_preferred', 'updated_at']);
+            }
         }
 
         return array_merge($createdIds, $updatedIds);
@@ -945,6 +1035,7 @@ class ImportUserService
             'education_level' => $source['highest_level_education_text'] ?? null,
             'languages' => self::parseLanguages($source['languages_text'] ?? null),
             'stripe_account_id' => $source['cg_stripe_id_text'] ?? $source['stripe_account_id_text'] ?? null,
+            'stripe_charges_enabled' => $source['charges_enabled_boolean'] ?? false,
             'rating' => ($source['cg_star_rating__rated_by_client__number'] ?? 0) > 0 ? $source['cg_star_rating__rated_by_client__number'] : null,
             'admin_rating' => ! empty($source['5_star_boolean']) ? 5.0 : null,
         ];
@@ -1043,6 +1134,12 @@ class ImportUserService
 
     public static function mapClientType(array $source): string
     {
+        $bubbleType = $source['client_type_option_client_type'] ?? null;
+
+        if ($bubbleType === 'corporate') {
+            return ClientType::Invoiced->value;
+        }
+
         if (! empty($source['corporate__boolean'])) {
             return ClientType::Invoiced->value;
         }
@@ -1241,6 +1338,7 @@ class ImportUserService
                 'caregiver_notes' => $source['cg_checkout_job_notes_text'] ?? $source['caregiver_notes_text'] ?? null,
                 'notes_to_sitterwise' => $source['notes_to_sw_admin_text'] ?? null,
                 'admin_notes' => $source['admin_notes_text'] ?? null,
+                'corporate_id' => $source['corporate_job_id_text'] ?? null,
                 'children' => $serviceType === ServiceType::GroupChildcareInvoiced->value
                     ? null
                     : self::parseChildren($source['names_and_ages_of_children_text'] ?? null, $source['__of_children_option_number_of_kids'] ?? null),
@@ -1261,9 +1359,10 @@ class ImportUserService
             $bonus = $source['bonus_number'] ?? 0;
             $reimbursement = $source['check_out_reimbursement_number'] ?? 0;
 
-            $chargeToClient = round($clientHourly * $hours, 2);
-            $paidToCaregiver = $isInvoiced ? 0 : round($cgHourly * $hours, 2);
-            $sitterwiseCut = round($swHourly * $hours, 2);
+            $chargeToClient = $source['client_total_number'] ?? round($clientHourly * $hours, 2);
+            $caregiverTotal = $source['caregiver_total_number'] ?? round($cgHourly * $hours, 2);
+            $paidToCaregiver = $isInvoiced ? 0 : $caregiverTotal;
+            $sitterwiseCut = round($chargeToClient - $paidToCaregiver, 2);
 
             $bookingData = [
                 'bubble_id' => $externalId,
@@ -1288,9 +1387,9 @@ class ImportUserService
                 'stripe_payment_intent_id' => $source['payment_intent_id_text'] ?? null,
                 'cancelled_at' => self::timestampToDateTime($source['cancellation_date_date'] ?? null),
                 'cancellation_reason' => $source['cancellation_reason_text'] ?? null,
-                'paid_to_caregiver_total' => round($cgHourly * $hours, 2) + $reimbursement + $bonus + $tip,
-                'total_service_amount' => $chargeToClient + $reimbursement + $bonus,
-                'total_amount' => $chargeToClient + $reimbursement + $bonus + $tip,
+                'paid_to_caregiver_total' => $caregiverTotal,
+                'total_service_amount' => round($chargeToClient - $tip, 2),
+                'total_amount' => $chargeToClient,
             ];
 
             // Update client bio with house notes

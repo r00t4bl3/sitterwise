@@ -26,11 +26,13 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): AdminPaymentFailedMail
     {
-        return new AdminPaymentFailedMail(
+        $address = $notifiable->routeNotificationFor('mail', $this);
+
+        return (new AdminPaymentFailedMail(
             $this->booking,
             $this->attemptCount,
             $this->errorMessage,
-        );
+        ))->to($address);
     }
 
     public function toArray(object $notifiable): array

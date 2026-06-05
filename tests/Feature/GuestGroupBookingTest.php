@@ -4,6 +4,7 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
+use App\Events\GuestAccountSetup;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Services\Booking\GuestBookingService;
@@ -52,7 +53,7 @@ describe('Guest Multi-Date Group Booking', function () {
         $mockService->shouldAllowMockingProtectedMethods();
         $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $booking = $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
 
@@ -101,7 +102,7 @@ describe('Guest Multi-Date Group Booking', function () {
             'other_adults_present' => 'Grandparent',
         ];
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();
@@ -144,7 +145,7 @@ describe('Guest Multi-Date Group Booking', function () {
             ],
         ];
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();
@@ -187,7 +188,7 @@ describe('Guest Multi-Date Group Booking', function () {
             ],
         ];
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();

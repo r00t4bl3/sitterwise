@@ -2,6 +2,7 @@
 
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
+use App\Events\GuestAccountSetup;
 use App\Models\Client;
 use App\Models\ClientChild;
 use App\Models\Hotel;
@@ -42,7 +43,7 @@ describe('BookingCreated fires for single-date submissions', function () {
             ],
         ];
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();
@@ -149,7 +150,7 @@ describe('BookingGroupCreated fires for multi-date submissions', function () {
             ],
         ];
 
-        Event::fake([BookingCreated::class, BookingGroupCreated::class]);
+        Event::fake([BookingCreated::class, BookingGroupCreated::class, GuestAccountSetup::class]);
 
         $mockService = mock(GuestBookingService::class)->makePartial();
         $mockService->shouldAllowMockingProtectedMethods();

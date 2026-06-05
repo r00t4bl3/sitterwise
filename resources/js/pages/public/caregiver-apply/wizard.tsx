@@ -326,11 +326,10 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
     }, [verifiedEmail]);
 
     useEffect(() => {
-        const isEmployed =
-            form.data.employment_status === 'full_time' ||
-            form.data.employment_status === 'part_time';
-
         form.setData((prev) => {
+            const isEmployed =
+                prev.employment_status === 'full_time' ||
+                prev.employment_status === 'part_time';
             const newExp = [...prev.experiences];
             newExp[0] = {
                 ...newExp[0],
@@ -341,6 +340,25 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.employment_status]);
+
+    // Auto-save draft to sessionStorage on field changes
+    const isFirstRender = useRef(true);
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+        const timer = setTimeout(() => {
+            sessionStorage.setItem(
+                'caregiver_application_draft',
+                JSON.stringify({
+                    step: currentStep,
+                    data: form.data,
+                }),
+            );
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [form.data, currentStep]);
 
     // Save draft to sessionStorage and server on step change
     const saveDraft = () => {
@@ -1475,7 +1493,7 @@ return;
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            {!exp.present ? (
+                                            {!exp.present || index !== 0 ? (
                                                 <>
                                                     <Label>End Date</Label>
                                                     <div className="grid grid-cols-2 gap-2">
@@ -1730,19 +1748,19 @@ return;
                                                     </div>
                                                 </div>
                                             )}
+                                            {index === 0 && (
                                             <label
-                                                className={`flex items-center gap-2 ${index === 0 && (form.data.employment_status === 'full_time' || form.data.employment_status === 'part_time') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                                className={`flex items-center gap-2 ${form.data.employment_status === 'full_time' || form.data.employment_status === 'part_time' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                             >
                                                 <Checkbox
                                                     checked={exp.present}
                                                     disabled={
-                                                        index === 0 &&
-                                                        (form.data
+                                                        form.data
                                                             .employment_status ===
                                                             'full_time' ||
-                                                            form.data
-                                                                .employment_status ===
-                                                                'part_time')
+                                                        form.data
+                                                            .employment_status ===
+                                                            'part_time'
                                                     }
                                                     onCheckedChange={(
                                                         checked,
@@ -1770,6 +1788,7 @@ return;
                                                     I currently work here
                                                 </span>
                                             </label>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label

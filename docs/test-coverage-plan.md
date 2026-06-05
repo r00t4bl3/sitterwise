@@ -45,14 +45,14 @@ Scenarios:
 - `BookingReceipt` fires after charge success (smoke)
 - Admin notify endpoint dedup + `BookingCaregiverNotification` creation (partially exists, verify coverage)
 
-### 6. Assignment Resolution Completeness
+### 6. Assignment Resolution Completeness — ✅ Complete
 File: `tests/Feature/Caregiver/CaregiverAssignmentResolutionTest.php`
-- Admin can mark `completed`
-- Admin can mark `reassigned`
-- Admin can mark `no_show`
-- Admin can mark `cancelled_by_sitterwise`
-- Rejects invalid/terminal statuses
-- Each resolution emits expected notification (smoke)
+- Checkout → marks assignment `completed` ✅
+- Checkout validations (auth, required fields, end > start) ✅
+- Stores reimbursement, bonus, description on checkout ✅
+- Model `resolve()` method unit tests for all 6 resolution types ✅
+- Resolution note handling (set + preserve existing) ✅
+- Note: `back_out`, `excuse`, `no_show`, `late_arrival` resolution tests already exist in `CaregiverCancellationTest.php`
 
 ### 7. SMS Broadcast Dispatch + Delivery Tracking
 File: `tests/Feature/Superadmin/SmsBroadcastDispatchTest.php`
