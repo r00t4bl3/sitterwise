@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
-function createCaregiver(array $overrides = []): Caregiver
+function broadcastSmsTestCaregiver(array $overrides = []): Caregiver
 {
     $status = CaregiverStatus::tryFrom($overrides['status'] ?? 'active') ?? CaregiverStatus::Active;
     $user = User::factory()->create(['role' => 'caregiver']);
@@ -45,9 +45,9 @@ it('denies access for unauthenticated users', function () {
 });
 
 it('shows the broadcast page with recipient count for super admin', function () {
-    createCaregiver();
-    createCaregiver();
-    createCaregiver();
+    broadcastSmsTestCaregiver();
+    broadcastSmsTestCaregiver();
+    broadcastSmsTestCaregiver();
 
     $this->actingAs(superAdmin())
         ->get(route('broadcast-sms.index'))
@@ -59,9 +59,9 @@ it('shows the broadcast page with recipient count for super admin', function () 
 });
 
 it('excludes opted-out caregivers from recipient count', function () {
-    createCaregiver();
-    createCaregiver();
-    createCaregiver(['sms_opted_out' => true]);
+    broadcastSmsTestCaregiver();
+    broadcastSmsTestCaregiver();
+    broadcastSmsTestCaregiver(['sms_opted_out' => true]);
 
     $this->actingAs(superAdmin())
         ->get(route('broadcast-sms.index'))
@@ -72,8 +72,8 @@ it('excludes opted-out caregivers from recipient count', function () {
 });
 
 it('excludes inactive caregivers from recipient count', function () {
-    createCaregiver(['status' => 'active']);
-    createCaregiver(['status' => 'inactive']);
+    broadcastSmsTestCaregiver(['status' => 'active']);
+    broadcastSmsTestCaregiver(['status' => 'inactive']);
 
     $this->actingAs(superAdmin())
         ->get(route('broadcast-sms.index'))
@@ -84,8 +84,8 @@ it('excludes inactive caregivers from recipient count', function () {
 });
 
 it('excludes caregivers without a phone number', function () {
-    createCaregiver();
-    createCaregiver(['phone' => '']);
+    broadcastSmsTestCaregiver();
+    broadcastSmsTestCaregiver(['phone' => '']);
 
     $this->actingAs(superAdmin())
         ->get(route('broadcast-sms.index'))
@@ -99,9 +99,9 @@ it('creates broadcast and dispatches jobs on send', function () {
     Queue::fake();
 
     $caregivers = [];
-    $caregivers[] = createCaregiver();
-    $caregivers[] = createCaregiver();
-    $caregivers[] = createCaregiver();
+    $caregivers[] = broadcastSmsTestCaregiver();
+    $caregivers[] = broadcastSmsTestCaregiver();
+    $caregivers[] = broadcastSmsTestCaregiver();
 
     $user = superAdmin();
 
@@ -144,7 +144,7 @@ it('validates message body does not exceed max length', function () {
 });
 
 it('returns error when no eligible caregivers exist', function () {
-    createCaregiver(['status' => 'inactive']);
+    broadcastSmsTestCaregiver(['status' => 'inactive']);
 
     $this->actingAs(superAdmin())
         ->post(route('broadcast-sms.store'), [
@@ -155,7 +155,7 @@ it('returns error when no eligible caregivers exist', function () {
 });
 
 it('handles STOP inbound sms and opts out caregiver', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -167,7 +167,7 @@ it('handles STOP inbound sms and opts out caregiver', function () {
 });
 
 it('handles STOPALL inbound sms', function () {
-    $caregiver = createCaregiver(['phone' => '(619) 555-1212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '(619) 555-1212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -179,7 +179,7 @@ it('handles STOPALL inbound sms', function () {
 });
 
 it('handles case-insensitive stop keywords', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -191,7 +191,7 @@ it('handles case-insensitive stop keywords', function () {
 });
 
 it('ignores non-stop messages', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -210,7 +210,7 @@ it('handles STOP from unknown number gracefully', function () {
 });
 
 it('matches phone numbers with different formatting', function () {
-    $caregiver = createCaregiver(['phone' => '619-555-1212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '619-555-1212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -222,7 +222,7 @@ it('matches phone numbers with different formatting', function () {
 });
 
 it('handles UNSUBSCRIBE keyword', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -234,7 +234,7 @@ it('handles UNSUBSCRIBE keyword', function () {
 });
 
 it('handles CANCEL keyword', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -246,7 +246,7 @@ it('handles CANCEL keyword', function () {
 });
 
 it('handles END keyword', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',
@@ -258,7 +258,7 @@ it('handles END keyword', function () {
 });
 
 it('handles QUIT keyword', function () {
-    $caregiver = createCaregiver(['phone' => '+16195551212']);
+    $caregiver = broadcastSmsTestCaregiver(['phone' => '+16195551212']);
 
     $this->post(route('webhooks.twilio.inbound'), [
         'From' => '+16195551212',

@@ -26,6 +26,16 @@ class SendBroadcastMessage implements ShouldQueue
             return;
         }
 
+        if (! app()->environment('production')) {
+            $this->broadcastMessage->update([
+                'twilio_message_sid' => 'dry-run-'.fake()->uuid(),
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+
+            return;
+        }
+
         $statusCallback = route('webhooks.twilio.status');
 
         $result = $twilio->send(
