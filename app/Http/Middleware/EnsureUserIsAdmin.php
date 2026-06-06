@@ -11,7 +11,7 @@ class EnsureUserIsAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user() || ! in_array($request->user()->role, ['admin', 'super_admin'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            abort(403);
         }
 
         return $next($request);
