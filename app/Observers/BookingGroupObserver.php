@@ -2,13 +2,14 @@
 
 namespace App\Observers;
 
+use App\Enums\BookingStatus;
 use App\Models\BookingGroup;
 
 class BookingGroupObserver
 {
     /**
      * When shared fields that affect pricing change on a BookingGroup,
-     * reprice all child bookings.
+     * reprice all child bookings that are not yet finalized.
      */
     public function updated(BookingGroup $group): void
     {
@@ -18,9 +19,18 @@ class BookingGroupObserver
 
         $group->loadMissing('bookings');
 
+        $finalized = [
+            BookingStatus::Completed->value,
+            BookingStatus::Paid->value,
+            BookingStatus::Cancelled->value,
+        ];
         $updatedIds = [];
 
         foreach ($group->bookings as $booking) {
+            if (in_array($booking->status, $finalized, true)) {
+                continue;
+            }
+
             $booking->calculateHourlyRate($group);
             $booking->calculateTotalAmount();
             $booking->saveQuietly();

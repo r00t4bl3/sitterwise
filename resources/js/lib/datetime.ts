@@ -175,7 +175,9 @@ export const formatDisplayDateTimeRangeInPT = (
     startStr: string | null | undefined,
     endStr: string | null | undefined,
 ): string => {
-    if (!startStr || !endStr) return '';
+    if (!startStr || !endStr) {
+return '';
+}
 
     const startShort = formatDisplayDateShortInPT(startStr);
     const endShort = formatDisplayDateShortInPT(endStr);

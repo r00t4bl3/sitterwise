@@ -53,6 +53,7 @@ interface FormData {
     location_type: string;
     start_datetime: string;
     end_datetime: string;
+    dates: Array<{ start_datetime: string; end_datetime: string }>;
     hotel_id: number | null;
     address_id: number | null;
     caregiver_id: number | null;
@@ -175,6 +176,7 @@ export function useBookingSheet({
         location_type: 'private_home',
         start_datetime: '',
         end_datetime: '',
+        dates: [],
         hotel_id: null,
         address_id: null,
         caregiver_id: null,
@@ -501,6 +503,7 @@ export function useBookingSheet({
             location_type: 'private_home',
             start_datetime: formatDateTimeLocal(defaultStart),
             end_datetime: formatDateTimeLocal(defaultEnd),
+            dates: [],
             hotel_id: null,
             address_id: null,
             caregiver_id: null,

@@ -25,10 +25,10 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { getChildBirthYearOptions } from '@/lib/age';
+import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { ClientInfoPanel } from './client-info-panel';
 import type { Booking } from './types';
-import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
 const MONTH_ABBR = [

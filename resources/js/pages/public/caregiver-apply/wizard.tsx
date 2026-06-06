@@ -336,29 +336,11 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 present: isEmployed,
                 end_date: isEmployed ? '' : newExp[0].end_date,
             };
+
             return { ...prev, experiences: newExp };
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data.employment_status]);
-
-    // Auto-save draft to sessionStorage on field changes
-    const isFirstRender = useRef(true);
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-        const timer = setTimeout(() => {
-            sessionStorage.setItem(
-                'caregiver_application_draft',
-                JSON.stringify({
-                    step: currentStep,
-                    data: form.data,
-                }),
-            );
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [form.data, currentStep]);
 
     // Save draft to sessionStorage and server on step change
     const saveDraft = () => {
@@ -427,9 +409,11 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 const birthDate = new Date(data.personal.dob);
                 let age = currentYear - birthDate.getFullYear();
                 const monthDiff = new Date().getMonth() - birthDate.getMonth();
+
                 if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) {
                     age--;
                 }
+
                 if (age < 18) {
                     form.setError('personal.dob', 'You must be at least 18 years old to apply.');
                     hasError = true;
@@ -583,6 +567,7 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
     const nextStep = () => {
         if (!validateStep(currentStep)) {
             validatedRef.current = true;
+
 return;
 }
 
@@ -1282,9 +1267,10 @@ return;
                                 </Label>
                                 <Select
                                     value={form.data.employment_status ?? ''}
-                                    onValueChange={(value) =>
-                                        form.setData('employment_status', value)
-                                    }
+                                    onValueChange={(value) => {
+                                        form.setData('employment_status', value);
+                                        saveDraft();
+                                    }}
                                 >
                                     <SelectTrigger id="employment-status">
                                         <SelectValue placeholder="Select employment status" />
@@ -1782,6 +1768,7 @@ return;
                                                             'experiences',
                                                             newExp,
                                                         );
+                                                        saveDraft();
                                                     }}
                                                 />
                                                 <span className="text-xs text-muted-foreground">

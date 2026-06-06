@@ -28,6 +28,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -120,6 +121,11 @@ export default function Bookings() {
         client_types,
         discovery_sources,
     } = usePage<Props>().props;
+
+    const serviceTypeLabels = useMemo(
+        () => Object.fromEntries(service_types.map((st) => [st.value, st.label])),
+        [service_types],
+    );
 
     const sheet = useBookingSheet({
         clients: clients as unknown as Array<{
@@ -614,10 +620,20 @@ export default function Bookings() {
                                                           }`}
                                                      >
                                                          <div className="flex flex-col items-center gap-0.5">
-                                                             <ServiceIcon className="h-4 w-4 flex-shrink-0 opacity-90" />
-                                                             {(booking.booking_group?.bookings_count ?? 0) > 1 && (
-                                                                 <Layers className="h-3 w-3 text-muted-foreground/70" />
-                                                             )}
+                                                              <Tooltip>
+                                                                  <TooltipTrigger asChild>
+                                                                      <ServiceIcon className="h-4 w-4 flex-shrink-0 opacity-90" />
+                                                                  </TooltipTrigger>
+                                                                  <TooltipContent>{serviceTypeLabels[booking.booking_group?.service_type ?? ''] || 'Booking'}</TooltipContent>
+                                                              </Tooltip>
+                                                               {(booking.booking_group?.bookings_count ?? 0) > 1 && (
+                                                                  <Tooltip>
+                                                                      <TooltipTrigger asChild>
+                                                                          <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
+                                                                      </TooltipTrigger>
+                                                                      <TooltipContent>Multi-date booking</TooltipContent>
+                                                                  </Tooltip>
+                                                              )}
                                                          </div>
                                                          <div className="flex min-w-0 flex-col items-start text-left">
                                                              <span className="text-[10px] leading-tight opacity-80">
@@ -790,23 +806,40 @@ export default function Bookings() {
                                                             {rowDate}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
-                                                            <Link
-                                                                href={`/clients/${booking.booking_group?.client?.id}`}
-                                                                onClick={(e) =>
-                                                                    e.stopPropagation()
-                                                                }
-                                                                className="hover:underline"
-                                                            >
-                                                                {
-                                                                    booking.booking_group?.client?.first_name
-                                                                }{' '}
-                                                                {
-                                                                    booking.booking_group?.client?.last_name
-                                                                }
-                                                            </Link>
-                                                            {(booking.booking_group?.bookings_count ?? 0) > 1 && (
-                                                                <Layers className="ml-1.5 inline h-3 w-3 text-muted-foreground/70" />
-                                                            )}
+                                                            <div className="flex items-center justify-between">
+                                                                <Link
+                                                                    href={`/clients/${booking.booking_group?.client?.id}`}
+                                                                    onClick={(e) =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                    className="hover:underline"
+                                                                >
+                                                                    {
+                                                                        booking.booking_group?.client?.first_name
+                                                                    }{' '}
+                                                                    {
+                                                                        booking.booking_group?.client?.last_name
+                                                                    }
+                                                                </Link>
+                                                                <div className="flex items-center gap-1">
+                                                                    {booking.booking_group?.service_type === 'corporate_invoiced' && (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Building className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Corporate (Invoiced)</TooltipContent>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                    {(booking.booking_group?.bookings_count ?? 0) > 1 && (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Multi-date booking</TooltipContent>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                                             {formatDisplayTimeInPT(
@@ -1000,7 +1033,12 @@ export default function Bookings() {
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <div className="rounded-full bg-background/20 p-2">
-                                                <ServiceIcon className="h-4 w-4" />
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <ServiceIcon className="h-4 w-4" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{serviceTypeLabels[booking.booking_group?.service_type ?? ''] || 'Booking'}</TooltipContent>
+                                                </Tooltip>
                                             </div>
                                             <div className="overflow-hidden">
                                                 <div className="text-xs opacity-80">

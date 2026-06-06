@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
@@ -14,7 +14,39 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { autoSetEndDateTime, validateMinimumDuration } from '@/lib/datetime';
+import { autoSetEndDateTime, formatDateTimeLocal, validateMinimumDuration } from '@/lib/datetime';
+
+interface DateEntry {
+    id: string;
+    start_datetime: string;
+    end_datetime: string;
+}
+
+function generateDateId(): string {
+    return `date-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
+    const overlaps: Record<string, string[]> = {};
+
+    for (let i = 0; i < dates.length; i++) {
+        for (let j = i + 1; j < dates.length; j++) {
+            const a = new Date(dates[i].start_datetime).getTime();
+            const bEnd = new Date(dates[i].end_datetime).getTime();
+            const c = new Date(dates[j].start_datetime).getTime();
+            const dEnd = new Date(dates[j].end_datetime).getTime();
+
+            if (a < dEnd && c < bEnd) {
+                if (!overlaps[dates[i].id]) overlaps[dates[i].id] = [];
+                if (!overlaps[dates[j].id]) overlaps[dates[j].id] = [];
+                overlaps[dates[i].id].push(`Date ${j + 1}`);
+                overlaps[dates[j].id].push(`Date ${i + 1}`);
+            }
+        }
+    }
+
+    return overlaps;
+}
 
 interface BookingDetailsSectionProps {
     sheetMode: 'create' | 'edit' | 'duplicate';
@@ -53,6 +85,102 @@ export function BookingDetailsSection({
     const startDatetime = form.data.start_datetime;
     const endDatetime = form.data.end_datetime;
     const datetimeError = validateMinimumDuration(startDatetime, endDatetime);
+
+    const tomorrow = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(9, 0, 0, 0);
+
+        return d;
+    }, []);
+
+    const defaultStartStr = useMemo(() => formatDateTimeLocal(tomorrow), [tomorrow]);
+    const defaultEndStr = useMemo(() => formatDateTimeLocal(new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000)), [tomorrow]);
+
+    const [dates, setDates] = useState<DateEntry[]>(() => {
+        if (sheetMode !== 'create') return [];
+
+        if (form.data.start_datetime && form.data.end_datetime) {
+            return [{
+                id: generateDateId(),
+                start_datetime: form.data.start_datetime,
+                end_datetime: form.data.end_datetime,
+            }];
+        }
+
+        return [{
+            id: generateDateId(),
+            start_datetime: defaultStartStr,
+            end_datetime: defaultEndStr,
+        }];
+    });
+
+    const syncDatesToForm = (allDates: DateEntry[]) => {
+        if (allDates.length > 0) {
+            form.setData('start_datetime', allDates[0].start_datetime);
+            form.setData('end_datetime', allDates[0].end_datetime);
+            form.setData(
+                'dates',
+                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+            );
+        }
+    };
+
+    const handleAddDate = () => {
+        const nextDate = new Date(tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000);
+        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const newEntry: DateEntry = {
+            id: generateDateId(),
+            start_datetime: formatDateTimeLocal(nextDate),
+            end_datetime: formatDateTimeLocal(endDate),
+        };
+        const updated = [...dates, newEntry];
+        setDates(updated);
+        syncDatesToForm(updated);
+    };
+
+    const handleRemoveDate = (id: string) => {
+        const updated = dates.filter((d) => d.id !== id);
+        setDates(updated);
+        syncDatesToForm(updated);
+    };
+
+    const handleUpdateDate = (id: string, field: 'start_datetime' | 'end_datetime', value: string) => {
+        const updated = dates.map((d) => {
+            if (d.id !== id) return d;
+
+            const next = { ...d, [field]: value };
+
+            if (field === 'start_datetime') {
+                next.end_datetime = autoSetEndDateTime(value);
+            }
+
+            return next;
+        });
+        setDates(updated);
+        syncDatesToForm(updated);
+    };
+
+    const dateOverlaps = useMemo(() => findDateOverlaps(dates), [dates]);
+
+    // Reset dates when sheet opens with fresh form data
+    useEffect(() => {
+        if (sheetMode !== 'create') return;
+
+        const formStart = form.data.start_datetime;
+        const currentStart = dates[0]?.start_datetime;
+
+        if (formStart && currentStart !== formStart) {
+            const initial = [{
+                id: generateDateId(),
+                start_datetime: formStart,
+                end_datetime: form.data.end_datetime || autoSetEndDateTime(formStart),
+            }];
+            setDates(initial);
+            syncDatesToForm(initial);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sheetMode, form.data.start_datetime]);
 
     useEffect(() => {
         const serviceType = form.data.service_type;
@@ -147,72 +275,154 @@ export function BookingDetailsSection({
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                        <Label
-                            className={
-                                form.errors.start_datetime
-                                    ? 'text-destructive'
-                                    : ''
-                            }
-                        >
-                            Start DateTime{' '}
-                            <span className="text-red-500">*</span>
-                        </Label>
-                        <DateTimePicker
-                            value={startDatetime}
-                            minDate={
-                                sheetMode !== 'edit' ? new Date() : undefined
-                            }
-                            onChange={(datetime) => {
-                                form.setData('start_datetime', datetime);
+                {sheetMode === 'create' ? (
+                    <div className="space-y-3">
+                        {dates.map((dateEntry, index) => (
+                            <div
+                                key={dateEntry.id}
+                                className="rounded-[4px] border border-border bg-card p-[14px]"
+                            >
+                                <div className="mb-[10px] flex items-center justify-between">
+                                    <span className="text-xs font-semibold tracking-[0.5px] text-foreground uppercase">
+                                        Date {index + 1}
+                                    </span>
+                                    {index > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveDate(dateEntry.id)}
+                                            className="cursor-pointer border-none bg-none p-0 text-xs text-primary"
+                                        >
+                                            × Remove
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-2">
+                                        <Label
+                                            className={
+                                                form.errors['dates.' + index + '.start_datetime']
+                                                    ? 'text-destructive'
+                                                    : ''
+                                            }
+                                        >
+                                            Start Date/Time <span className="text-red-500">*</span>
+                                        </Label>
+                                        <DateTimePicker
+                                            value={dateEntry.start_datetime}
+                                            minDate={new Date()}
+                                            onChange={(datetime) => {
+                                                if (datetime) {
+                                                    handleUpdateDate(dateEntry.id, 'start_datetime', datetime);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label
+                                            className={
+                                                form.errors['dates.' + index + '.end_datetime']
+                                                    ? 'text-destructive'
+                                                    : ''
+                                            }
+                                        >
+                                            End Date/Time <span className="text-red-500">*</span>
+                                        </Label>
+                                        <DateTimePicker
+                                            value={dateEntry.end_datetime}
+                                            startTime={dateEntry.start_datetime}
+                                            minDate={new Date()}
+                                            onChange={(datetime) => {
+                                                if (datetime) {
+                                                    handleUpdateDate(dateEntry.id, 'end_datetime', datetime);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {dateOverlaps[dateEntry.id]?.length > 0 && (
+                                    <p className="mt-2 text-xs text-amber-700">
+                                        ⚠ This overlaps with {dateOverlaps[dateEntry.id].join(', ')}.
+                                    </p>
+                                )}
+                            </div>
+                        ))}
 
-                                if (datetime) {
-                                    form.setData(
-                                        'end_datetime',
-                                        autoSetEndDateTime(datetime),
-                                    );
-                                }
-                            }}
-                        />
-                        {form.errors.start_datetime && (
-                            <p className="text-sm text-destructive">
-                                {form.errors.start_datetime}
-                            </p>
-                        )}
-                    </div>
-                    <div className="grid gap-2">
-                        <Label
-                            className={
-                                form.errors.end_datetime
-                                    ? 'text-destructive'
-                                    : ''
-                            }
+                        <button
+                            type="button"
+                            onClick={handleAddDate}
+                            className="w-full cursor-pointer rounded-[4px] border border-dashed border-logo-teal bg-card py-3 text-sm font-medium text-foreground transition-[background] duration-150 hover:bg-teal-bg"
                         >
-                            End DateTime <span className="text-red-500">*</span>
-                        </Label>
-                        <DateTimePicker
-                            value={endDatetime}
-                            startTime={startDatetime}
-                            minDate={
-                                sheetMode !== 'edit' ? new Date() : undefined
-                            }
-                            onChange={(datetime) => {
-                                form.setData('end_datetime', datetime);
-                            }}
-                        />
-                        {form.errors.end_datetime && (
-                            <p className="text-sm text-destructive">
-                                {form.errors.end_datetime}
-                            </p>
+                            + Add another date
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label
+                                className={
+                                    form.errors.start_datetime
+                                        ? 'text-destructive'
+                                        : ''
+                                }
+                            >
+                                Start DateTime{' '}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <DateTimePicker
+                                value={startDatetime}
+                                minDate={
+                                    sheetMode !== 'edit' ? new Date() : undefined
+                                }
+                                onChange={(datetime) => {
+                                    form.setData('start_datetime', datetime);
+
+                                    if (datetime) {
+                                        form.setData(
+                                            'end_datetime',
+                                            autoSetEndDateTime(datetime),
+                                        );
+                                    }
+                                }}
+                            />
+                            {form.errors.start_datetime && (
+                                <p className="text-sm text-destructive">
+                                    {form.errors.start_datetime}
+                                </p>
+                            )}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label
+                                className={
+                                    form.errors.end_datetime
+                                        ? 'text-destructive'
+                                        : ''
+                                }
+                            >
+                                End DateTime <span className="text-red-500">*</span>
+                            </Label>
+                            <DateTimePicker
+                                value={endDatetime}
+                                startTime={startDatetime}
+                                minDate={
+                                    sheetMode !== 'edit' ? new Date() : undefined
+                                }
+                                onChange={(datetime) => {
+                                    form.setData('end_datetime', datetime);
+                                }}
+                            />
+                            {form.errors.end_datetime && (
+                                <p className="text-sm text-destructive">
+                                    {form.errors.end_datetime}
+                                </p>
+                            )}
+                        </div>
+                        {datetimeError && (
+                            <div className="col-span-2 text-sm text-destructive">
+                                {datetimeError}
+                            </div>
                         )}
                     </div>
-                    {datetimeError && (
-                        <div className="col-span-2 text-sm text-destructive">
-                            {datetimeError}
-                        </div>
-                    )}
-                </div>
+                )}
 
                 <div className="grid gap-2">
                     <Label

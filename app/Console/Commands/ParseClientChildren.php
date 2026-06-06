@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Client as ClientModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class ParseClientChildren extends Command
@@ -194,7 +196,69 @@ class ParseClientChildren extends Command
             $this->line("Limited to {$limit} records.");
         }
 
+        $this->line('Pre-loading application data...');
+
+        $allJobIds = [];
+        $allUserIds = [];
+
+        foreach ($records as $item) {
+            if ($item['type'] === 'jobs') {
+                $allJobIds[] = $item['external_id'];
+            } else {
+                $allUserIds[] = $item['external_id'];
+            }
+        }
+
+        $bookingsByBubbleId = [];
+        if ($allJobIds) {
+            $bookingsByBubbleId = Booking::with('bookingGroup')
+                ->whereIn('bubble_id', $allJobIds)
+                ->get()
+                ->keyBy('bubble_id');
+        }
+
+        $stagedByExternalId = [];
+        $emailByExternalId = [];
+        $clientsByEmail = [];
+        $invoicedClientIds = [];
+
+        if ($allUserIds) {
+            $placeholders = implode(',', array_fill(0, count($allUserIds), '?'));
+            $userStmt = $this->db->prepare("SELECT external_id, raw_json FROM staged_records WHERE external_id IN ($placeholders)");
+            $userStmt->execute($allUserIds);
+
+            while ($row = $userStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $stagedByExternalId[$row['external_id']] = $row['raw_json'];
+                $data = json_decode($row['raw_json'], true);
+                $email = $data['authentication']['email']['email'] ?? null;
+
+                if ($email) {
+                    $emailByExternalId[$row['external_id']] = $email;
+                }
+            }
+
+            if ($emailByExternalId) {
+                $emails = array_values($emailByExternalId);
+                $clients = ClientModel::whereHas('user', fn ($q) => $q->whereIn('email', $emails))
+                    ->with('user')
+                    ->get();
+
+                foreach ($clients as $client) {
+                    $clientsByEmail[$client->user->email] = $client;
+                }
+
+                $clientIds = array_map(fn ($c) => $c->id, $clientsByEmail);
+                $invoicedClientIds = BookingGroup::whereIn('client_id', $clientIds)
+                    ->where('service_type', 'group_childcare_invoiced')
+                    ->pluck('client_id')
+                    ->flip()
+                    ->toArray();
+            }
+        }
+
+        $this->line('Pre-loading complete. Starting import...');
         $this->line('');
+
         $processed = 0;
         $imported = 0;
 
@@ -202,20 +266,31 @@ class ParseClientChildren extends Command
             $batchNum = (int) ($processed / $batchSize) + 1;
             $this->line("── Batch {$batchNum} ──────────────────────────────");
 
-            foreach ($batch as $item) {
-                $entityName = $this->saveToApp($item['external_id'], $item['children'], $item['type']);
+            DB::transaction(function () use ($batch, $bookingsByBubbleId, $stagedByExternalId, $emailByExternalId, $clientsByEmail, $invoicedClientIds, &$processed, &$imported) {
+                foreach ($batch as $item) {
+                    $email = $emailByExternalId[$item['external_id']] ?? null;
+                    $clientLookup = $email ? ($clientsByEmail[$email] ?? null) : null;
 
-                if ($entityName) {
-                    $this->line('  ✓ '.$entityName.': '.count($item['children']).' child'.(count($item['children']) !== 1 ? 'ren' : '').' imported');
-                    $cacheKey = $item['type'] === 'jobs' ? "jobs_{$item['external_id']}" : $item['external_id'];
-                    $this->cacheResult($cacheKey, $item['external_id'], $item['children']);
-                    $imported++;
-                } else {
-                    $this->line("  ✗ {$item['external_id']}: {$item['type']} record not found in app DB, skipped");
+                    $entityName = $this->saveToApp(
+                        externalId: $item['external_id'],
+                        children: $item['children'],
+                        type: $item['type'],
+                        booking: $bookingsByBubbleId[$item['external_id']] ?? null,
+                        stagedRaw: $stagedByExternalId[$item['external_id']] ?? null,
+                        client: $clientLookup,
+                        hasGroupChildcare: $email ? isset($invoicedClientIds[$clientLookup?->id]) : null,
+                    );
+
+                    if ($entityName) {
+                        $this->line('  ✓ '.$entityName.': '.count($item['children']).' child'.(count($item['children']) !== 1 ? 'ren' : '').' imported');
+                        $imported++;
+                    } else {
+                        $this->line("  ✗ {$item['external_id']}: {$item['type']} record not found in app DB, skipped");
+                    }
+
+                    $processed++;
                 }
-
-                $processed++;
-            }
+            });
 
             $this->line("  Progress: {$processed}/{$total}");
             $this->line('');
@@ -431,10 +506,17 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
         return $content;
     }
 
-    private function saveToApp(string $externalId, array $children, string $type): ?string
-    {
+    private function saveToApp(
+        string $externalId,
+        array $children,
+        string $type,
+        ?Booking $booking = null,
+        ?string $stagedRaw = null,
+        ?ClientModel $client = null,
+        ?bool $hasGroupChildcare = null,
+    ): ?string {
         if ($type === 'jobs') {
-            $booking = Booking::where('bubble_id', $externalId)->first();
+            $booking ??= Booking::where('bubble_id', $externalId)->first();
 
             if (! $booking) {
                 return null;
@@ -470,7 +552,7 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
 
             $group = $booking->bookingGroup;
 
-            if ($group) {
+            if ($group && $group->children !== $formattedChildren) {
                 $group->children = $formattedChildren;
                 $group->save();
             }
@@ -478,34 +560,40 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
             return "booking {$externalId}";
         }
 
-        $stmt = $this->db->prepare('SELECT raw_json FROM staged_records WHERE external_id = ?');
-        $stmt->execute([$externalId]);
-        $raw = $stmt->fetchColumn();
+        if ($stagedRaw === null) {
+            $stmt = $this->db->prepare('SELECT raw_json FROM staged_records WHERE external_id = ?');
+            $stmt->execute([$externalId]);
+            $stagedRaw = $stmt->fetchColumn();
+        }
 
-        if (! $raw) {
+        if (! $stagedRaw) {
             return null;
         }
 
-        $data = json_decode($raw, true);
+        $data = json_decode($stagedRaw, true);
         $email = $data['authentication']['email']['email'] ?? null;
 
         if (! $email) {
             return null;
         }
 
-        $client = ClientModel::whereHas('user', fn ($q) => $q->where('email', $email))->first();
+        $client ??= ClientModel::whereHas('user', fn ($q) => $q->where('email', $email))->first();
 
         if (! $client) {
             return null;
         }
 
-        if ($client->bookingGroups()->where('service_type', 'group_childcare_invoiced')->exists()) {
+        $hasGroupChildcare ??= $client->bookingGroups()->where('service_type', 'group_childcare_invoiced')->exists();
+
+        if ($hasGroupChildcare) {
             return null;
         }
 
         $clientName = $client->first_name.' '.$client->last_name;
 
         $client->children()->delete();
+
+        $formattedChildren = [];
 
         foreach ($children as $child) {
             $name = $child['name'] ?? '';
@@ -522,12 +610,14 @@ Output ONLY a JSON object, no markdown, no explanation.'."\n\n".implode("\n", $s
                 $birthDate = now()->subYears((int) $child['age_years']);
             }
 
-            $client->children()->create([
+            $formattedChildren[] = [
                 'name' => $name,
                 'birth_date' => $birthDate,
                 'gender' => ($child['gender'] ?? null) ?: null,
-            ]);
+            ];
         }
+
+        $client->children()->createMany($formattedChildren);
 
         return $clientName;
     }

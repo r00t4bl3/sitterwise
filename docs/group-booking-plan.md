@@ -25,7 +25,8 @@ Implement group booking: multi-date bookings with a `BookingGroup` header record
 - **Gap B** — Atomic Caregiver Ops: isGroupBooking() helper, reserve/confirm/release refactored to lock+update all siblings in transaction, broadcasts per-sibling (Option A), 3 tests
 - **Gap C** — Admin Index Group Badge: bookings_count eager-loaded, calendar view Users icon below service icon, table view `[Group]` badge inline after client name
 - **Gap D** — Client + Caregiver Show/Index: group context, dark mode, all hardcoded colors removed
-- 58 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup, split group, Booking - Caregiver)
+- **Admin booking-sheet multi-date** — create mode: multi-date date blocks (Date 1, Date 2, ... + Add another date) with overlap detection; edit/duplicate keep single-date fields
+- 119 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup, split group, Booking - Caregiver, Booking - Admin)
 
 ### 🔲 No remaining gaps — group booking implementation complete
 
@@ -44,7 +45,8 @@ Implement group booking: multi-date bookings with a `BookingGroup` header record
 9. **Guest confirmation dates panel** — styled like info panel (`rounded-lg bg-muted p-4`), Date | Time columns, same font color for both, no status column.
 10. **Split edge cases** — extracted bookings reset to `received` with caregiver fields cleared; `lockForUpdate()` inside transaction prevents races; always redirect to first extracted booking; `BookingGroupSplit` event fired; paid bookings can be split (payment fields are per-booking).
 11. **Atomic caregiver Ops (Gap B)** — `isGroupBooking()` checks `bookings()->count() > 1`; group paths use `DB::transaction()` with `lockForUpdate()` on all siblings; broadcasts fire per-sibling (Option A, no new events); all sibling notifications marked claimed on group confirm.
-12. **Admin index group badge (Gap C)** — calendar view: `Users` icon stacked below service icon when group; table view: `[Group]` badge inline after client name; no separate column needed.
+12. **Admin index group badge (Gap C)** — calendar view: `Layers` icon stacked below service icon when group; table view: `Layers` icon inline after client name; no separate column needed.
+13. **Admin booking-sheet multi-date** — create mode only, following guest/client patterns with `DateEntry[]` local state, `+ Add another date` dashed button, overlap detection, and `syncDatesToForm()` to populate `form.data.dates` array (backend already validates + handles it).
 
 ---
 
