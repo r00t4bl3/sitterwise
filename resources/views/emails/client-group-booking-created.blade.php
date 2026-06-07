@@ -84,7 +84,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Group Booking Request Received</h1>
+        <h1>Multi-Day Booking Request Received</h1>
         <p>Thank you for your booking request, {{ $bookingGroup->client_first_name }}!</p>
     </div>
 

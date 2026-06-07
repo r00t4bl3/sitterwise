@@ -84,7 +84,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>New Group Booking Created</h1>
+        <h1>New Multi-Day Booking Created</h1>
         <p>A new group booking has been submitted.</p>
     </div>
 

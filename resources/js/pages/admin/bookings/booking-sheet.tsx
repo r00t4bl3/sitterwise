@@ -167,7 +167,7 @@ export function BookingSheet({
                                         <div className="flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
                                             <Badge variant="outline" className="text-xs">
-                                                Group ({editingBooking.booking_group.bookings_count})
+                                                Multi-Day ({editingBooking.booking_group.bookings_count})
                                             </Badge>
                                         </div>
                                     </div>

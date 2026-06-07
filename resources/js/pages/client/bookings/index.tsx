@@ -123,7 +123,7 @@ export default function ClientBookingsIndex() {
                                                 />
                                                 {booking.booking_group && booking.booking_group.bookings_count > 1 && (
                                                     <Badge variant="outline" className="text-xs">
-                                                        Group ({booking.booking_group.bookings_count})
+                                                        Multi-Day ({booking.booking_group.bookings_count})
                                                     </Badge>
                                                 )}
                                             </div>

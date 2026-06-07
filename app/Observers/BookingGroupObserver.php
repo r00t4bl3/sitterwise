@@ -27,7 +27,7 @@ class BookingGroupObserver
         $updatedIds = [];
 
         foreach ($group->bookings as $booking) {
-            if (in_array($booking->status, $finalized, true)) {
+            if (in_array($booking->status, $finalized, true) || $booking->end_datetime->isPast()) {
                 continue;
             }
 
