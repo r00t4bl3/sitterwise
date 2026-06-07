@@ -2,6 +2,7 @@
 
 use App\Enums\CaregiverStatus;
 use App\Events\BookingGroupSplit;
+use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
@@ -477,11 +478,19 @@ describe('Booking - Admin', function () {
         expect($booking->client_phone)->toBe($originalPhone);
     });
 
-    test('recommended caregivers endpoint returns scored caregivers', function () {
+    test('recommended caregivers endpoint returns tiered caregivers', function () {
         $this->actingAs($this->user);
 
         $client = Client::factory()->create();
-        Caregiver::factory()->count(3)->create(['status' => CaregiverStatus::Active->value]);
+
+        // Create caregivers with availability so they pass the default filter
+        foreach (range(1, 3) as $i) {
+            $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+            Availability::factory()->create([
+                'caregiver_id' => $caregiver->id,
+                'date' => now()->addDays(5)->format('Y-m-d'),
+            ]);
+        }
 
         $response = $this->get(route('bookings.recommendedCaregivers', [
             'client_id' => $client->id,
@@ -490,7 +499,7 @@ describe('Booking - Admin', function () {
         $response->assertSuccessful();
         $response->assertJsonCount(3);
         $response->assertJsonStructure([
-            '*' => ['id', 'name', 'score', 'matchBadge' => ['label', 'color', 'icon']],
+            '*' => ['id', 'name', 'age', 'tier', 'tierLabel', 'matchIcons', 'hasBeenNotified'],
         ]);
     });
 

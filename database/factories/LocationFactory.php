@@ -19,7 +19,10 @@ class LocationFactory extends Factory
     {
         return [
             'name' => fake()->unique()->company().' Hotel',
-            'description' => fake()->sentence(),
+            'cities' => implode(', ', fake()->randomElements(
+                ['La Jolla', 'Downtown', 'Coronado', 'Del Mar', 'Carlsbad', 'Encinitas', 'Escondido'],
+                fake()->numberBetween(1, 3),
+            )),
             'is_active' => true,
         ];
     }

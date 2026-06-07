@@ -295,10 +295,15 @@ export default function Bookings() {
             const query = debouncedSearch.toLowerCase().trim();
             result = result.filter((booking) => {
                 const clientName =
-                    booking.booking_group?.client?.user?.name?.toLowerCase() || '';
+                    (booking.booking_group?.client_first_name + ' ' + booking.booking_group?.client_last_name).toLowerCase();
                 const caregiverName =
-                    booking.caregiver?.user?.name?.toLowerCase() || '';
-                const hotelName = booking.booking_group?.hotel?.name?.toLowerCase() || '';
+                    booking.caregiver
+                        ? (booking.caregiver.first_name + ' ' + booking.caregiver.last_name).toLowerCase()
+                        : '';
+                const hotelName = (() => {
+                    const h = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
+                    return h?.name?.toLowerCase() || '';
+                })();
 
                 return (
                     clientName.includes(query) ||
@@ -645,11 +650,10 @@ export default function Bookings() {
                                                                      booking.end_datetime,
                                                                  )}
                                                              </span>
-                                                             <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
-                                                                 {booking.booking_group?.client?.user?.name ||
-                                                                     `${booking.booking_group?.client?.first_name || ''} ${booking.booking_group?.client?.last_name || ''}`.trim() ||
-                                                                     'Unknown Client'}
-                                                             </span>
+                                                              <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
+                                                                   {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
+                                                                      'Unknown Client'}
+                                                              </span>
                                                          </div>
                                                      </button>
                                                     {/* eslint-disable-next-line no-constant-binary-expression */}
@@ -808,18 +812,18 @@ export default function Bookings() {
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
                                                             <div className="flex items-center justify-between">
                                                                 <Link
-                                                                    href={`/clients/${booking.booking_group?.client?.id}`}
+                                                                     href={`/clients/${booking.booking_group?.client_id}`}
                                                                     onClick={(e) =>
                                                                         e.stopPropagation()
                                                                     }
                                                                     className="hover:underline"
                                                                 >
                                                                     {
-                                                                        booking.booking_group?.client?.first_name
-                                                                    }{' '}
-                                                                    {
-                                                                        booking.booking_group?.client?.last_name
-                                                                    }
+                                                                         booking.booking_group?.client_first_name
+                                                                     }{' '}
+                                                                     {
+                                                                         booking.booking_group?.client_last_name
+                                                                     }
                                                                 </Link>
                                                                 <div className="flex items-center gap-1">
                                                                     {booking.booking_group?.service_type === 'corporate_invoiced' && (

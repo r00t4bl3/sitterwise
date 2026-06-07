@@ -15,13 +15,13 @@ test('can be instantiated', function () {
 test('has correct fillable fields', function () {
     $location = Location::factory()->create([
         'name' => 'San Diego',
-        'description' => 'Beautiful coastal city',
+        'cities' => 'Downtown, La Jolla',
         'svg_icon' => '<svg></svg>',
         'is_active' => true,
     ]);
 
     $this->assertEquals('San Diego', $location->name);
-    $this->assertEquals('Beautiful coastal city', $location->description);
+    $this->assertEquals('Downtown, La Jolla', $location->cities);
     $this->assertEquals('<svg></svg>', $location->svg_icon);
     $this->assertTrue($location->is_active);
 });

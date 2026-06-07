@@ -15,9 +15,10 @@ class StoreLocationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'unique:locations,name'],
-            'description' => ['nullable', 'string'],
             'svg_icon' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'cities' => ['nullable', 'array'],
+            'cities.*' => ['required', 'string', 'max:255'],
         ];
     }
 }

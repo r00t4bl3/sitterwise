@@ -221,6 +221,60 @@ describe('LocationController', function () {
         expect($location->name)->toBe('Updated Location');
     });
 
+    test('super_admin can create a location with cities', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('locations.store'), [
+            'name' => 'Downtown Area',
+            'cities' => ['La Jolla', 'Downtown', 'Coronado'],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('locations', [
+            'name' => 'Downtown Area',
+            'cities' => 'La Jolla, Downtown, Coronado',
+        ]);
+    });
+
+    test('super_admin can update location cities', function () {
+        $this->actingAs($this->user);
+
+        $location = Location::factory()->create([
+            'name' => 'Test Area',
+            'cities' => 'La Jolla, Downtown',
+        ]);
+
+        $response = $this->patch(route('locations.update', $location), [
+            'name' => 'Test Area',
+            'cities' => ['Carlsbad', 'Encinitas', 'Vista'],
+        ]);
+
+        $response->assertRedirect();
+
+        $location->refresh();
+        expect($location->cities)->toBe('Carlsbad, Encinitas, Vista');
+    });
+
+    test('super_admin can clear location cities', function () {
+        $this->actingAs($this->user);
+
+        $location = Location::factory()->create([
+            'name' => 'Clear Me',
+            'cities' => 'La Jolla, Downtown',
+        ]);
+
+        $response = $this->patch(route('locations.update', $location), [
+            'name' => 'Clear Me',
+            'cities' => [],
+        ]);
+
+        $response->assertRedirect();
+
+        $location->refresh();
+        expect($location->cities)->toBeNull();
+    });
+
     test('super_admin can delete a location', function () {
         $this->actingAs($this->user);
 

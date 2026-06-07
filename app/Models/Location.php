@@ -12,7 +12,7 @@ class Location extends Model
 
     protected $fillable = [
         'name',
-        'description',
+        'cities',
         'svg_icon',
         'is_active',
     ];

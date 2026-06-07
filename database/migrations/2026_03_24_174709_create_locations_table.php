@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('description')->nullable();
+            $table->string('cities')->nullable();
             $table->text('svg_icon')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

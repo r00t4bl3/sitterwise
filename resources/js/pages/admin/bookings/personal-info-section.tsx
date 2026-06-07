@@ -1,8 +1,25 @@
 import { useForm } from '@inertiajs/react';
-import { BadgeCheck, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import {
+    BadgeCheck,
+    Baby,
+    Briefcase,
+    CalendarCheck,
+    ChevronDown,
+    ChevronUp,
+    History,
+    MapPin,
+    MapPinCheckInside,
+    Plus,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -99,7 +116,9 @@ interface PersonalInfoSectionProps {
         id: number;
         name: string;
         age?: number | null;
-        matchBadge?: { label: string; color: string };
+        tier?: number;
+        tierLabel?: string;
+        matchIcons?: string[];
         hasBeenNotified?: boolean;
     }>;
     booking_attributes: Array<{
@@ -337,14 +356,34 @@ export function PersonalInfoSection({
 
                     <div className="flex-1 space-y-2 overflow-y-auto px-4">
                         {caregiverSuggestions.map((caregiver) => {
-                            const badge = (caregiver as any).matchBadge;
                             const hasBeenNotified = (caregiver as any)
                                 .hasBeenNotified;
-                            const colorClasses: Record<string, string> = {
-                                green: 'bg-green-100 text-green-800',
-                                yellow: 'bg-yellow-100 text-yellow-800',
-                                orange: 'bg-orange-100 text-orange-800',
-                                blue: 'bg-blue-100 text-blue-800',
+                            const matchIcons = (caregiver as any).matchIcons as
+                                | string[]
+                                | undefined;
+                            const tier = (caregiver as any).tier;
+
+                            const ICON_MAP: Record<
+                                string,
+                                React.ElementType
+                            > = {
+                                previous_work: History,
+                                available: CalendarCheck,
+                                specialty: Baby,
+                                location_preferred: MapPinCheckInside,
+                                location_willing: MapPin,
+                                recent_work: Briefcase,
+                            };
+
+                            const ICON_TOOLTIPS: Record<string, string> = {
+                                previous_work:
+                                    'Previously worked with this family',
+                                available: 'Available for booking dates',
+                                specialty: 'Specializes in this age group',
+                                location_preferred: 'Based in booking area',
+                                location_willing:
+                                    'Willing to travel to booking area',
+                                recent_work: 'Actively working recently',
                             };
 
                             return (
@@ -362,7 +401,7 @@ export function PersonalInfoSection({
                                                 toggleCaregiver(caregiver.id)
                                             }
                                         />
-                                        <div className="flex flex-row gap-2">
+                                        <div className="flex flex-row items-center gap-2">
                                             <Label
                                                 htmlFor={`cg-${caregiver.id}`}
                                                 className="flex text-sm font-medium"
@@ -377,26 +416,73 @@ export function PersonalInfoSection({
                                                     </span>
                                                 )}
                                             </Label>
+                                            {matchIcons && matchIcons.length > 0 && (
+                                                <div className="flex items-center gap-1">
+                                                    {matchIcons.map(
+                                                        (iconKey: string) => {
+                                                            const IconComponent =
+                                                                ICON_MAP[
+                                                                    iconKey
+                                                                ];
+                                                            const tooltip =
+                                                                ICON_TOOLTIPS[
+                                                                    iconKey
+                                                                ];
+
+                                                            if (
+                                                                !IconComponent
+                                                            ) {
+                                                                return null;
+                                                            }
+
+                                                            return (
+                                                                <Tooltip
+                                                                    key={
+                                                                        iconKey
+                                                                    }
+                                                                >
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <span className="flex cursor-default items-center">
+                                                                            <IconComponent className="h-4 w-4 text-muted-foreground" />
+                                                                        </span>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        {
+                                                                            tooltip
+                                                                        }
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    {badge && (
-                                        <div>
-                                            {caregiver.age && (
-                                                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-                                                    {caregiver.age}y
-                                                </span>
-                                            )}
-
-                                            <span
-                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                    colorClasses[badge.color] ||
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}
-                                            >
-                                                {badge.label}
+                                    <div className="flex items-center gap-2">
+                                        {caregiver.age && (
+                                            <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
+                                                {caregiver.age}y
                                             </span>
-                                        </div>
-                                    )}
+                                        )}
+                                        {tier && tier <= 2 && (
+                                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                                                {(caregiver as any).tierLabel}
+                                            </span>
+                                        )}
+                                        {tier && tier === 3 && (
+                                            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+                                                {(caregiver as any).tierLabel}
+                                            </span>
+                                        )}
+                                        {tier && tier >= 4 && tier <= 5 && (
+                                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+                                                {(caregiver as any).tierLabel}
+                                            </span>
+                                        )}
+                                    </div>
                                 </Label>
                             );
                         })}

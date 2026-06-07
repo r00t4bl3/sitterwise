@@ -131,7 +131,16 @@ export function useBookingSheet({
         Array<{ id: number; name: string; [key: string]: unknown }>
     >([]);
     const [caregiverSuggestions, setCaregiverSuggestions] = useState<
-        Array<{ id: number; name: string; [key: string]: unknown }>
+        Array<{
+            id: number;
+            name: string;
+            age: number | null;
+            tier: number;
+            tierLabel: string;
+            matchIcons: string[];
+            hasBeenNotified: boolean;
+            [key: string]: unknown;
+        }>
     >([]);
 
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
@@ -241,18 +250,52 @@ export function useBookingSheet({
                 params.append('end_datetime', form.data.end_datetime);
             }
 
+            const addressCity =
+                editingBooking.booking_group?.address_city ||
+                form.data.address_city;
+
+            if (addressCity) {
+                params.append('address_city', addressCity);
+            }
+
             const response = await fetch(
                 `/bookings/recommended-caregivers?${params}`,
             );
             const data = await response.json();
-            setCaregiverSuggestions(data);
+
+            setCaregiverSuggestions(
+                data as unknown as Array<{
+                    id: number;
+                    name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
+                    [key: string]: unknown;
+                }>,
+            );
         } catch (error) {
             console.error('Error fetching recommended caregivers:', error);
             setCaregiverSuggestions(
                 caregivers.map((c) => ({
                     id: c.id,
                     name: c.name,
-                })),
+                    age: null,
+                    tier: 6,
+                    tierLabel: 'Available',
+                    matchIcons: [],
+                    hasBeenNotified: false,
+                })) as unknown as Array<{
+                    id: number;
+                    name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
+                    [key: string]: unknown;
+                }>,
             );
         }
     };
@@ -307,9 +350,22 @@ export function useBookingSheet({
     const handleCaregiverSearch = async (query: string) => {
         if (!query.trim()) {
             setCaregiverSuggestions(
-                caregivers as unknown as Array<{
+                caregivers.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    age: null,
+                    tier: 6,
+                    tierLabel: 'Available',
+                    matchIcons: [],
+                    hasBeenNotified: false,
+                })) as unknown as Array<{
                     id: number;
                     name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>,
             );
@@ -321,9 +377,22 @@ export function useBookingSheet({
             c.name.toLowerCase().includes(query.toLowerCase()),
         );
         setCaregiverSuggestions(
-            filtered as unknown as Array<{
+            filtered.map((c) => ({
+                id: c.id,
+                name: c.name,
+                age: null,
+                tier: 6,
+                tierLabel: 'Available',
+                matchIcons: [],
+                hasBeenNotified: false,
+            })) as unknown as Array<{
                 id: number;
                 name: string;
+                age: number | null;
+                tier: number;
+                tierLabel: string;
+                matchIcons: string[];
+                hasBeenNotified: boolean;
                 [key: string]: unknown;
             }>,
         );
@@ -369,6 +438,10 @@ export function useBookingSheet({
                 params.append('end_datetime', form.data.end_datetime);
             }
 
+            if (form.data.address_city) {
+                params.append('address_city', form.data.address_city);
+            }
+
             const response = await fetch(
                 `/bookings/recommended-caregivers?${params}`,
             );
@@ -383,15 +456,33 @@ export function useBookingSheet({
                 data as unknown as Array<{
                     id: number;
                     name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>,
             );
         } catch (error) {
             console.error('Error fetching recommended caregivers:', error);
             setCaregiverSuggestions(
-                caregivers as unknown as Array<{
+                caregivers.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    age: null,
+                    tier: 6,
+                    tierLabel: 'Available',
+                    matchIcons: [],
+                    hasBeenNotified: false,
+                })) as unknown as Array<{
                     id: number;
                     name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>,
             );
@@ -469,9 +560,22 @@ export function useBookingSheet({
             setBookingChildren([]);
             setBookingPets([]);
             setCaregiverSuggestions(
-                caregivers as unknown as Array<{
+                caregivers.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    age: null,
+                    tier: 6,
+                    tierLabel: 'Available',
+                    matchIcons: [],
+                    hasBeenNotified: false,
+                })) as unknown as Array<{
                     id: number;
                     name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>,
             );
@@ -569,7 +673,7 @@ export function useBookingSheet({
             });
             const fullBooking = await response.json();
 
-            const client = clients.find((c) => c.id === booking.booking_group?.client_id);
+            const client = clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null;
 
             if (client) {
                 setSelectedClientName(client.name);
@@ -621,9 +725,21 @@ export function useBookingSheet({
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
-                setCaregiverSuggestions([caregiver] as unknown as Array<{
+                setCaregiverSuggestions([{
+                    ...caregiver,
+                    age: null,
+                    tier: 6,
+                    tierLabel: 'Available',
+                    matchIcons: [],
+                    hasBeenNotified: false,
+                }] as unknown as Array<{
                     id: number;
                     name: string;
+                    age: number | null;
+                    tier: number;
+                    tierLabel: string;
+                    matchIcons: string[];
+                    hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>);
             }
@@ -761,7 +877,7 @@ export function useBookingSheet({
                 })) || [];
 
             const client = booking.booking_group?.client_id
-                ? clients.find((c) => c.id === booking.booking_group?.client_id)
+                ? clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null
                 : null;
 
             if (client) {

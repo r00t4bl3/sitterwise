@@ -1,4 +1,13 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    Baby,
+    Briefcase,
+    CalendarCheck,
+    ChevronDown,
+    ChevronUp,
+    History,
+    MapPin,
+    MapPinCheckInside,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { Button } from '@/components/ui/button';
@@ -14,6 +23,11 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { autoSetEndDateTime, formatDateTimeLocal, validateMinimumDuration } from '@/lib/datetime';
 
 interface DateEntry {
@@ -58,6 +72,9 @@ interface BookingDetailsSectionProps {
     caregiverSuggestions: Array<{
         id: number;
         name: string;
+        tier?: number;
+        tierLabel?: string;
+        matchIcons?: string[];
         [key: string]: unknown;
     }>;
     selectedCaregiverName: string;
@@ -440,30 +457,67 @@ export function BookingDetailsSection({
                         placeholder="Search caregiver..."
                         displayValue={selectedCaregiverName}
                         renderItem={(item) => {
-                            const badge = (item as any).matchBadge;
+                            const matchIcons = (item as any).matchIcons as
+                                | string[]
+                                | undefined;
 
-                            if (!badge) {
-                                return item.name;
-                            }
+                            const ICON_MAP: Record<
+                                string,
+                                React.ElementType
+                            > = {
+                                previous_work: History,
+                                available: CalendarCheck,
+                                specialty: Baby,
+                                location_preferred: MapPinCheckInside,
+                                location_willing: MapPin,
+                                recent_work: Briefcase,
+                            };
 
-                            const colorClasses: Record<string, string> = {
-                                green: 'bg-green-100 text-green-800',
-                                yellow: 'bg-yellow-100 text-yellow-800',
-                                orange: 'bg-orange-100 text-orange-800',
-                                blue: 'bg-blue-100 text-blue-800',
+                            const ICON_TOOLTIPS: Record<string, string> = {
+                                previous_work:
+                                    'Previously worked with this family',
+                                available: 'Available for booking dates',
+                                specialty: 'Specializes in this age group',
+                                location_preferred: 'Based in booking area',
+                                location_willing:
+                                    'Willing to travel to booking area',
+                                recent_work: 'Actively working recently',
                             };
 
                             return (
                                 <div className="flex items-center justify-between">
                                     <span>{item.name}</span>
-                                    <span
-                                        className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                            colorClasses[badge.color] ||
-                                            'bg-gray-100 text-gray-800'
-                                        }`}
-                                    >
-                                        {badge.label}
-                                    </span>
+                                    <div className="ml-2 flex items-center gap-1">
+                                        {matchIcons &&
+                                            matchIcons.length > 0 &&
+                                            matchIcons.map((iconKey: string) => {
+                                                const IconComponent =
+                                                    ICON_MAP[iconKey];
+                                                const tooltip =
+                                                    ICON_TOOLTIPS[iconKey];
+
+                                                if (!IconComponent) {
+                                                    return null;
+                                                }
+
+                                                return (
+                                                    <Tooltip
+                                                        key={iconKey}
+                                                    >
+                                                        <TooltipTrigger
+                                                            asChild
+                                                        >
+                                                            <span className="flex cursor-default items-center">
+                                                                <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            {tooltip}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                );
+                                            })}
+                                    </div>
                                 </div>
                             );
                         }}

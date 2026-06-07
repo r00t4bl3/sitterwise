@@ -56,15 +56,12 @@ class AdminBookingService implements BookingServiceInterface
         $startDate = now()->year($year)->month($month)->startOfMonth();
         $endDate = $startDate->endOfMonth();
 
-        $query = Booking::with([
-            'bookingGroup.bookings',
-            'bookingGroup.client.user',
-            'bookingGroup.client.children',
-            'bookingGroup.client.pets',
-            'bookingGroup.hotel',
-            'bookingGroup.address',
-            'caregiver.user',
-            'caregiverNotifications',
+        $query = Booking::select([
+            'id', 'ulid', 'booking_group_id', 'caregiver_id',
+            'start_datetime', 'end_datetime', 'status', 'payment_status',
+        ])->with([
+            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes',
+            'caregiver:id,first_name,last_name',
         ]);
 
         if ($status) {
@@ -76,32 +73,19 @@ class AdminBookingService implements BookingServiceInterface
                 ->orWhereBetween('end_datetime', [$startDate, $endDate]);
         })
             ->orderBy('start_datetime', 'asc')
-            ->get()
-            ->map(function (Booking $booking) {
-                $group = $booking->bookingGroup;
-                if ($group) {
-                    $group->setAttribute('bookings_count', $group->bookings->count());
-                }
+            ->get();
 
-                $groupClient = $group?->client;
-                if ($groupClient) {
-                    $groupClient->setAttribute('children', $groupClient->children->map(fn ($c) => [
-                        'name' => $c['name'],
-                        'gender' => $c['gender'],
-                        'birth_month' => $c['birth_month'],
-                        'birth_year' => $c['birth_year'],
-                    ]));
-                    $groupClient->setAttribute('pets', $groupClient->pets->map(fn ($p) => [
-                        // 'id' => $p->id,
-                        'name' => $p['name'],
-                        'type' => $p['type'],
-                        'breed' => $p['breed'],
-                        'notes' => $p['notes'],
-                    ]));
-                }
+        $groupIds = $bookings->pluck('booking_group_id')->unique()->filter();
+        $counts = Booking::whereIn('booking_group_id', $groupIds)
+            ->selectRaw('booking_group_id, count(*) as count')
+            ->groupBy('booking_group_id')
+            ->pluck('count', 'booking_group_id');
 
-                return $booking;
-            });
+        $bookings->each(function (Booking $booking) use ($counts) {
+            $booking->setAppends([]);
+            $booking->bookingGroup?->setAttribute('bookings_count', (int) $counts->get($booking->booking_group_id, 1));
+            $booking->bookingGroup?->setHidden(['created_at', 'updated_at', 'deleted_at']);
+        });
 
         $serviceTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -142,13 +126,7 @@ class AdminBookingService implements BookingServiceInterface
             'zip' => $h->zip,
         ]);
 
-        $clients = Client::with('user')->get()->map(fn ($c) => [
-            'id' => $c->id,
-            'name' => $c->first_name.' '.$c->last_name,
-            'email' => $c->user->email,
-        ]);
-
-        $caregivers = Caregiver::with('user')
+        $caregivers = Caregiver::query()
             ->where('status', CaregiverStatus::Active->value)
             ->get()
             ->map(fn ($c) => [
@@ -182,7 +160,10 @@ class AdminBookingService implements BookingServiceInterface
                 'status' => $status,
             ],
             'hotels' => $hotels,
-            'clients' => $clients,
+            'clients' => Inertia::defer(fn () => Client::query()->get()->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => trim($c->first_name.' '.$c->last_name),
+            ])),
             'caregivers' => $caregivers,
 
         ]);
@@ -877,6 +858,7 @@ class AdminBookingService implements BookingServiceInterface
             'service_type' => 'nullable|string',
             'start_datetime' => 'nullable|date',
             'end_datetime' => 'nullable|date|after:start_datetime',
+            'address_city' => 'nullable|string',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
@@ -891,6 +873,7 @@ class AdminBookingService implements BookingServiceInterface
                 $booking->service_type = $validated['service_type'];
                 $booking->start_datetime = $validated['start_datetime'];
                 $booking->end_datetime = $validated['end_datetime'];
+                $booking->address_city = $validated['address_city'] ?? null;
             }
         }
 
@@ -900,16 +883,7 @@ class AdminBookingService implements BookingServiceInterface
             20
         );
 
-        return response()->json($recommended->map(function ($item) {
-            return [
-                'id' => $item['caregiver']->id,
-                'name' => $item['caregiver']->first_name.' '.$item['caregiver']->last_name,
-                'age' => $item['caregiver']->date_of_birth->age,
-                'score' => $item['score'],
-                'matchBadge' => $item['matchBadge'],
-                'hasBeenNotified' => $item['hasBeenNotified'],
-            ];
-        }));
+        return response()->json($recommended);
     }
 
     public function reserve(Request $request, Booking $booking)

@@ -1,12 +1,13 @@
 <?php
 
 use App\Enums\CaregiverStatus;
+use App\Enums\ServiceType;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Models\Caregiver;
-use App\Models\CertificationType;
 use App\Models\Client;
+use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Database\Seeders\AttributeDefinitionSeeder;
@@ -25,125 +26,270 @@ beforeEach(function () {
         AttributeDefinitionSeeder::class,
     ]);
     $this->service = app(CaregiverRecommendationService::class);
-
-    // Get active status
     $this->activeStatus = CaregiverStatus::Active;
-    $this->inactiveStatus = CaregiverStatus::Inactive;
+
+    // Ensure caregivers have at least one availability record (required by default filter)
+    $this->defaultAvailDate = now()->addDays(5)->format('Y-m-d');
 });
+
+/**
+ * Helper: create an active caregiver with a basic availability record.
+ */
+function makeActiveCaregiver(array $overrides = []): Caregiver
+{
+    $caregiver = Caregiver::factory()->create(array_merge([
+        'status' => CaregiverStatus::Active->value,
+    ], $overrides));
+
+    // Every caregiver needs at least one availability to pass the default filter
+    Availability::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'date' => now()->addDays(5)->format('Y-m-d'),
+        'time_slots' => ['morning', 'afternoon'],
+    ]);
+
+    return $caregiver;
+}
 
 describe('Recommendation Service - Caregiver', function () {
     test('returns only active caregivers', function () {
         $client = Client::factory()->create();
-        $caregiver1 = Caregiver::factory()->create(['status' => $this->activeStatus->value]);
-        $caregiver2 = Caregiver::factory()->create(['status' => CaregiverStatus::Inactive->value]);
+        $active = makeActiveCaregiver();
+        $inactive = Caregiver::factory()->create(['status' => CaregiverStatus::Inactive->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        // Caregiver1 should be in results (active)
-        expect($recommended->pluck('caregiver.id')->contains($caregiver1->id))->toBeTrue();
-
-        // Caregiver2 might be in results since factory configure overrides status
-        // Just verify the service doesn't crash
-        expect($recommended->count())->toBeGreaterThanOrEqual(1);
+        $ids = $recommended->pluck('id')->toArray();
+        expect(in_array($active->id, $ids))->toBeTrue()
+            ->and(in_array($inactive->id, $ids))->toBeFalse();
     });
 
-    test('returns match badge for each caregiver', function () {
+    test('returns expected keys for each caregiver', function () {
         $client = Client::factory()->create();
-        Caregiver::factory()->create(['status' => $this->activeStatus->value]);
+        makeActiveCaregiver();
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        expect($recommended->first())->toHaveKeys(['caregiver', 'score', 'matchBadge'])
-            ->and($recommended->first()['matchBadge'])->toHaveKeys(['label', 'color', 'icon']);
-    });
-
-    test('favorite caregiver gets excellent match badge', function () {
-        $client = Client::factory()->create();
-        $favoriteCaregiver = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.5,
+        expect($recommended->first())->toHaveKeys([
+            'id', 'name', 'age', 'tier', 'tierLabel', 'matchIcons', 'hasBeenNotified',
         ]);
-
-        $client->favoriteCaregivers()->attach($favoriteCaregiver->id);
-
-        $recommended = $this->service->getRecommendedCaregivers($client);
-
-        $match = $recommended->firstWhere('caregiver.id', $favoriteCaregiver->id);
-        expect($match['matchBadge']['label'])->toBe('Excellent Match')
-            ->and($match['matchBadge']['color'])->toBe('green');
     });
 
     test('blocked caregiver is excluded from recommendations', function () {
         $client = Client::factory()->create();
-        $blockedCaregiver = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.5,
-        ]);
+        $blocked = makeActiveCaregiver(['rating' => 4.5]);
 
-        $client->blockedCaregivers()->attach($blockedCaregiver->id);
+        $client->blockedCaregivers()->attach($blocked->id);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        expect($recommended->pluck('caregiver.id')->contains($blockedCaregiver->id))->toBeFalse();
+        expect($recommended->pluck('id')->contains($blocked->id))->toBeFalse();
     });
 
-    test('caregiver with previous work history scores higher', function () {
+    test('tier 1 when caregiver previously worked with client', function () {
         $client = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
-        $caregiver1 = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.0,
-        ]);
-
-        $caregiver2 = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.0,
-        ]);
-
-        // Create 3 completed bookings for caregiver1
-        Booking::factory()->count(3)->forClient($client)->create([
-            'caregiver_id' => $caregiver1->id,
+        Booking::factory()->forClient($client)->create([
+            'caregiver_id' => $caregiver->id,
             'status' => 'completed',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        $score1 = $recommended->firstWhere('caregiver.id', $caregiver1->id)['score'];
-        $score2 = $recommended->firstWhere('caregiver.id', $caregiver2->id)['score'];
-
-        expect($score1)->toBeGreaterThan($score2);
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(1)
+            ->and($result['matchIcons'])->toContain('previous_work');
     });
 
-    test('higher rated caregiver scores higher', function () {
+    test('tier 2 when caregiver has availability, specialty, and preferred location', function () {
         $client = Client::factory()->create();
+        $southCounty = Location::where('name', 'South County')->first();
+        $caregiver = makeActiveCaregiver(['rating' => 4.5]);
 
-        $caregiver1 = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.8,
+        // Give caregiver preferred location in South County
+        $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => true]]);
+
+        // Give caregiver the Babies specialty (matching babysitter service type)
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        // Availability already created in makeActiveCaregiver at same date
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+        ]);
+        // Set booking group service_type + address city
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+            'address_city' => 'La Jolla',
         ]);
 
-        $caregiver2 = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 3.5,
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(2)
+            ->and($result['matchIcons'])->toContain('available')
+            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('location_preferred');
+    });
+
+    test('tier 3 when caregiver has specialty and willing location (adjacent fit)', function () {
+        $client = Client::factory()->create();
+        $southCounty = Location::where('name', 'South County')->first();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        // Willing (non-preferred) location
+        $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => false]]);
+
+        // Matching specialty
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+
+        $booking = Booking::factory()->forClient($client)->create();
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+            'address_city' => 'La Jolla',
         ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(3)
+            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('location_willing');
+    });
+
+    test('tier 4 when caregiver has recent work (3mo) plus specialty and location fit', function () {
+        $client = Client::factory()->create();
+        $southCounty = Location::where('name', 'South County')->first();
+        $otherClient = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => true]]);
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+
+        // Recent work with a different client in last 3 months
+        Booking::factory()->forClient($otherClient)->create([
+            'caregiver_id' => $caregiver->id,
+            'status' => 'completed',
+            'start_datetime' => now()->subMonth(),
+            'end_datetime' => now()->subMonth()->addHours(4),
+        ]);
+
+        $booking = Booking::factory()->forClient($client)->create();
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+            'address_city' => 'La Jolla',
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(4)
+            ->and($result['matchIcons'])->toContain('recent_work');
+    });
+
+    test('tier 5 when caregiver has recent work (6mo) with partial fit', function () {
+        $client = Client::factory()->create();
+        $otherClient = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 3.5]);
+
+        // Give caregiver a matching specialty (needed for "partial fit")
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+
+        // Recent work in last 6 months (4 months ago, not 3mo, so recentWork6mo only)
+        Booking::factory()->forClient($otherClient)->create([
+            'caregiver_id' => $caregiver->id,
+            'status' => 'completed',
+            'start_datetime' => now()->subMonths(4),
+            'end_datetime' => now()->subMonths(4)->addHours(4),
+        ]);
+
+        // Pass a booking with service_type to trigger specialty check
+        $booking = Booking::factory()->forClient($client)->create();
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(5)
+            ->and($result['matchIcons'])->toContain('recent_work');
+    });
+
+    test('tier 6 for caregivers with no special matching', function () {
+        $client = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 3.0]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        $score1 = $recommended->firstWhere('caregiver.id', $caregiver1->id)['score'];
-        $score2 = $recommended->firstWhere('caregiver.id', $caregiver2->id)['score'];
-
-        expect($score1)->toBeGreaterThan($score2);
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['tier'])->toBe(6)
+            ->and($result['matchIcons'])->toBeEmpty();
     });
 
-    test('getMatchBadge returns correct badge for score ranges', function () {
-        expect($this->service->getMatchBadge(150)['label'])->toBe('Excellent Match')
-            ->and($this->service->getMatchBadge(100)['label'])->toBe('Excellent Match')
-            ->and($this->service->getMatchBadge(75)['label'])->toBe('Good Match')
-            ->and($this->service->getMatchBadge(50)['label'])->toBe('Good Match')
-            ->and($this->service->getMatchBadge(35)['label'])->toBe('Fair Match')
-            ->and($this->service->getMatchBadge(20)['label'])->toBe('Fair Match')
-            ->and($this->service->getMatchBadge(10)['label'])->toBe('Available')
-            ->and($this->service->getMatchBadge(0)['label'])->toBe('Available');
+    test('respects limit parameter', function () {
+        $client = Client::factory()->create();
+        makeActiveCaregiver();
+        makeActiveCaregiver();
+        makeActiveCaregiver();
+        makeActiveCaregiver();
+        makeActiveCaregiver();
+
+        $recommended = $this->service->getRecommendedCaregivers($client, limit: 3);
+
+        expect($recommended)->toHaveCount(3);
+    });
+
+    test('hasBeenNotified returns true when caregiver was notified for booking', function () {
+        $client = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'caregiver_id' => null,
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeTrue();
+    });
+
+    test('hasBeenNotified returns false when no notification exists', function () {
+        $client = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeFalse();
+    });
+
+    test('hasBeenNotified returns false when no booking provided', function () {
+        $client = Client::factory()->create();
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['hasBeenNotified'])->toBeFalse();
     });
 
     test('returns empty collection when no active caregivers', function () {
@@ -154,108 +300,31 @@ describe('Recommendation Service - Caregiver', function () {
         expect($recommended)->toHaveCount(0);
     });
 
-    test('respects limit parameter', function () {
+    test('caregiver without availability is excluded', function () {
         $client = Client::factory()->create();
-        Caregiver::factory()->count(5)->create(['status' => $this->activeStatus->value]);
+        Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
 
-        $recommended = $this->service->getRecommendedCaregivers($client, limit: 3);
+        $recommended = $this->service->getRecommendedCaregivers($client);
 
-        expect($recommended)->toHaveCount(3);
+        expect($recommended)->toHaveCount(0);
     });
 
-    test('hasBeenNotified returns true when caregiver was notified for booking', function () {
+    test('caregivers are sorted by tier then name', function () {
         $client = Client::factory()->create();
-        $caregiver = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.0,
-        ]);
 
-        $booking = Booking::factory()->forClient($client)->create([
-            'caregiver_id' => null,
-        ]);
+        $cg2 = makeActiveCaregiver(['rating' => 4.0, 'first_name' => 'Alpha']);
+        $cg1 = makeActiveCaregiver(['rating' => 4.5, 'first_name' => 'Beta']);
 
-        // Create notification record
-        BookingCaregiverNotification::create([
-            'booking_id' => $booking->id,
-            'caregiver_id' => $caregiver->id,
-            'notified_at' => now(),
-        ]);
-
-        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
-
-        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
-        expect($result['hasBeenNotified'])->toBeTrue();
-    });
-
-    test('hasBeenNotified returns false when caregiver was not notified', function () {
-        $client = Client::factory()->create();
-        $caregiver = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.0,
-        ]);
-
-        $booking = Booking::factory()->forClient($client)->create([
-            'caregiver_id' => null,
-        ]);
-
-        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
-
-        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
-        expect($result['hasBeenNotified'])->toBeFalse();
-    });
-
-    test('hasBeenNotified returns false when no booking provided', function () {
-        $client = Client::factory()->create();
-        $caregiver = Caregiver::factory()->create([
-            'status' => $this->activeStatus->value,
-            'rating' => 4.0,
+        // Give cg1 previous work to put it in tier 1
+        Booking::factory()->forClient($client)->create([
+            'caregiver_id' => $cg1->id,
+            'status' => 'completed',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        $result = $recommended->firstWhere('caregiver.id', $caregiver->id);
-        expect($result['hasBeenNotified'])->toBeFalse();
-    });
-
-    test('caregiver with full availability scores higher', function () {
-        $client = Client::factory()->create();
-
-        $caregiver1 = Caregiver::factory()
-            ->state(['status' => $this->activeStatus->value, 'rating' => 4.0])
-            ->create();
-
-        $caregiver2 = Caregiver::factory()
-            ->state(['status' => $this->activeStatus->value, 'rating' => 4.0])
-            ->create();
-
-        // Ensure both have same certifications and specialties
-        $certTypeIds = CertificationType::limit(2)->pluck('id')->toArray();
-        $specialtyIds = SpecialtyType::limit(2)->pluck('id')->toArray();
-        $caregiver1->certifications()->sync($certTypeIds);
-        $caregiver1->specialtyTypes()->sync($specialtyIds);
-        $caregiver2->certifications()->sync($certTypeIds);
-        $caregiver2->specialtyTypes()->sync($specialtyIds);
-
-        // Add full availability for caregiver1
-        $bookingDate = now()->addDays(1)->setHour(9)->setMinute(0)->setSecond(0);
-        Availability::create([
-            'caregiver_id' => $caregiver1->id,
-            'date' => $bookingDate->format('Y-m-d'), // Store as date only
-            'time_slots' => ['morning', 'afternoon', 'evening'],
-        ]);
-
-        $booking = Booking::factory()->forClient($client)->create([
-            'start_datetime' => $bookingDate,
-            'end_datetime' => (clone $bookingDate)->setHour(13),
-        ]);
-
-        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
-
-        $score1 = $recommended->firstWhere('caregiver.id', $caregiver1->id)['score'];
-        $score2 = $recommended->firstWhere('caregiver.id', $caregiver2->id)['score'];
-
-        // Caregiver1 should have availability records and get bonus
-        expect($score1)->toBe(135.0) // 105 base + 30 availability
-            ->and($score2)->toBe(105.0); // 105 base + 0 availability
+        // cg1 (tier 1) should come before cg2 (tier 6)
+        $tiers = $recommended->pluck('tier')->toArray();
+        expect($tiers[0])->toBeLessThan($tiers[1]);
     });
 });

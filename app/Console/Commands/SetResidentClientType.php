@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\ClientType;
 use App\Models\Client;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +12,8 @@ class SetResidentClientType extends Command
 {
     protected $signature = 'clients:set-resident-type
         {--dry-run : Preview changes without updating}
-        {--csv= : Path to CSV file (defaults to database/seeders/data/resident_clients.csv)}';
+        {--csv= : Path to CSV file (defaults to database/seeders/data/resident_clients.csv)}
+        {--record-changes : Record ClientTypeChange history entries}';
 
     protected $description = 'Update client_type to resident for clients matching emails in the CSV';
 
@@ -111,13 +113,21 @@ class SetResidentClientType extends Command
                     'client_type' => ClientType::Resident->value,
                 ]);
 
-                $client->typeChanges()->create([
-                    'changed_by_admin_id' => 1,
-                    'previous_type' => $previousType ?: 'vacationer',
-                    'new_type' => 'sd_resident',
-                    'reason' => 'Bulk update from resident clients CSV',
-                    'changed_at' => now(),
-                ]);
+                if ($this->option('record-changes')) {
+                    $admin = User::whereIn('role', ['admin', 'super_admin'])->first();
+
+                    if ($admin) {
+                        $client->typeChanges()->create([
+                            'changed_by_admin_id' => $admin->id,
+                            'previous_type' => $previousType ?: 'vacationer',
+                            'new_type' => 'sd_resident',
+                            'reason' => 'Bulk update from resident clients CSV',
+                            'changed_at' => now(),
+                        ]);
+                    } else {
+                        $this->warn('--record-changes enabled but no admin user found; skipping history entry for client #'.$client->id);
+                    }
+                }
 
                 $updatedCount++;
             });
