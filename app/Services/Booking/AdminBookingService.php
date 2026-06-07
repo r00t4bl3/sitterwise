@@ -54,7 +54,7 @@ class AdminBookingService implements BookingServiceInterface
         $status = $request->input('status');
 
         $startDate = now()->year($year)->month($month)->startOfMonth();
-        $endDate = $startDate->endOfMonth();
+        $endDate = $startDate->endOfMonth()->addDay();
 
         $query = Booking::select([
             'id', 'ulid', 'booking_group_id', 'caregiver_id',

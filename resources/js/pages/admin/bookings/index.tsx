@@ -319,23 +319,35 @@ export default function Bookings() {
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, FullBooking[]> = {};
         filteredBookings.forEach((booking) => {
-            const date = getPTDate(booking.start_datetime);
+            const ptStart = getPTDate(booking.start_datetime);
+            const ptEnd = getPTDate(booking.end_datetime);
 
-            if (!date) {
+            if (!ptStart || !ptEnd) {
                 return;
             }
 
-            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            const start = new Date(ptStart.getFullYear(), ptStart.getMonth(), ptStart.getDate());
+            const end = new Date(ptEnd.getFullYear(), ptEnd.getMonth(), ptEnd.getDate());
 
-            if (!grouped[key]) {
-                grouped[key] = [];
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                if (d.getFullYear() !== currentYear || d.getMonth() + 1 !== currentMonth) {
+                    continue;
+                }
+
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+                if (!grouped[key]) {
+                    grouped[key] = [];
+                }
+
+                if (!grouped[key].some((b) => b.id === booking.id)) {
+                    grouped[key].push(booking);
+                }
             }
-
-            grouped[key].push(booking);
         });
 
         return grouped;
-    }, [filteredBookings]);
+    }, [filteredBookings, currentMonth, currentYear]);
 
     const currentMonthBookings = useMemo(() => {
         return filteredBookings.filter((booking) => {
@@ -1055,6 +1067,8 @@ export default function Bookings() {
                                                     )}
                                                 </div>
                                                 <div className="truncate font-semibold whitespace-nowrap">
+                                                    {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
+                                                        'Unknown Client'}
                                                 </div>
                                             </div>
                                         </div>
