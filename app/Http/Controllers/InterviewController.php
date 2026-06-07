@@ -6,6 +6,7 @@ use App\Enums\CaregiverStatus;
 use App\Http\Requests\StoreInterviewEvaluationRequest;
 use App\Models\CaregiverApplication;
 use App\Models\CaregiverInterview;
+use App\Models\InterviewTalkingPoint;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -19,12 +20,25 @@ class InterviewController extends Controller
             abort(422, 'Interview can only be evaluated when status is Interview Scheduled.');
         }
 
-        $existing = CaregiverInterview::where('caregiver_id', $caregiver->id)
-            ->where('application_id', $application->id)
-            ->latest()
-            ->first();
+        $interview = CaregiverInterview::firstOrCreate(
+            [
+                'caregiver_id' => $caregiver->id,
+                'application_id' => $application->id,
+            ],
+            [
+                'evaluator_id' => Auth::id(),
+                'scores' => ['soft_skills' => [], 'professionalism' => []],
+                'composite' => 0,
+                'status' => 'draft',
+            ],
+        );
 
         $sponsor = $caregiver->sponsors()->first();
+
+        // Seed talking points from master template if first load
+        if ($interview->talkingPoints()->count() === 0) {
+            $this->seedTalkingPoints($interview);
+        }
 
         return Inertia::render('admin/interviews/evaluate', [
             'application' => [
@@ -42,12 +56,13 @@ class InterviewController extends Controller
                 'name' => $sponsor->first_name.' '.$sponsor->last_name,
                 'relationship' => $sponsor->relationship,
             ] : null,
-            'existing' => $existing ? [
-                'scores' => $existing->scores,
-                'composite' => $existing->composite,
-                'notes' => $existing->notes,
-                'status' => $existing->status,
-            ] : null,
+            'existing' => [
+                'scores' => $interview->scores,
+                'composite' => $interview->composite,
+                'notes' => $interview->notes,
+                'status' => $interview->status,
+            ],
+            'talkingPoints' => $interview->talkingPoints,
         ]);
     }
 
@@ -96,5 +111,18 @@ class InterviewController extends Controller
         );
 
         return array_sum($all);
+    }
+
+    private function seedTalkingPoints(CaregiverInterview $interview): void
+    {
+        $templatePoints = InterviewTalkingPoint::active()->ordered()->get();
+
+        foreach ($templatePoints as $template) {
+            $interview->talkingPoints()->create([
+                'talking_point_id' => $template->id,
+                'label' => $template->label,
+                'sort_order' => $template->sort_order,
+            ]);
+        }
     }
 }

@@ -5,6 +5,7 @@ import {
     ClipboardList,
     Home,
     LayoutGrid,
+    ListChecks,
     MapPin,
     MessageCircle,
     Shield,
@@ -142,6 +143,11 @@ const superAdminNavItems: NavItem[] = [
         title: 'Quick Links',
         href: '/quick-links',
         icon: FileSymlink,
+    },
+    {
+        title: 'Talking Points',
+        href: '/talking-points',
+        icon: ListChecks,
     },
 ];
 

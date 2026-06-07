@@ -52,7 +52,7 @@ BookingController → BookingServiceFactory → AdminBookingService | CaregiverB
 // AdminBookingService.php:841-846
 public function destroy(Booking $booking)
 {
-    $booking->delete();                           // soft delete
+    $booking->delete();                           // soft delete (CURRENT)
     return redirect()->back()
         ->with('success', 'Booking deleted successfully.');
 }
@@ -60,16 +60,35 @@ public function destroy(Booking $booking)
 
 **No pre-checks, no event dispatch, no related cleanup.**
 
-### Related Models (Soft Delete Status)
+### Required Change: Hard Delete
 
-| Model | Soft Deletes? | Notes |
-|---|---|---|
-| Booking | ✅ | `deleted_at` column |
-| BookingGroup | ✅ | Orphaned if last booking deleted |
-| BookingRating | ✅ | Orphaned (ratings still reference booking_id) |
-| BookingCaregiverNotification | ❌ Not checked | Stays in DB |
-| ClientPayment | ❌ Not checked | Stays in DB |
-| CaregiverAssignment | ❌ Not checked | Stays in DB |
+Change `$booking->delete()` → **`$booking->forceDelete()`**.
+
+All related records are already handled at the database level via `ON DELETE CASCADE` foreign keys — no manual cleanup code needed.
+
+```php
+// AdminBookingService.php:841-846 (UPDATED)
+public function destroy(Booking $booking)
+{
+    $booking->forceDelete();                      // hard delete — permanent
+    return redirect()->back()
+        ->with('success', 'Booking deleted successfully.');
+}
+```
+
+### Related Models — Database CASCADE Behavior
+
+On **hard delete** (`forceDelete`), the database engine automatically cascades to all child tables. No manual cleanup needed.
+
+| Table | Soft Deletes? | CASCADE on `booking_id` FK | Effect on hard delete |
+|---|---|---|---|
+| Booking | ✅ (will be ignored) | — | Deleted permanently |
+| BookingGroup | ✅ | No FK to booking (only booking has FK to group) | **Not auto-deleted** — must handle separately |
+| BookingRating | ✅ | ✅ CASCADE | Hard-deleted (bypasses Eloquent soft delete) |
+| BookingCaregiverNotification | ❌ | ✅ CASCADE | Deleted permanently |
+| CaregiverAssignment | ❌ | ✅ CASCADE | Deleted permanently |
+| CaregiverPayout | ❌ | ✅ CASCADE | Deleted permanently |
+| ClientPayment | ❌ | ✅ CASCADE | Deleted permanently |
 
 ---
 
@@ -134,16 +153,17 @@ Add checks in `AdminBookingService@destroy`:
 
 ### 3. Backend: BookingGroup Cleanup (~1-2 hours)
 
-When deleting a booking:
+When hard-deleting a booking that belongs to a group:
 
 ```
 if ($booking->bookingGroup?->bookings()->whereNull('deleted_at')->count() === 1) {
-    // This is the only remaining booking in the group → soft delete the group too
-    $booking->bookingGroup->delete();
+    // This is the only remaining booking in the group → hard delete the group too
+    // (Since we're using forceDelete, all soft-delete records are skipped)
+    $booking->bookingGroup->forceDelete();
 }
 ```
 
-**Edge case**: Group may have `client()` relationship that also needs cleanup if group is deleted.
+**Edge case**: Group may have `client()` relationship that also needs cleanup if group is deleted. Note that `booking_groups` does NOT have `ON DELETE CASCADE` for any child table referencing it, so manual group cleanup is safer.
 
 ### 4. Events & Notifications (~1 hour)
 
@@ -166,48 +186,50 @@ This is the **biggest business decision** in the feature. **For MVP, skip refund
 ## Risks & Side Effects
 
 | Risk | Impact | Likelihood | Mitigation |
-|---|---|---|---|
-| BookingGroup has 0 bookings after delete | Low (soft delete, but empty group is confusing) | High | Auto-cleanup groups |
-| No refund for paid bookings | High (financial/compliance) | High | Add payment status guard (block delete of paid bookings) |
-| Caregiver/client sees 404 on deleted booking URL | Medium (confusing but expected) | Certain | Show "this booking was deleted" message instead |
+|---|---|---|---|---|
+| BookingGroup has 0 bookings after delete | Low (hard-deleted group loses client linkage) | High | Auto-cleanup groups via forceDelete |
+| **Financial records permanently destroyed** | **High** (audit/compliance) | **Certain** | Guard: block deletion of paid bookings. Text input warning lists this explicitly |
+| Caregiver/client sees 404 on deleted booking URL | Medium (confusing but expected) | Certain | Dialog warns about permanent deletion |
 | No notification on delete | Medium (stakeholders unaware) | Current behavior | Add `BookingDeleted` event |
-| Double-click / race condition | Low (soft delete is idempotent) | Low | Already handled by Inertia |
-| Ratings become orphaned | Low (still reference booking_id) | Certain | Acceptable for soft delete |
-| Stripe payment intent orphaned | Medium (no refund issued) | High | Block delete of paid bookings |
-| **Accidental delete by admin** | **High** (data loss, no undo UI) | **Low** (admin trust) | **Text input confirmation requires typing "DELETE"** |
+| Double-click / race condition | Low (force delete fails gracefully on re-delete) | Low | Already handled by Inertia |
+| Ratings permanently lost | Medium (historical data) | Certain | Acceptable per product requirements |
+| Stripe payment intent orphaned (no refund) | Medium (financial/compliance) | High | Block deletion of paid bookings |
+| **Accidental hard delete (no recovery)** | **Very High** (irreversible data loss) | **Low** (admin trust) | **Text input confirmation requires typing "DELETE"** |
 | Admin deletes wrong booking (sibling in group) | Medium (group loses sibling) | Low | Dialog shows booking datetime info |
 
 ---
 
 ## Edge Cases
 
-1. **Deleting the last booking in a group** — BookingGroup becomes empty; should it also be soft-deleted?
-2. **Deleting a paid booking** — Should refund? Should it be blocked?
-3. **Deleting a booking with ratings** — Ratings become orphaned (soft delete preserves FK, but booking is hidden)
-4. **Deleting a confirmed booking** — Caregiver has committed; notification required
-5. **Deleting a reserved booking** — Should release the reservation first
-6. **Stripe payment intent still exists** — Delete without refund = potential compliance issue
-7. **Undo / Restore** — Soft delete allows restore but no UI exists
-8. **Bulk delete** — Not currently supported, may be expected for admin workflows
-9. **Simultaneous delete** — Two admins deleting same booking; soft delete handles gracefully
-10. **Deleted booking in exports** — Should exports include or exclude deleted bookings?
+1. **Deleting the last booking in a group** — BookingGroup becomes empty; should it also be hard-deleted?
+2. **Deleting a paid booking** — All transaction records permanently destroyed. Must block or refund first.
+3. **Deleting a booking with ratings** — Ratings permanently lost (DB CASCADE bypasses Eloquent soft delete).
+4. **Deleting a confirmed booking** — Caregiver has committed; notification recommended.
+5. **Deleting a reserved booking** — Should release the reservation first.
+6. **Stripe payment intent still exists** — No refund issued, no trace of Stripe reference.
+7. **No undo / no restore** — Hard delete means data is gone. No trash view possible.
+8. **Bulk delete** — Not currently supported.
+9. **Simultaneous delete** — Two admins deleting same booking; second `forceDelete()` returns 0 rows affected (no error).
+10. **Deleted booking in exports** — Exports cannot include deleted records.
+11. **`caregiver_payouts` cascade** — Payout records (money already paid) are also destroyed. This is an accounting risk.
 
 ---
 
 ## Decision Points (Updated)
 
 | # | Question | Decision | Details |
-|---|---|---|---|
+|---|---|---|---|---|
 | 1 | Who can delete? | **Admin only** ✅ | Blocked for caregiver/client via service factory (no policy changes needed) |
 | 2 | Where does the delete button live? | **Show page only** ✅ | `admin/bookings/show.tsx` — NOT the index page or edit sheet |
 | 3 | Confirmation safeguard? | **Text input requiring `DELETE`** ✅ | User must type "DELETE" to enable the confirm button — prevents accidental clicks |
-| 4 | What booking statuses can be deleted? | TBD | Suggestions above (Section 2). For MVP: allow any status, skip validation |
-| 5 | Refund on delete? | TBD | **For MVP: block deletion of paid bookings** rather than implementing refund logic |
-| 6 | Separate "cancel" vs "delete"? | TBD | Not currently needed. Delete = soft delete (admin action only) |
-| 7 | Restore UI? | TBD | Not needed for MVP. Soft delete data is preserved for manual DB restore |
-| 8 | Notifications? | TBD | Not needed for MVP. Admin-only action, no stakeholder notification |
-| 9 | BookingGroup cleanup? | TBD | Needs assessment. For MVP: allow orphaned groups |
-| 10 | Show page redirect? | **Back to index** ✅ | `redirect()->back()` on the show page returns to index |
+| 4 | Soft delete or hard delete? | **Hard delete (forceDelete)** ✅ | All related data cascades permanently. Dialog explicitly warns about this |
+| 5 | What booking statuses can be deleted? | TBD | For MVP: allow any status. Block paid bookings to protect financial records |
+| 6 | Refund on delete? | TBD | **For MVP: block deletion of paid bookings** rather than implementing refund logic |
+| 7 | Separate "cancel" vs "delete"? | TBD | Not currently needed. Delete = permanent removal (admin action only). Cancel = status change (different flow) |
+| 8 | Restore / undo? | **Not possible** ✅ | Hard delete is irreversible. Dialog warns "cannot be undone" |
+| 9 | Notifications? | TBD | Not needed for MVP. Admin-only action |
+| 10 | BookingGroup cleanup? | TBD | Needs assessment. For MVP: allow orphaned groups |
+| 11 | Show page redirect? | **Back to index** ✅ | `redirect()->back()` on the show page returns to index |
 
 ---
 
@@ -215,18 +237,16 @@ This is the **biggest business decision** in the feature. **For MVP, skip refund
 
 | Test | Priority | Notes |
 |---|---|---|
-| Delete a booking as admin → success + soft delete | ✅ Exists | `BookingTest.php:349-361` |
+| Delete a booking as admin → success + **hard deleted** | ✅ Exists (needs update) | `BookingTest.php:349-361` — change `assertSoftDeleted` → `assertModelMissing` |
 | Guest cannot delete → redirect to login | ✅ Exists | `BookingTest.php:68-73` |
 | Caregiver cannot delete → 403 | ✅ Exists | `BookingTest.php:128-136` |
-| Client cannot delete → 403 | ❌ Missing | Low priority (test only) |
+| Related ratings cascade-deleted | ❌ Missing | High priority — verify DB CASCADE works on forceDelete |
+| Related payments cascade-deleted | ❌ Missing | High priority — verify DB CASCADE works on forceDelete |
+| Client cannot delete → 403 | ❌ Missing | Low priority |
 | Delete a booking that is part of a group | ❌ Missing | Medium priority |
 | Delete the last booking in a group (group cleanup) | ❌ Missing | Medium priority (if cleanup added) |
 | Delete a booking with `payment_status = paid` → blocked | ❌ Missing | High priority (if guard added) |
-| Delete a `confirmed` booking → notification sent | ❌ Missing | Low priority (if notification added) |
-| Delete a booking with ratings → ratings preserved | ❌ Missing | Medium priority |
-| Cancel $booking = delete + refund | ❌ Missing | Low priority (if refund added) |
-| Multiple deletes of same booking → idempotent | ❌ Missing | Low priority |
-| Soft-deleted booking not visible in index/show | ❌ Missing | Route binding test |
+| Multiple deletes of same booking → safe | ❌ Missing | Low priority (forceDelete on deleted row returns 0) |
 | **Confirmation text input: rejects wrong input** | ❌ Missing | Frontend test — verify button stays disabled until "DELETE" typed |
 
 ---

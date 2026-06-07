@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CaregiverInterview extends Model
 {
@@ -40,5 +41,12 @@ class CaregiverInterview extends Model
     public function application(): BelongsTo
     {
         return $this->belongsTo(CaregiverApplication::class);
+    }
+
+    public function talkingPoints(): HasMany
+    {
+        return $this->hasMany(CaregiverInterviewTalkingPoint::class, 'caregiver_interview_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

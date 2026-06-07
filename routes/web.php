@@ -9,6 +9,7 @@ use App\Http\Controllers\BookingReviewController;
 use App\Http\Controllers\BroadcastSmsController;
 use App\Http\Controllers\CaregiverApplicationController;
 use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\CaregiverInterviewTalkingPointController;
 use App\Http\Controllers\CaregiverPayoutController;
 use App\Http\Controllers\CertificationTypeController;
 use App\Http\Controllers\ChargeBookingController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestBookingController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\InterviewController;
+use App\Http\Controllers\InterviewTalkingPointController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PricingRuleController;
@@ -168,11 +170,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Interview evaluation
         Route::get('applications/{application}/interview', [InterviewController::class, 'create'])->name('applications.interview');
         Route::post('applications/{application}/interview', [InterviewController::class, 'store'])->name('applications.interview.store');
+
+        // Interview talking points (per-interview)
+        Route::get('applications/{application}/interview/talking-points', [CaregiverInterviewTalkingPointController::class, 'index'])->name('applications.interview.talking-points');
+        Route::post('applications/{application}/interview/talking-points', [CaregiverInterviewTalkingPointController::class, 'store'])->name('applications.interview.talking-points.store');
+        Route::patch('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'toggle'])->name('applications.interview.talking-points.toggle');
+        Route::put('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'update'])->name('applications.interview.talking-points.update');
+        Route::delete('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'destroy'])->name('applications.interview.talking-points.destroy');
     });
 
     Route::middleware('super_admin')->group(function () {
         Route::get('broadcast-sms', [BroadcastSmsController::class, 'index'])->name('broadcast-sms.index');
         Route::post('broadcast-sms', [BroadcastSmsController::class, 'store'])->name('broadcast-sms.store');
+
+        // Talking points master template CRUD
+        Route::get('talking-points', [InterviewTalkingPointController::class, 'index'])->name('talking-points.index');
+        Route::post('talking-points', [InterviewTalkingPointController::class, 'store'])->name('talking-points.store');
+        Route::put('talking-points/{talkingPoint}', [InterviewTalkingPointController::class, 'update'])->name('talking-points.update');
+        Route::delete('talking-points/{talkingPoint}', [InterviewTalkingPointController::class, 'destroy'])->name('talking-points.destroy');
+        Route::post('talking-points/reorder', [InterviewTalkingPointController::class, 'reorder'])->name('talking-points.reorder');
     });
 
     // Route::middleware('super_admin')->group(function () {

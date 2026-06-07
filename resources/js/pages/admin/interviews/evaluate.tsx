@@ -1,6 +1,7 @@
 import { Head, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -9,8 +10,21 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+
+interface TalkingPoint {
+    id: number;
+    caregiver_interview_id: number;
+    talking_point_id: number | null;
+    label: string;
+    sort_order: number;
+    is_checked: boolean;
+    notes: string | null;
+}
 
 interface Props {
     application: { id: number; submitted_at: string };
@@ -25,9 +39,10 @@ interface Props {
     existing: {
         scores: { soft_skills: Record<string, number>; professionalism: Record<string, number> };
         composite: number;
-        notes: string;
+        notes: string | null;
         status: string;
-    } | null;
+    };
+    talkingPoints: TalkingPoint[];
     [key: string]: unknown;
 }
 
@@ -52,22 +67,10 @@ function HeartRating({ value, onChange }: { value: number; onChange: (v: number)
     const activeValue = hovered ?? value;
 
     function heartColor(): string {
-        if (activeValue === 4) {
-return 'text-green-500';
-}
-
-        if (activeValue === 3) {
-return 'text-blue-500';
-}
-
-        if (activeValue === 2) {
-return 'text-amber-400';
-}
-
-        if (activeValue === 1) {
-return 'text-red-400';
-}
-
+        if (activeValue === 4) return 'text-green-500';
+        if (activeValue === 3) return 'text-blue-500';
+        if (activeValue === 2) return 'text-amber-400';
+        if (activeValue === 1) return 'text-red-400';
         return 'text-gray-200';
     }
 
@@ -92,7 +95,7 @@ return 'text-red-400';
 }
 
 export default function InterviewEvaluate() {
-    const { application, caregiver, sponsor, existing } = usePage<Props>().props;
+    const { application, caregiver, sponsor, existing, talkingPoints: initialTalkingPoints } = usePage<Props>().props;
 
     const [scores, setScores] = useState<Record<string, Record<string, number>>>(
         existing?.scores ?? {
@@ -105,6 +108,18 @@ export default function InterviewEvaluate() {
     const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
         open: false, title: '', message: '', onConfirm: () => {},
     });
+
+    // Talking points state
+    const [talkingPoints, setTalkingPoints] = useState<TalkingPoint[]>(initialTalkingPoints ?? []);
+    const [editingPointId, setEditingPointId] = useState<number | null>(null);
+    const [editLabel, setEditLabel] = useState('');
+    const [editNotes, setEditNotes] = useState('');
+    const [addLabel, setAddLabel] = useState('');
+    const [showAdd, setShowAdd] = useState(false);
+
+    const checkedCount = talkingPoints.filter((p) => p.is_checked).length;
+    const totalCount = talkingPoints.length;
+    const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
 
     const allScores = [
         ...Object.values(scores.soft_skills),
@@ -121,9 +136,7 @@ export default function InterviewEvaluate() {
     }
 
     function handleSave(status: 'draft' | 'declined' | 'completed') {
-        if (!notes.trim()) {
-return;
-}
+        if (!notes.trim()) return;
 
         setSubmitting(true);
         router.post(
@@ -133,6 +146,80 @@ return;
                 onFinish: () => setSubmitting(false),
             },
         );
+    }
+
+    // --- Talking point actions ---
+
+    function toggleTalkingPoint(point: TalkingPoint) {
+        const prev = point.is_checked;
+        setTalkingPoints((pts) =>
+            pts.map((p) => (p.id === point.id ? { ...p, is_checked: !p.is_checked } : p)),
+        );
+
+        fetch(`/applications/${application.id}/interview/talking-points/${point.id}`, {
+            method: 'PATCH',
+            headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+        }).catch(() => {
+            // Revert on failure
+            setTalkingPoints((pts) =>
+                pts.map((p) => (p.id === point.id ? { ...p, is_checked: prev } : p)),
+            );
+        });
+    }
+
+    function addCustomPoint() {
+        if (!addLabel.trim()) return;
+
+        fetch(`/applications/${application.id}/interview/talking-points`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ label: addLabel.trim() }),
+        })
+            .then((r) => r.json())
+            .then((created: TalkingPoint) => {
+                setTalkingPoints((pts) => [...pts, created]);
+                setAddLabel('');
+                setShowAdd(false);
+            });
+    }
+
+    function removePoint(point: TalkingPoint) {
+        setTalkingPoints((pts) => pts.filter((p) => p.id !== point.id));
+
+        fetch(`/applications/${application.id}/interview/talking-points/${point.id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': token },
+        }).catch(() => {
+            setTalkingPoints((pts) =>
+                [...pts, point].sort((a, b) => a.sort_order - b.sort_order),
+            );
+        });
+    }
+
+    function startEdit(point: TalkingPoint) {
+        setEditingPointId(point.id);
+        setEditLabel(point.label);
+        setEditNotes(point.notes ?? '');
+    }
+
+    function saveEdit(point: TalkingPoint) {
+        fetch(`/applications/${application.id}/interview/talking-points/${point.id}`, {
+            method: 'PUT',
+            headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ label: editLabel, notes: editNotes }),
+        })
+            .then(() => {
+                setTalkingPoints((pts) =>
+                    pts.map((p) =>
+                        p.id === point.id ? { ...p, label: editLabel, notes: editNotes } : p,
+                    ),
+                );
+                setEditingPointId(null);
+            });
+    }
+
+    function cancelEdit() {
+        setEditingPointId(null);
     }
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -252,8 +339,160 @@ return;
                                 </div>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Auto-calculated from all 9 ratings above. Used for internal sorting. Doesn't replace your notes.
+                                Auto-calculated from all 9 ratings above. Used for internal sorting. Does not replace your notes.
                             </p>
+                        </div>
+
+                        {/* Talking Points Checklist */}
+                        <div>
+                            <div className="mb-3 flex items-center justify-between">
+                                <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                    Talking Points
+                                </h3>
+                                {totalCount > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                        {checkedCount}/{totalCount} covered
+                                    </span>
+                                )}
+                            </div>
+
+                            {talkingPoints.length > 0 ? (
+                                <div className="space-y-2">
+                                    {talkingPoints.map((point) => (
+                                        <div
+                                            key={point.id}
+                                            className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+                                        >
+                                            <Checkbox
+                                                id={`tp-${point.id}`}
+                                                checked={point.is_checked}
+                                                onCheckedChange={() => toggleTalkingPoint(point)}
+                                                className="mt-0.5"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                {editingPointId === point.id ? (
+                                                    <div className="space-y-2">
+                                                        <Input
+                                                            value={editLabel}
+                                                            onChange={(e) => setEditLabel(e.target.value)}
+                                                            className="h-8 text-sm"
+                                                        />
+                                                        <Textarea
+                                                            value={editNotes}
+                                                            onChange={(e) => setEditNotes(e.target.value)}
+                                                            placeholder="Add notes (optional)..."
+                                                            className="min-h-[60px] text-sm"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => saveEdit(point)}
+                                                                className="h-7 text-xs"
+                                                            >
+                                                                Save
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={cancelEdit}
+                                                                className="h-7 text-xs"
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <label
+                                                            htmlFor={`tp-${point.id}`}
+                                                            className={`text-sm cursor-pointer ${point.is_checked ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                                                        >
+                                                            {point.label}
+                                                        </label>
+                                                        {point.notes && (
+                                                            <p className="text-xs text-muted-foreground mt-0.5">
+                                                                {point.notes}
+                                                            </p>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-1 shrink-0">
+                                                {editingPointId !== point.id && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => startEdit(point)}
+                                                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removePoint(point)}
+                                                    className="h-7 text-xs text-muted-foreground hover:text-red-500"
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground py-2">
+                                    No talking points defined yet. Add the first one below, or ask a superadmin to set up the template.
+                                </p>
+                            )}
+
+                            {/* Add custom point */}
+                            {showAdd ? (
+                                <div className="mt-3 flex items-center gap-2">
+                                    <Input
+                                        value={addLabel}
+                                        onChange={(e) => setAddLabel(e.target.value)}
+                                        placeholder="Type a new talking point..."
+                                        className="h-9 text-sm"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') addCustomPoint();
+                                            if (e.key === 'Escape') {
+                                                setShowAdd(false);
+                                                setAddLabel('');
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <Button
+                                        size="sm"
+                                        onClick={addCustomPoint}
+                                        disabled={!addLabel.trim()}
+                                        className="h-9 shrink-0"
+                                    >
+                                        Add
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setShowAdd(false);
+                                            setAddLabel('');
+                                        }}
+                                        className="h-9 shrink-0"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowAdd(true)}
+                                    className="mt-3"
+                                >
+                                    + Add custom point
+                                </Button>
+                            )}
                         </div>
 
                         {/* Notes */}
@@ -264,7 +503,7 @@ return;
                             <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Capture the things a rating can't. Strengths, concerns, anything specific you noticed."
+                                placeholder="Capture the things a rating cannot. Strengths, concerns, anything specific you noticed."
                                 className="min-h-[120px] w-full rounded-lg border border-border bg-card p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                             />
                         </div>
