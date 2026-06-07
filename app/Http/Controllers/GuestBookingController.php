@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\LocationType;
 use App\Models\Booking;
 use App\Services\Booking\GuestBookingService;
 use Illuminate\Http\Request;
@@ -65,6 +66,10 @@ class GuestBookingController extends Controller
             'token' => $token,
             'stripe_public_key' => config('services.stripe.public'),
             'session_id' => $sessionId,
+            'location_types' => array_map(
+                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
+                LocationType::cases(),
+            ),
         ]);
     }
 

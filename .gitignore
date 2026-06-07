@@ -29,3 +29,5 @@ yarn-error.log
 /.kilo
 /.antigravitycli
 /.qwen
+/tests/Browser/Screenshots
+/tests/Browser/console-logs

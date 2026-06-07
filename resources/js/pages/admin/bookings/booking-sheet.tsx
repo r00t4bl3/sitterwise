@@ -60,7 +60,6 @@ export function BookingSheet({
     setSaveChildrenPetsToProfile,
     client_types,
     discovery_sources,
-    booking_attributes,
     sitter_preferences,
     service_types,
     location_types,
@@ -304,7 +303,6 @@ export function BookingSheet({
                                 sitter_preferences={sitter_preferences}
                                 client_types={client_types}
                                 discovery_sources={discovery_sources}
-                                booking_attributes={booking_attributes}
                                 hotels={hotels}
                                 hotelSuggestions={hotelSuggestions}
                                 selectedHotelName={selectedHotelName}

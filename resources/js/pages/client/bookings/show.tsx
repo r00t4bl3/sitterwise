@@ -54,11 +54,14 @@ interface Booking {
     end_datetime: string;
     status: string;
     has_review: boolean;
+    charge_to_client_hourly: number | null;
+    total_working_hour: number | null;
     charge_to_client: number | null;
     paid_to_caregiver: number | null;
     sitterwise_cut: number | null;
     tip: number | null;
     reimbursement: number | null;
+    reimbursement_description: string | null;
     special_considerations: string[] | null;
     caregiver_notes: string | null;
     children: Array<{
@@ -155,13 +158,12 @@ export default function BookingDetail({
 
     const mapsUrl = buildGoogleMapsUrl();
 
-    const feeItems = [
-        { label: 'Charge to Client', value: booking.charge_to_client },
-        { label: 'Paid to Caregiver', value: booking.paid_to_caregiver },
-        { label: 'Sitterwise Cut', value: booking.sitterwise_cut },
-        { label: 'Tip', value: booking.tip },
-        { label: 'Reimbursement', value: booking.reimbursement },
-    ].filter((f) => f.value !== null && f.value !== undefined);
+    const hasHourlyRate = booking.charge_to_client_hourly != null;
+    const hasHours = booking.total_working_hour != null;
+    const hasReimbursement = booking.reimbursement != null;
+    const hasTotal = booking.charge_to_client != null;
+
+    const showFeesSection = hasHourlyRate || hasHours || hasReimbursement || hasTotal;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -443,25 +445,62 @@ export default function BookingDetail({
                                 </div>
                             </div>
 
-                            {feeItems.length > 0 && (
+                            {showFeesSection && (
                                 <div>
                                     <h2 className="text-md mb-2 font-semibold text-foreground">
                                         Fees
                                     </h2>
                                     <div className="space-y-2">
-                                        {feeItems.map((item) => (
-                                            <div
-                                                key={item.label}
-                                                className="flex items-center justify-between"
-                                            >
+                                        {hasHourlyRate && (
+                                            <div className="flex items-center justify-between">
                                                 <span className="text-sm text-muted-foreground">
-                                                    {item.label}
+                                                    Hourly Rate
                                                 </span>
                                                 <span className="text-sm font-medium text-foreground">
-                                                    {formatCurrency(item.value)}
+                                                    {formatCurrency(booking.charge_to_client_hourly)}/hr
                                                 </span>
                                             </div>
-                                        ))}
+                                        )}
+                                        {hasHours && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-muted-foreground">
+                                                    Hours
+                                                </span>
+                                                <span className="text-sm font-medium text-foreground">
+                                                    {Number(booking.total_working_hour).toFixed(1)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {hasReimbursement && (
+                                            <>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-muted-foreground">
+                                                        Reimbursement
+                                                    </span>
+                                                    <span className="text-sm font-medium text-foreground">
+                                                        {formatCurrency(booking.reimbursement)}
+                                                    </span>
+                                                </div>
+                                                {booking.reimbursement_description && (
+                                                    <p className="-mt-1 text-right text-xs text-muted-foreground">
+                                                        {booking.reimbursement_description}
+                                                    </p>
+                                                )}
+                                            </>
+                                        )}
+                                        {hasTotal && (
+                                            <>
+                                                <hr className="border-border" />
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-foreground">
+                                                        Total
+                                                    </span>
+                                                    <span className="text-sm font-bold text-foreground">
+                                                        {formatCurrency(booking.charge_to_client)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}

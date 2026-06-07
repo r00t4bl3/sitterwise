@@ -135,7 +135,6 @@ export default function ClientBookingCreate() {
         client_addresses,
         hotels,
         pet_types,
-        booking_attributes,
         sitter_preferences,
         discovery_sources,
     } = usePage().props as unknown as {
@@ -173,13 +172,6 @@ export default function ClientBookingCreate() {
             zip: string | null;
         }>;
         pet_types: Array<{ value: string; label: string }>;
-        booking_attributes: Array<{
-            id: number;
-            name: string;
-            slug: string;
-            type: string;
-            options: string[];
-        }>;
         sitter_preferences: Array<{ value: string; label: string }>;
         discovery_sources: Array<{ value: string; label: string }>;
     };
@@ -580,50 +572,6 @@ return d;
                                         </Select>
                                     </div>
                                 )}
-
-                            {form.data.location_type === 'vacation_rental' && (
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Rental Platform
-                                    </Label>
-                                    <Select
-                                        value={form.data.rental_platform}
-                                        onValueChange={(value) =>
-                                            form.setData(
-                                                'rental_platform',
-                                                value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select platform..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {booking_attributes
-                                                .filter(
-                                                    (attr) =>
-                                                        attr.slug ===
-                                                        'vacation_rental_platform',
-                                                )
-                                                .flatMap(
-                                                    (attr) =>
-                                                        attr.options || [],
-                                                )
-                                                .map((option) => (
-                                                    <SelectItem
-                                                        key={option}
-                                                        value={option}
-                                                    >
-                                                        {option
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                            option.slice(1)}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
 
                             {form.data.location_type === 'hotel' && (
                                 <div>

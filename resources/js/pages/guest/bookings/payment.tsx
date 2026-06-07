@@ -13,6 +13,11 @@ const stripePromise = loadStripe(
     import.meta.env.VITE_STRIPE_KEY || 'pk_test_placeholder',
 );
 
+interface BookingDate {
+    start_datetime: string;
+    end_datetime: string;
+}
+
 interface BookingData {
     client_first_name: string;
     client_last_name: string;
@@ -26,18 +31,21 @@ interface BookingData {
     address_state: string;
     address_zip: string;
     hotel_name: string | null;
+    dates?: BookingDate[] | null;
 }
 
 interface PaymentPageProps {
     booking: BookingData;
     token: string;
     error?: string;
+    location_types: Array<{ value: string; label: string }>;
 }
 
 export default function PaymentPage({
     booking,
     token,
     error,
+    location_types,
 }: PaymentPageProps) {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [checkoutError, setCheckoutError] = useState<string | null>(
@@ -52,10 +60,9 @@ export default function PaymentPage({
         boarding: 'Boarding',
     };
 
-    const locationLabels: Record<string, string> = {
-        home: 'My Home',
-        hotel: 'Hotel / Rental',
-    };
+    const locationLabels = Object.fromEntries(
+        location_types.map((lt) => [lt.value, lt.label]),
+    );
 
     useEffect(() => {
         const fetchSetupIntent = async () => {
@@ -126,19 +133,38 @@ export default function PaymentPage({
                                     booking.location_type}
                             </dd>
                         </div>
-                        <div className="flex justify-between">
-                            <dt className="text-muted-foreground">Date</dt>
-                            <dd className="font-medium">
-                                {formatDisplayDateInPT(booking.start_datetime)}
-                            </dd>
-                        </div>
-                        <div className="flex justify-between">
-                            <dt className="text-muted-foreground">Time</dt>
-                            <dd className="font-medium">
-                                {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
-                                {formatDisplayTimeInPT(booking.end_datetime)}
-                            </dd>
-                        </div>
+                        {booking.dates && booking.dates.length > 1 ? (
+                            <div className="flex justify-between">
+                                <dt className="text-muted-foreground">Dates</dt>
+                                <dd className="text-right font-medium">
+                                    {booking.dates.map((d, i) => (
+                                        <div key={i} className={i > 0 ? 'mt-2' : ''}>
+                                            <div>{formatDisplayDateInPT(d.start_datetime)}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {formatDisplayTimeInPT(d.start_datetime)} -{' '}
+                                                {formatDisplayTimeInPT(d.end_datetime)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </dd>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex justify-between">
+                                    <dt className="text-muted-foreground">Date</dt>
+                                    <dd className="font-medium">
+                                        {formatDisplayDateInPT(booking.start_datetime)}
+                                    </dd>
+                                </div>
+                                <div className="flex justify-between">
+                                    <dt className="text-muted-foreground">Time</dt>
+                                    <dd className="font-medium">
+                                        {formatDisplayTimeInPT(booking.start_datetime)} -{' '}
+                                        {formatDisplayTimeInPT(booking.end_datetime)}
+                                    </dd>
+                                </div>
+                            </>
+                        )}
                         <div className="flex justify-between">
                             <dt className="text-muted-foreground">Address</dt>
                             <dd className="text-right font-medium">

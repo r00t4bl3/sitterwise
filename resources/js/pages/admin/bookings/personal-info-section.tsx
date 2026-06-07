@@ -121,13 +121,6 @@ interface PersonalInfoSectionProps {
         matchIcons?: string[];
         hasBeenNotified?: boolean;
     }>;
-    booking_attributes: Array<{
-        id: number;
-        name: string;
-        slug: string;
-        type: string;
-        options: string[];
-    }>;
     hotels: Array<{
         id: number;
         name: string;
@@ -185,7 +178,6 @@ export function PersonalInfoSection({
     sitter_preferences,
     client_types,
     discovery_sources,
-    booking_attributes,
     hotels,
     hotelSuggestions,
     selectedHotelName,
@@ -901,44 +893,6 @@ export function PersonalInfoSection({
                                 No saved addresses. Please enter address below.
                             </div>
                         )}
-
-                    {form.data.location_type === 'vacation_rental' && (
-                        <div>
-                            <Label className="text-sm font-medium text-foreground">
-                                Rental Platform
-                            </Label>
-                            <Select
-                                value={form.data.rental_platform || ''}
-                                onValueChange={(value) =>
-                                    form.setData('rental_platform', value)
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select platform" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {booking_attributes
-                                        .filter(
-                                            (attr) =>
-                                                attr.slug ===
-                                                'vacation_rental_platform',
-                                        )
-                                        .flatMap((attr) => attr.options || [])
-                                        .map((option) => (
-                                            <SelectItem
-                                                key={option}
-                                                value={option}
-                                            >
-                                                {option
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    option.slice(1)}
-                                            </SelectItem>
-                                        ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
 
                     {form.data.location_type === 'event_venue' && (
                         <div className="text-sm text-muted-foreground">

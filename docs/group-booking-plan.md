@@ -28,7 +28,9 @@ Implement group booking: multi-date bookings with a `BookingGroup` header record
 - **Admin booking-sheet multi-date** — create mode: multi-date date blocks (Date 1, Date 2, ... + Add another date) with overlap detection; edit/duplicate keep single-date fields
 - 119 relevant tests pass (BookingGroup, BookingCreated, SendBookingGroup, split group, Booking - Caregiver, Booking - Admin)
 
-### 🔲 No remaining gaps — group booking implementation complete
+### ✅ All gaps closed — multi-date booking implementation complete
+
+**UI terminology:** "Group" renamed to "Multi-Day" throughout (TSX badges + email headings) — avoids confusion with group childcare invoicing or multiple clients. The concept is one client booking the same caregiver across multiple consecutive days (e.g. vacation coverage).
 
 ---
 

@@ -137,6 +137,10 @@ break;
         errors.new_children = 'Please add at least one child.';
     }
 
+    if (!formData.how_did_you_hear?.trim()) {
+        errors.how_did_you_hear = 'Please tell us how you found us.';
+    }
+
     return errors;
 }
 
@@ -185,7 +189,6 @@ export default function GuestBookingCreate() {
         location_types,
         hotels,
         pet_types,
-        booking_attributes,
         sitter_preferences,
         discovery_sources,
     } = usePage().props as unknown as {
@@ -201,13 +204,6 @@ export default function GuestBookingCreate() {
             zip: string | null;
         }>;
         pet_types: Array<{ value: string; label: string }>;
-        booking_attributes: Array<{
-            id: number;
-            name: string;
-            slug: string;
-            type: string;
-            options: string[];
-        }>;
         sitter_preferences: Array<{ value: string; label: string }>;
         discovery_sources: Array<{ value: string; label: string }>;
     };
@@ -450,7 +446,7 @@ export default function GuestBookingCreate() {
         <GuestLayout>
             <Head title="Book a Caregiver" />
             <ToasterMessage />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="mx-auto w-full max-w-[900px] flex h-full flex-1 flex-col gap-6 p-4">
                 {/* HERO */}
                 <div className="py-3 pb-5 text-center">
                     <h1 className="mb-4 font-serif text-[32px] font-medium text-foreground">
@@ -649,7 +645,7 @@ export default function GuestBookingCreate() {
                             </div>
 
                             <div>
-                                <Label>How did you find us?</Label>
+                                <Label>How did you find us? <span className="text-primary" aria-hidden="true">*</span></Label>
                                 <Select
                                     value={form.data.how_did_you_hear || ''}
                                     onValueChange={(value) =>
@@ -670,6 +666,11 @@ export default function GuestBookingCreate() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {(validationErrors.how_did_you_hear || form.errors.how_did_you_hear) && (
+                                    <InputError
+                                        message={validationErrors.how_did_you_hear || form.errors.how_did_you_hear}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
@@ -784,49 +785,6 @@ export default function GuestBookingCreate() {
                                     </div>
                                 </div>
 
-                                {form.data.location_type ===
-                                    'vacation_rental' && (
-                                    <div className="mb-[14px]">
-                                        <Label>Rental Platform</Label>
-                                        <Select
-                                            value={form.data.rental_platform}
-                                            onValueChange={(value) =>
-                                                form.setData(
-                                                    'rental_platform',
-                                                    value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select platform..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {booking_attributes
-                                                    .filter(
-                                                        (attr) =>
-                                                            attr.slug ===
-                                                            'vacation_rental_platform',
-                                                    )
-                                                    .flatMap(
-                                                        (attr) =>
-                                                            attr.options || [],
-                                                    )
-                                                    .map((option) => (
-                                                        <SelectItem
-                                                            key={option}
-                                                            value={option}
-                                                        >
-                                                            {option
-                                                                .charAt(0)
-                                                                .toUpperCase() +
-                                                                option.slice(1)}
-                                                        </SelectItem>
-                                                    ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-
                                 {form.data.location_type === 'hotel' && (
                                     <div className="mb-[14px]">
                                         <Label>Hotel</Label>
@@ -916,6 +874,32 @@ export default function GuestBookingCreate() {
                                         )}
                                     </div>
                                 )}
+
+                                {/* Address */}
+                                <div className="mt-4">
+                                    <BookingAddressFields
+                                        form={form}
+                                        isAddressLocked={isAddressLocked}
+                                        addressValue={addressValue}
+                                        errors={form.errors}
+                                        onAddressLock={(
+                                            locked,
+                                            newAddressValue,
+                                        ) => {
+                                            setIsAddressLocked(locked);
+
+                                            if (locked && newAddressValue) {
+                                                setAddressValue(
+                                                    newAddressValue,
+                                                );
+                                            }
+
+                                            if (!locked) {
+                                                setAddressValue('');
+                                            }
+                                        }}
+                                    />
+                                </div>
 
                                 {/* Date blocks */}
                                 {dates.map((dateEntry, index) => (
@@ -1038,32 +1022,6 @@ export default function GuestBookingCreate() {
                                         }
                                     />
                                 )}
-
-                                {/* Address */}
-                                <div className="mt-4">
-                                    <BookingAddressFields
-                                        form={form}
-                                        isAddressLocked={isAddressLocked}
-                                        addressValue={addressValue}
-                                        errors={form.errors}
-                                        onAddressLock={(
-                                            locked,
-                                            newAddressValue,
-                                        ) => {
-                                            setIsAddressLocked(locked);
-
-                                            if (locked && newAddressValue) {
-                                                setAddressValue(
-                                                    newAddressValue,
-                                                );
-                                            }
-
-                                            if (!locked) {
-                                                setAddressValue('');
-                                            }
-                                        }}
-                                    />
-                                </div>
 
                                 {/* Complex booking note */}
                                 <div className="mt-4 rounded-[4px] border border-[#F0C5BA] bg-blush p-[14px_16px] text-xs leading-relaxed text-foreground italic">
