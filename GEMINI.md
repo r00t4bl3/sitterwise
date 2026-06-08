@@ -266,4 +266,14 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - IMPORTANT: Always use the `search-docs` tool for detailed Laravel Fortify patterns and documentation.
 - IMPORTANT: Activate `developing-with-fortify` skill when working with Fortify authentication features.
 
+## Browser Testing
+
+- Browser tests live in `tests/Browser/`. See `docs/browser-testing-guide.md` for detailed patterns and gotchas.
+- Use `script()`-based helpers (`fillField`, `clickElement`, `loginViaJs`) instead of Playwright's `click()`/`hover()` — they time out due to actionability checks on Inertia pages.
+- Use `assertPathIs()` not `assertUrlIs()` for URL assertions (`assertUrlIs` has a full-URL-vs-path regex bug).
+- Bypass password confirmation middleware with `session()->put('auth.password_confirmed_at', time())` after `actingAs()`.
+- Many pages require `Client` or `Caregiver` models alongside `User`. Use `createClientUser()` and `createCaregiver()` helpers.
+- Full suite runs need `pkill -f playwright` between batches to clear process buildup.
+- Always run `php artisan optimize:clear` before tests — a stale config cache causes Browser tests to truncate the dev database.
+
 </laravel-boost-guidelines>
