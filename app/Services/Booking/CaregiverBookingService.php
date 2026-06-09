@@ -12,6 +12,7 @@ use App\Events\JobReserved;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -290,6 +291,10 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             foreach ($siblingIds as $id) {
                 broadcast(new JobConfirmed($id, $caregiver->id))->toOthers();
             }
+
+            Booking::whereIn('id', $siblingIds)->each(function (Booking $b) {
+                app(AvailabilityReservationService::class)->reserve($b);
+            });
 
             event(new BookingAccepted($booking));
 

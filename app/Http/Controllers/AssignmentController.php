@@ -8,6 +8,7 @@ use App\Models\CaregiverAssignment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
 
 class AssignmentController extends Controller
@@ -41,6 +42,8 @@ class AssignmentController extends Controller
             ));
         }
 
+        Artisan::queue('app:recalculate-reliability', ['--caregiver' => $caregiver->id]);
+
         return back()->with('success', 'You have backed out of this job. A notification has been sent to the team.');
     }
 
@@ -58,6 +61,8 @@ class AssignmentController extends Controller
             'excused_at' => now(),
         ]);
 
+        Artisan::queue('app:recalculate-reliability', ['--caregiver' => $assignment->caregiver_id]);
+
         return back()->with('success', 'Back-out excused.');
     }
 
@@ -68,6 +73,8 @@ class AssignmentController extends Controller
         ]);
 
         $assignment->resolve(AssignmentResolution::NoShow, $validated['note'] ?? null);
+
+        Artisan::queue('app:recalculate-reliability', ['--caregiver' => $assignment->caregiver_id]);
 
         return back()->with('success', 'No-show logged.');
     }

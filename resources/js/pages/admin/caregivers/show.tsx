@@ -31,6 +31,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Rating } from '@/components/ui/rating';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
@@ -210,6 +211,16 @@ interface Caregiver {
     application: CaregiverApplication | null;
     agreements: Agreement[];
     reference_requests: ReferenceRequest[];
+    internal_rating: InternalRating | null;
+}
+
+interface InternalRating {
+    communication_score: number | null;
+    communication_notes: string | null;
+    reliability_score: number | null;
+    reliability_override: number | null;
+    reliability_cached_at: string | null;
+    composite_score: number | null;
 }
 
 interface ActivePause {
@@ -307,7 +318,13 @@ export default function CaregiverShow() {
     const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
     const [isResuming, setIsResuming] = useState(false);
 
-    const adminRatingForm = useForm({ admin_rating: caregiver.admin_rating || 0 });
+    const adminRatingForm = useForm({
+        admin_rating: caregiver.admin_rating || 0,
+        communication_notes: caregiver.internal_rating?.communication_notes || '',
+    });
+    const reliabilityOverrideForm = useForm({
+        reliability_override: caregiver.internal_rating?.reliability_override || null as number | null,
+    });
     const statusForm = useForm<{ status: string }>({ status: caregiver.status.value });
     const passwordForm = useForm<{ new_password: string; new_password_confirmation: string }>({
         new_password: '',
@@ -323,6 +340,15 @@ export default function CaregiverShow() {
 
     const handleAdminRatingUpdate = () => {
         adminRatingForm.put(`/caregivers/${caregiver.id}/admin-rating`, { preserveScroll: true });
+    };
+
+    const handleReliabilityOverrideUpdate = () => {
+        reliabilityOverrideForm.put(`/caregivers/${caregiver.id}/reliability-override`, { preserveScroll: true });
+    };
+
+    const handleClearReliabilityOverride = () => {
+        reliabilityOverrideForm.setData('reliability_override', null);
+        reliabilityOverrideForm.put(`/caregivers/${caregiver.id}/reliability-override`, { preserveScroll: true });
     };
 
     const handleStatusUpdate = () => {
@@ -750,16 +776,98 @@ next.add(ref.id);
                         {activeTab === 'internal_rating' && (
                             <div className="border border-border bg-card p-6">
                                 <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Internal Rating</h2>
-                                <p className="mb-4 text-xs text-muted-foreground">Global rating visible to admins only.</p>
-                                <div className="space-y-6">
+                                <p className="mb-4 text-xs text-muted-foreground">Visible to admins only. Composite weights: interview (20%), communication (30%), reliability (50%). When a component is unavailable, remaining weights are re-proportioned.</p>
+                                <div className="space-y-8">
+                                    {/* Communication */}
                                     <div>
-                                        <p className="mb-2 text-sm font-medium text-foreground">Admin Rating</p>
-                                        <RatingInput value={adminRatingForm.data.admin_rating}
-                                            onChange={(val) => adminRatingForm.setData('admin_rating', val)}
-                                            error={adminRatingForm.errors.admin_rating} />
-                                        <Button onClick={handleAdminRatingUpdate} disabled={adminRatingForm.processing} variant="outline" className="mt-3">
-                                            {adminRatingForm.processing ? 'Saving...' : 'Save Admin Rating'}
-                                        </Button>
+                                        <h3 className="mb-3 text-sm font-semibold text-foreground">Communication</h3>
+                                        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+                                            <div>
+                                                <p className="mb-2 text-sm font-medium text-foreground">Score (1&ndash;5)</p>
+                                                <RatingInput value={adminRatingForm.data.admin_rating}
+                                                    onChange={(val) => adminRatingForm.setData('admin_rating', val)}
+                                                    error={adminRatingForm.errors.admin_rating} />
+                                            </div>
+                                            <div>
+                                                <p className="mb-2 text-sm font-medium text-foreground">Notes</p>
+                                                <Textarea
+                                                    value={adminRatingForm.data.communication_notes}
+                                                    onChange={(e) => adminRatingForm.setData('communication_notes', e.target.value)}
+                                                    placeholder="Optional notes about communication..."
+                                                    className="min-h-[80px] text-sm"
+                                                />
+                                            </div>
+                                            <Button onClick={handleAdminRatingUpdate} disabled={adminRatingForm.processing} variant="outline" size="sm">
+                                                {adminRatingForm.processing ? 'Saving...' : 'Save Communication Rating'}
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Reliability */}
+                                    <div>
+                                        <h3 className="mb-3 text-sm font-semibold text-foreground">Reliability</h3>
+                                        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+                                            <div className="flex items-center gap-4">
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground">Auto-calculated</p>
+                                                    <p className="text-lg font-bold text-foreground">
+                                                        {caregiver.internal_rating?.reliability_score !== null
+                                                            ? caregiver.internal_rating!.reliability_score.toFixed(2)
+                                                            : '—'}
+                                                    </p>
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {caregiver.internal_rating?.reliability_cached_at
+                                                        ? `Cached: ${caregiver.internal_rating.reliability_cached_at}`
+                                                        : 'Not yet calculated'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="mb-2 text-sm font-medium text-foreground">Override</p>
+                                                <RatingInput
+                                                    value={reliabilityOverrideForm.data.reliability_override ?? 0}
+                                                    onChange={(val) => reliabilityOverrideForm.setData('reliability_override', val)}
+                                                />
+                                                <p className="mt-1 text-xs text-muted-foreground">When set, overrides the auto-calculated score.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button onClick={handleReliabilityOverrideUpdate} disabled={reliabilityOverrideForm.processing} variant="outline" size="sm">
+                                                    {reliabilityOverrideForm.processing ? 'Saving...' : 'Save Override'}
+                                                </Button>
+                                                {caregiver.internal_rating?.reliability_override !== null && (
+                                                    <Button onClick={handleClearReliabilityOverride} disabled={reliabilityOverrideForm.processing} variant="ghost" size="sm" className="text-muted-foreground">
+                                                        Clear Override
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Composite */}
+                                    <div>
+                                        <h3 className="mb-3 text-sm font-semibold text-foreground">Composite Score</h3>
+                                        <div className="rounded-lg border border-border bg-card p-4">
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-bold text-foreground">
+                                                    {caregiver.internal_rating?.composite_score !== null
+                                                        ? caregiver.internal_rating!.composite_score.toFixed(1)
+                                                        : '—'}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">/ 100</span>
+                                            </div>
+                                            <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                                                {caregiver.internal_rating && (
+                                                    <>
+                                                        <p>Interview (20%) &mdash; from completed interview composite</p>
+                                                        <p>Communication (30%) &mdash; from manual admin rating</p>
+                                                        <p>Reliability (50%) &mdash; from auto-score or override</p>
+                                                    </>
+                                                )}
+                                                {!caregiver.internal_rating && (
+                                                    <p>No rating data yet. Save a communication rating or recalculate reliability to generate a composite.</p>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

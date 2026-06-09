@@ -10,6 +10,8 @@ import {
     Plus,
     ExternalLink,
     Link as LinkIcon,
+    MessageSquareText,
+    Star,
 } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
@@ -95,6 +97,14 @@ interface AdminDashboardProps {
         troubledAwaitingCheckout: number;
     };
     admin: {
+        reviewAnalytics?: {
+            avgRatingAll: number;
+            avgRating30d: number;
+            avgRating90d: number;
+            totalReviews: number;
+            pendingReviewsCount: number;
+            ratingDistribution: [number, number, number, number, number];
+        };
         bookingsNeedingAttention: Booking[];
         todaysBookings: Booking[];
         recentBookings: Booking[];
@@ -640,6 +650,70 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Review Analytics */}
+                        {admin.reviewAnalytics && (
+                            <div className="flex flex-col gap-4">
+                                <h3 className="text-lg leading-none font-semibold tracking-tight">
+                                    Reviews
+                                </h3>
+                                <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
+                                    <div className="p-6">
+                                        <div className="mb-4 grid grid-cols-3 gap-4">
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-foreground">
+                                                    {admin.reviewAnalytics.avgRatingAll}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Avg Rating
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-foreground">
+                                                    {admin.reviewAnalytics.totalReviews}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Total
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-foreground">
+                                                    {admin.reviewAnalytics.pendingReviewsCount}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Pending
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {[5, 4, 3, 2, 1].map((star, i) => {
+                                                const count = admin.reviewAnalytics!.ratingDistribution[5 - star];
+                                                const max = Math.max(...admin.reviewAnalytics!.ratingDistribution, 1);
+                                                const pct = (count / max) * 100;
+
+                                                return (
+                                                    <div key={star} className="flex items-center gap-2">
+                                                        <span className="flex w-4 items-center justify-center text-xs text-muted-foreground">
+                                                            {star}
+                                                        </span>
+                                                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                                            <div
+                                                                className="h-full rounded-full bg-amber-400"
+                                                                style={{ width: `${pct}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="w-5 text-right text-xs tabular-nums text-muted-foreground">
+                                                            {count}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Quick Links */}
                         {admin.quickLinks && admin.quickLinks.length > 0 && (

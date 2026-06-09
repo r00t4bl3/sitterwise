@@ -146,6 +146,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('caregivers/{caregiver}/profile-photo', [CaregiverController::class, 'updateProfilePhoto'])->name('caregivers.updateProfilePhoto');
         Route::post('caregivers/{caregiver}/password', [CaregiverController::class, 'resetPassword'])->name('caregivers.resetPassword');
         Route::put('caregivers/{caregiver}/admin-rating', [CaregiverController::class, 'updateAdminRating'])->name('caregivers.updateAdminRating');
+        Route::put('caregivers/{caregiver}/reliability-override', [CaregiverController::class, 'updateReliabilityOverride'])->name('caregivers.updateReliabilityOverride');
         Route::post('caregivers/{caregiver}/resume', [CaregiverController::class, 'resumeCaregiver'])->name('caregivers.resume');
         Route::resource('caregivers', CaregiverController::class)->except(['destroy']);
 

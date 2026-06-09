@@ -135,14 +135,11 @@ export function useBookingSheet({
             id: number;
             name: string;
             age: number | null;
-            tier: number;
-            tierLabel: string;
             matchIcons: string[];
             hasBeenNotified: boolean;
             [key: string]: unknown;
         }>
     >([]);
-
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [bookingChildren, setBookingChildren] = useState<
         Array<{
@@ -268,8 +265,7 @@ export function useBookingSheet({
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -282,16 +278,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -354,16 +347,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -381,8 +371,6 @@ export function useBookingSheet({
                 id: c.id,
                 name: c.name,
                 age: null,
-                tier: 6,
-                tierLabel: 'Available',
                 matchIcons: [],
                 hasBeenNotified: false,
             })) as unknown as Array<{
@@ -457,8 +445,7 @@ export function useBookingSheet({
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -471,16 +458,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -564,16 +548,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -728,16 +709,13 @@ export function useBookingSheet({
                 setCaregiverSuggestions([{
                     ...caregiver,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 }] as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;

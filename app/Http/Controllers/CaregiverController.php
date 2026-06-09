@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\RecalculateReliability;
 use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
@@ -9,7 +10,6 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
 use App\Http\Requests\StoreCaregiverRequest;
-use App\Http\Requests\UpdateCaregiverProfilePhotoRequest;
 use App\Http\Requests\UpdateCaregiverRequest;
 use App\Http\Resources\CaregiverResource;
 use App\Models\AttributeDefinition;
@@ -121,7 +121,7 @@ class CaregiverController extends Controller
 
     public function show(Caregiver $caregiver)
     {
-        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'application', 'agreements', 'referenceRequests']);
+        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'application', 'agreements', 'referenceRequests', 'internalRating']);
 
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,
@@ -447,14 +447,58 @@ class CaregiverController extends Controller
     public function updateAdminRating(Request $request, Caregiver $caregiver): RedirectResponse
     {
         $validated = $request->validate([
-            'admin_rating' => 'required|numeric|min:1|max:5',
+            'admin_rating' => 'nullable|numeric|min:1|max:5',
+            'communication_notes' => 'nullable|string|max:5000',
         ]);
 
-        $caregiver->update([
-            'admin_rating' => round($validated['admin_rating'], 2),
-        ]);
+        $updateData = [];
+        $internalData = [];
+
+        if (isset($validated['admin_rating'])) {
+            $updateData['admin_rating'] = round($validated['admin_rating'], 2);
+            $internalData['communication_score'] = round($validated['admin_rating'], 2);
+            $internalData['communication_updated_at'] = now();
+        }
+
+        if (isset($validated['communication_notes'])) {
+            $internalData['communication_notes'] = $validated['communication_notes'];
+        }
+
+        if (! empty($updateData)) {
+            $caregiver->update($updateData);
+        }
+
+        if (! empty($internalData)) {
+            $caregiver->internalRating()->updateOrCreate([], $internalData);
+        }
 
         return back()->with('success', 'Admin rating updated successfully');
+    }
+
+    public function updateReliabilityOverride(Request $request, Caregiver $caregiver): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reliability_override' => 'nullable|numeric|min:0|max:5',
+        ]);
+
+        $rating = $caregiver->internalRating()->firstOrNew([]);
+
+        if (isset($validated['reliability_override'])) {
+            $rating->reliability_override = round($validated['reliability_override'], 2);
+        } else {
+            $rating->reliability_override = null;
+        }
+
+        $rating->composite_score = (new RecalculateReliability)->handleSingle($caregiver, $rating);
+
+        $rating->save();
+
+        return back()->with(
+            'success',
+            isset($validated['reliability_override'])
+                ? 'Reliability override saved. Auto-score will be used when cleared.'
+                : 'Reliability override cleared. Using auto-calculated score.',
+        );
     }
 
     public function resumeCaregiver(Caregiver $caregiver): RedirectResponse

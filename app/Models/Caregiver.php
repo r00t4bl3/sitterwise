@@ -265,6 +265,11 @@ class Caregiver extends Model
         return $this->hasMany(CaregiverAssignment::class);
     }
 
+    public function internalRating(): HasOne
+    {
+        return $this->hasOne(CaregiverInternalRating::class);
+    }
+
     public function assignedBookings(): BelongsToMany
     {
         return $this->belongsToMany(Booking::class, 'caregiver_assignments')

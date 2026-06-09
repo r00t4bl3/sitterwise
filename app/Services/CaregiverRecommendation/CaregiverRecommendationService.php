@@ -4,6 +4,7 @@ namespace App\Services\CaregiverRecommendation;
 
 use App\Enums\CaregiverStatus;
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -11,22 +12,15 @@ use Illuminate\Support\Collection;
 
 class CaregiverRecommendationService
 {
-    protected const TIER_LABELS = [
-        1 => 'Previous Caregiver',
-        2 => 'Excellent Match',
-        3 => 'Good Match',
-        4 => 'Fair Match',
-        5 => 'Potential Match',
-        6 => 'Available',
-    ];
-
-    protected const TIER_MATCH_ICONS = [
-        1 => ['previous_work'],
-        2 => ['available', 'specialty', 'location_preferred'],
-        3 => ['specialty', 'location_willing'],
-        4 => ['recent_work', 'specialty', 'location_preferred'],
-        5 => ['recent_work'],
-        6 => [],
+    protected const SCORE_WEIGHTS = [
+        'available_and_favorited' => 100000,
+        'available' => 10000,
+        'specialty' => 1000,
+        'preferred_location' => 100,
+        'willing_location' => 10,
+        'recent_work_3mo' => 3,
+        'previous_work' => 2,
+        'recent_work_6mo' => 1,
     ];
 
     public function __construct(
@@ -34,28 +28,40 @@ class CaregiverRecommendationService
     ) {}
 
     /**
-     * Get recommended caregivers for a client/booking using tiered ranking.
+     * Get recommended caregivers for a client/booking using weighted scoring.
      *
-     * Each caregiver appears in exactly one tier — the highest they qualify for.
-     * All tiers enforce the default filter: active status, not blocked, not paused,
+     * Each caregiver is scored based on matched criteria (availability, specialty,
+     * location fit, previous work, favorited). Sorted by score descending.
+     * All results enforce the default filter: active status, not blocked, not paused,
      * and has posted availability.
      */
     public function getRecommendedCaregivers(
         Client $client,
         ?Booking $booking = null,
-        int $limit = 20
+        int $limit = 20,
+        array $dateRanges = [],
     ): Collection {
         $serviceType = $booking?->service_type;
-        $startDate = $booking?->start_datetime;
-        $endDate = $booking?->end_datetime;
+
+        if (empty($dateRanges) && $booking?->start_datetime && $booking?->end_datetime) {
+            $dateRanges = [
+                ['start' => $booking->start_datetime, 'end' => $booking->end_datetime],
+            ];
+        }
 
         $bookingLocationId = $this->resolveBookingLocationId($booking);
+
+        $sitterPreferences = $booking?->sitter_preferences ?? $client->sitter_preferences ?? [];
+        $favoriteCaregiverIds = $client->relationLoaded('favoriteCaregivers')
+            ? $client->favoriteCaregivers->pluck('id')
+            : $client->favoriteCaregivers()->pluck('caregivers.id');
 
         $allCaregivers = Caregiver::with([
             'certifications',
             'specialtyTypes',
             'availabilities',
             'locations',
+            'attributes',
         ])
             ->where('status', CaregiverStatus::Active->value)
             ->whereDoesntHave('blockedClients', fn ($q) => $q->where('client_id', $client->id))
@@ -75,41 +81,42 @@ class CaregiverRecommendationService
             $client,
             $booking,
             $serviceType,
-            $startDate,
-            $endDate,
+            $dateRanges,
             $bookingLocationId,
             $previousWorkCaregiverIds,
             $recentWork3moIds,
             $recentWork6moIds,
+            $sitterPreferences,
+            $favoriteCaregiverIds,
         ) {
             $attrs = $this->computeAttributes(
                 $caregiver,
                 $client,
                 $serviceType,
-                $startDate,
-                $endDate,
+                $dateRanges,
                 $bookingLocationId,
                 $previousWorkCaregiverIds,
                 $recentWork3moIds,
                 $recentWork6moIds,
+                $sitterPreferences,
+                $favoriteCaregiverIds,
             );
 
-            $tier = $this->assignTier($attrs);
+            $score = $this->computeScore($attrs);
 
             return [
                 'id' => $caregiver->id,
                 'name' => $caregiver->first_name.' '.$caregiver->last_name,
                 'age' => $caregiver->date_of_birth?->age,
-                'tier' => $tier,
-                'tierLabel' => static::TIER_LABELS[$tier] ?? 'Available',
-                'matchIcons' => static::TIER_MATCH_ICONS[$tier] ?? [],
+                'score' => $score,
+                'matchIcons' => $this->getMatchIcons($attrs),
                 'hasBeenNotified' => $this->hasBeenNotified($caregiver, $booking),
             ];
         });
 
         return $scored
             ->sortBy([
-                ['tier', 'asc'],
+                ['score', 'desc'],
                 ['name', 'asc'],
             ])
             ->take($limit)
@@ -138,26 +145,29 @@ class CaregiverRecommendationService
     }
 
     /**
-     * Compute boolean attributes for a caregiver relevant to tier assignment.
+     * Compute boolean attributes for a caregiver relevant to scoring.
      */
     protected function computeAttributes(
         Caregiver $caregiver,
         Client $client,
         ?string $serviceType,
-        mixed $startDate,
-        mixed $endDate,
+        array $dateRanges,
         ?int $bookingLocationId,
         Collection $previousWorkCaregiverIds,
         Collection $recentWork3moIds,
         Collection $recentWork6moIds,
+        array $sitterPreferences = [],
+        Collection $favoriteCaregiverIds = new Collection,
     ): array {
         $previousWork = $previousWorkCaregiverIds->contains($caregiver->id);
-        $available = $this->hasAvailabilityForBooking($caregiver, $startDate, $endDate);
-        $specialty = $this->matchesServiceType($caregiver, $serviceType);
+        $available = $this->hasAvailabilityForBooking($caregiver, $dateRanges);
+        $specialty = $this->matchesServiceType($caregiver, $serviceType, $sitterPreferences)
+            || $this->matchesSitterPreferences($caregiver, $sitterPreferences);
         $preferredLocation = $this->hasPreferredLocation($caregiver, $bookingLocationId);
         $willingLocation = $this->hasWillingLocation($caregiver, $bookingLocationId);
         $recentWork3mo = $recentWork3moIds->contains($caregiver->id);
         $recentWork6mo = $recentWork6moIds->contains($caregiver->id);
+        $favorited = $favoriteCaregiverIds->contains($caregiver->id);
 
         return compact(
             'previousWork',
@@ -167,42 +177,88 @@ class CaregiverRecommendationService
             'willingLocation',
             'recentWork3mo',
             'recentWork6mo',
+            'favorited',
         );
     }
 
     /**
-     * Assign the highest tier a caregiver qualifies for.
-     * Priority order: 1 (highest) → 6 (lowest).
+     * Compute a weighted score for a caregiver based on matched attributes.
      */
-    protected function assignTier(array $attrs): int
+    protected function computeScore(array $attrs): int
     {
-        // Tier 1: Previously worked with this client
+        $score = 0;
+
+        if ($attrs['available'] && $attrs['favorited']) {
+            $score += static::SCORE_WEIGHTS['available_and_favorited'];
+        }
+
+        if ($attrs['available']) {
+            $score += static::SCORE_WEIGHTS['available'];
+        }
+
+        if ($attrs['specialty']) {
+            $score += static::SCORE_WEIGHTS['specialty'];
+        }
+
+        if ($attrs['preferredLocation']) {
+            $score += static::SCORE_WEIGHTS['preferred_location'];
+        }
+
+        if ($attrs['willingLocation']) {
+            $score += static::SCORE_WEIGHTS['willing_location'];
+        }
+
+        if ($attrs['recentWork3mo']) {
+            $score += static::SCORE_WEIGHTS['recent_work_3mo'];
+        }
+
         if ($attrs['previousWork']) {
-            return 1;
+            $score += static::SCORE_WEIGHTS['previous_work'];
         }
 
-        // Tier 2: Available + specialty + preferred location
-        if ($attrs['available'] && $attrs['specialty'] && $attrs['preferredLocation']) {
-            return 2;
+        if ($attrs['recentWork6mo']) {
+            $score += static::SCORE_WEIGHTS['recent_work_6mo'];
         }
 
-        // Tier 3: Adjacent fit — willing to go there, not based there
-        if ($attrs['specialty'] && $attrs['willingLocation'] && ! $attrs['preferredLocation']) {
-            return 3;
+        return $score;
+    }
+
+    /**
+     * Build match icons array from matched attributes.
+     */
+    protected function getMatchIcons(array $attrs): array
+    {
+        $icons = [];
+
+        if ($attrs['favorited']) {
+            $icons[] = 'favorited';
         }
 
-        // Tier 4: Recent work (3mo) + specialty + preferred location
-        if ($attrs['recentWork3mo'] && $attrs['specialty'] && $attrs['preferredLocation']) {
-            return 4;
+        if ($attrs['available']) {
+            $icons[] = 'available';
         }
 
-        // Tier 5: Recent work (6mo) + any fit (specialty or location)
-        if ($attrs['recentWork6mo'] && ($attrs['specialty'] || $attrs['preferredLocation'] || $attrs['willingLocation'])) {
-            return 5;
+        if ($attrs['specialty']) {
+            $icons[] = 'specialty';
         }
 
-        // Tier 6: All remaining (default filter already applied)
-        return 6;
+        if ($attrs['preferredLocation']) {
+            $icons[] = 'location_preferred';
+        }
+
+        if ($attrs['willingLocation']) {
+            $icons[] = 'location_willing';
+        }
+
+        if ($attrs['recentWork3mo'] || $attrs['recentWork6mo']) {
+            $icons[] = 'recent_work';
+        }
+
+        if ($attrs['previousWork']) {
+            $icons[] = 'previous_work';
+        }
+
+        return $icons;
     }
 
     /**
@@ -246,26 +302,50 @@ class CaregiverRecommendationService
     }
 
     /**
-     * Check if caregiver has availability covering the booking dates/times.
+     * Check if caregiver has availability covering all of the given date ranges.
+     *
+     * Each range is an associative array with 'start' and 'end' keys (DateTime|string).
+     * All unique dates across all ranges are checked — the caregiver must have
+     * availability for every required date.
      */
     protected function hasAvailabilityForBooking(
         Caregiver $caregiver,
-        mixed $startDate,
-        mixed $endDate
+        array $dateRanges,
     ): bool {
-        if (! $startDate || ! $endDate) {
+        if (empty($dateRanges)) {
             return false;
         }
 
-        $start = new \DateTime($startDate);
-        $end = new \DateTime($endDate);
+        $allDateKeys = [];
+        $requiredSlotsPerDate = [];
 
-        $bookingDates = [];
-        $current = clone $start;
-        while ($current <= $end) {
-            $bookingDates[] = $current->format('Y-m-d');
-            $current->modify('+1 day');
+        foreach ($dateRanges as $range) {
+            $start = new \DateTime($range['start']);
+            $end = new \DateTime($range['end']);
+
+            $current = clone $start;
+            while ($current <= $end) {
+                $dateKey = $current->format('Y-m-d');
+                $allDateKeys[$dateKey] = true;
+                $current->modify('+1 day');
+            }
+
+            $rangeSlots = $this->getRequiredTimeSlots($range['start'], $range['end']);
+            foreach ($rangeSlots as $dateKey => $slots) {
+                if (! isset($requiredSlotsPerDate[$dateKey])) {
+                    $requiredSlotsPerDate[$dateKey] = [];
+                }
+                $requiredSlotsPerDate[$dateKey] = array_unique(
+                    array_merge($requiredSlotsPerDate[$dateKey], $slots)
+                );
+            }
         }
+
+        if (empty($allDateKeys)) {
+            return false;
+        }
+
+        $bookingDates = array_keys($allDateKeys);
 
         $availabilities = $caregiver->availabilities()
             ->where(function ($query) use ($bookingDates) {
@@ -278,8 +358,6 @@ class CaregiverRecommendationService
         if ($availabilities->isEmpty()) {
             return false;
         }
-
-        $requiredSlotsPerDate = $this->getRequiredTimeSlots($startDate, $endDate);
 
         foreach ($bookingDates as $date) {
             $availability = $availabilities->first(function ($avail) use ($date) {
@@ -306,7 +384,13 @@ class CaregiverRecommendationService
                 continue;
             }
 
-            $coveredSlots = array_intersect($requiredSlots, $availableSlots);
+            $usedSlots = $availability->usedSlots()
+                ->whereIn('date', [$date])
+                ->pluck('time_slot')
+                ->toArray();
+
+            $freeSlots = array_diff($availableSlots, $usedSlots);
+            $coveredSlots = array_intersect($requiredSlots, $freeSlots);
 
             if (count($coveredSlots) < count($requiredSlots)) {
                 return false;
@@ -359,27 +443,55 @@ class CaregiverRecommendationService
     }
 
     /**
-     * Check if caregiver's specialties match the service type.
+     * Check if caregiver's age-group specialties match the service type or baby_specialist preference.
      */
-    protected function matchesServiceType(Caregiver $caregiver, ?string $serviceType): bool
+    protected function matchesServiceType(Caregiver $caregiver, ?string $serviceType, array $sitterPreferences = []): bool
     {
-        if (! $serviceType) {
-            return false;
-        }
-
         $specialtyMap = [
             ServiceType::Babysitter->value => ['Babies', 'Toddlers', 'Preschool', 'School Age'],
-            ServiceType::CompanionCare->value => ['Special Needs'],
             ServiceType::GroupChildcareInvoiced->value => ['Babies', 'Toddlers', 'Preschool', 'School Age'],
         ];
 
         $expectedSpecialties = $specialtyMap[$serviceType] ?? [];
 
-        if (empty($expectedSpecialties)) {
-            return false;
+        if (in_array(SitterPreference::BabySpecialist->value, $sitterPreferences)) {
+            $expectedSpecialties[] = 'Babies';
         }
 
-        return $caregiver->specialtyTypes->pluck('name')->intersect($expectedSpecialties)->isNotEmpty();
+        if (! empty($expectedSpecialties)) {
+            return $caregiver->specialtyTypes->pluck('name')
+                ->intersect(array_unique($expectedSpecialties))
+                ->isNotEmpty();
+        }
+
+        if ($serviceType === ServiceType::CompanionCare->value) {
+            return $caregiver->attributes
+                ->firstWhere('slug', 'special_needs')?->pivot->value === 'true';
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if caregiver's EAV attributes match sitter preferences.
+     */
+    protected function matchesSitterPreferences(Caregiver $caregiver, array $sitterPreferences): bool
+    {
+        $preferenceAttributeMap = [
+            SitterPreference::SpecialNeedsCare->value => 'special_needs',
+        ];
+
+        foreach ($sitterPreferences as $preference) {
+            $attributeSlug = $preferenceAttributeMap[$preference] ?? null;
+            if ($attributeSlug) {
+                $attribute = $caregiver->attributes->firstWhere('slug', $attributeSlug);
+                if ($attribute && $attribute->pivot->value === 'true') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

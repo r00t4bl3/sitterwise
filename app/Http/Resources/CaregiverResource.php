@@ -41,6 +41,14 @@ class CaregiverResource extends JsonResource
             ],
             'rating' => $this->rating ? (float) $this->rating : null,
             'admin_rating' => $this->admin_rating ? (float) $this->admin_rating : null,
+            'internal_rating' => $this->relationLoaded('internalRating') && $this->internalRating ? [
+                'communication_score' => $this->internalRating->communication_score ? (float) $this->internalRating->communication_score : null,
+                'communication_notes' => $this->internalRating->communication_notes,
+                'reliability_score' => $this->internalRating->reliability_score ? (float) $this->internalRating->reliability_score : null,
+                'reliability_override' => $this->internalRating->reliability_override ? (float) $this->internalRating->reliability_override : null,
+                'reliability_cached_at' => $this->internalRating->reliability_cached_at?->format('Y-m-d'),
+                'composite_score' => $this->internalRating->composite_score ? (float) $this->internalRating->composite_score : null,
+            ] : null,
             'biography' => $this->biography,
             'notes' => $this->notes,
             'status' => $this->status ? [

@@ -153,7 +153,7 @@ class BookingGroup extends Model
                 'status' => $booking->status,
                 'caregiver_name' => $booking->caregiver?->first_name.' '.$booking->caregiver?->last_name,
                 'review_url' => $booking->status === 'completed' || $booking->status === 'paid'
-                    ? URL::signedRoute('review.create', ['booking' => $booking->ulid])
+                    ? URL::temporarySignedRoute('review.create', now()->addDays(14), ['booking' => $booking->ulid])
                     : null,
             ])->toArray(),
         ];

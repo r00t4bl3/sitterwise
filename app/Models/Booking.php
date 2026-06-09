@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
+use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -209,7 +210,32 @@ class Booking extends Model
     protected static function booted(): void
     {
         static::saved(function (Booking $booking) {
-            if ($booking->wasChanged('caregiver_id') && $booking->caregiver_id) {
+            $reservationService = app(AvailabilityReservationService::class);
+
+            $caregiverChanged = $booking->wasRecentlyCreated || $booking->wasChanged('caregiver_id');
+
+            if ($caregiverChanged) {
+                if ($booking->getOriginal('caregiver_id')) {
+                    $reservationService->release($booking);
+                }
+
+                if ($booking->caregiver_id) {
+                    $reservationService->reserve($booking);
+                }
+            }
+
+            if ($booking->wasChanged('status') && $booking->status === 'cancelled' && $booking->caregiver_id) {
+                $reservationService->release($booking);
+            }
+
+            if ($booking->caregiver_id && (
+                $booking->wasChanged('start_datetime') || $booking->wasChanged('end_datetime')
+            )) {
+                $reservationService->release($booking);
+                $reservationService->reserve($booking);
+            }
+
+            if ($caregiverChanged && $booking->caregiver_id) {
                 $booking->assignments()->firstOrCreate(
                     ['caregiver_id' => $booking->caregiver_id],
                     ['assigned_at' => now()],
@@ -456,7 +482,7 @@ class Booking extends Model
             'cg_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'bio_link' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'service_date' => $start->format('m/d/Y'),
-            'review_url' => URL::signedRoute('review.create', ['booking' => $this->ulid]),
+            'review_url' => URL::temporarySignedRoute('review.create', now()->addDays(14), ['booking' => $this->ulid]),
             'hotel_fee' => $this->hotel_fee ?? 0.00,
             'reimbursement_amount' => $this->reimbursement ?? 0.00,
             'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',

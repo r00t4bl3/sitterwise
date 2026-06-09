@@ -6,6 +6,7 @@ interface Availability {
     date: string;
     time_slots: string[];
     specific_time: string | null;
+    booked_slots?: string[];
 }
 
 interface AvailabilityCalendarProps {
@@ -158,6 +159,15 @@ export function AvailabilityCalendar({
                     const hasAvailability =
                         availability && availability.time_slots.length > 0;
 
+                    const bookedSlots = availability?.booked_slots ?? [];
+                    const availableSlots = hasAvailability
+                        ? availability.time_slots.filter(
+                              (s) => !bookedSlots.includes(s),
+                          )
+                        : [];
+                    const isFullyBooked =
+                        hasAvailability && availableSlots.length === 0;
+
                     const isCurrentMonth = monthOffset === 0;
 
                     return (
@@ -167,7 +177,7 @@ export function AvailabilityCalendar({
                                 isCurrentMonth
                                     ? 'border-border bg-background'
                                     : 'border-dashed border-gray-300 bg-white'
-                            } ${isToday ? 'bg-blush' : ''} ${!isPast && !isToday ? 'group relative cursor-pointer' : ''}`}
+                            } ${isToday ? 'bg-blush' : ''} ${!isPast && !isToday && !isFullyBooked ? 'group relative cursor-pointer' : ''} ${isFullyBooked ? 'opacity-60' : ''}`}
                         >
                             <span
                                 className={`text-sm ${
@@ -187,14 +197,19 @@ export function AvailabilityCalendar({
                                         <div className="flex items-center gap-0.5">
                                             {getSortedTimeSlots(
                                                 availability.time_slots,
-                                            ).map((slot) => (
-                                                <span
-                                                    key={slot}
-                                                    className="flex items-center"
-                                                >
-                                                    {getIcon(slot)}
-                                                </span>
-                                            ))}
+                                            ).map((slot) => {
+                                                const isBooked =
+                                                    bookedSlots.includes(slot);
+
+                                                return (
+                                                    <span
+                                                        key={slot}
+                                                        className={`flex items-center ${isBooked ? 'opacity-30 grayscale' : ''}`}
+                                                    >
+                                                        {getIcon(slot)}
+                                                    </span>
+                                                );
+                                            })}
                                         </div>
                                         {availability.specific_time && (
                                             <span className="truncate text-xs text-muted-foreground">
@@ -203,7 +218,7 @@ export function AvailabilityCalendar({
                                         )}
                                     </div>
                                 ) : null)}
-                            {!isPast && !isToday && (
+                            {!isPast && !isToday && !isFullyBooked && (
                                 <button
                                     onClick={() => onDateClick(dateStr)}
                                     className={`absolute inset-0 flex items-center justify-center rounded-[3px] text-xs font-medium transition ${

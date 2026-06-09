@@ -42,6 +42,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
             ],
+            'how_did_you_hear' => 'search_engine',
         ];
 
         $response = $this->post(route('guest.bookings.store'), $guestData);

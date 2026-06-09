@@ -28,7 +28,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
                 'specialtyTypes',
                 'certifications',
                 'availabilities' => function ($q) {
-                    $q->inTheFuture()->orderBy('date');
+                    $q->with('usedSlots')->inTheFuture()->orderBy('date');
                 },
             ]);
 
@@ -76,6 +76,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
     {
         $caregiver = Caregiver::findOrFail($id);
         $availabilities = $caregiver->availabilities()
+            ->with('usedSlots')
             ->inTheFuture()
             ->orderBy('date')
             ->limit(32)
@@ -86,6 +87,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
                     'date' => $availability->date->format('Y-m-d'),
                     'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
+                    'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
                 ];
             });
 

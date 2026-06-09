@@ -30,6 +30,7 @@ use App\Models\Hotel;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -863,8 +864,17 @@ class AdminBookingService implements BookingServiceInterface
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
 
+        $dateRanges = [];
+
         if ($bookingId = $validated['booking_id'] ?? null) {
-            $booking = Booking::find($bookingId);
+            $booking = Booking::with('bookingGroup.bookings')->find($bookingId);
+
+            if ($booking && $booking->bookingGroup && $booking->bookingGroup->bookings->isNotEmpty()) {
+                $dateRanges = $booking->bookingGroup->bookings
+                    ->map(fn (Booking $b) => ['start' => $b->start_datetime, 'end' => $b->end_datetime])
+                    ->values()
+                    ->toArray();
+            }
         } else {
             // Create a mock booking if dates are provided
             $booking = null;
@@ -880,7 +890,8 @@ class AdminBookingService implements BookingServiceInterface
         $recommended = $this->recommendationService->getRecommendedCaregivers(
             $client,
             $booking,
-            20
+            20,
+            $dateRanges
         );
 
         return response()->json($recommended);
@@ -925,9 +936,18 @@ class AdminBookingService implements BookingServiceInterface
         $firstBooking = null;
 
         DB::transaction(function () use ($group, $extractedIds, &$firstBooking) {
-            Booking::whereIn('id', $extractedIds)
+            $extractedBookings = Booking::whereIn('id', $extractedIds)
                 ->lockForUpdate()
-                ->get();
+                ->get()
+                ->keyBy('id');
+
+            $reservationService = app(AvailabilityReservationService::class);
+
+            foreach ($extractedBookings as $extractedBooking) {
+                if ($extractedBooking->caregiver_id) {
+                    $reservationService->release($extractedBooking);
+                }
+            }
 
             $newGroup = $group->replicate();
             $newGroup->submitted_at = now();

@@ -51,6 +51,7 @@ interface Availability {
     date: string;
     time_slots: string[];
     specific_time: string | null;
+    booked_slots?: string[];
 }
 
 interface Caregiver {
@@ -430,6 +431,9 @@ export default function AvailabilitiesIndex() {
                                                             dh.isoDate
                                                         ];
 
+                                                    const bookedSlots =
+                                                        av?.booked_slots ?? [];
+
                                                     return (
                                                         <td
                                                             key={dh.isoDate}
@@ -451,18 +455,25 @@ export default function AvailabilitiesIndex() {
                                                                     {av.time_slots.map(
                                                                         (
                                                                             slot,
-                                                                        ) => (
-                                                                            <span
-                                                                                key={
-                                                                                    slot
-                                                                                }
-                                                                                className="flex items-center"
-                                                                            >
-                                                                                {getIcon(
+                                                                        ) => {
+                                                                            const isBooked =
+                                                                                bookedSlots.includes(
                                                                                     slot,
-                                                                                )}
-                                                                            </span>
-                                                                        ),
+                                                                                );
+
+                                                                            return (
+                                                                                <span
+                                                                                    key={
+                                                                                        slot
+                                                                                    }
+                                                                                    className={`flex items-center ${isBooked ? 'opacity-30 grayscale' : ''}`}
+                                                                                >
+                                                                                    {getIcon(
+                                                                                        slot,
+                                                                                    )}
+                                                                                </span>
+                                                                            );
+                                                                        },
                                                                     )}
                                                                 </div>
                                                             ) : (

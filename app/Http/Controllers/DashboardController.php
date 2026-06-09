@@ -15,6 +15,7 @@ use App\Enums\TimeSlot;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
+use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
 use App\Models\Client;
@@ -231,6 +232,26 @@ class DashboardController extends Controller
                 'stuckReferencesCount' => ReferenceRequest::pending()
                     ->where('created_at', '<', now()->subDays(7))
                     ->count(),
+                'reviewAnalytics' => [
+                    'avgRatingAll' => round(BookingRating::where('ratable_type', Caregiver::class)->avg('rating') ?? 0, 2),
+                    'avgRating30d' => round(BookingRating::where('ratable_type', Caregiver::class)
+                        ->where('created_at', '>=', now()->subDays(30))
+                        ->avg('rating') ?? 0, 2),
+                    'avgRating90d' => round(BookingRating::where('ratable_type', Caregiver::class)
+                        ->where('created_at', '>=', now()->subDays(90))
+                        ->avg('rating') ?? 0, 2),
+                    'totalReviews' => BookingRating::where('ratable_type', Caregiver::class)->count(),
+                    'pendingReviewsCount' => Booking::whereIn('status', $completedStatuses)
+                        ->whereDoesntHave('ratings', fn ($q) => $q->where('ratable_type', Caregiver::class))
+                        ->count(),
+                    'ratingDistribution' => [
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 1)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 2)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 3)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 4)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 5)->count(),
+                    ],
+                ],
                 'needsAttention' => [
                     // [
                     //     'key' => 'no_shows',
@@ -317,6 +338,7 @@ class DashboardController extends Controller
 
             if ($caregiver) {
                 $availabilities = $caregiver->availabilities()
+                    ->with('usedSlots')
                     ->inTheFuture()
                     ->orderBy('date')
                     ->limit(32)
@@ -327,6 +349,7 @@ class DashboardController extends Controller
                             'date' => $availability->date->format('Y-m-d'),
                             'time_slots' => $availability->time_slots,
                             'specific_time' => $availability->specific_time,
+                            'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
                         ];
                     });
 

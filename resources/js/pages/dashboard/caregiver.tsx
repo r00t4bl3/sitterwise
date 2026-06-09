@@ -55,6 +55,7 @@ interface Availability {
     date: string;
     time_slots: string[];
     specific_time: string | null;
+    booked_slots?: string[];
 }
 
 interface Booking {

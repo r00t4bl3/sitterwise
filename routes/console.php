@@ -28,3 +28,9 @@ Schedule::command('app:archive-long-term-inactive')->daily();
 
 // Check for caregivers with 3+ late arrivals in 60 days
 Schedule::command('app:check-late-arrivals')->dailyAt('11:00');
+
+// Recalculate caregiver reliability scores daily
+Schedule::command('app:recalculate-reliability')->dailyAt('02:00');
+
+// Send review reminders for completed bookings (every 6 hours)
+Schedule::command('app:send-review-reminders')->everySixHours();

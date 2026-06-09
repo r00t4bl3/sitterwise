@@ -72,8 +72,6 @@ interface BookingDetailsSectionProps {
     caregiverSuggestions: Array<{
         id: number;
         name: string;
-        tier?: number;
-        tierLabel?: string;
         matchIcons?: string[];
         [key: string]: unknown;
     }>;

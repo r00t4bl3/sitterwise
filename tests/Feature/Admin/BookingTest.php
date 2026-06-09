@@ -499,7 +499,7 @@ describe('Booking - Admin', function () {
         $response->assertSuccessful();
         $response->assertJsonCount(3);
         $response->assertJsonStructure([
-            '*' => ['id', 'name', 'age', 'tier', 'tierLabel', 'matchIcons', 'hasBeenNotified'],
+            '*' => ['id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified'],
         ]);
     });
 

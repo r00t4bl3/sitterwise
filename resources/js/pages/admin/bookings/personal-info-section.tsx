@@ -6,6 +6,7 @@ import {
     CalendarCheck,
     ChevronDown,
     ChevronUp,
+    Heart,
     History,
     MapPin,
     MapPinCheckInside,
@@ -116,8 +117,6 @@ interface PersonalInfoSectionProps {
         id: number;
         name: string;
         age?: number | null;
-        tier?: number;
-        tierLabel?: string;
         matchIcons?: string[];
         hasBeenNotified?: boolean;
     }>;
@@ -199,6 +198,8 @@ export function PersonalInfoSection({
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
 
     const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
+
+    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>('all');
 
     const notifyForm = useForm({
         caregiver_ids: [] as number[],
@@ -319,46 +320,98 @@ export function PersonalInfoSection({
                                 <SheetDescription>
                                     Select caregivers to notify about this
                                     booking.
-                                    <Button
-                                        variant="link"
-                                        size="sm"
-                                        onClick={() => {
-                                            notifyForm.setData(
-                                                'caregiver_ids',
-                                                notifyForm.data.caregiver_ids
-                                                    .length ===
-                                                    caregiverSuggestions.length
-                                                    ? []
-                                                    : caregiverSuggestions.map(
-                                                          (cg) => cg.id,
-                                                      ),
-                                            );
-                                        }}
-                                    >
-                                        {notifyForm.data.caregiver_ids
-                                            .length ===
-                                        caregiverSuggestions.length
-                                            ? 'Deselect All'
-                                            : 'Select All'}
-                                    </Button>
                                 </SheetDescription>
                             </div>
                         </div>
                     </SheetHeader>
 
+                    <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+                        <button
+                            type="button"
+                            onClick={() => setAgeFilter('all')}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                ageFilter === 'all'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                        >
+                            All
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAgeFilter('younger')}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                ageFilter === 'younger'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                        >
+                            Younger (18-34)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAgeFilter('seasoned')}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                ageFilter === 'seasoned'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                        >
+                            Seasoned (35+)
+                        </button>
+                        <div className="ml-auto">
+                            <Button
+                                variant="link"
+                                size="sm"
+                                onClick={() => {
+                                    const filtered = caregiverSuggestions.filter(
+                                        (cg) => {
+                                            if (ageFilter === 'all') return true;
+                                            if (cg.age == null) return true;
+                                            return ageFilter === 'younger'
+                                                ? cg.age < 35
+                                                : cg.age >= 35;
+                                        },
+                                    );
+                                    notifyForm.setData(
+                                        'caregiver_ids',
+                                        notifyForm.data.caregiver_ids
+                                            .length === filtered.length
+                                            ? []
+                                            : filtered.map((cg) => cg.id),
+                                    );
+                                }}
+                            >
+                                {notifyForm.data.caregiver_ids.length ===
+                                caregiverSuggestions.filter((cg) => {
+                                    if (ageFilter === 'all') return true;
+                                    if (cg.age == null) return true;
+                                    return ageFilter === 'younger'
+                                        ? cg.age < 35
+                                        : cg.age >= 35;
+                                }).length
+                                    ? 'Deselect All'
+                                    : 'Select All'}
+                            </Button>
+                        </div>
+                    </div>
+
                     <div className="flex-1 space-y-2 overflow-y-auto px-4">
-                        {caregiverSuggestions.map((caregiver) => {
-                            const hasBeenNotified = (caregiver as any)
-                                .hasBeenNotified;
-                            const matchIcons = (caregiver as any).matchIcons as
-                                | string[]
-                                | undefined;
-                            const tier = (caregiver as any).tier;
+                        {(() => {
+                            const filteredCaregivers =
+                                caregiverSuggestions.filter((cg) => {
+                                    if (ageFilter === 'all') return true;
+                                    if (cg.age == null) return true;
+                                    return ageFilter === 'younger'
+                                        ? cg.age < 35
+                                        : cg.age >= 35;
+                                });
 
                             const ICON_MAP: Record<
                                 string,
                                 React.ElementType
                             > = {
+                                favorited: Heart,
                                 previous_work: History,
                                 available: CalendarCheck,
                                 specialty: Baby,
@@ -368,6 +421,7 @@ export function PersonalInfoSection({
                             };
 
                             const ICON_TOOLTIPS: Record<string, string> = {
+                                favorited: 'Favorited by client',
                                 previous_work:
                                     'Previously worked with this family',
                                 available: 'Available for booking dates',
@@ -378,106 +432,102 @@ export function PersonalInfoSection({
                                 recent_work: 'Actively working recently',
                             };
 
-                            return (
-                                <Label
-                                    key={caregiver.id}
-                                    className={`flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:cursor-pointer hover:bg-blush ${notifyForm.data.caregiver_ids.includes(caregiver.id) && `bg-blush`}`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox
-                                            id={`cg-${caregiver.id}`}
-                                            checked={notifyForm.data.caregiver_ids.includes(
-                                                caregiver.id,
-                                            )}
-                                            onCheckedChange={() =>
-                                                toggleCaregiver(caregiver.id)
-                                            }
-                                        />
-                                        <div className="flex flex-row items-center gap-2">
-                                            <Label
-                                                htmlFor={`cg-${caregiver.id}`}
-                                                className="flex text-sm font-medium"
-                                            >
-                                                {caregiver.name}
-                                                {hasBeenNotified && (
-                                                    <span
-                                                        className="ml-2 text-green-500"
-                                                        title="Already notified"
-                                                    >
-                                                        <BadgeCheck className="h-5 w-5" />
-                                                    </span>
+                            return filteredCaregivers.map((caregiver) => {
+                                const hasBeenNotified = (caregiver as any)
+                                    .hasBeenNotified;
+                                const matchIcons = (
+                                    caregiver as any
+                                ).matchIcons as string[] | undefined;
+
+                                return (
+                                    <Label
+                                        key={caregiver.id}
+                                        className={`flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:cursor-pointer hover:bg-blush ${notifyForm.data.caregiver_ids.includes(caregiver.id) && `bg-blush`}`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={`cg-${caregiver.id}`}
+                                                checked={notifyForm.data.caregiver_ids.includes(
+                                                    caregiver.id,
                                                 )}
-                                            </Label>
-                                            {matchIcons && matchIcons.length > 0 && (
-                                                <div className="flex items-center gap-1">
-                                                    {matchIcons.map(
-                                                        (iconKey: string) => {
-                                                            const IconComponent =
-                                                                ICON_MAP[
-                                                                    iconKey
-                                                                ];
-                                                            const tooltip =
-                                                                ICON_TOOLTIPS[
-                                                                    iconKey
-                                                                ];
-
-                                                            if (
-                                                                !IconComponent
-                                                            ) {
-                                                                return null;
-                                                            }
-
-                                                            return (
-                                                                <Tooltip
-                                                                    key={
-                                                                        iconKey
-                                                                    }
-                                                                >
-                                                                    <TooltipTrigger
-                                                                        asChild
-                                                                    >
-                                                                        <span className="flex cursor-default items-center">
-                                                                            <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                                                        </span>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>
-                                                                        {
-                                                                            tooltip
-                                                                        }
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            );
-                                                        },
+                                                onCheckedChange={() =>
+                                                    toggleCaregiver(
+                                                        caregiver.id,
+                                                    )
+                                                }
+                                            />
+                                            <div className="flex flex-row items-center gap-2">
+                                                <Label
+                                                    htmlFor={`cg-${caregiver.id}`}
+                                                    className="flex text-sm font-medium"
+                                                >
+                                                    {caregiver.name}
+                                                    {hasBeenNotified && (
+                                                        <span
+                                                            className="ml-2 text-green-500"
+                                                            title="Already notified"
+                                                        >
+                                                            <BadgeCheck className="h-5 w-5" />
+                                                        </span>
                                                     )}
-                                                </div>
+                                                </Label>
+                                                {matchIcons &&
+                                                    matchIcons.length > 0 && (
+                                                        <div className="flex items-center gap-1">
+                                                            {matchIcons.map(
+                                                                (
+                                                                    iconKey: string,
+                                                                ) => {
+                                                                    const IconComponent =
+                                                                        ICON_MAP[
+                                                                            iconKey
+                                                                        ];
+                                                                    const tooltip =
+                                                                        ICON_TOOLTIPS[
+                                                                            iconKey
+                                                                        ];
+
+                                                                    if (
+                                                                        !IconComponent
+                                                                    ) {
+                                                                        return null;
+                                                                    }
+
+                                                                    return (
+                                                                        <Tooltip
+                                                                            key={
+                                                                                iconKey
+                                                                            }
+                                                                        >
+                                                                            <TooltipTrigger asChild>
+                                                                                <span className="flex cursor-default items-center">
+                                                                                    <IconComponent className="h-4 w-4 text-muted-foreground" />
+                                                                                </span>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                {
+                                                                                    tooltip
+                                                                                }
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                    )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {caregiver.age && (
+                                                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
+                                                    {caregiver.age}y
+                                                </span>
                                             )}
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {caregiver.age && (
-                                            <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-                                                {caregiver.age}y
-                                            </span>
-                                        )}
-                                        {tier && tier <= 2 && (
-                                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                                                {(caregiver as any).tierLabel}
-                                            </span>
-                                        )}
-                                        {tier && tier === 3 && (
-                                            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                                                {(caregiver as any).tierLabel}
-                                            </span>
-                                        )}
-                                        {tier && tier >= 4 && tier <= 5 && (
-                                            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
-                                                {(caregiver as any).tierLabel}
-                                            </span>
-                                        )}
-                                    </div>
-                                </Label>
-                            );
-                        })}
+                                    </Label>
+                                );
+                            });
+                        })()}
                     </div>
 
                     <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
