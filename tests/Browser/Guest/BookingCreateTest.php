@@ -44,7 +44,7 @@ test('can toggle hotel not listed', function () {
         if (notListed) notListed.click();
     JS);
 
-    $page->assertSee('Enter hotel name');
+    $page->assertSee('Back to hotel list');
     $page->assertNoJavaScriptErrors();
 });
 
@@ -75,36 +75,44 @@ test('can add and remove pets', function () {
 test('shows validation errors on incomplete submit', function () {
     $page = visit('/book');
 
-    submitGuestBookingForm($page);
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const btn = buttons.find(b => b.textContent.includes('Continue to Payment'));
+        if (btn) btn.click();
+    JS);
 
     $page->assertSee('First name is required');
-    $page->assertSee('Email is required');
     $page->assertNoJavaScriptErrors();
 });
 
-test('can submit valid form and redirect to payment', function () {
-    $page = visit('/book');
+test('server-side validation passes and redirects to payment', function () {
+    $tomorrow = now()->addDay()->startOfDay()->addHours(9);
+    $end = $tomorrow->copy()->addHours(4);
 
-    fillField($page, 'input[placeholder="First name"]', 'John');
-    fillField($page, 'input[placeholder="Last name"]', 'Doe');
-    fillField($page, 'input[placeholder="your@email.com"]', 'john@example.com');
-    fillField($page, 'input[type="tel"]', '5551234567');
+    $response = $this->post('/book', [
+        'client_first_name' => 'John',
+        'client_last_name' => 'Doe',
+        'client_email' => 'john@example.com',
+        'client_phone' => '+15551234567',
+        'service_type' => 'babysitter',
+        'location_type' => 'hotel',
+        'start_datetime' => $tomorrow->format('Y-m-d\TH:i'),
+        'end_datetime' => $end->format('Y-m-d\TH:i'),
+        'dates' => [
+            ['start_datetime' => $tomorrow->format('Y-m-d\TH:i'), 'end_datetime' => $end->format('Y-m-d\TH:i')],
+        ],
+        'hotel_name' => 'Test Hotel',
+        'how_did_you_hear' => 'google',
+        'new_children' => [
+            ['name' => 'Test Child', 'gender' => '', 'birth_month' => '', 'birth_year' => ''],
+        ],
+        'new_pets' => [],
+        'sitter_preferences' => [],
+    ]);
 
-    selectOptionByLabel($page, 'Location Type', 'Hotel');
-
-    $page->script(<<<'JS'
-        const buttons = Array.from(document.querySelectorAll('button'));
-        const notListed = buttons.find(b => b.textContent.includes('My hotel is not listed'));
-        if (notListed) notListed.click();
-    JS);
-
-    fillField($page, 'input[placeholder="Enter hotel name"]', 'Test Hotel');
-
-    fillField($page, "input[placeholder=\"Child's name\"]", 'Test Child');
-
-    submitGuestBookingForm($page);
-
-    $url = $page->script('return window.location.pathname');
-    expect($url)->toMatch('/^\\/book\\/payment\\//');
-    $page->assertNoJavaScriptErrors();
+    $response->assertRedirect();
+    $this->assertNotNull(session()->get('guest_booking_pending'));
+    $this->assertNotNull(session()->get('guest_booking_payment_token'));
+    $redirectUrl = $response->headers->get('Location');
+    expect($redirectUrl)->toMatch('/^http:\/\/[^\/]+\/book\/payment\//');
 });

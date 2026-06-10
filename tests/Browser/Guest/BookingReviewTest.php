@@ -121,7 +121,7 @@ test('submit with tip but no card shows error', function () {
     fillField($page, 'input[type="number"]', '10');
 
     $page->script(<<<'JS'
-        document.querySelector('button[type="submit"]').click();
+        document.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     JS);
 
     $page->assertSee('Please enter your card details');
