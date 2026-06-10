@@ -141,6 +141,14 @@ php artisan test --compact --filter=testName
 vendor/bin/pint
 ```
 
+## Configuration
+
+Key environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `CAREGIVER_BUFFER_MINUTES` | `60` | Minimum gap (minutes) between a caregiver's bookings on the same day for travel time |
+
 ## Stripe Webhook Configuration
 
 Configure in [Stripe Dashboard](https://dashboard.stripe.com/webhooks) pointing `{BASE_URL}` to the production domain. Requires the `whsec_*` signing secret set as `STRIPE_WEBHOOK_SECRET` in `.env`.

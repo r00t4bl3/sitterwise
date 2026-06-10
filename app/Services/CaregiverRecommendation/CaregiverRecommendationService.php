@@ -2,6 +2,7 @@
 
 namespace App\Services\CaregiverRecommendation;
 
+use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
 use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
@@ -73,6 +74,42 @@ class CaregiverRecommendationService
             return collect();
         }
 
+        $bufferMinutes = (int) config('caregiver.buffer_minutes');
+
+        $bookingDatesForBuffer = [];
+        if (! empty($dateRanges)) {
+            foreach ($dateRanges as $range) {
+                $start = new \DateTime($range['start']);
+                $end = new \DateTime($range['end']);
+                $current = clone $start;
+                while ($current <= $end) {
+                    $bookingDatesForBuffer[] = $current->format('Y-m-d');
+                    $current->modify('+1 day');
+                }
+            }
+            $bookingDatesForBuffer = array_unique($bookingDatesForBuffer);
+        }
+
+        $existingBookingsByCaregiver = collect();
+        if (! empty($bookingDatesForBuffer)) {
+            $caregiverIds = $allCaregivers->pluck('id');
+
+            $existingBookingsByCaregiver = Booking::whereIn('caregiver_id', $caregiverIds)
+                ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Received->value])
+                ->when($booking, fn ($q) => $q->where('id', '!=', $booking->id))
+                ->where(function ($q) use ($bookingDatesForBuffer) {
+                    foreach ($bookingDatesForBuffer as $date) {
+                        $q->orWhere(fn ($sub) => $sub
+                            ->whereDate('start_datetime', '<=', $date)
+                            ->whereDate('end_datetime', '>=', $date)
+                        );
+                    }
+                })
+                ->orderBy('start_datetime')
+                ->get()
+                ->groupBy('caregiver_id');
+        }
+
         $previousWorkCaregiverIds = $this->getPreviousWorkCaregiverIds($client);
         $recentWork3moIds = $this->getRecentWorkCaregiverIds(3);
         $recentWork6moIds = $this->getRecentWorkCaregiverIds(6);
@@ -88,6 +125,8 @@ class CaregiverRecommendationService
             $recentWork6moIds,
             $sitterPreferences,
             $favoriteCaregiverIds,
+            $existingBookingsByCaregiver,
+            $bufferMinutes,
         ) {
             $attrs = $this->computeAttributes(
                 $caregiver,
@@ -100,6 +139,8 @@ class CaregiverRecommendationService
                 $recentWork6moIds,
                 $sitterPreferences,
                 $favoriteCaregiverIds,
+                $existingBookingsByCaregiver,
+                $bufferMinutes,
             );
 
             $score = $this->computeScore($attrs);
@@ -158,9 +199,11 @@ class CaregiverRecommendationService
         Collection $recentWork6moIds,
         array $sitterPreferences = [],
         Collection $favoriteCaregiverIds = new Collection,
+        Collection $existingBookings = new Collection,
+        int $bufferMinutes = 0,
     ): array {
         $previousWork = $previousWorkCaregiverIds->contains($caregiver->id);
-        $available = $this->hasAvailabilityForBooking($caregiver, $dateRanges);
+        $available = $this->hasAvailabilityForBooking($caregiver, $dateRanges, $existingBookings, $bufferMinutes);
         $specialty = $this->matchesServiceType($caregiver, $serviceType, $sitterPreferences)
             || $this->matchesSitterPreferences($caregiver, $sitterPreferences);
         $preferredLocation = $this->hasPreferredLocation($caregiver, $bookingLocationId);
@@ -311,6 +354,8 @@ class CaregiverRecommendationService
     protected function hasAvailabilityForBooking(
         Caregiver $caregiver,
         array $dateRanges,
+        Collection $existingBookings = new Collection,
+        int $bufferMinutes = 0,
     ): bool {
         if (empty($dateRanges)) {
             return false;
@@ -330,7 +375,7 @@ class CaregiverRecommendationService
                 $current->modify('+1 day');
             }
 
-            $rangeSlots = $this->getRequiredTimeSlots($range['start'], $range['end']);
+            $rangeSlots = TimeSlotHelper::getRequiredTimeSlots($range['start'], $range['end']);
             foreach ($rangeSlots as $dateKey => $slots) {
                 if (! isset($requiredSlotsPerDate[$dateKey])) {
                     $requiredSlotsPerDate[$dateKey] = [];
@@ -397,49 +442,26 @@ class CaregiverRecommendationService
             }
         }
 
-        return true;
-    }
+        // Buffer time check — ensure adequate gap between existing bookings
+        if ($bufferMinutes > 0 && ! empty($dateRanges)) {
+            $caregiverBookings = $existingBookings[$caregiver->id] ?? collect();
 
-    /**
-     * Determine required time slots based on booking start/end times.
-     */
-    protected function getRequiredTimeSlots(string $startDate, string $endDate): array
-    {
-        $start = new \DateTime($startDate);
-        $end = new \DateTime($endDate);
+            foreach ($dateRanges as $range) {
+                $newStart = new \DateTime($range['start']);
+                $newEnd = new \DateTime($range['end']);
 
-        $requiredSlots = [];
+                foreach ($caregiverBookings as $existing) {
+                    $bufferedStart = (clone $existing->start_datetime)->subMinutes($bufferMinutes);
+                    $bufferedEnd = (clone $existing->end_datetime)->addMinutes($bufferMinutes);
 
-        $current = clone $start;
-        while ($current <= $end) {
-            $dateKey = $current->format('Y-m-d');
-            $slots = [];
-
-            $dayStart = ($current->format('Y-m-d') === $start->format('Y-m-d')) ? $start : new \DateTime($dateKey.' 00:00:00');
-            $dayEnd = ($current->format('Y-m-d') === $end->format('Y-m-d')) ? $end : new \DateTime($dateKey.' 23:59:59');
-
-            $morningStart = new \DateTime($dateKey.' 06:00:00');
-            $morningEnd = new \DateTime($dateKey.' 12:00:00');
-            $afternoonStart = new \DateTime($dateKey.' 12:00:00');
-            $afternoonEnd = new \DateTime($dateKey.' 18:00:00');
-            $eveningStart = new \DateTime($dateKey.' 18:00:00');
-            $eveningEnd = new \DateTime($dateKey.' 23:00:00');
-
-            if ($dayStart < $morningEnd && $dayEnd > $morningStart) {
-                $slots[] = 'morning';
+                    if ($newStart < $bufferedEnd && $newEnd > $bufferedStart) {
+                        return false;
+                    }
+                }
             }
-            if ($dayStart < $afternoonEnd && $dayEnd > $afternoonStart) {
-                $slots[] = 'afternoon';
-            }
-            if ($dayStart < $eveningEnd && $dayEnd > $eveningStart) {
-                $slots[] = 'evening';
-            }
-
-            $requiredSlots[$dateKey] = $slots;
-            $current->modify('+1 day');
         }
 
-        return $requiredSlots;
+        return true;
     }
 
     /**

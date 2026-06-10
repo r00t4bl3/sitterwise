@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
@@ -818,6 +819,30 @@ class AdminBookingService implements BookingServiceInterface
                 'location_type' => $locationType,
             ]);
         }
+    }
+
+    public function cancel(Request $request, Booking $booking)
+    {
+        if ($booking->status === BookingStatus::Cancelled->value) {
+            return redirect()->back()->with('error', 'Booking is already cancelled.');
+        }
+
+        DB::transaction(function () use ($booking, $request) {
+            $booking->update([
+                'status' => BookingStatus::Cancelled->value,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $request->input('reason'),
+                'cancelled_by' => auth()->id(),
+            ]);
+
+            $assignment = $booking->assignments()->unresolved()->first();
+
+            if ($assignment) {
+                $assignment->resolve(AssignmentResolution::CancelledBySitterwise);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Booking cancelled successfully.');
     }
 
     public function destroy(Booking $booking)

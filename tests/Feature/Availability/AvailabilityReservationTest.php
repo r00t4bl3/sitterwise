@@ -55,8 +55,8 @@ function createReservationBooking(Caregiver $caregiver, int $startHour = 8, int 
     return Booking::factory()->create([
         'booking_group_id' => $group->id,
         'caregiver_id' => $caregiver->id,
-        'start_datetime' => now()->addDays(5)->setHour($startHour)->setMinute(0),
-        'end_datetime' => now()->addDays(5)->setHour($endHour)->setMinute(0),
+        'start_datetime' => now()->addDays(5)->setTime($startHour, 0, 0),
+        'end_datetime' => now()->addDays(5)->setTime($endHour, 0, 0),
         'status' => BookingStatus::Received->value,
         'payment_status' => BookingPaymentStatus::Pending->value,
         'charge_to_client_hourly' => 25.00,
@@ -176,7 +176,7 @@ describe('Recommendation service with used slots', function () {
         expect($recommended->pluck('id'))->toContain($caregiver->id);
     });
 
-    test('releasing slots restores caregiver availability icon', function () {
+    test('unassigning caregiver restores availability icon', function () {
         $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeCaregiverWithSlots();
 
@@ -193,7 +193,7 @@ describe('Recommendation service with used slots', function () {
         $result = $recommended->firstWhere('id', $caregiver->id);
         expect($result['matchIcons'])->not->toContain('available');
 
-        $this->reservationService->release($booking);
+        $booking->update(['caregiver_id' => null]);
 
         $recommended = $this->recommendationService->getRecommendedCaregivers(
             $client, null, 20, $dateRanges,
@@ -264,5 +264,107 @@ describe('Booking model saved hook reservation', function () {
 
         $newSlots = BookingAvailabilitySlot::where('booking_id', $booking->id)->get();
         expect($newSlots->count())->toBeGreaterThan(0);
+    });
+});
+
+describe('Buffer time between bookings', function () {
+    test('buffer blocks booking too close to existing commitment', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeCaregiverWithSlots();
+
+        createReservationBooking($caregiver, 17, 18);
+
+        $dateRanges = [[
+            'start' => now()->addDays(5)->setHour(18)->setMinute(30)->format('Y-m-d H:i:s'),
+            'end' => now()->addDays(5)->setHour(19)->setMinute(0)->format('Y-m-d H:i:s'),
+        ]];
+
+        $recommended = $this->recommendationService->getRecommendedCaregivers(
+            $client, null, 20, $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->not->toContain('available');
+    });
+
+    test('buffer allows booking far enough from existing commitment', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeCaregiverWithSlots();
+
+        createReservationBooking($caregiver, 17, 18);
+
+        $dateRanges = [[
+            'start' => now()->addDays(5)->setHour(19)->setMinute(1)->format('Y-m-d H:i:s'),
+            'end' => now()->addDays(5)->setHour(20)->setMinute(0)->format('Y-m-d H:i:s'),
+        ]];
+
+        $recommended = $this->recommendationService->getRecommendedCaregivers(
+            $client, null, 20, $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('available');
+    });
+
+    test('buffer does not block booking on different date', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeCaregiverWithSlots();
+
+        createReservationBooking($caregiver, 17, 18);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => now()->addDays(6)->format('Y-m-d'),
+            'time_slots' => ['morning', 'afternoon', 'evening'],
+        ]);
+
+        $dateRanges = [[
+            'start' => now()->addDays(6)->setHour(18)->setMinute(30)->format('Y-m-d H:i:s'),
+            'end' => now()->addDays(6)->setHour(19)->setMinute(0)->format('Y-m-d H:i:s'),
+        ]];
+
+        $recommended = $this->recommendationService->getRecommendedCaregivers(
+            $client, null, 20, $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('available');
+    });
+
+    test('cancelled booking does not trigger buffer', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeCaregiverWithSlots();
+
+        $booking = createReservationBooking($caregiver, 17, 18);
+        $booking->update(['status' => BookingStatus::Cancelled->value]);
+
+        $dateRanges = [[
+            'start' => now()->addDays(5)->setHour(18)->setMinute(30)->format('Y-m-d H:i:s'),
+            'end' => now()->addDays(5)->setHour(19)->setMinute(0)->format('Y-m-d H:i:s'),
+        ]];
+
+        $recommended = $this->recommendationService->getRecommendedCaregivers(
+            $client, null, 20, $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('available');
+    });
+
+    test('buffer does not affect caregiver with no existing bookings', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeCaregiverWithSlots();
+
+        $dateRanges = [[
+            'start' => now()->addDays(5)->setHour(8)->setMinute(0)->format('Y-m-d H:i:s'),
+            'end' => now()->addDays(5)->setHour(10)->setMinute(0)->format('Y-m-d H:i:s'),
+        ]];
+
+        $recommended = $this->recommendationService->getRecommendedCaregivers(
+            $client, null, 20, $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('available');
     });
 });
