@@ -21,12 +21,12 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -139,10 +139,15 @@ export default function LocationsIndex() {
     // City editor handlers
     const handleAddCity = () => {
         const trimmed = newCityInput.trim();
-        if (!trimmed) return;
+
+        if (!trimmed) {
+return;
+}
+
         if (cityEditorCities.map((c) => c.toLowerCase()).includes(trimmed.toLowerCase())) {
             return;
         }
+
         setCityEditorCities((prev) => [...prev, trimmed]);
         setNewCityInput('');
     };

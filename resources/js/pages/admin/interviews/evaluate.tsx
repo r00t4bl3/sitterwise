@@ -67,10 +67,22 @@ function HeartRating({ value, onChange }: { value: number; onChange: (v: number)
     const activeValue = hovered ?? value;
 
     function heartColor(): string {
-        if (activeValue === 4) return 'text-green-500';
-        if (activeValue === 3) return 'text-blue-500';
-        if (activeValue === 2) return 'text-amber-400';
-        if (activeValue === 1) return 'text-red-400';
+        if (activeValue === 4) {
+return 'text-green-500';
+}
+
+        if (activeValue === 3) {
+return 'text-blue-500';
+}
+
+        if (activeValue === 2) {
+return 'text-amber-400';
+}
+
+        if (activeValue === 1) {
+return 'text-red-400';
+}
+
         return 'text-gray-200';
     }
 
@@ -136,7 +148,9 @@ export default function InterviewEvaluate() {
     }
 
     function handleSave(status: 'draft' | 'declined' | 'completed') {
-        if (!notes.trim()) return;
+        if (!notes.trim()) {
+return;
+}
 
         setSubmitting(true);
         router.post(
@@ -168,7 +182,9 @@ export default function InterviewEvaluate() {
     }
 
     function addCustomPoint() {
-        if (!addLabel.trim()) return;
+        if (!addLabel.trim()) {
+return;
+}
 
         fetch(`/applications/${application.id}/interview/talking-points`, {
             method: 'POST',
@@ -455,7 +471,10 @@ export default function InterviewEvaluate() {
                                         placeholder="Type a new talking point..."
                                         className="h-9 text-sm"
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter') addCustomPoint();
+                                            if (e.key === 'Enter') {
+addCustomPoint();
+}
+
                                             if (e.key === 'Escape') {
                                                 setShowAdd(false);
                                                 setAddLabel('');

@@ -221,7 +221,7 @@ export function AvailabilityCalendar({
                             {!isPast && !isToday && !isFullyBooked && (
                                 <button
                                     onClick={() => onDateClick(dateStr)}
-                                    className={`absolute inset-0 flex items-center justify-center rounded-[3px] text-xs font-medium transition ${
+                                    className={`absolute inset-0 flex cursor-pointer items-center justify-center rounded-[3px] text-xs font-medium transition ${
                                         hasAvailability
                                             ? 'bg-primary/80 text-primary-foreground opacity-0 group-hover:opacity-100 hover:bg-primary'
                                             : 'bg-muted/80 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted'

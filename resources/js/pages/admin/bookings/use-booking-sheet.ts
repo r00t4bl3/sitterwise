@@ -222,16 +222,20 @@ export function useBookingSheet({
     });
 
     const populateCaregiverSuggestions = async () => {
-        if (!editingBooking?.booking_group?.client_id) {
+        const clientId =
+            editingBooking?.booking_group?.client_id ??
+            form.data.client_id;
+
+        if (!clientId) {
             return;
         }
 
         try {
             const params = new URLSearchParams({
-                client_id: editingBooking.booking_group?.client_id.toString(),
+                client_id: clientId.toString(),
             });
 
-            if (editingBooking.id) {
+            if (editingBooking?.id) {
                 params.append('booking_id', editingBooking.id.toString());
             }
 
@@ -248,7 +252,7 @@ export function useBookingSheet({
             }
 
             const addressCity =
-                editingBooking.booking_group?.address_city ||
+                editingBooking?.booking_group?.address_city ||
                 form.data.address_city;
 
             if (addressCity) {
@@ -273,6 +277,7 @@ export function useBookingSheet({
             );
         } catch (error) {
             console.error('Error fetching recommended caregivers:', error);
+
             setCaregiverSuggestions(
                 caregivers.map((c) => ({
                     id: c.id,
@@ -656,6 +661,9 @@ export function useBookingSheet({
 
             const client = clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null;
 
+            setSelectedClientName('');
+            setClientSuggestions([]);
+
             if (client) {
                 setSelectedClientName(client.name);
                 setClientSuggestions([client] as unknown as Array<{
@@ -665,9 +673,13 @@ export function useBookingSheet({
                 }>);
             }
 
+            setSelectedClientType(null);
+
             if (fullBooking.client) {
                 setSelectedClientType(fullBooking.client.client_type || null);
             }
+
+            setClientAddresses([]);
 
             if (fullBooking.client?.addresses) {
                 setClientAddresses(
@@ -683,6 +695,9 @@ export function useBookingSheet({
             }
 
             const hotel = hotels.find((h) => h.id === fullBooking.hotel_id);
+
+            setSelectedHotelName('');
+            setHotelSuggestions([]);
 
             if (hotel) {
                 setSelectedHotelName(hotel.name);
@@ -703,6 +718,9 @@ export function useBookingSheet({
             const caregiver = caregivers.find(
                 (cg) => cg.id === fullBooking.caregiver_id,
             );
+
+            setSelectedCaregiverName('');
+            setCaregiverSuggestions([]);
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
@@ -796,6 +814,8 @@ export function useBookingSheet({
             ].filter(Boolean);
             setAddressValue(addressParts.join(', '));
 
+            setIsAddressLocked(false);
+
             if (fullBooking.address_line1) {
                 setIsAddressLocked(true);
             }
@@ -858,6 +878,9 @@ export function useBookingSheet({
                 ? clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null
                 : null;
 
+            setSelectedClientName('');
+            setClientSuggestions([]);
+
             if (client) {
                 setSelectedClientName(client.name);
                 setClientSuggestions([client] as unknown as Array<{
@@ -914,6 +937,9 @@ export function useBookingSheet({
             form.setData(formData);
             setBookingChildren(clientChildren);
             setBookingPets(clientPets);
+
+            setSelectedHotelName('');
+            setHotelSuggestions([]);
 
             if (booking.booking_group?.hotel_id) {
                 const hotel = hotels.find((h) => h.id === booking.booking_group?.hotel_id);

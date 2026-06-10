@@ -414,6 +414,13 @@ class AdminBookingService implements BookingServiceInterface
             $data = $booking->toArray();
             $data['booking_group'] = $group ? [
                 'id' => $group->id,
+                'client_id' => $group->client_id,
+                'address_city' => $group->address_city,
+                'children' => $group->children,
+                'pets' => $group->pets,
+                'children_notes' => $group->children_notes,
+                'service_type' => $group->service_type,
+                'location_type' => $group->location_type,
                 'bookings_count' => $group->bookings->count(),
                 'sibling_bookings' => $siblingBookings,
             ] : null;

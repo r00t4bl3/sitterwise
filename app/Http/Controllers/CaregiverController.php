@@ -10,6 +10,7 @@ use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
 use App\Http\Requests\StoreCaregiverRequest;
+use App\Http\Requests\UpdateCaregiverProfilePhotoRequest;
 use App\Http\Requests\UpdateCaregiverRequest;
 use App\Http\Resources\CaregiverResource;
 use App\Models\AttributeDefinition;
@@ -24,6 +25,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -418,6 +420,14 @@ class CaregiverController extends Controller
         $file = $request->file('profile_photo');
         $filename = time().'_'.$file->getClientOriginalName();
         $path = $file->storeAs('profile-photos', $filename, 'public');
+
+        if ($path === false) {
+            Log::error('Failed to store profile photo for caregiver {id}', ['id' => $caregiver->id]);
+
+            return redirect()->route('caregivers.edit', $caregiver->id)
+                ->with('error', 'Failed to upload profile photo. Please try again.');
+        }
+
         $caregiver->user->update([
             'profile_photo_path' => $path,
             'profile_photo_url' => Storage::disk('public')->url($path),

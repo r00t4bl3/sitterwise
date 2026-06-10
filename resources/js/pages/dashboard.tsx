@@ -42,7 +42,7 @@ interface Props {
         firstName: string;
         lastName: string;
         rating: number | null;
-        status: { name: string };
+        status: string | null;
         availabilities: Availability[];
         bookingStatuses: Array<{
             value: string;
@@ -100,7 +100,7 @@ export default function Dashboard() {
                         firstName: caregiver?.firstName || user.name,
                         lastName: caregiver?.lastName || '',
                         rating: caregiver?.rating || null,
-                        status: caregiver?.status?.name || 'Unknown',
+                        status: caregiver?.status || 'Unknown',
                         availabilities: caregiver?.availabilities || [],
                         bookingStatuses: caregiver?.bookingStatuses || [],
                         nextJob: caregiver?.nextJob,

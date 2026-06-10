@@ -51,8 +51,14 @@ function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
             const dEnd = new Date(dates[j].end_datetime).getTime();
 
             if (a < dEnd && c < bEnd) {
-                if (!overlaps[dates[i].id]) overlaps[dates[i].id] = [];
-                if (!overlaps[dates[j].id]) overlaps[dates[j].id] = [];
+                if (!overlaps[dates[i].id]) {
+overlaps[dates[i].id] = [];
+}
+
+                if (!overlaps[dates[j].id]) {
+overlaps[dates[j].id] = [];
+}
+
                 overlaps[dates[i].id].push(`Date ${j + 1}`);
                 overlaps[dates[j].id].push(`Date ${i + 1}`);
             }
@@ -113,7 +119,9 @@ export function BookingDetailsSection({
     const defaultEndStr = useMemo(() => formatDateTimeLocal(new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000)), [tomorrow]);
 
     const [dates, setDates] = useState<DateEntry[]>(() => {
-        if (sheetMode !== 'create') return [];
+        if (sheetMode !== 'create') {
+return [];
+}
 
         if (form.data.start_datetime && form.data.end_datetime) {
             return [{
@@ -162,7 +170,9 @@ export function BookingDetailsSection({
 
     const handleUpdateDate = (id: string, field: 'start_datetime' | 'end_datetime', value: string) => {
         const updated = dates.map((d) => {
-            if (d.id !== id) return d;
+            if (d.id !== id) {
+return d;
+}
 
             const next = { ...d, [field]: value };
 
@@ -180,7 +190,9 @@ export function BookingDetailsSection({
 
     // Reset dates when sheet opens with fresh form data
     useEffect(() => {
-        if (sheetMode !== 'create') return;
+        if (sheetMode !== 'create') {
+return;
+}
 
         const formStart = form.data.start_datetime;
         const currentStart = dates[0]?.start_datetime;

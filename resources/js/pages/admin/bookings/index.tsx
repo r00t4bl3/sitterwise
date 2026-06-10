@@ -302,6 +302,7 @@ export default function Bookings() {
                         : '';
                 const hotelName = (() => {
                     const h = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
+
                     return h?.name?.toLowerCase() || '';
                 })();
 

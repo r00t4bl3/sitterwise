@@ -16,11 +16,6 @@ import {
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -42,6 +37,11 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getChildBirthYearOptions } from '@/lib/age';
 import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
@@ -329,7 +329,7 @@ export function PersonalInfoSection({
                         <button
                             type="button"
                             onClick={() => setAgeFilter('all')}
-                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                                 ageFilter === 'all'
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -340,7 +340,7 @@ export function PersonalInfoSection({
                         <button
                             type="button"
                             onClick={() => setAgeFilter('younger')}
-                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                                 ageFilter === 'younger'
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -351,7 +351,7 @@ export function PersonalInfoSection({
                         <button
                             type="button"
                             onClick={() => setAgeFilter('seasoned')}
-                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                                 ageFilter === 'seasoned'
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -363,11 +363,18 @@ export function PersonalInfoSection({
                             <Button
                                 variant="link"
                                 size="sm"
+                                className="cursor-pointer"
                                 onClick={() => {
                                     const filtered = caregiverSuggestions.filter(
                                         (cg) => {
-                                            if (ageFilter === 'all') return true;
-                                            if (cg.age == null) return true;
+                                            if (ageFilter === 'all') {
+return true;
+}
+
+                                            if (cg.age == null) {
+return true;
+}
+
                                             return ageFilter === 'younger'
                                                 ? cg.age < 35
                                                 : cg.age >= 35;
@@ -384,8 +391,14 @@ export function PersonalInfoSection({
                             >
                                 {notifyForm.data.caregiver_ids.length ===
                                 caregiverSuggestions.filter((cg) => {
-                                    if (ageFilter === 'all') return true;
-                                    if (cg.age == null) return true;
+                                    if (ageFilter === 'all') {
+return true;
+}
+
+                                    if (cg.age == null) {
+return true;
+}
+
                                     return ageFilter === 'younger'
                                         ? cg.age < 35
                                         : cg.age >= 35;
@@ -400,8 +413,14 @@ export function PersonalInfoSection({
                         {(() => {
                             const filteredCaregivers =
                                 caregiverSuggestions.filter((cg) => {
-                                    if (ageFilter === 'all') return true;
-                                    if (cg.age == null) return true;
+                                    if (ageFilter === 'all') {
+return true;
+}
+
+                                    if (cg.age == null) {
+return true;
+}
+
                                     return ageFilter === 'younger'
                                         ? cg.age < 35
                                         : cg.age >= 35;

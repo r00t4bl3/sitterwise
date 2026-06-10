@@ -22,6 +22,7 @@ use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -658,6 +659,14 @@ class ClientController extends Controller
             $file = $request->file('profile_photo');
             $filename = time().'_'.$file->getClientOriginalName();
             $path = $file->storeAs('profile-photos', $filename, 'public');
+
+            if ($path === false) {
+                Log::error('Failed to store profile photo for client {id}', ['id' => $client->id]);
+
+                return redirect()->route('clients.edit', $client->id)
+                    ->with('error', 'Failed to upload profile photo. Please try again.');
+            }
+
             $client->user->update([
                 'profile_photo_path' => $path,
                 'profile_photo_url' => Storage::disk('public')->url($path),

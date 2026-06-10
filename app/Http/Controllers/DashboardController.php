@@ -390,9 +390,7 @@ class DashboardController extends Controller
                     'firstName' => $caregiver->first_name,
                     'lastName' => $caregiver->last_name,
                     'rating' => $caregiver->rating,
-                    'status' => $caregiver->status ? [
-                        'value' => $caregiver->status->value,
-                    ] : null,
+                    'status' => $caregiver->status?->label() ?? null,
                     'availabilities' => $availabilities,
                     'bookingStatuses' => $bookingStatuses,
                     'nextJob' => $nextJob,

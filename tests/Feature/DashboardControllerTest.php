@@ -66,7 +66,7 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->component('dashboard')
         ->where('caregiver.firstName', 'Jane')
         ->where('caregiver.lastName', 'Smith')
-        ->where('caregiver.status.value', CaregiverStatus::Active->value)
+        ->where('caregiver.status', CaregiverStatus::Active->label())
         ->has('stats', fn ($page) => $page
             ->where('completed_jobs', 1)
             ->where('total_earned', 100)
