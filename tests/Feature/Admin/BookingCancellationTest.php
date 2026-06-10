@@ -27,7 +27,27 @@ beforeEach(function () {
     $this->clientUser = $this->client->user;
 });
 
-test('admin can cancel a booking via update', function () {
+test('admin can cancel a booking via cancel endpoint', function () {
+    $booking = Booking::factory()
+        ->forClient($this->client)
+        ->withBookingGroup(fn ($group) => $group->state(['service_type' => ServiceType::GroupChildcareInvoiced->value]))
+        ->create([
+            'status' => BookingStatus::Confirmed->value,
+            'start_datetime' => now()->addDays(10),
+            'end_datetime' => now()->addDays(10)->addHours(4),
+        ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('bookings.cancel', $booking), [
+            'reason' => 'Client requested cancellation',
+        ])
+        ->assertRedirect();
+
+    $booking->refresh();
+    expect($booking->status)->toBe(BookingStatus::Cancelled->value);
+});
+
+test('update endpoint rejects cancelled status', function () {
     $booking = Booking::factory()
         ->forClient($this->client)
         ->withBookingGroup(fn ($group) => $group->state(['service_type' => ServiceType::GroupChildcareInvoiced->value]))
@@ -47,10 +67,10 @@ test('admin can cancel a booking via update', function () {
             'status' => BookingStatus::Cancelled->value,
             'payment_status' => BookingPaymentStatus::Pending->value,
         ])
-        ->assertRedirect();
+        ->assertSessionHasErrors('status');
 
     $booking->refresh();
-    expect($booking->status)->toBe(BookingStatus::Cancelled->value);
+    expect($booking->status)->not->toBe(BookingStatus::Cancelled->value);
 });
 
 test('financial amounts zeroed on cancellation', function () {
@@ -68,14 +88,8 @@ test('financial amounts zeroed on cancellation', function () {
         ]);
 
     $this->actingAs($this->admin)
-        ->patch(route('bookings.update', $booking), [
-            'client_id' => $booking->client_id,
-            'service_type' => $booking->bookingGroup->service_type,
-            'location_type' => $booking->bookingGroup->location_type,
-            'start_datetime' => $booking->start_datetime->toISOString(),
-            'end_datetime' => $booking->end_datetime->toISOString(),
-            'status' => BookingStatus::Cancelled->value,
-            'payment_status' => BookingPaymentStatus::Pending->value,
+        ->post(route('bookings.cancel', $booking), [
+            'reason' => 'Cancellation for financial zeroing test',
         ]);
 
     $booking->refresh();
@@ -176,8 +190,8 @@ test('caregiver cannot cancel a booking', function () {
     ]);
 
     $this->actingAs($caregiver->user)
-        ->patch(route('bookings.update', $booking), [
-            'status' => BookingStatus::Cancelled->value,
+        ->post(route('bookings.cancel', $booking), [
+            'reason' => 'Caregiver attempting cancellation',
         ])
         ->assertForbidden();
 });

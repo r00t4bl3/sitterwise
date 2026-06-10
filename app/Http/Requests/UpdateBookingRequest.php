@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Rules\MinimumBookingDuration;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateBookingRequest extends FormRequest
@@ -71,7 +72,7 @@ class UpdateBookingRequest extends FormRequest
             'emergency_instructions' => ['nullable', 'string'],
             'total_amount' => ['nullable', 'numeric', 'min:0'],
             'requires_payment' => ['nullable', 'boolean'],
-            'status' => ['required', 'string'],
+            'status' => ['required', 'string', Rule::notIn(['cancelled'])],
             'payment_status' => ['required', 'string'],
             'rental_platform' => ['nullable', 'string'],
             'address_line1' => ['nullable', 'string'],

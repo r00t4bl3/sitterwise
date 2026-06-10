@@ -1,4 +1,4 @@
-import { Link, Head, useForm } from '@inertiajs/react';
+import { Link, Head, router, useForm } from '@inertiajs/react';
 import {
     Calendar,
     ExternalLink,
@@ -30,6 +30,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
@@ -135,6 +136,19 @@ export default function BookingDetail({
     booking_statuses,
 }: PageProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+    const cancelForm = useForm({ reason: '' });
+
+    const submitCancel = () => {
+        cancelForm.post(`/bookings/${booking.ulid}/cancel`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCancelDialogOpen(false);
+                cancelForm.reset();
+            },
+        });
+    };
 
     const currentSiblingIds = booking.booking_group
         ? [booking.id, ...booking.booking_group.sibling_bookings.map((s) => s.id)]
@@ -704,12 +718,64 @@ export default function BookingDetail({
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    {booking.status !== 'cancelled' && (
+                        <Button
+                            variant="destructive"
+                            onClick={() => setCancelDialogOpen(true)}
+                        >
+                            Cancel Booking
+                        </Button>
+                    )}
                     <Button asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
                 </div>
             </div>
+
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cancel Booking</DialogTitle>
+                        <DialogDescription>
+                            This action will mark the booking as cancelled, zero out all financial fields, and release the caregiver. This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="reason">Cancellation Reason</Label>
+                            <Textarea
+                                id="reason"
+                                value={cancelForm.data.reason}
+                                onChange={(e) => cancelForm.setData('reason', e.target.value)}
+                                placeholder="Explain why this booking is being cancelled..."
+                                rows={3}
+                            />
+                            {cancelForm.errors.reason && (
+                                <p className="text-sm text-destructive">{cancelForm.errors.reason}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setCancelDialogOpen(false);
+                                cancelForm.reset();
+                            }}
+                        >
+                            Keep Booking
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={submitCancel}
+                            disabled={cancelForm.processing}
+                        >
+                            {cancelForm.processing ? 'Cancelling...' : 'Cancel Booking'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

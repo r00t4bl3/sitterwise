@@ -127,14 +127,18 @@ flowchart TD
 
     subgraph Cancellation["Admin Cancellation"]
         direction TB
-        CA1[Admin sets status = cancelled] --> CA2[Zero all financial amounts]
+        CA1[Admin clicks Cancel Booking<br/>with reason] --> CA2[POST /bookings/{booking}/cancel]
+        CA2 --> CA3[status = cancelled<br/>cancelled_at, reason, cancelled_by]
+        CA3 --> CA4[Zero all financial amounts]
+        CA4 --> CA5[Resolve unresolved assignment<br/>to CancelledBySitterwise]
     end
 
     subgraph BackOut["Caregiver Back-Out"]
         direction TB
-        BO1[Caregiver submits back-out<br/>with reason] --> BO2[CaregiverAssignment<br/>resolved = backed_out]
-        BO2 --> BO3[Admin notified via email]
-        BO3 --> BO4[Booking status unchanged<br/>Admin handles manually]
+        BO1[Caregiver submits back-out<br/>with reason] --> BO2[POST /assignments/{id}/back-out]
+        BO2 --> BO3[CaregiverAssignment<br/>resolved = backed_out]
+        BO3 --> BO4[Admin notified via email]
+        BO4 --> BO5[Booking status & caregiver_id<br/>unchanged — Admin handles manually]
     end
 
     CO3 --> P1
@@ -142,6 +146,8 @@ flowchart TD
     P5 --> R3
     CO3 --> BO1
 ```
+
+> **Known gaps:** See `docs/caregiver-backout-gaps.md` for issues with the booking detail page, auto-resolve on reassign, replace caregiver flow, and other gaps in the backout/cancellation flow.
 
 ## Financial Model
 

@@ -465,7 +465,7 @@ const hasAnyFreeSlot = availability && availability.time_slots.some(
 | Admin splits booking group | Raw DB update → explicit `release()` in `splitGroup()` |
 | Reservation expires (status = 'reserved') | No `caregiver_id` set → no slot records exist → no action needed |
 | CleanupExpiredReservations command | Only clears `reserved_by`, doesn't touch `caregiver_id` → no action needed |
-| Caregiver backs out | Only resolves `CaregiverAssignment`, doesn't change `caregiver_id` → booking still assigned → no action needed |
+| Caregiver backs out | Only resolves `CaregiverAssignment`, doesn't change `caregiver_id` → booking still assigned → no action needed. See `docs/caregiver-backout-gaps.md` for gaps in the admin UI around backout visibility. |
 | Soft-delete booking | FK `cascadeOnDelete` only fires on force-delete; soft-delete leaves slot records intact (status-based filtering covers this) |
 | Admin changes booking dates | `start_datetime`/`end_datetime` change: the saved hook fires but doesn't trigger reservation logic (only `caregiver_id` and `status` changes are watched). Slot records would reference stale dates. **This is a gap.** |
 | Multi-date sibling bookings | Each sibling `Booking` fires its own saved hook → each reserves its own date's slots |

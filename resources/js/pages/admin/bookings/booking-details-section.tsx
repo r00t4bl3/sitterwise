@@ -603,7 +603,9 @@ export function BookingDetailsSection({
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {booking_statuses.map((status) => (
+                                    {booking_statuses
+                                        .filter((s) => s.value !== 'cancelled')
+                                        .map((status) => (
                                         <SelectItem
                                             key={status.value}
                                             value={status.value}

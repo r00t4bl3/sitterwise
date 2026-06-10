@@ -24,7 +24,7 @@
         <p style="background: #f8fafc; padding: 12px; border-radius: 6px; border-left: 3px solid #EF4444;">
             {{ $reason }}
         </p>
-        <p>From Job History you can excise the back-out, log a no-show, or log a late arrival:</p>
+        <p>From Job History you can excuse the back-out, log a no-show, or log a late arrival:</p>
         <p style="margin: 24px 0;">
             <a href="{{ config('app.url') }}/caregivers/{{ $caregiverId }}/jobs" class="btn">
                 View Job Details
