@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Models\Traits\HasGroupFields;
@@ -33,6 +34,12 @@ class Booking extends Model
         });
 
         static::updating(function (Booking $booking) {
+            $skip = [BookingStatus::Paid->value, BookingStatus::Cancelled->value];
+
+            if (in_array($booking->status, $skip, true)) {
+                return;
+            }
+
             if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
                 $booking->calculateTotalWorkingHours();
             }
@@ -70,6 +77,10 @@ class Booking extends Model
 
         $pricingRule = $query->first();
 
+        if (! $pricingRule) {
+            $pricingRule = PricingRule::where('service_type', $group->service_type)->first();
+        }
+
         if ($pricingRule) {
             $this->charge_to_client_hourly = $pricingRule->charge_to_client;
             $this->paid_to_caregiver_hourly = $pricingRule->paid_to_caregiver;
@@ -83,6 +94,10 @@ class Booking extends Model
 
     public function calculateTotalAmount(): void
     {
+        if ($this->status === BookingStatus::Paid->value) {
+            return;
+        }
+
         if ($this->status === BookingStatus::Cancelled->value) {
             $this->charge_to_client = 0;
             $this->paid_to_caregiver = 0;
@@ -90,6 +105,10 @@ class Booking extends Model
             $this->total_service_amount = 0;
             $this->total_amount = 0;
 
+            return;
+        }
+
+        if ($this->end_datetime?->isPast() && $this->status !== BookingStatus::Completed->value) {
             return;
         }
 
@@ -236,6 +255,21 @@ class Booking extends Model
             }
 
             if ($caregiverChanged && $booking->caregiver_id) {
+                if ($booking->wasChanged('caregiver_id')) {
+                    $oldCaregiverId = $booking->getOriginal('caregiver_id');
+
+                    if ($oldCaregiverId) {
+                        $oldAssignment = $booking->assignments()
+                            ->where('caregiver_id', $oldCaregiverId)
+                            ->unresolved()
+                            ->first();
+
+                        if ($oldAssignment) {
+                            $oldAssignment->resolve(AssignmentResolution::Reassigned, 'Caregiver changed via booking edit');
+                        }
+                    }
+                }
+
                 $booking->assignments()->firstOrCreate(
                     ['caregiver_id' => $booking->caregiver_id],
                     ['assigned_at' => now()],

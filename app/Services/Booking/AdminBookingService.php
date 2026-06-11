@@ -436,7 +436,23 @@ class AdminBookingService implements BookingServiceInterface
             BookingStatus::cases()
         );
 
-        $booking->load('caregiver.user', 'clientRating', 'caregiverRating', 'bookingGroup.bookings.caregiver');
+        $booking->load([
+            'caregiver.user',
+            'clientRating',
+            'caregiverRating',
+            'bookingGroup.bookings.caregiver',
+            'assignments',
+            'client.favoriteCaregivers',
+            'client.blockedCaregivers',
+        ]);
+
+        $assignmentResolution = null;
+        if ($booking->caregiver_id) {
+            $currentAssignment = $booking->assignments
+                ->where('caregiver_id', $booking->caregiver_id)
+                ->first();
+            $assignmentResolution = $currentAssignment?->resolution;
+        }
 
         $group = $booking->bookingGroup;
         $siblingBookings = $group?->bookings
@@ -453,8 +469,16 @@ class AdminBookingService implements BookingServiceInterface
                     : null,
             ]);
 
+        $recommended = $this->recommendationService->getRecommendedCaregivers($booking->client, $booking);
+        $caregiverSuggestions = $recommended->values()->toArray();
+        $caregiverAllIds = $recommended->pluck('id')->toArray();
+        $caregiverTotal = $recommended->count();
+
         return Inertia::render('admin/bookings/show', [
             'booking_statuses' => $bookingStatuses,
+            'caregiver_suggestions' => $caregiverSuggestions,
+            'caregiver_all_ids' => $caregiverAllIds,
+            'caregiver_total' => $caregiverTotal,
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
@@ -467,6 +491,7 @@ class AdminBookingService implements BookingServiceInterface
                 'caregiver_name' => $booking->caregiver
                     ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
                     : null,
+                'assignment_resolution' => $assignmentResolution,
                 'address_line1' => $booking->address_line1,
                 'address_line2' => $booking->address_line2,
                 'address_city' => $booking->address_city,
@@ -839,16 +864,64 @@ class AdminBookingService implements BookingServiceInterface
                 'cancelled_at' => now(),
                 'cancellation_reason' => $request->input('reason'),
                 'cancelled_by' => auth()->id(),
+                'charge_to_client' => 0,
+                'paid_to_caregiver' => 0,
+                'sitterwise_cut' => 0,
+                'total_service_amount' => 0,
+                'total_amount' => 0,
             ]);
 
             $assignment = $booking->assignments()->unresolved()->first();
 
             if ($assignment) {
-                $assignment->resolve(AssignmentResolution::CancelledBySitterwise);
+                $assignment->resolve(AssignmentResolution::CancelledBySitterwise, $request->input('reason'));
             }
         });
 
         return redirect()->back()->with('success', 'Booking cancelled successfully.');
+    }
+
+    public function replaceCaregiver(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'caregiver_id' => 'required|exists:caregivers,id',
+        ]);
+
+        $finalized = [BookingStatus::Completed->value, BookingStatus::Paid->value, BookingStatus::Cancelled->value];
+
+        if (in_array($booking->status, $finalized, true)) {
+            return redirect()->back()->with('error', 'Cannot replace caregiver on a finalized booking.');
+        }
+
+        $newCaregiver = Caregiver::where('id', $validated['caregiver_id'])
+            ->where('status', CaregiverStatus::Active->value)
+            ->first();
+
+        if (! $newCaregiver) {
+            return redirect()->back()->with('error', 'Selected caregiver is not active.');
+        }
+
+        DB::transaction(function () use ($booking, $validated) {
+            $currentAssignment = $booking->assignments()
+                ->unresolved()
+                ->first();
+
+            if ($currentAssignment) {
+                $currentAssignment->resolve(
+                    AssignmentResolution::Reassigned,
+                    'Replaced via Replace Caregiver flow',
+                );
+            }
+
+            $booking->update(['caregiver_id' => $validated['caregiver_id']]);
+
+            $booking->assignments()->create([
+                'caregiver_id' => $validated['caregiver_id'],
+                'assigned_at' => now(),
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Caregiver replaced successfully.');
     }
 
     public function destroy(Booking $booking)

@@ -50,6 +50,11 @@ class BookingController extends Controller
         return $this->service->cancel($request, $booking);
     }
 
+    public function replaceCaregiver(Request $request, Booking $booking)
+    {
+        return $this->service->replaceCaregiver($request, $booking);
+    }
+
     public function destroy(Booking $booking)
     {
         return $this->service->destroy($booking);

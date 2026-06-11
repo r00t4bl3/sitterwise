@@ -130,6 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
         Route::post('bookings/{booking}/process-payment', [BookingController::class, 'processPayment'])->name('bookings.processPayment');
         Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::post('bookings/{booking}/replace-caregiver', [BookingController::class, 'replaceCaregiver'])->name('bookings.replace-caregiver');
         Route::post('bookings/{booking}/notify', [BookingController::class, 'notify'])->name('bookings.notify');
         Route::post('bookings/groups/{bookingGroup}/split', [BookingController::class, 'splitGroup'])->name('bookings.groups.split');
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');

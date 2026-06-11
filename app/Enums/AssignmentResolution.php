@@ -2,6 +2,17 @@
 
 namespace App\Enums;
 
+/**
+ * Represents the resolution state of a CaregiverAssignment.
+ *
+ * - null:              Actively assigned. Caregiver is expected to work this booking.
+ * - completed:         Caregiver completed the job. Set during checkout/payment flow.
+ * - backed_out:        Caregiver voluntarily backed out via the back-out form.
+ * - backed_out_excused: Admin excused a caregiver's backout retroactively.
+ * - reassigned:        Admin swapped the caregiver for another (edit sheet or Replace flow).
+ * - no_show:           Caregiver did not show up for the job.
+ * - cancelled_by_sitterwise: Entire booking was cancelled by admin.
+ */
 enum AssignmentResolution: string
 {
     case Completed = 'completed';

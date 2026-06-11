@@ -330,3 +330,156 @@ test('calculate hourly rate defaults to zero when no match', function () {
     $this->assertEquals(0.00, $booking->paid_to_caregiver_hourly);
     $this->assertEquals(0.00, $booking->sitterwise_cut_hourly);
 });
+
+test('calculate hourly rate for group_childcare_invoiced with null children falls back to pricing rule', function () {
+    $client = Client::factory()->create();
+
+    PricingRule::factory()->create([
+        'service_type' => 'group_childcare_invoiced',
+        'number_of_children' => 5,
+        'charge_to_client' => 36.00,
+        'paid_to_caregiver' => 23.00,
+        'sitterwise_cut' => 0.00,
+    ]);
+
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'group_childcare_invoiced',
+        'children' => null,
+    ]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
+    $booking->calculateHourlyRate();
+
+    $this->assertEquals(36.00, $booking->charge_to_client_hourly);
+    $this->assertEquals(23.00, $booking->paid_to_caregiver_hourly);
+    $this->assertEquals(0.00, $booking->sitterwise_cut_hourly);
+});
+
+test('calculate hourly rate for corporate_invoiced with null children falls back to pricing rule', function () {
+    $client = Client::factory()->create();
+
+    PricingRule::factory()->create([
+        'service_type' => 'corporate_invoiced',
+        'number_of_children' => 1,
+        'charge_to_client' => 36.00,
+        'paid_to_caregiver' => 23.00,
+        'sitterwise_cut' => 0.00,
+    ]);
+
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'corporate_invoiced',
+        'children' => null,
+    ]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
+    $booking->calculateHourlyRate();
+
+    $this->assertEquals(36.00, $booking->charge_to_client_hourly);
+    $this->assertEquals(23.00, $booking->paid_to_caregiver_hourly);
+    $this->assertEquals(0.00, $booking->sitterwise_cut_hourly);
+});
+
+test('calculate hourly rate for comped with null children falls back to pricing rule', function () {
+    $client = Client::factory()->create();
+
+    PricingRule::factory()->create([
+        'service_type' => 'comped',
+        'number_of_children' => 1,
+        'charge_to_client' => 0.00,
+        'paid_to_caregiver' => 23.00,
+        'sitterwise_cut' => 0.00,
+    ]);
+
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'comped',
+        'children' => null,
+    ]);
+    $booking = Booking::factory()->create(['booking_group_id' => $group->id]);
+    $booking->calculateHourlyRate();
+
+    $this->assertEquals(0.00, $booking->charge_to_client_hourly);
+    $this->assertEquals(23.00, $booking->paid_to_caregiver_hourly);
+    $this->assertEquals(0.00, $booking->sitterwise_cut_hourly);
+});
+
+test('calculate total amount does not modify financials for paid booking', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'paid',
+        'charge_to_client' => 100.00,
+        'paid_to_caregiver' => 70.00,
+        'sitterwise_cut' => 30.00,
+        'total_service_amount' => 100.00,
+        'total_amount' => 110.00,
+        'charge_to_client_hourly' => 0,
+        'total_working_hour' => 0,
+    ]);
+
+    $booking->calculateTotalAmount();
+
+    $this->assertEquals(100.00, $booking->charge_to_client);
+    $this->assertEquals(70.00, $booking->paid_to_caregiver);
+    $this->assertEquals(30.00, $booking->sitterwise_cut);
+    $this->assertEquals(100.00, $booking->total_service_amount);
+    $this->assertEquals(110.00, $booking->total_amount);
+});
+
+test('calculate total amount zeros financials for cancelled booking', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'cancelled',
+        'charge_to_client' => 100.00,
+        'paid_to_caregiver' => 70.00,
+        'sitterwise_cut' => 30.00,
+        'total_service_amount' => 100.00,
+        'total_amount' => 110.00,
+    ]);
+
+    $booking->calculateTotalAmount();
+
+    $this->assertEquals(0.00, $booking->charge_to_client);
+    $this->assertEquals(0.00, $booking->paid_to_caregiver);
+    $this->assertEquals(0.00, $booking->sitterwise_cut);
+    $this->assertEquals(0.00, $booking->total_service_amount);
+    $this->assertEquals(0.00, $booking->total_amount);
+});
+
+test('calculate total amount does not modify financials for past-dated confirmed booking', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'confirmed',
+        'start_datetime' => now()->subDays(2),
+        'end_datetime' => now()->subDays(2)->addHours(4),
+        'charge_to_client' => 100.00,
+        'paid_to_caregiver' => 70.00,
+        'sitterwise_cut' => 30.00,
+        'total_service_amount' => 100.00,
+        'total_amount' => 110.00,
+        'charge_to_client_hourly' => 0,
+        'total_working_hour' => 0,
+    ]);
+
+    $booking->calculateTotalAmount();
+
+    $this->assertEquals(100.00, $booking->charge_to_client);
+    $this->assertEquals(70.00, $booking->paid_to_caregiver);
+    $this->assertEquals(30.00, $booking->sitterwise_cut);
+    $this->assertEquals(100.00, $booking->total_service_amount);
+    $this->assertEquals(110.00, $booking->total_amount);
+});

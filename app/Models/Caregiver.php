@@ -42,11 +42,17 @@ class Caregiver extends Model
         });
     }
 
-    private static function generateSlug(string $name): string
+    public static function generateSlug(string $name, ?int $exceptId = null): string
     {
         $parts = explode(' ', $name, 2);
         $firstName = $parts[0] ?? '';
         $lastName = $parts[1] ?? '';
+
+        $collisionQuery = function (string $slug) use ($exceptId) {
+            return self::where('slug', $slug)
+                ->when($exceptId, fn ($q, $id) => $q->where('id', '!=', $id))
+                ->exists();
+        };
 
         $lastInitial = $lastName
             ? Str::slug(mb_substr($lastName, 0, 1))
@@ -58,10 +64,14 @@ class Caregiver extends Model
             $baseSlug = Str::slug($name);
         }
 
+        if ($collisionQuery($baseSlug) && $lastName) {
+            $baseSlug = Str::slug($firstName).'-'.Str::slug($lastName);
+        }
+
         $originalSlug = $baseSlug;
         $counter = 2;
 
-        while (self::where('slug', $baseSlug)->exists()) {
+        while ($collisionQuery($baseSlug)) {
             $baseSlug = $originalSlug.'-'.$counter;
             $counter++;
         }

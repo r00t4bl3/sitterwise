@@ -14,6 +14,7 @@ import {
     Building2,
     PartyPopper,
     Split,
+    UserPlus,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
@@ -35,6 +36,7 @@ import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { ReplaceCaregiverSheet } from './replace-caregiver-sheet';
 
 interface Booking {
     id: number;
@@ -46,6 +48,7 @@ interface Booking {
     client_email: string | null;
     caregiver_id: number | null;
     caregiver_name: string | null;
+    assignment_resolution: string | null;
     hotel_id: number | null;
     hotel_name: string | null;
     location_type: string;
@@ -114,6 +117,15 @@ interface BookingStatus {
 interface PageProps {
     booking: Booking;
     booking_statuses: BookingStatus[];
+    caregiver_suggestions: Array<{
+        id: number;
+        name: string;
+        age?: number | null;
+        matchIcons?: string[];
+        hasBeenNotified?: boolean;
+    }>;
+    caregiver_all_ids: number[];
+    caregiver_total: number;
 }
 
 const breadcrumbs = [
@@ -134,9 +146,11 @@ const breadcrumbs = [
 export default function BookingDetail({
     booking,
     booking_statuses,
+    caregiver_suggestions,
 }: PageProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
 
     const cancelForm = useForm({ reason: '' });
 
@@ -401,6 +415,29 @@ export default function BookingDetail({
                                         >
                                             {booking.caregiver_name}
                                         </Link>
+                                        {booking.assignment_resolution && (
+                                            <Badge variant="outline" className="text-xs">
+                                                {{
+                                                    'backed_out': 'Backed Out',
+                                                    'backed_out_excused': 'Backed Out (Excused)',
+                                                    'reassigned': 'Reassigned',
+                                                    'completed': 'Completed',
+                                                    'no_show': 'No-Show',
+                                                    'cancelled_by_sitterwise': 'Cancelled',
+                                                }[booking.assignment_resolution] ?? booking.assignment_resolution}
+                                            </Badge>
+                                        )}
+                                        {booking.status !== 'cancelled' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-6 text-[11px]"
+                                                onClick={() => setReplaceSheetOpen(true)}
+                                            >
+                                                <UserPlus className="mr-1 h-3 w-3" />
+                                                Replace
+                                            </Button>
+                                        )}
                                     </div>
                                 )}
 
@@ -720,18 +757,35 @@ export default function BookingDetail({
 
                 <div className="flex justify-end gap-2">
                     {booking.status !== 'cancelled' && (
-                        <Button
-                            variant="destructive"
-                            onClick={() => setCancelDialogOpen(true)}
-                        >
-                            Cancel Booking
-                        </Button>
+                        <>
+                            <Button
+                                variant="outline"
+                                onClick={() => setReplaceSheetOpen(true)}
+                            >
+                                <UserPlus className="mr-1 h-4 w-4" />
+                                Replace Caregiver
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setCancelDialogOpen(true)}
+                            >
+                                Cancel Booking
+                            </Button>
+                        </>
                     )}
                     <Button asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
                 </div>
             </div>
+
+            <ReplaceCaregiverSheet
+                open={replaceSheetOpen}
+                onOpenChange={setReplaceSheetOpen}
+                bookingId={booking.id}
+                currentCaregiverName={booking.caregiver_name}
+                caregiverSuggestions={caregiver_suggestions}
+            />
 
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
                 <DialogContent>

@@ -123,6 +123,7 @@ export function useBookingSheet({
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     const [sheetMode, setSheetMode] = useState<SheetMode>('create');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showPastBookingDialog, setShowPastBookingDialog] = useState(false);
 
     const [clientSuggestions, setClientSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
@@ -687,7 +688,7 @@ export function useBookingSheet({
         setIsSheetOpen(true);
     };
 
-    const openEditSheet = async (booking: Booking) => {
+    const proceedWithEditSheet = async (booking: Booking) => {
         setEditingBooking(booking);
         setSheetMode('edit');
         setIsLoading(true);
@@ -869,6 +870,32 @@ export function useBookingSheet({
             setIsSheetOpen(false);
             setIsLoading(false);
         }
+    };
+
+    const openEditSheet = async (booking: Booking) => {
+        const endDate = new Date(booking.end_datetime);
+
+        if (endDate < new Date()) {
+            setEditingBooking(booking);
+            setShowPastBookingDialog(true);
+
+            return;
+        }
+
+        await proceedWithEditSheet(booking);
+    };
+
+    const handleConfirmPastBooking = async () => {
+        setShowPastBookingDialog(false);
+
+        if (editingBooking) {
+            await proceedWithEditSheet(editingBooking);
+        }
+    };
+
+    const handleCancelPastBooking = () => {
+        setShowPastBookingDialog(false);
+        setEditingBooking(null);
     };
 
     const openDuplicateSheet = async (booking: Booking) => {
@@ -1183,6 +1210,7 @@ export function useBookingSheet({
         sheetMode,
         showDeleteDialog,
         setShowDeleteDialog,
+        showPastBookingDialog,
         form,
         clientSuggestions,
         setClientSuggestions,
@@ -1232,6 +1260,8 @@ export function useBookingSheet({
         handleDelete,
         handleConfirmDelete,
         handleCancelDelete,
+        handleConfirmPastBooking,
+        handleCancelPastBooking,
         openCreateSheet,
         openEditSheet,
         openDuplicateSheet,

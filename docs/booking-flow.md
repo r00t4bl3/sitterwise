@@ -188,6 +188,7 @@ Derived directly from matched attributes (not from score range). The frontend di
 flowchart TD
     START(["Confirmed Booking"]) --> CO
     START --> BO
+    START --> RC
     START --> CA
 
     subgraph CO["Caregiver Checkout"]
@@ -229,12 +230,30 @@ flowchart TD
         BO4 --> BO5[Booking status & caregiver_id<br/>unchanged — Admin handles manually]
     end
 
+    subgraph RC["Admin Replace Caregiver"]
+        direction TB
+        RC1[Admin clicks Replace on<br/>booking detail page] --> RC2["POST /bookings/{booking}/replace-caregiver"]
+        RC2 --> RC3[Resolve current unresolved<br/>assignment → Reassigned]
+        RC3 --> RC4[Update booking.caregiver_id]
+        RC4 --> RC5[Create new CaregiverAssignment<br/>for replacement]
+    end
+
     CO3 --> P1
     P5 --> R1
     P5 --> R3
 ```
 
-> **Known gaps:** See `docs/caregiver-backout-gaps.md` for issues with the booking detail page, auto-resolve on reassign, replace caregiver flow, and other gaps in the backout/cancellation flow.
+### Admin Follow-Up Actions (from Job History)
+
+After a caregiver backs out, the admin can take additional actions from the caregiver's **Job History** page (`/caregivers/{id}/jobs`):
+
+- **Excuse** — Mark the backout as excused by calling `POST /assignments/{id}/excuse` with a required note. Sets resolution to `backed_out_excused`, records who excused it and when, and queues a reliability recalculation.
+- **No-Show** — Log the caregiver as a no-show by calling `POST /assignments/{id}/no-show` with an optional note. Sets resolution to `no_show` and queues a reliability recalculation.
+- **Late Arrival** — Log a late arrival flag by calling `POST /assignments/{id}/late-arrival` with an optional note. Sets `late_arrival_flag = true` without changing the assignment resolution.
+
+These actions are independent of the booking status. The booking itself remains confirmed — only the caregiver assignment resolution changes.
+
+> See `docs/assignment-resolutions.md` for the full resolution reference and `docs/caregiver-backout-gaps.md` for remaining gaps.
 
 ## Financial Model
 

@@ -2043,6 +2043,13 @@ class ImportUserService
                 $baseSlug = 'caregiver';
             }
 
+            if (
+                Caregiver::where('slug', $baseSlug)->where('id', '!=', $caregiver->id)->exists()
+                && $caregiver->last_name
+            ) {
+                $baseSlug = $firstName.'-'.Str::slug($caregiver->last_name);
+            }
+
             $originalSlug = $baseSlug;
             $counter = 2;
 

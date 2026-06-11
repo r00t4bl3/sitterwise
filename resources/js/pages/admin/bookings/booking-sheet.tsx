@@ -38,6 +38,9 @@ export function BookingSheet({
     sheetMode,
     showDeleteDialog,
     setShowDeleteDialog,
+    showPastBookingDialog,
+    handleConfirmPastBooking,
+    handleCancelPastBooking,
     form,
     clientSuggestions,
     clientAddresses,
@@ -377,6 +380,26 @@ export function BookingSheet({
                             disabled={form.processing}
                         >
                             {form.processing ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showPastBookingDialog} onOpenChange={handleCancelPastBooking}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Past Booking</DialogTitle>
+                        <DialogDescription>
+                            This booking has already ended. Financial fields are locked and will not be saved.
+                            Only non-financial changes will be applied. Continue?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCancelPastBooking}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleConfirmPastBooking}>
+                            Continue Editing
                         </Button>
                     </DialogFooter>
                 </DialogContent>

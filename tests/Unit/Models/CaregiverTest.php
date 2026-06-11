@@ -177,7 +177,7 @@ test('generates slug with last initial', function () {
     $this->assertEquals('jason-s', $caregiver->refresh()->slug);
 });
 
-test('generates unique slug for duplicate base', function () {
+test('generates unique slug with full last name on collision', function () {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
@@ -200,10 +200,10 @@ test('generates unique slug for duplicate base', function () {
     $caregiver2->save();
 
     $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
-    $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
+    $this->assertEquals('jason-michael', $caregiver2->refresh()->slug);
 });
 
-test('generates sequential slugs for multiple duplicates', function () {
+test('falls back to numeric suffix when full last name also collides', function () {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
     $user3 = User::factory()->create();
@@ -236,8 +236,8 @@ test('generates sequential slugs for multiple duplicates', function () {
     $caregiver3->save();
 
     $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
-    $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
-    $this->assertEquals('jason-m-3', $caregiver3->refresh()->slug);
+    $this->assertEquals('jason-michael', $caregiver2->refresh()->slug);
+    $this->assertEquals('jason-miller', $caregiver3->refresh()->slug);
 });
 
 test('generates slug for special last name', function () {
@@ -250,4 +250,39 @@ test('generates slug for special last name', function () {
     $caregiver->save();
 
     $this->assertEquals('jason-o', $caregiver->refresh()->slug);
+});
+
+test('uses numeric suffix when full last name also collides', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+    $user3 = User::factory()->create();
+
+    $caregiver1 = new Caregiver([
+        'user_id' => $user1->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => 'jason-m',
+    ]);
+    $caregiver1->save();
+
+    $caregiver2 = new Caregiver([
+        'user_id' => $user2->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => 'jason-momoa',
+    ]);
+    $caregiver2->save();
+
+    $caregiver3 = new Caregiver([
+        'user_id' => $user3->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => '',
+    ]);
+    $caregiver3->save();
+
+    $this->assertEquals('jason-momoa-2', $caregiver3->refresh()->slug);
 });

@@ -16,6 +16,8 @@ The booking detail page displays the caregiver name as a clickable link, but it 
 
 **Possible fix:** Load the assignment resolution for the booking's caregiver and display a `<StatusBadge>` or color-coded indicator next to the caregiver name. E.g., "Jane Doe (Backed Out)" or a red badge.
 
+**Status:** ✅ Resolved — Badge shown next to caregiver name on booking detail page.
+
 ---
 
 ## Gap 2: No Auto-Resolve Old Assignment on Caregiver Change
@@ -41,14 +43,16 @@ But the old assignment's `resolution` is **never automatically set** to `Assignm
 
 **Possible fix:** In the `booted()` saved hook, when `caregiver_id` changes, find the previous assignment and auto-resolve it to `Reassigned` with a note.
 
+**Status:** ✅ Resolved — Old assignment auto-resolved to `Reassigned` in `Booking::booted()` saved hook.
+
 ---
 
 ## Gap 3: No "Replace Caregiver" Flow from Booking Detail Page
 
 **Files:**
 - `resources/js/pages/admin/bookings/show.tsx`
-- `resources/js/pages/admin/bookings/booking-details-section.tsx`
-- `resources/js/pages/admin/caregivers/job-history.tsx`
+- `resources/js/pages/admin/bookings/replace-caregiver-sheet.tsx`
+- `app/Services/Booking/AdminBookingService.php`
 
 To replace a backed-out caregiver, an admin currently must:
 1. Navigate to the booking edit sheet
@@ -61,6 +65,8 @@ There is no dedicated "Replace Caregiver" action on the booking detail page that
 **Impact:** High friction for the common admin task of filling a booking after a backout. Steps are spread across two pages with no automation.
 
 **Possible fix:** Add a "Replace Caregiver" action on the booking detail page that lets the admin select a new caregiver, auto-resolves the old assignment to `Reassigned`, and creates the new assignment — all in one flow.
+
+**Status:** ✅ Resolved — Sheet UI with ranked caregiver recommendations, backend endpoint resolving assignment and creating new one.
 
 ---
 
@@ -103,6 +109,8 @@ If a caregiver had previously backed out (assignment resolution = `BackedOut`), 
 
 **Possible fix:** Accept a reason in the cancel endpoint and use it to set the resolution context. Or, when cancelling a booking that has a backed-out caregiver, set the new assignment's resolution to `CancelledBySitterwise` with a note referencing the original backout.
 
+**Status:** ✅ Resolved — Cancellation reason passed as resolution note in `AdminBookingService::cancel()`.
+
 ---
 
 ## Gap 6: Email Template Typo
@@ -114,6 +122,8 @@ The email template says:
 > "From Job History you can **excise** the back-out..."
 
 This should be **"excuse"** not "excise."
+
+**Status:** ✅ Resolved — Typo fixed.
 
 ---
 
