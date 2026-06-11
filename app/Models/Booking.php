@@ -458,6 +458,14 @@ class Booking extends Model
             'end_time' => $end->format('g:i A'),
             'service_time' => $start->format('g:i A'),
             'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),
+            'dates' => [
+                [
+                    'date' => $start->format('l, F j, Y'),
+                    'start_time' => $start->format('g:i A'),
+                    'end_time' => $end->format('g:i A'),
+                ],
+            ],
+            'is_multi_day' => false,
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
             'location' => $group->hotel_name ?? $group->hotel?->name ?? $group->address_line1,

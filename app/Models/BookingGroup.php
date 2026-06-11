@@ -132,6 +132,12 @@ class BookingGroup extends Model
             'client_phone' => $this->client_phone,
             'service_requested' => $this->service_type,
             'service_name' => $this->service_type,
+            'dates' => $this->bookings->map(fn ($booking) => [
+                'date' => $booking->start_datetime->setTimezone('America/Los_Angeles')->format('l, F j, Y'),
+                'start_time' => $booking->start_datetime->setTimezone('America/Los_Angeles')->format('g:i A'),
+                'end_time' => $booking->end_datetime->setTimezone('America/Los_Angeles')->format('g:i A'),
+            ])->toArray(),
+            'is_multi_day' => true,
             'kids_count' => $childrenCount.' '.($childrenCount !== 1 ? 'children' : 'child'),
             'children_summary' => $childrenSummary ?: 'None',
             'location' => $this->hotel_name ?? $this->hotel?->name ?? $this->address_line1,
