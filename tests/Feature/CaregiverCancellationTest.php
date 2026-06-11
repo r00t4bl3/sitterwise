@@ -3,13 +3,13 @@
 use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
-use App\Mail\AdminCaregiverBackedOutMail;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\CaregiverAssignment;
 use App\Models\User;
+use App\Notifications\AdminCaregiverBackedOutNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\artisan;
@@ -67,7 +67,7 @@ describe('caregiver back-out', function () {
     });
 
     it('sends notification to admins on back-out', function () {
-        Mail::fake();
+        Notification::fake();
 
         $admin = User::factory()->create(['role' => 'admin']);
         $caregiver = buildCaregiver(['status' => CaregiverStatus::Active]);
@@ -78,10 +78,14 @@ describe('caregiver back-out', function () {
                 'reason' => 'Family emergency',
             ]);
 
-        Mail::assertQueued(AdminCaregiverBackedOutMail::class, function ($mail) use ($caregiver) {
-            return $mail->caregiverName === $caregiver->first_name.' '.$caregiver->last_name
-                && $mail->reason === 'Family emergency';
-        });
+        Notification::assertSentTo(
+            $admin,
+            AdminCaregiverBackedOutNotification::class,
+            function ($notification) use ($caregiver) {
+                return $notification->caregiverName === $caregiver->first_name.' '.$caregiver->last_name
+                    && $notification->reason === 'Family emergency';
+            }
+        );
     });
 
     it('requires a reason for back-out', function () {

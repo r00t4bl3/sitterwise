@@ -3,14 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Enums\CaregiverStatus;
-use App\Mail\AdminCaregiverArchivedMail;
 use App\Mail\CaregiverArchiveWarningMail;
 use App\Models\CaregiverPause;
 use App\Models\User;
+use App\Notifications\AdminCaregiverArchivedNotification;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 #[Signature('app:archive-long-term-inactive')]
 #[Description('Warn caregivers at 166 days and archive to inactive at 180 days on hold')]
@@ -55,17 +56,12 @@ class ArchiveLongTermInactive extends Command
             $caregiver->update(['status' => CaregiverStatus::Inactive]);
             $pause->update(['resumed_at' => now()]);
 
-            $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
-
-            foreach ($adminEmails as $adminEmail) {
-                Mail::to($adminEmail)->queue(
-                    new AdminCaregiverArchivedMail(
-                        caregiverName: "{$caregiver->first_name} {$caregiver->last_name}",
-                        caregiverId: $caregiver->id,
-                        daysOnHold: $pause->paused_at->diffInDays(now()),
-                    ),
-                );
-            }
+            $admins = User::where('role', 'admin')->get();
+            Notification::send($admins, new AdminCaregiverArchivedNotification(
+                caregiverName: "{$caregiver->first_name} {$caregiver->last_name}",
+                caregiverId: $caregiver->id,
+                daysOnHold: $pause->paused_at->diffInDays(now()),
+            ));
 
             $this->info("Archived caregiver {$caregiver->id} ({$caregiver->first_name} {$caregiver->last_name}) to Inactive");
             $archived++;

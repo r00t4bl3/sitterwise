@@ -101,5 +101,4 @@ describe('Guest Account Setup Notifications', function () {
         expect($payload['type'])->toBe('account_setup');
     });
 
-
 });

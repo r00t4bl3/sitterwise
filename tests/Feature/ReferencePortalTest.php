@@ -1,12 +1,12 @@
 <?php
 
 use App\Enums\CaregiverStatus;
-use App\Mail\ReferenceCompletedMail;
 use App\Models\Caregiver;
 use App\Models\ReferenceRequest;
 use App\Models\User;
+use App\Notifications\ReferenceCompletedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -172,21 +172,25 @@ describe('Reference Portal - Submit', function () {
     });
 
     it('sends admin notification on successful submission', function () {
-        Mail::fake();
-        User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
+        Notification::fake();
+        $admin = User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
 
         $reference = referencePortalCreateReferenceRequest();
 
         $this->post("/references/{$reference->token}", referencePortalValidPayload());
 
-        Mail::assertQueued(ReferenceCompletedMail::class, function ($mail) use ($reference) {
-            return $mail->referenceName === 'Jane Reference'
-                && $mail->applicantName === $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
-        });
+        Notification::assertSentTo(
+            $admin,
+            ReferenceCompletedNotification::class,
+            function ($notification) use ($reference) {
+                return $notification->referenceName === 'Jane Reference'
+                    && $notification->applicantName === $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
+            }
+        );
     });
 
-    it('sends admin notification to super admins too', function () {
-        Mail::fake();
+    it('does not send notification when only super admin exists', function () {
+        Notification::fake();
         User::factory()->create(['role' => 'super_admin', 'email' => 'super@example.test']);
 
         $reference = referencePortalCreateReferenceRequest();
@@ -196,7 +200,7 @@ describe('Reference Portal - Submit', function () {
             'strengths' => 'Good caregiver.',
         ]));
 
-        Mail::assertQueued(ReferenceCompletedMail::class, 1);
+        Notification::assertNothingSent();
     });
 
     it('returns 404 for invalid token on store', function () {

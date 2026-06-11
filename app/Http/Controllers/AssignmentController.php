@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssignmentResolution;
-use App\Mail\AdminCaregiverBackedOutMail;
 use App\Models\CaregiverAssignment;
 use App\Models\User;
+use App\Notifications\AdminCaregiverBackedOutNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class AssignmentController extends Controller
 {
@@ -31,16 +31,14 @@ class AssignmentController extends Controller
 
         $assignment->resolve(AssignmentResolution::BackedOut, $validated['reason']);
 
-        $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
+        $admins = User::where('role', 'admin')->get();
         $caregiverName = $caregiver->first_name.' '.$caregiver->last_name;
-        foreach ($adminEmails as $adminEmail) {
-            Mail::to($adminEmail)->queue(new AdminCaregiverBackedOutMail(
-                caregiverName: $caregiverName,
-                caregiverId: $caregiver->id,
-                bookingId: $assignment->booking_id,
-                reason: $validated['reason'],
-            ));
-        }
+        Notification::send($admins, new AdminCaregiverBackedOutNotification(
+            caregiverName: $caregiverName,
+            caregiverId: $caregiver->id,
+            bookingId: $assignment->booking_id,
+            reason: $validated['reason'],
+        ));
 
         Artisan::queue('app:recalculate-reliability', ['--caregiver' => $caregiver->id]);
 

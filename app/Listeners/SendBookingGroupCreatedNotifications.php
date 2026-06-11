@@ -3,11 +3,12 @@
 namespace App\Listeners;
 
 use App\Events\BookingGroupCreated;
-use App\Mail\AdminGroupBookingCreatedMail;
 use App\Mail\ClientGroupBookingCreatedMail;
 use App\Models\User;
+use App\Notifications\AdminGroupBookingCreatedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class SendBookingGroupCreatedNotifications implements ShouldQueue
 {
@@ -23,8 +24,6 @@ class SendBookingGroupCreatedNotifications implements ShouldQueue
 
         // 2. Notify all Admins
         $admins = User::where('role', 'admin')->get();
-        foreach ($admins as $admin) {
-            Mail::to($admin->email)->send(new AdminGroupBookingCreatedMail($group));
-        }
+        Notification::send($admins, new AdminGroupBookingCreatedNotification($group));
     }
 }
