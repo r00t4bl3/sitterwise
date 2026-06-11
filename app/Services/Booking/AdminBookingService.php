@@ -17,10 +17,9 @@ use App\Events\BookingAccepted;
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
 use App\Events\BookingGroupSplit;
-use App\Events\BookingInvitationSent;
+use App\Jobs\NotifyCaregiversJob;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
-use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -866,21 +865,9 @@ class AdminBookingService implements BookingServiceInterface
             'caregiver_ids.*' => 'exists:caregivers,id',
         ]);
 
-        foreach ($validated['caregiver_ids'] as $caregiverId) {
-            $notification = BookingCaregiverNotification::firstOrCreate([
-                'booking_id' => $booking->id,
-                'caregiver_id' => $caregiverId,
-            ], [
-                'notified_at' => now(),
-            ]);
+        NotifyCaregiversJob::dispatch($booking, $validated['caregiver_ids']);
 
-            if ($notification->wasRecentlyCreated) {
-                // Send notification email/sms
-                event(new BookingInvitationSent($booking, Caregiver::find($caregiverId)));
-            }
-        }
-
-        return redirect()->back()->with('success', 'Caregivers notified successfully.');
+        return redirect()->back()->with('success', 'Notifications queued.');
     }
 
     public function recommendedCaregivers(Request $request)

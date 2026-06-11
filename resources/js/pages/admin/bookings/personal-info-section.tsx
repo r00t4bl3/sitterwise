@@ -1,17 +1,6 @@
-import { useForm } from '@inertiajs/react';
 import {
-    BadgeCheck,
-    Baby,
-    Briefcase,
-    CalendarCheck,
     ChevronDown,
     ChevronUp,
-    Heart,
-    History,
-    MapPin,
-    MapPinCheckInside,
-    Plus,
-    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
@@ -28,33 +17,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { getChildBirthYearOptions } from '@/lib/age';
 import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { BookingChildrenSection } from './booking-children-section';
+import { BookingPetsSection } from './booking-pets-section';
 import { ClientInfoPanel } from './client-info-panel';
+import { NotifyCaregiversSheet } from './notify-caregivers-sheet';
 import type { Booking } from './types';
-
-const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
-const MONTH_ABBR = [
-    '',
-    ...Array.from({ length: 12 }, (_, i) =>
-        monthFormatter.format(new Date(2000, i)),
-    ),
-];
 
 interface NewChild {
     tempId: string;
@@ -212,34 +182,6 @@ export function PersonalInfoSection({
 
     const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
 
-    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>('all');
-
-    const notifyForm = useForm({
-        caregiver_ids: [] as number[],
-    });
-
-    const toggleCaregiver = (id: number) => {
-        const current = notifyForm.data.caregiver_ids;
-        const next = current.includes(id)
-            ? current.filter((c) => c !== id)
-            : [...current, id];
-
-        notifyForm.setData('caregiver_ids', next);
-    };
-
-    const handleNotify = () => {
-        if (notifyForm.data.caregiver_ids.length === 0) {
-            return;
-        }
-
-        notifyForm.post(`/bookings/${editingBooking!.id}/notify`, {
-            onSuccess: () => {
-                setNotifySheetOpen(false);
-                notifyForm.reset();
-            },
-        });
-    };
-
     return (
         <>
             {editingBooking && (
@@ -302,11 +244,6 @@ export function PersonalInfoSection({
                             <Button
                                 size="sm"
                                 onClick={() => {
-                                    const currentId = form.data.caregiver_id;
-                                    notifyForm.setData(
-                                        'caregiver_ids',
-                                        currentId ? [currentId] : [],
-                                    );
                                     onOpenNotifySheet?.();
                                     setNotifySheetOpen(true);
                                 }}
@@ -321,334 +258,23 @@ export function PersonalInfoSection({
                 <ClientInfoPanel client={(editingBooking.client ?? editingBooking.booking_group?.client) as any} />
             )}
 
-            <Sheet open={notifySheetOpen} onOpenChange={setNotifySheetOpen}>
-                <SheetContent
-                    side="right"
-                    className="flex w-full flex-col sm:max-w-lg"
-                >
-                    <SheetHeader className="shrink-0 pb-0">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <SheetTitle>Notify Caregivers</SheetTitle>
-                                <SheetDescription>
-                                    Select caregivers to notify about this
-                                    booking.
-                                </SheetDescription>
-                            </div>
-                        </div>
-                    </SheetHeader>
-
-                    <div className="flex flex-col gap-2 border-b border-border px-4 py-2">
-                        <div className="items-center text-xs text-muted-foreground">
-                            Showing {caregiverSuggestions.length} of {caregiverTotal} caregivers
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setAgeFilter('all');
-                                    onAgeFilterChange?.('all');
-                                }}
-                                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                    ageFilter === 'all'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                            >
-                                All
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setAgeFilter('younger');
-                                    onAgeFilterChange?.('younger');
-                                }}
-                                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                    ageFilter === 'younger'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                            >
-                                Younger (18-34)
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setAgeFilter('seasoned');
-                                    onAgeFilterChange?.('seasoned');
-                                }}
-                                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                    ageFilter === 'seasoned'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                            >
-                                Seasoned (35+)
-                            </button>
-                            <div className="ml-auto">
-                                <Button
-                                    variant="link"
-                                    size="sm"
-                                    className="cursor-pointer"
-                                    onClick={() => {
-                                        const visibleIds = caregiverSuggestions.map((cg) => cg.id);
-                                        const allSelected = visibleIds.every((id) =>
-                                            notifyForm.data.caregiver_ids.includes(id),
-                                        );
-
-                                        notifyForm.setData(
-                                            'caregiver_ids',
-                                            allSelected ? [] : visibleIds,
-                                        );
-                                    }}
-                                    disabled={loadingCaregiverRecommendations}
-                                >
-                                    {(() => {
-                                        const total = caregiverSuggestions.length;
-                                        const allSelected = caregiverSuggestions.every((cg) =>
-                                            notifyForm.data.caregiver_ids.includes(cg.id),
-                                        );
-
-                                        return allSelected
-                                            ? `Deselect All (${total})`
-                                            : `Select All (${total})`;
-                                    })()}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {(() => {
-                        const visibleIds = caregiverSuggestions.map((cg) => cg.id);
-                        const visibleAllSelected = visibleIds.length > 0
-                            && visibleIds.every((id) =>
-                                notifyForm.data.caregiver_ids.includes(id),
-                            );
-
-                        const totalAllSelected = caregiverAllIds.length > 0
-                            && caregiverAllIds.every((id) =>
-                                notifyForm.data.caregiver_ids.includes(id),
-                            );
-
-                        const showBanner = visibleAllSelected
-                            && !totalAllSelected
-                            && caregiverAllIds.length > visibleIds.length;
-
-                        if (!showBanner) return null;
-
-                        return (
-                            <div className="mx-4 mt-2 flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                                <span>
-                                    All {visibleIds.length} on this page selected.{' '}
-                                    <button
-                                        type="button"
-                                        className="cursor-pointer font-medium underline hover:text-blue-600"
-                                        onClick={() => {
-                                            notifyForm.setData(
-                                                'caregiver_ids',
-                                                caregiverAllIds,
-                                            );
-                                        }}
-                                    >
-                                        Select all {caregiverAllIds.length} matching caregivers.
-                                    </button>
-                                </span>
-                                <button
-                                    type="button"
-                                    className="ml-2 cursor-pointer text-blue-500 hover:text-blue-700"
-                                    onClick={() => {
-                                        /* Dismiss by deselecting one so condition is no longer met */
-                                    }}
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        );
-                    })()}
-
-                    <div className="flex-1 space-y-2 overflow-y-auto px-4">
-                        {loadingCaregiverRecommendations ? (
-                            <div className="flex h-96 items-center justify-center">
-                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                                    <p className="text-sm">
-                                        Loading caregiver recommendations...
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                {(() => {
-                                    const ICON_MAP: Record<
-                                        string,
-                                        React.ElementType
-                                    > = {
-                                        favorited: Heart,
-                                        previous_work: History,
-                                        available: CalendarCheck,
-                                        specialty: Baby,
-                                        location_preferred: MapPinCheckInside,
-                                        location_willing: MapPin,
-                                        recent_work: Briefcase,
-                                    };
-
-                                    const ICON_TOOLTIPS: Record<
-                                        string,
-                                        string
-                                    > = {
-                                        favorited: 'Favorited by client',
-                                        previous_work:
-                                            'Previously worked with this family',
-                                        available: 'Available for booking dates',
-                                        specialty:
-                                            'Specializes in this age group',
-                                        location_preferred:
-                                            'Based in booking area',
-                                        location_willing:
-                                            'Willing to travel to booking area',
-                                        recent_work:
-                                            'Actively working recently',
-                                    };
-
-                                    return caregiverSuggestions.map((caregiver) => {
-                                        const hasBeenNotified = (caregiver as any)
-                                            .hasBeenNotified;
-                                        const matchIcons = (
-                                            caregiver as any
-                                        ).matchIcons as string[] | undefined;
-
-                                        return (
-                                            <Label
-                                                key={caregiver.id}
-                                                className={`flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:cursor-pointer hover:bg-blush ${notifyForm.data.caregiver_ids.includes(caregiver.id) && `bg-blush`}`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <Checkbox
-                                                        id={`cg-${caregiver.id}`}
-                                                        checked={notifyForm.data.caregiver_ids.includes(
-                                                            caregiver.id,
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleCaregiver(
-                                                                caregiver.id,
-                                                            )
-                                                        }
-                                                    />
-                                                    <div className="flex flex-row items-center gap-2">
-                                                        <Label
-                                                            htmlFor={`cg-${caregiver.id}`}
-                                                            className="flex text-sm font-medium"
-                                                        >
-                                                            {caregiver.name}
-                                                            {hasBeenNotified && (
-                                                                <span
-                                                                    className="ml-2 text-green-500"
-                                                                    title="Already notified"
-                                                                >
-                                                                    <BadgeCheck className="h-5 w-5" />
-                                                                </span>
-                                                            )}
-                                                        </Label>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {matchIcons &&
-                                                        matchIcons.length > 0 && (
-                                                            <div className="flex items-center gap-1">
-                                                                {matchIcons.map(
-                                                                    (
-                                                                        iconKey: string,
-                                                                    ) => {
-                                                                        const IconComponent =
-                                                                            ICON_MAP[
-                                                                                iconKey
-                                                                            ];
-                                                                        const tooltip =
-                                                                            ICON_TOOLTIPS[
-                                                                                iconKey
-                                                                            ];
-
-                                                                        if (
-                                                                            !IconComponent
-                                                                        ) {
-                                                                            return null;
-                                                                        }
-
-                                                                        return (
-                                                                            <Tooltip
-                                                                                key={
-                                                                                    iconKey
-                                                                                }
-                                                                            >
-                                                                                <TooltipTrigger asChild>
-                                                                                    <span className="flex cursor-default items-center">
-                                                                                        <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                                                                    </span>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent>
-                                                                                    {
-                                                                                        tooltip
-                                                                                    }
-                                                                                </TooltipContent>
-                                                                            </Tooltip>
-                                                                        );
-                                                                    },
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    {caregiver.age && (
-                                                        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-                                                            {caregiver.age}y
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </Label>
-                                        );
-                                    });
-                                })()}
-
-                                {caregiverCurrentPage < caregiverLastPage && (
-                                    <div className="flex justify-center py-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => onLoadMoreCaregivers?.(ageFilter)}
-                                            disabled={loadingMoreCaregivers}
-                                            className="cursor-pointer"
-                                        >
-                                            {loadingMoreCaregivers && (
-                                                <Spinner className="mr-2 size-4" />
-                                            )}
-                                            {loadingMoreCaregivers
-                                                ? 'Loading more caregivers...'
-                                                : 'Load More'}
-                                        </Button>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    <div className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
-                        <Button
-                            onClick={handleNotify}
-                            disabled={notifyForm.processing}
-                            className="flex-1"
-                        >
-                            {notifyForm.processing && (
-                                <Spinner className="size-4" />
-                            )}
-                            Send Notification
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setNotifySheetOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                    </div>
-                </SheetContent>
-            </Sheet>
+            {editingBooking && (
+                <NotifyCaregiversSheet
+                    open={notifySheetOpen}
+                    onOpenChange={setNotifySheetOpen}
+                    bookingId={editingBooking.id}
+                    initialCaregiverId={form.data.caregiver_id}
+                    caregiverSuggestions={caregiverSuggestions}
+                    caregiverAllIds={caregiverAllIds}
+                    caregiverTotal={caregiverTotal}
+                    caregiverCurrentPage={caregiverCurrentPage}
+                    caregiverLastPage={caregiverLastPage}
+                    loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                    loadingMoreCaregivers={loadingMoreCaregivers}
+                    onLoadMoreCaregivers={onLoadMoreCaregivers}
+                    onAgeFilterChange={onAgeFilterChange}
+                />
+            )}
 
             <details
                 className="rounded-[3px] border border-border bg-card"
@@ -1169,208 +795,14 @@ export function PersonalInfoSection({
                         />
                     )}
 
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium text-foreground">
-                                Children
-                            </Label>
-                            <Button
-                                type="button"
-                                onClick={onAddChild}
-                                size="xs"
-                            >
-                                <Plus className="h-3 w-3" />
-                                Add Child
-                            </Button>
-                        </div>
-                        <div className="mt-1 grid gap-4">
-                            {bookingChildren.map((child) => (
-                                <div
-                                    key={child.tempId}
-                                    className="rounded-lg border bg-card p-4"
-                                >
-                                    <div className="mb-3 flex items-start justify-between">
-                                        <p className="text-sm font-medium text-foreground">
-                                            {child.name || 'Add New Child'}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            onClick={() =>
-                                                onRemoveChild(child.tempId)
-                                            }
-                                            size="sm"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="sm:col-span-1 md:col-auto">
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                value={child.name}
-                                                onChange={(e) =>
-                                                    onUpdateChild(
-                                                        child.tempId,
-                                                        'name',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Name"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Gender
-                                            </Label>
-                                            <Select
-                                                value={child.gender || ''}
-                                                onValueChange={(value) =>
-                                                    onUpdateChild(
-                                                        child.tempId,
-                                                        'gender',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select gender" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="male">
-                                                        Male
-                                                    </SelectItem>
-                                                    <SelectItem value="female">
-                                                        Female
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="flex flex-row gap-4 sm:col-span-2">
-                                            <div className="grow">
-                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                    Month
-                                                </Label>
-                                                <Select
-                                                    value={
-                                                        child.birth_month || ''
-                                                    }
-                                                    onValueChange={(value) =>
-                                                        onUpdateChild(
-                                                            child.tempId,
-                                                            'birth_month',
-                                                            value,
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Month" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {MONTH_ABBR.map(
-                                                            (
-                                                                monthAbbr,
-                                                                index,
-                                                            ) => {
-                                                                if (
-                                                                    index === 0
-                                                                ) {
-                                                                    return null;
-                                                                }
-
-                                                                return (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            monthAbbr
-                                                                        }
-                                                                        value={String(
-                                                                            index,
-                                                                        )}
-                                                                    >
-                                                                        {
-                                                                            monthAbbr
-                                                                        }
-                                                                    </SelectItem>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="grow">
-                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                    Year
-                                                </Label>
-                                                <Select
-                                                    value={
-                                                        child.birth_year || ''
-                                                    }
-                                                    onValueChange={(value) =>
-                                                        onUpdateChild(
-                                                            child.tempId,
-                                                            'birth_year',
-                                                            value,
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Year" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {getChildBirthYearOptions().map(
-                                                            (year) => (
-                                                                <SelectItem
-                                                                    key={year}
-                                                                    value={String(
-                                                                        year,
-                                                                    )}
-                                                                >
-                                                                    {year}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="grow">
-                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                    Age
-                                                </Label>
-                                                <p className="flex h-11 items-center text-sm text-foreground">
-                                                    {child.birth_year
-                                                        ? calculateAge(
-                                                              parseInt(
-                                                                  child.birth_year,
-                                                              ) || null,
-                                                              parseInt(
-                                                                  child.birth_month,
-                                                              ) || null,
-                                                          )
-                                                        : '-'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {bookingChildren.length === 0 && (
-                                <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                    <p className="text-sm text-muted-foreground">
-                                        No children added
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        {bookingChildren.length === 0 &&
-                            form.data.service_type !==
-                                'group_childcare_invoiced' && (
-                                <p className="text-sm text-destructive">
-                                    At least one child is required.
-                                </p>
-                            )}
-                    </div>
+                    <BookingChildrenSection
+                        children={bookingChildren}
+                        onAdd={onAddChild}
+                        onRemove={onRemoveChild}
+                        onUpdate={onUpdateChild}
+                        calculateAge={calculateAge}
+                        serviceType={form.data.service_type}
+                    />
 
                     <div>
                         <Label className="text-sm font-medium text-foreground">
@@ -1407,128 +839,13 @@ export function PersonalInfoSection({
                         </div>
                     )}
 
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium text-foreground">
-                                Pets
-                            </Label>
-                            <Button type="button" onClick={onAddPet} size="xs">
-                                <Plus className="h-3 w-3" />
-                                Add Pet
-                            </Button>
-                        </div>
-                        <div className="mt-1 grid gap-4">
-                            {bookingPets.map((pet) => (
-                                <div
-                                    key={pet.tempId}
-                                    className="rounded-lg border bg-card p-4"
-                                >
-                                    <div className="mb-3 flex items-start justify-between">
-                                        <p className="text-sm font-medium text-foreground">
-                                            {pet.name || 'Add New Pet'}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            onClick={() =>
-                                                onRemovePet(pet.tempId)
-                                            }
-                                            size="sm"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="sm:col-span-1">
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                value={pet.name}
-                                                onChange={(e) =>
-                                                    onUpdatePet(
-                                                        pet.tempId,
-                                                        'name',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Name"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Type
-                                            </Label>
-                                            <Select
-                                                value={pet.type || ''}
-                                                onValueChange={(value) =>
-                                                    onUpdatePet(
-                                                        pet.tempId,
-                                                        'type',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {pet_types.map((type) => (
-                                                        <SelectItem
-                                                            key={type.value}
-                                                            value={type.value}
-                                                        >
-                                                            {type.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {pet.type === 'dog' && (
-                                            <div>
-                                                <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                    Breed
-                                                </Label>
-                                                <Input
-                                                    value={pet.breed || ''}
-                                                    onChange={(e) =>
-                                                        onUpdatePet(
-                                                            pet.tempId,
-                                                            'breed',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Breed"
-                                                />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <Label className="text-xs font-medium text-muted-foreground uppercase">
-                                                Notes
-                                            </Label>
-                                            <Input
-                                                value={pet.notes || ''}
-                                                onChange={(e) =>
-                                                    onUpdatePet(
-                                                        pet.tempId,
-                                                        'notes',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Notes"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {bookingPets.length === 0 && (
-                                <div className="rounded-lg border border-dashed bg-card/50 p-8 text-center">
-                                    <p className="text-sm text-muted-foreground">
-                                        No pets added
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <BookingPetsSection
+                        pets={bookingPets}
+                        onAdd={onAddPet}
+                        onRemove={onRemovePet}
+                        onUpdate={onUpdatePet}
+                        petTypes={pet_types}
+                    />
 
                     <div className="flex items-center gap-2">
                         <Checkbox
