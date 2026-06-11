@@ -84,6 +84,14 @@ export function BookingSheet({
     handleConfirmDelete,
     handleCancelDelete,
     populateCaregiverSuggestions,
+    loadMoreCaregivers,
+    caregiverAllIds,
+    caregiverTotal,
+    caregiverCurrentPage,
+    caregiverLastPage,
+    loadingCaregiverRecommendations,
+    loadingMoreCaregivers,
+    onAgeFilterChange,
 }: BookingSheetProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
 
@@ -318,7 +326,17 @@ export function BookingSheet({
                                 addressValue={addressValue}
                                 setAddressValue={setAddressValue}
                                 caregiverSuggestions={caregiverSuggestions}
+                                caregiverAllIds={caregiverAllIds}
+                                caregiverTotal={caregiverTotal}
+                                caregiverCurrentPage={caregiverCurrentPage}
+                                caregiverLastPage={caregiverLastPage}
+                                loadingCaregiverRecommendations={
+                                    loadingCaregiverRecommendations
+                                }
+                                loadingMoreCaregivers={loadingMoreCaregivers}
                                 onOpenNotifySheet={populateCaregiverSuggestions}
+                                onLoadMoreCaregivers={loadMoreCaregivers}
+                                onAgeFilterChange={onAgeFilterChange}
                                 sheetMode={sheetMode}
                             />
 

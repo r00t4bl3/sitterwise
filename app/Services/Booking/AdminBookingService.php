@@ -892,6 +892,9 @@ class AdminBookingService implements BookingServiceInterface
             'start_datetime' => 'nullable|date',
             'end_datetime' => 'nullable|date|after:start_datetime',
             'address_city' => 'nullable|string',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'age_filter' => 'nullable|in:all,younger,seasoned',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
@@ -922,11 +925,30 @@ class AdminBookingService implements BookingServiceInterface
         $recommended = $this->recommendationService->getRecommendedCaregivers(
             $client,
             $booking,
-            20,
-            $dateRanges
+            dateRanges: $dateRanges,
         );
 
-        return response()->json($recommended);
+        if (($validated['age_filter'] ?? 'all') === 'younger') {
+            $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] < 35);
+        } elseif (($validated['age_filter'] ?? 'all') === 'seasoned') {
+            $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] >= 35);
+        }
+
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $page = (int) ($validated['page'] ?? 1);
+        $total = $recommended->count();
+        $paginated = $recommended->forPage($page, $perPage)->values();
+
+        return response()->json([
+            'data' => $paginated,
+            'all_ids' => $recommended->pluck('id'),
+            'meta' => [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => max(1, (int) ceil($total / $perPage)),
+            ],
+        ]);
     }
 
     public function reserve(Request $request, Booking $booking)

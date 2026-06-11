@@ -39,7 +39,7 @@ class CaregiverRecommendationService
     public function getRecommendedCaregivers(
         Client $client,
         ?Booking $booking = null,
-        int $limit = 20,
+        int $limit = 1000,
         array $dateRanges = [],
     ): Collection {
         $serviceType = $booking?->service_type;
@@ -60,14 +60,13 @@ class CaregiverRecommendationService
         $allCaregivers = Caregiver::with([
             'certifications',
             'specialtyTypes',
-            'availabilities',
+            'availabilities.usedSlots',
             'locations',
             'attributes',
         ])
             ->where('status', CaregiverStatus::Active->value)
             ->whereDoesntHave('blockedClients', fn ($q) => $q->where('client_id', $client->id))
             ->whereDoesntHave('activePause')
-            ->has('availabilities')
             ->get();
 
         if ($allCaregivers->isEmpty()) {
@@ -392,13 +391,13 @@ class CaregiverRecommendationService
 
         $bookingDates = array_keys($allDateKeys);
 
-        $availabilities = $caregiver->availabilities()
-            ->where(function ($query) use ($bookingDates) {
-                foreach ($bookingDates as $date) {
-                    $query->orWhereDate('date', $date);
-                }
-            })
-            ->get();
+        $availabilities = $caregiver->availabilities->filter(function ($avail) use ($bookingDates) {
+            $availDate = $avail->date instanceof \DateTimeInterface
+                ? $avail->date->format('Y-m-d')
+                : date('Y-m-d', strtotime($avail->date));
+
+            return in_array($availDate, $bookingDates);
+        });
 
         if ($availabilities->isEmpty()) {
             return false;
@@ -429,8 +428,8 @@ class CaregiverRecommendationService
                 continue;
             }
 
-            $usedSlots = $availability->usedSlots()
-                ->whereIn('date', [$date])
+            $usedSlots = $availability->usedSlots
+                ->where('date', $date)
                 ->pluck('time_slot')
                 ->toArray();
 

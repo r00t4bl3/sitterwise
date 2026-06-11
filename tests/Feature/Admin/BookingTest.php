@@ -497,9 +497,13 @@ describe('Booking - Admin', function () {
         ]));
 
         $response->assertSuccessful();
-        $response->assertJsonCount(3);
+        $response->assertJsonCount(3, 'data');
         $response->assertJsonStructure([
-            '*' => ['id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified'],
+            'data' => [
+                '*' => ['id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified'],
+            ],
+            'all_ids',
+            'meta' => ['total', 'per_page', 'current_page', 'last_page'],
         ]);
     });
 

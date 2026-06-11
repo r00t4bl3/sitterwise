@@ -324,13 +324,18 @@ describe('Recommendation Service - Caregiver', function () {
         expect($recommended)->toHaveCount(0);
     });
 
-    test('caregiver without availability is excluded', function () {
+    test('caregiver without availability appears with zero score', function () {
         $client = Client::factory()->create(['sitter_preferences' => []]);
-        Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        expect($recommended)->toHaveCount(0);
+        expect($recommended)->toHaveCount(1);
+        expect($recommended[0])->toMatchArray([
+            'id' => $caregiver->id,
+            'score' => 0,
+            'matchIcons' => [],
+        ]);
     });
 
     test('caregivers are sorted by score descending then name ascending', function () {
