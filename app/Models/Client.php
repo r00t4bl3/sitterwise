@@ -38,6 +38,7 @@ class Client extends Model
         'other_adults_present',
         'emergency_instructions',
         'special_needs_notes',
+        'sms_opted_out',
         'notes',
     ];
 
@@ -49,6 +50,7 @@ class Client extends Model
     protected $casts = [
         'sitter_preferences' => 'array',
         'rating' => 'decimal:2',
+        'sms_opted_out' => 'boolean',
     ];
 
     public function ratings(): MorphMany

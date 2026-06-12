@@ -43,6 +43,7 @@ return new class extends Migration
             $table->decimal('actual_amount', 10, 2)->nullable()->comment('Actual amount charged to client: total_service_amount * 100');
             $table->integer('charge_attempt_count')->default(0);
             $table->timestamp('last_charge_attempt_at')->nullable();
+            $table->timestamp('payment_reminder_sent_at')->nullable();
             $table->string('bubble_id')->nullable()->index();
             $table->timestamp('cancelled_at')->nullable();
             $table->text('cancellation_reason')->nullable();

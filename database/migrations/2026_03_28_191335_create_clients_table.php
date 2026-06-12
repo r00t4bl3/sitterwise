@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('client_type')->default('vacationer');
             $table->string('corporate_id')->nullable();
             $table->string('stripe_customer_id')->nullable();
+            $table->boolean('sms_opted_out')->default(false);
             $table->decimal('rating', 3, 2)->default(0);
             $table->string('how_did_you_hear')->nullable();
             $table->json('sitter_preferences')->nullable();

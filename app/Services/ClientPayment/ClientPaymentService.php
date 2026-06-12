@@ -75,7 +75,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
         ])->toArray();
     }
 
-    public function createSetupIntent(): array
+    public function createSetupIntent(?string $returnUrl = null): array
     {
         $client = $this->getClient();
 
@@ -93,7 +93,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'ui_mode' => 'embedded_page',
             'mode' => 'setup',
             'payment_method_types' => ['card'],
-            'return_url' => config('app.url').'/payments?session_id={CHECKOUT_SESSION_ID}',
+            'return_url' => $returnUrl ?? config('app.url').'/payments?session_id={CHECKOUT_SESSION_ID}',
         ]);
 
         return [

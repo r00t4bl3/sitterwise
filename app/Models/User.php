@@ -90,7 +90,7 @@ class User extends Authenticatable
     public function routeNotificationForSms(): ?string
     {
         if ($this->isClient()) {
-            return $this->client?->phone;
+            return $this->client && ! $this->client->sms_opted_out ? $this->client->phone : null;
         }
 
         if ($this->isCaregiver()) {

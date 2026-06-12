@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\DiscoverySource;
 use App\Enums\LocationType;
@@ -20,6 +21,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -28,6 +30,10 @@ use Inertia\Inertia;
 
 class ClientBookingService implements BookingServiceInterface, HasMiddleware
 {
+    public function __construct(
+        private ClientPaymentServiceFactory $paymentFactory,
+    ) {}
+
     public static function middleware(): array
     {
         return [
@@ -292,6 +298,28 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
 
         $booking->load('bookingGroup.bookings.caregiver', 'caregiver.user', 'caregiverRating');
 
+        $paymentService = $this->paymentFactory->make()->setClient($client);
+
+        // Handle Stripe redirect return — store the payment method
+        $sessionId = $request->query('session_id');
+        if ($sessionId) {
+            $setupData = $paymentService->retrieveSetupIntent($sessionId);
+            if ($setupData) {
+                $paymentService->storePaymentMethod($setupData);
+            }
+        }
+
+        $requiresPayment = $booking->requires_payment;
+        $paymentStatus = $booking->payment_status;
+        $hasPaymentMethod = $paymentService->showPaymentMethods() !== [];
+        $paymentSetupIntent = null;
+
+        if ($requiresPayment && $paymentStatus === BookingPaymentStatus::Pending->value && ! $hasPaymentMethod) {
+            $returnUrl = route('bookings.show', $booking).'?session_id={CHECKOUT_SESSION_ID}';
+            $intent = $paymentService->createSetupIntent($returnUrl);
+            $paymentSetupIntent = $intent['client_secret'];
+        }
+
         $bookingStatuses = array_map(
             fn ($case) => [
                 'value' => $case->value,
@@ -364,6 +392,10 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'bookings_count' => $group->bookings->count(),
                     'sibling_bookings' => $siblingBookings,
                 ] : null,
+                'requires_payment' => $requiresPayment,
+                'payment_status' => $paymentStatus,
+                'payment_setup_intent' => $paymentSetupIntent,
+                'has_payment_method' => $hasPaymentMethod,
             ],
         ]);
     }

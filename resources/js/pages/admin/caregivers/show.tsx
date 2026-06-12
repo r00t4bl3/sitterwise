@@ -811,8 +811,8 @@ next.add(ref.id);
                                                 <div>
                                                     <p className="text-xs text-muted-foreground">Auto-calculated</p>
                                                     <p className="text-lg font-bold text-foreground">
-                                                        {caregiver.internal_rating?.reliability_score !== null
-                                                            ? caregiver.internal_rating!.reliability_score.toFixed(2)
+                                                        {caregiver.internal_rating?.reliability_score != null
+                                                            ? caregiver.internal_rating.reliability_score.toFixed(2)
                                                             : '—'}
                                                     </p>
                                                 </div>
@@ -834,7 +834,7 @@ next.add(ref.id);
                                                 <Button onClick={handleReliabilityOverrideUpdate} disabled={reliabilityOverrideForm.processing} variant="outline" size="sm">
                                                     {reliabilityOverrideForm.processing ? 'Saving...' : 'Save Override'}
                                                 </Button>
-                                                {caregiver.internal_rating?.reliability_override !== null && (
+                                                {caregiver.internal_rating?.reliability_override != null && (
                                                     <Button onClick={handleClearReliabilityOverride} disabled={reliabilityOverrideForm.processing} variant="ghost" size="sm" className="text-muted-foreground">
                                                         Clear Override
                                                     </Button>
@@ -849,8 +849,8 @@ next.add(ref.id);
                                         <div className="rounded-lg border border-border bg-card p-4">
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-foreground">
-                                                    {caregiver.internal_rating?.composite_score !== null
-                                                        ? caregiver.internal_rating!.composite_score.toFixed(1)
+                                                    {caregiver.internal_rating?.composite_score != null
+                                                        ? caregiver.internal_rating.composite_score.toFixed(1)
                                                         : '—'}
                                                 </span>
                                                 <span className="text-sm text-muted-foreground">/ 100</span>

@@ -1,6 +1,7 @@
 import { Link, Head } from '@inertiajs/react';
 import {
     Calendar,
+    CreditCard,
     ExternalLink,
     MapPin,
     User,
@@ -18,6 +19,7 @@ import React from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
@@ -82,6 +84,10 @@ interface Booking {
         bookings_count: number;
         sibling_bookings: SiblingBooking[];
     } | null;
+    requires_payment: boolean;
+    payment_status: string | null;
+    payment_setup_intent: string | null;
+    has_payment_method: boolean;
 }
 
 interface BookingStatus {
@@ -502,6 +508,25 @@ export default function BookingDetail({
                                             </>
                                         )}
                                     </div>
+                                </div>
+                            )}
+
+                            {booking.requires_payment &&
+                                booking.payment_status === 'pending' &&
+                                !booking.has_payment_method &&
+                                booking.payment_setup_intent && (
+                                <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-600 dark:bg-yellow-900/20">
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <CreditCard className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                        <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                                            Payment Required
+                                        </h3>
+                                    </div>
+                                    <p className="mb-4 text-xs text-yellow-700 dark:text-yellow-300">
+                                        Please add a card to complete your booking.
+                                        Your card won't be charged until after care is complete.
+                                    </p>
+                                    <StripeCheckout clientSecret={booking.payment_setup_intent} />
                                 </div>
                             )}
                         </div>
