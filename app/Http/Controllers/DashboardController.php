@@ -185,7 +185,7 @@ class DashboardController extends Controller
                     ->get()
                     ->map(fn ($client) => [
                         'id' => $client->id,
-                        'name' => $client->user->name,
+                        'name' => $client->full_name,
                     ])
                     ->toArray(),
                 'clientTypes' => array_map(
@@ -211,7 +211,7 @@ class DashboardController extends Controller
                     ->get()
                     ->map(fn ($caregiver) => [
                         'id' => $caregiver->id,
-                        'name' => $caregiver->user->name,
+                        'name' => $caregiver->full_name,
                     ])
                     ->toArray(),
                 'serviceTypes' => $serviceTypes,
@@ -420,7 +420,7 @@ class DashboardController extends Controller
                 ];
 
                 $allUpcoming = $client->bookings()
-                    ->with(['caregiver.user'])
+                    ->with(['caregiver'])
                     ->where('end_datetime', '>', now())
                     ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('start_datetime', 'asc')
@@ -430,7 +430,7 @@ class DashboardController extends Controller
                 $upcomingBookings = $allUpcoming->slice(1, 2)->values();
 
                 $recentBookings = $client->bookings()
-                    ->with(['caregiver.user'])
+                    ->with(['caregiver'])
                     ->where('end_datetime', '<=', now())
                     ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('end_datetime', 'desc')
@@ -438,6 +438,7 @@ class DashboardController extends Controller
                     ->get();
 
                 $clientData = [
+                    'firstName' => $client->first_name,
                     'nextBooking' => $nextBooking,
                     'upcomingBookings' => $upcomingBookings,
                     'recentBookings' => $recentBookings,

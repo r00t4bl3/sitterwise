@@ -125,7 +125,6 @@ class ClientController extends Controller
                     $q->where(function ($q) use ($term) {
                         $q->where('first_name', 'like', "%{$term}%")
                             ->orWhere('last_name', 'like', "%{$term}%")
-                            ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$term}%"))
                             ->orWhereHas('user', fn ($q) => $q->where('email', 'like', "%{$term}%"));
                     });
                 }
@@ -151,7 +150,7 @@ class ClientController extends Controller
         return response()->json([
             'client' => [
                 'id' => $client->id,
-                'name' => $client->user->name ?? $client->first_name.' '.$client->last_name,
+                'name' => $client->full_name,
                 'client_type' => $client->client_type,
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,
@@ -376,10 +375,18 @@ class ClientController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('caregiver.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhere('location_type', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $search));
+            $query->where(function ($q) use ($terms) {
+                $q->whereHas('caregiver', function ($cq) use ($terms) {
+                    foreach ($terms as $term) {
+                        $cq->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%");
+                        });
+                    }
+                })
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
+                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
             });
         }
 

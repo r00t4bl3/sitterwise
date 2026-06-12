@@ -166,6 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('applications/{application}/hire', [ApplicationController::class, 'hire'])->name('applications.hire');
         Route::post('applications/{application}/complete-onboarding', [ApplicationController::class, 'completeOnboarding'])->name('applications.complete-onboarding');
         Route::post('applications/{application}/checklist/{checklistItem}/toggle', [ApplicationController::class, 'toggleChecklistItem'])->name('applications.checklist.toggle');
+        Route::post('applications/{application}/certifications/{certType}/verify', [ApplicationController::class, 'toggleCertificationVerification'])->name('applications.certifications.verify');
         Route::post('applications/{application}/decline', [ApplicationController::class, 'decline'])->name('applications.decline');
 
         // Assignment management (admin actions)

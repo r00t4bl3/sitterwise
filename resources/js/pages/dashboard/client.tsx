@@ -20,9 +20,8 @@ interface Booking {
     ulid: string;
     service_type: string;
     caregiver?: {
-        user: {
-            name: string;
-        };
+        first_name: string;
+        last_name: string;
     };
     start_datetime: string;
     end_datetime: string;
@@ -44,11 +43,11 @@ interface ClientDashboardProps {
         name: string;
     };
     client: {
+        firstName: string;
         nextBooking: Booking & {
             caregiver: {
-                user: {
-                    name: string;
-                };
+                first_name: string;
+                last_name: string;
             };
         };
     };
@@ -85,7 +84,7 @@ export default function ClientDashboard({
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
-                            Welcome back, {user.name}
+                            Welcome back, {client.firstName}
                         </h1>
                         <p className="text-muted-foreground">
                             Here is what is happening with your bookings.
@@ -169,8 +168,8 @@ export default function ClientDashboard({
                                             <span>
                                                 Caregiver:{' '}
                                                 {client.nextBooking.caregiver
-                                                    ?.user.name ||
-                                                    'Not assigned yet'}
+                                                    ? `${client.nextBooking.caregiver.first_name} ${client.nextBooking.caregiver.last_name}`
+                                                    : 'Not assigned yet'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-foreground">
@@ -243,12 +242,9 @@ export default function ClientDashboard({
                                                                 )}
                                                             </p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                {
-                                                                    booking
-                                                                        .caregiver
-                                                                        ?.user
-                                                                        .name
-                                                                }
+                                                                    {booking.caregiver
+                                                                        ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                        : ''}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -314,8 +310,8 @@ export default function ClientDashboard({
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
                                                             {booking.caregiver
-                                                                ?.user?.name ||
-                                                                'No caregiver assigned'}
+                                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                : 'No caregiver assigned'}
                                                         </p>
                                                     </div>
                                                 </div>

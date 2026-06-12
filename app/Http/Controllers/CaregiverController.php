@@ -140,7 +140,7 @@ class CaregiverController extends Controller
                 'pause_reason' => $caregiver->activePause->pause_reason,
             ] : null,
             'reviews' => Inertia::defer(fn () => $caregiver->receivedRatings()
-                ->with(['rater', 'booking.client.user'])
+                ->with(['rater', 'booking.client'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(fn ($r) => [
@@ -149,11 +149,11 @@ class CaregiverController extends Controller
                     'comment' => $r->comment,
                     'rater_name' => $r->rater?->name,
                     'booking_service' => $r->booking?->service_type,
-                    'client_name' => $r->booking?->client?->user?->name,
+                    'client_name' => $r->booking?->client?->full_name,
                     'created_at' => $r->created_at?->format('Y-m-d'),
                 ]),
             ),
-            'jobHistory' => Inertia::defer(fn () => CaregiverAssignment::with(['booking.client.user', 'booking.hotel'])
+            'jobHistory' => Inertia::defer(fn () => CaregiverAssignment::with(['booking.client', 'booking.hotel'])
                 ->where('caregiver_id', $caregiver->id)
                 ->orderBy(
                     Booking::select('start_datetime')
@@ -167,7 +167,7 @@ class CaregiverController extends Controller
                     'job_number' => '#'.$assignment->booking->id,
                     'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s\Z'),
                     'client_id' => $assignment->booking->client_id,
-                    'client_name' => $assignment->booking->client?->user?->name ?? '—',
+                    'client_name' => $assignment->booking->client?->full_name ?? '—',
                     'client_description' => $assignment->booking->hotel?->name
                         ?? $assignment->booking->address_city
                         ?? '—',
@@ -196,10 +196,18 @@ class CaregiverController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('client.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhere('location_type', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $search));
+            $query->where(function ($q) use ($terms) {
+                $q->whereHas('client', function ($cq) use ($terms) {
+                    foreach ($terms as $term) {
+                        $cq->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%");
+                        });
+                    }
+                })
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
+                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
             });
         }
 

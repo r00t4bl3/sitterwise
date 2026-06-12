@@ -1557,6 +1557,42 @@ handleToggleChecklistItem(item.id);
                                                 Unverified
                                             </span>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setConfirmDialog({
+                                                    open: true,
+                                                    title: cert.verified_at
+                                                        ? `Unverify ${cert.name}?`
+                                                        : `Verify ${cert.name}?`,
+                                                    message: cert.verified_at
+                                                        ? `Mark "${cert.name}" as unverified for this caregiver?`
+                                                        : `Mark "${cert.name}" as verified for this caregiver?`,
+                                                    onConfirm: () => {
+                                                        setConfirmDialog(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                open: false,
+                                                            }),
+                                                        );
+                                                        router.post(
+                                                            `/applications/${application.id}/certifications/${cert.id}/verify`,
+                                                            {},
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        );
+                                                    },
+                                                })
+                                            }
+                                            className={`ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                                                cert.verified_at
+                                                    ? 'text-muted-foreground hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/50 dark:hover:text-red-300'
+                                                    : 'text-muted-foreground hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/50 dark:hover:text-green-300'
+                                            }`}
+                                        >
+                                            {cert.verified_at ? 'Unverify' : 'Verify'}
+                                        </button>
                                     </div>
                                 ))}
                             </div>

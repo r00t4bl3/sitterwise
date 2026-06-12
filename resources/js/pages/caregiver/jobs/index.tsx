@@ -69,11 +69,9 @@ interface Booking {
     tip: number;
     bonus: number;
     paid_to_caregiver_total: number;
+    client_name: string;
     client: {
         id: number;
-        user: {
-            name: string;
-        };
         children?: Array<{
             id: number;
             name: string;
@@ -492,7 +490,7 @@ return;
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="text-sm text-foreground">
-                                                {job.client?.user.name ?? '—'}
+                                                {job.client_name || '—'}
                                             </div>
                                             <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
                                                 {job.location_type ===
@@ -734,7 +732,7 @@ return;
                             >
                                 <div className="rounded-lg bg-muted p-4">
                                     <p className="text-sm font-medium">
-                                        {selectedJob.client?.user.name}
+                                        {selectedJob.client_name}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {formatDisplayDateTimeRangeInPT(
@@ -926,7 +924,7 @@ return;
                             {cancellingJob && (
                                 <div className="mt-3 rounded-lg border border-border bg-muted p-3 text-left text-sm text-foreground">
                                     <strong className="block">
-                                        {cancellingJob.client?.user?.name ?? 'Client'}
+                                        {cancellingJob.client_name ?? 'Client'}
                                         {cancellingJob.client?.children && cancellingJob.client.children.length > 0 && (
                                             <> &middot; {cancellingJob.client.children.length} child{cancellingJob.client.children.length !== 1 ? 'ren' : ''}</>
                                         )}

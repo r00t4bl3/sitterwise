@@ -23,6 +23,15 @@ class Client extends Model
         return ClientFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (Client $client) {
+            if ($client->user) {
+                $client->user->update(['name' => $client->full_name]);
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'first_name',

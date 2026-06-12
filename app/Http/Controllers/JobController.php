@@ -35,10 +35,18 @@ class JobController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('client.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhere('location_type', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $search));
+            $query->where(function ($q) use ($terms) {
+                $q->whereHas('client', function ($cq) use ($terms) {
+                    foreach ($terms as $term) {
+                        $cq->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%");
+                        });
+                    }
+                })
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
+                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
             });
         }
 
@@ -50,6 +58,7 @@ class JobController extends Controller
             ...$booking->toArray(),
             'assignment_id' => $booking->assignments->first()?->id,
             'assignment_resolution' => $booking->assignments->first()?->resolution,
+            'client_name' => $booking->client?->full_name,
         ]);
 
         $bookingStatuses = array_map(
