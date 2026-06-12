@@ -467,16 +467,15 @@ const hasAnyFreeSlot = availability && availability.time_slots.some(
 | CleanupExpiredReservations command | Only clears `reserved_by`, doesn't touch `caregiver_id` → no action needed |
 | Caregiver backs out | Only resolves `CaregiverAssignment`, doesn't change `caregiver_id` → booking still assigned → no action needed. See `docs/caregiver-backout-gaps.md` for gaps in the admin UI around backout visibility. |
 | Soft-delete booking | FK `cascadeOnDelete` only fires on force-delete; soft-delete leaves slot records intact (status-based filtering covers this) |
-| Admin changes booking dates | `start_datetime`/`end_datetime` change: the saved hook fires but doesn't trigger reservation logic (only `caregiver_id` and `status` changes are watched). Slot records would reference stale dates. **This is a gap.** |
+| Admin changes booking dates | `start_datetime`/`end_datetime` change: saved hook watches `wasChanged('start_datetime')`/`wasChanged('end_datetime')` and calls `release()` then `reserve()`. **Resolved.** |
 | Multi-date sibling bookings | Each sibling `Booking` fires its own saved hook → each reserves its own date's slots |
 | Two bookings on same date, different slots | Each booking reserves only its overlapping slots. `Booking B` (afternoon) leaves `Booking A`'s `morning` slot intact. |
 
-### Gap: Date Changes
+### Gap: Date Changes (Resolved)
 
-If an admin changes a booking's `start_datetime` or `end_datetime` without changing the caregiver, the slot records still reference the old dates. **Fix:** Also watch `wasChanged('start_datetime')` or `wasChanged('end_datetime')` and call `release()` then `reserve()` if the caregiver is assigned.
+The saved hook now watches `wasChanged('start_datetime')` / `wasChanged('end_datetime')` and calls `release()` then `reserve()` when dates change (see `Booking.php:250-255`). The code is already in place:
 
 ```php
-// In the saved hook:
 if ($booking->caregiver_id && (
     $booking->wasChanged('start_datetime') || $booking->wasChanged('end_datetime')
 )) {

@@ -9,6 +9,7 @@ use App\Notifications\AdminCaregiverBackedOutNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class AssignmentController extends Controller
@@ -29,7 +30,11 @@ class AssignmentController extends Controller
             'reason' => 'required|string|max:1000',
         ]);
 
-        $assignment->resolve(AssignmentResolution::BackedOut, $validated['reason']);
+        DB::transaction(function () use ($assignment, $validated) {
+            $assignment->resolve(AssignmentResolution::BackedOut, $validated['reason']);
+
+            $assignment->booking->update(['caregiver_id' => null]);
+        });
 
         $admins = User::where('role', 'admin')->get();
         $caregiverName = $caregiver->first_name.' '.$caregiver->last_name;

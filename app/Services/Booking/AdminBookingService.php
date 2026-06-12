@@ -35,6 +35,7 @@ use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -982,11 +983,36 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
-        $recommended = $this->recommendationService->getRecommendedCaregivers(
-            $client,
-            $booking,
-            dateRanges: $dateRanges,
-        );
+        $cacheKey = 'recommended_cg:'.md5(json_encode([
+            'client_id' => $validated['client_id'],
+            'booking_id' => $validated['booking_id'] ?? null,
+            'service_type' => $validated['service_type'] ?? null,
+            'start_datetime' => $validated['start_datetime'] ?? null,
+            'end_datetime' => $validated['end_datetime'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+        ]));
+
+        $page = (int) ($validated['page'] ?? 1);
+
+        if ($page === 1) {
+            $recommended = $this->recommendationService->getRecommendedCaregivers(
+                $client,
+                $booking,
+                dateRanges: $dateRanges,
+            );
+
+            Cache::put($cacheKey, $recommended->toArray(), 300);
+        } else {
+            $cached = Cache::get($cacheKey);
+
+            $recommended = $cached !== null
+                ? collect($cached)
+                : $this->recommendationService->getRecommendedCaregivers(
+                    $client,
+                    $booking,
+                    dateRanges: $dateRanges,
+                );
+        }
 
         if (($validated['age_filter'] ?? 'all') === 'younger') {
             $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] < 35);
@@ -995,7 +1021,6 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         $perPage = (int) ($validated['per_page'] ?? 20);
-        $page = (int) ($validated['page'] ?? 1);
         $total = $recommended->count();
         $paginated = $recommended->forPage($page, $perPage)->values();
 

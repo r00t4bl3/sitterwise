@@ -54,6 +54,8 @@ After a caregiver backs out, the admin can take these actions from the caregiver
 
 These actions do **not** change the booking status or `caregiver_id`. They only affect the caregiver assignment resolution.
 
+> **Note:** The caregiver backout itself **does** clear `booking.caregiver_id`. When a caregiver backs out, their assignment is resolved to `backed_out` AND the booking's `caregiver_id` is set to `null`. The booking status stays `confirmed` — it just needs reassignment. For multi-date groups, only the specific booking that was backed out is affected; sibling bookings keep their caregiver.
+
 ## Key Rules
 
 - Only **unresolved** (`resolution IS NULL`) assignments can be resolved. Once resolved, an assignment cannot be re-resolved.

@@ -226,8 +226,9 @@ flowchart TD
         direction TB
         BO1[Caregiver submits back-out<br/>with reason] --> BO2["POST /assignments/{id}/back-out"]
         BO2 --> BO3[CaregiverAssignment<br/>resolved = backed_out]
-        BO3 --> BO4[Admin notified via email]
-        BO4 --> BO5[Booking status & caregiver_id<br/>unchanged — Admin handles manually]
+        BO3 --> BO3b[booking.caregiver_id = null<br/>Availability slots released]
+        BO3b --> BO4[Admin notified via email]
+        BO4 --> BO5[Booking status stays confirmed<br/>Admin replaces via Replace flow]
     end
 
     subgraph RC["Admin Replace Caregiver"]

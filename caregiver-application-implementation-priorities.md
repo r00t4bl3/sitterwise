@@ -587,90 +587,26 @@ Implemented in this session. All items complete.
 
 **Wireframe:** Not shown.
 
-#### Current state
-
-| Feature | Status | Details |
-|---------|--------|---------|
-| Quick rating (`POST /jobs/{booking}/rate`) | ✅ Complete | `JobController::rate()` with recalculateRating |
-| Full review + tip flow (logged-in) | ✅ Complete | `BookingReviewController`, `client/reviews/create.tsx` |
-| Guest review flow (signed URL) | ✅ Complete | `BookingReviewController`, `guest/bookings/review.tsx` |
-| Guest review success page | ✅ Complete | `guest/bookings/review-success.tsx` |
-| Admin booking show (reviews section) | ✅ Complete | `admin/bookings/show.tsx` |
-| Caregiver profile reviews tab (deferred) | ✅ Complete | `CaregiverController@show` |
-| Reusable `<Rating>` / `<RatingInput>` | ✅ Complete | `ui/rating.tsx`, `rating-input.tsx` |
-| Booking model rating relationships | ✅ Complete | `clientRating`, `caregiverRating` accessors |
-| `recalculateRating()` after full review flow | ❌ **Bug** | `BookingReviewController` doesn't call it (unlike `JobController::rate()`) |
-| Review reminder email (2h) | ❌ Missing | No mailable or trigger exists |
-| SMS reminder (48h) | ❌ Missing | Twilio infrastructure exists (`TwilioService`, `SmsChannel`, `routeNotificationForSms()`, dry-run guard) — just needs `toSms()` on notification |
-| 14-day link expiration | ❌ Missing | Current signed URL never expires |
-| Admin trend dashboard | ❌ Missing | No rating analytics view |
-| Review/rating mailables | ❌ Missing | No dedicated mailable classes |
-
-### Low #6 — Milestone view + engagement metrics (§12 + §10, wireframe) — Planned
+### Low #6 — Milestone view + engagement metrics (§12 + §10, wireframe) — ✅ Completed
 
 Caregiver-facing stats page: portal greeting with 5 milestone stat cards plus an activity detail section showing engagement metrics. Designed to motivate without shaming — reliability % with peer comparison instead of raw back-out count.
 
 **Wireframe:** Full design in "Milestone View" screen — greeting banner + 5 stat cards. Engagement metrics from caregiver profile wireframe Activity Detail section.
 
-#### Implementation plan
-
-**New config:**
-| File | Purpose |
-|------|---------|
-| `config/trustline.php` | `'jobs_threshold' => 10`, `'reward_amount' => 140` — job count to qualify, configurable reward amount |
-
-**New files:**
+**Implementation:**
 
 | File | Purpose |
 |------|---------|
-| `app/Http/Controllers/MilestoneController.php` | `index()` — computes all 5 milestone stats + engagement metrics |
-| `resources/js/pages/caregiver/milestones.tsx` | Portal greeting + 5 stat cards + Trustline progress bar + Activity Detail section |
-
-**Modified files:**
-
-| File | Change |
-|------|--------|
-| `routes/web.php` | `Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones')` inside auth+caregiver middleware |
-| `resources/js/components/app-sidebar.tsx` | Add `Milestones` link to `caregiverNavItems` |
-
-**Milestone stats (5 cards):**
-
-| Stat | Data Source | Calculation |
-|------|-------------|-------------|
-| Jobs completed | `Caregiver.bookings()` where Completed/Paid | Count + `created_at->format('F')` for "Since you joined" |
-| Client rating | `Caregiver.rating` + ratings count | Stars display + "from X reviews" |
-| Reliability % | `CaregiverInternalRating.effectiveReliability()` | `score * 20` → percent. Team average: aggregate across active caregivers |
-| Job streak | `Caregiver.assignments()` ordered `assigned_at` desc | Count consecutive `completed`; skip `cancelled_by_sitterwise`; break on anything else (backed_out, no_show, etc.) |
-| Trustline progress | `Caregiver.certifications()` where Trustline | If certified: `completedJobs / config('trustline.jobs_threshold')` with progress bar + `config('trustline.reward_amount')` |
-
-**Engagement metrics (Activity Detail section below cards):**
-
-| Metric | Data Source | Calculation |
-|--------|-------------|-------------|
-| Jobs Offered | `BookingCaregiverNotification` where caregiver_id | Total notifications sent |
-| Jobs Accepted | same, where `claimed = true` | Count |
-| Acceptance Rate | above two | `accepted / offered * 100` |
-| Avg Response Time | `notified_at` → `responded_at` where `claimed = true` | Avg diff in hours |
-| Declined / Ignored | offered - accepted | Count + percentage |
-| Back-Out Rate | `CaregiverAssignment` resolutions | `(backed_out + no_show) / (completed + backed_out + no_show) * 100` |
-| Jobs This Month | `Caregiver.bookings()` where Completed/Paid this month | Count |
-| Jobs This Quarter | same, this quarter | Count |
-| Last Job Date | `Caregiver.bookings()` where Completed/Paid | Max `end_datetime` |
-| Member Since | `Caregiver.created_at` | Formatted date |
+| `config/trustline.php` | Jobs threshold (10) + reward ($140), env-configurable |
+| `app/Http/Controllers/MilestoneController.php` | Computes 5 milestone stats + 10 engagement metrics |
+| `resources/js/pages/caregiver/milestones.tsx` | Portal greeting, 5 stat cards, Trustline progress bar, Activity Detail grid |
+| `routes/web.php` | `GET /milestones` with auth+verified+caregiver middleware |
+| `resources/js/components/app-sidebar.tsx` | Added `Milestones` link to caregiver sidebar |
+| `tests/Feature/MilestoneViewTest.php` | 12 tests — all pass |
 
 No new schema needed — all data exists in `BookingCaregiverNotification` and `CaregiverAssignment`.
 
-**Tests** (`tests/Feature/MilestoneViewTest.php`):
-- Authorized caregiver can access milestones page
-- Milestone stats displayed correctly (completed jobs, rating, reliability, streak, Trustline)
-- Engagement metrics accurate (offered, accepted, acceptance rate, response time)
-- Job streak counts consecutive completions, skips `cancelled_by_sitterwise`, stops at back_out
-- Team average computed
-- Client user receives 403
-- Guest receives 302 (login redirect)
-- Trustline section hidden when caregiver lacks Trustline certification
-
-### Low #7 — S2Verify background check (§13)
+### Low #7 — S2Verify background check (§13) — Planned
 
 Background check integration with S2Verify. Admin (or caregiver after Interview Scheduled) can initiate checks. Results arrive via webhook. SSN must NEVER be stored — sent directly to S2Verify via one-time token.
 
@@ -678,36 +614,78 @@ Background check integration with S2Verify. Admin (or caregiver after Interview 
 
 **Wireframe:** Compliance tab on caregiver profile wireframe — status badge, check date, expiration, report link, Initiate button. Cost-awareness language ($30–50).
 
-#### Proposed implementation
+#### Schema changes
+
+**Migration — `background_checks` table:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | bigIncrements | PK |
+| `caregiver_id` | foreignId → caregivers | **Unique** — one check record per caregiver |
+| `status` | string (enum) | `not_initiated`/`pending`/`clear`/`review_required`/`failed` |
+| `initiated_at` | timestamp | When check was submitted |
+| `completed_at` | timestamp | nullable — when result arrived |
+| `expires_at` | timestamp | nullable — when check expires |
+| `report_url` | string | nullable — link to S2Verify report |
+| `external_id` | string | nullable — S2Verify's reference ID |
+| `raw_response` | json | nullable — full webhook payload for debugging |
+| timestamps | — | created_at, updated_at |
+
+#### Files to create (11)
+
+| File | Purpose |
+|------|---------|
+| `database/migrations/..._create_background_checks_table.php` | Schema above |
+| `app/Enums/BackgroundCheckStatus.php` | `not_initiated`, `pending`, `clear`, `review_required`, `failed` |
+| `app/Models/BackgroundCheck.php` | `BelongsTo caregiver`, status casts, `$fillable` |
+| `app/Http/Controllers/AdminBackgroundCheckController.php` | `initiate()`, `webhook()` handlers |
+| `app/Services/S2VerifyService.php` | API wrapper: `initiate()`, `getStatus()`, `handleWebhook()` |
+| `app/Jobs/InitiateBackgroundCheck.php` | Queued job calling S2Verify API |
+| `app/Mail/AdminBackgroundCheckCompleteMail.php` | Notify admin on status change |
+| `app/Http/Requests/InitiateBackgroundCheckRequest.php` | Validation |
+| `tests/Feature/AdminBackgroundCheckTest.php` | ~10 tests |
+
+#### Files to modify (4)
+
+| File | Change |
+|------|--------|
+| `config/services.php` | Add `s2verify` section (api_key, api_url, webhook_secret) — stubbed |
+| `routes/web.php` | `POST /admin/caregivers/{caregiver}/initiate-background-check`, `POST webhooks/s2verify` |
+| `resources/js/pages/admin/caregivers/show.tsx` | Add S2Verify panel to Compliance tab — status badge, dates, report link, Initiate button |
+| `app/Models/Caregiver.php` | Add `backgroundCheck()` HasOne relationship |
+
+#### Phase breakdown
 
 **Phase 1 — Data model + Admin UI (core):**
 
 | Task | Details |
 |------|---------|
-| Migration | `background_checks` (caregiver_id unique FK, status enum, initiated_at, expires_at, report_url, external_id, raw_response JSON) |
-| Enum | `BackgroundCheckStatus` — `not_initiated`, `pending`, `clear`, `review_required`, `failed` |
-| Model | `BackgroundCheck` with `BelongsTo caregiver`, status casts |
-| Config | `config/services.php` s2verify section (api_key, api_url, webhook_secret) — stubbed for now |
-| Compliance tab | Add S2Verify panel: status badge, initiated/expires dates, report link (when available) |
-| Initiate button | `POST /admin/caregivers/{caregiver}/initiate-background-check` — creates record, transitions to `pending` |
-| Checklist sync | When status → `clear`, auto-complete onboarding checklist `background_check` item + update certification pivot `verified_at` |
-| Admin notification | Queue `AdminBackgroundCheckCompleteMail` when status changes to clear/review_required/failed |
+| Migration + Enum + Model | Schema, status enum, model with casts and relationship |
+| Config | Stub S2Verify credentials in `config/services.php` |
+| Initiate endpoint | `POST /admin/caregivers/{caregiver}/initiate-background-check` — creates record, status → `pending`, queues job |
+| Compliance tab | S2Verify panel: status badge (color-coded), initiated/completed/expires dates, report link, Initiate button (only when `not_initiated`) |
+| Checklist sync | Hook: when status → `clear`, auto-complete `background_check` onboarding item + update certification pivot |
+| Admin notification | `AdminBackgroundCheckCompleteMail` queued when status changes to clear/review_required/failed |
+| Tests | Initiate flow, status transitions, auth (admin only), 403 for non-admin |
 
 **Phase 2 — S2Verify API + webhook:**
 
 | Task | Details |
 |------|---------|
 | Service class | `S2VerifyService` — `initiate(caregiver)`, `getStatus(externalId)`, `handleWebhook(payload)` |
-| Initiation job | `InitiateBackgroundCheck` job — calls S2Verify API, stores `external_id`, handles errors |
-| Webhook route | `POST webhooks/s2verify` — updates status, expires_at, report_url |
+| Initiation job | `InitiateBackgroundCheck` — calls API, stores `external_id`, handles failures |
+| Webhook route | `POST webhooks/s2verify` (excluded from CSRF) — updates status, expires_at, report_url |
+| Tests | Webhook processing, status updates from callback |
 
 **Phase 3 — Expiration + caregiver flow:**
 
 | Task | Details |
 |------|---------|
-| Expiration reminders | Command with 90/60/30/7 day cadence (matches spec §13.4) |
-| Auto-block | Prevent new job offers to caregivers with expired or failed checks |
-| Caregiver-initiated | "Start My Background Check" button on dashboard/jobs page with cost-awareness modal |
-| Tests | ~10 tests covering initiate, webhook, status transitions, expiration, auth |
+| Expiration reminders | Command checking 90/60/30/7 day thresholds (matches spec §13.4) |
+| Auto-block | Prevent job offers when expired or failed |
+| Caregiver-initiated | "Start My Background Check" button on dashboard (post-interview), cost-awareness modal |
+| Tests | Expiration logic, auto-block, caregiver-initiated flow |
+
+**SSN security note:** SSN must go directly to S2Verify via their hosted widget/API, never through our server. The initiation flow should redirect to S2Verify's form or use their Connect widget. The `InitiateBackgroundCheck` job sends caregiver PII (name, DOB, address) but NOT SSN.
 
 **Wireframe:** Not shown in main wireframe — exists in caregiver profile wireframe only.

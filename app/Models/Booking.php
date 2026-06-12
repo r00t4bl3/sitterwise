@@ -247,7 +247,7 @@ class Booking extends Model
                 $reservationService->release($booking);
             }
 
-            if ($booking->caregiver_id && (
+            if (! $booking->wasRecentlyCreated && $booking->caregiver_id && (
                 $booking->wasChanged('start_datetime') || $booking->wasChanged('end_datetime')
             )) {
                 $reservationService->release($booking);

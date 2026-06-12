@@ -88,6 +88,8 @@ The booking remains `confirmed` with `caregiver_id` still pointing to the caregi
 
 **Possible fix:** On backout, set `booking.caregiver_id = null` and potentially change `booking.status` to `received` or add a new status like `needs_reassignment`. This is a design decision that must consider the caregiver-facing flow (the caregiver sees "Cancel Job" only on confirmed bookings).
 
+**Status:** ✅ Resolved — `caregiver_id` is cleared to `null` on backout. Status stays `confirmed`. For multi-date groups, only the specific backed-out booking is affected. This approach keeps changes minimal — the Replace Caregiver flow handles reassignment. Group-level cascade to sibling bookings is deferred for team discussion.
+
 ---
 
 ## Gap 5: Admin Cancel Overwrites Backout Resolution
@@ -129,8 +131,8 @@ This should be **"excuse"** not "excise."
 
 ## Gap 7: Booking Date Change Doesn't Re-reserve Slots (Pre-existing)
 
-**File:** `app/Models/Booking.php` (booted saved hook)
+**File:** `app/Models/Booking.php` (booted saved hook, lines 250-255)
 
-Already documented in `docs/availability-reservation-plan.md` (line 470). When an admin changes a booking's `start_datetime` or `end_datetime` without changing the caregiver, the `BookingAvailabilitySlot` records still reference the old dates. The saved hook doesn't watch for date changes.
+**Status:** ✅ Resolved — The saved hook now watches `wasChanged('start_datetime')` / `wasChanged('end_datetime')` and calls `release()` then `reserve()` when dates change. Tested in `AvailabilityReservationTest.php` (`'changing booking dates releases old slots and reserves new ones'`).
 
 **Note:** This gap is in the availability reservation system, not the backout flow, but is related since both involve caregiver assignment lifecycle.

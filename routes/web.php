@@ -23,6 +23,7 @@ use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\InterviewTalkingPointController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\PricingRuleController;
 use App\Http\Controllers\QuickLinkController;
 use App\Http\Controllers\ReferenceController;
@@ -122,6 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('reviews/{booking}', [BookingReviewController::class, 'create'])->name('reviews.create');
         Route::post('reviews/{booking}', [BookingReviewController::class, 'store'])->name('reviews.store');
     });
+
+    Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones')->middleware('caregiver');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {

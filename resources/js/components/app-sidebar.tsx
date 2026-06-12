@@ -10,6 +10,7 @@ import {
     MessageCircle,
     Shield,
     Star,
+    TrendingUp,
     Users,
     User,
     CircleDollarSign,
@@ -49,6 +50,11 @@ const caregiverNavItems: NavItem[] = [
         title: 'Available Jobs',
         href: '/bookings',
         icon: ClipboardList,
+    },
+    {
+        title: 'Milestones',
+        href: '/milestones',
+        icon: TrendingUp,
     },
 ];
 
