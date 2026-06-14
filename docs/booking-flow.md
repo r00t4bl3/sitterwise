@@ -220,6 +220,7 @@ flowchart TD
         CA3 --> CA3b[Release availability slots<br/>BookingAvailabilitySlot deleted]
         CA3b --> CA4[Zero all financial amounts]
         CA4 --> CA5[Resolve unresolved assignment<br/>to CancelledBySitterwise]
+        CA5 --> CA6[Fire BookingCancelled event<br/>→ notify client, caregiver, all admins]
     end
 
     subgraph BO["Caregiver Back-Out"]
@@ -470,16 +471,24 @@ sequenceDiagram
         System->>System: Fire BookingCreated
         System->>Client: Email + DB notification (1×)
         System->>Admin: Email + DB notification (1× per admin)
+        Note over System: If requires_payment<br/>→ ClientPaymentRequired<br/>Email + DB
     else Multi-date (N dates)
         System->>System: Fire BookingGroupCreated
         System->>Client: Email with all dates listed (1× only)
         System->>Admin: Email with all dates listed (1× per admin)
+        Note over System: If group.requires_payment<br/>→ ClientPaymentRequired<br/>Email + DB
+    end
+
+    opt Guest & new user
+        System->>System: Fire GuestAccountSetup
+        System->>Client: DB notification only (1×)
+        Note over System: Password setup URL embedded<br/>in booking confirmation email
     end
 
     Note over Guest,Admin: CAREGIVER INVITATION
     Admin->>System: Notify caregiver(s)
     System->>System: Create N BookingCaregiverNotification records
-    System->>Caregiver: Email + SMS + DB notification (1×)
+    System->>Caregiver: Email + DB notification (1×)
 
     Note over Caregiver: Caregiver sees N notification records<br/>grouped in UI by booking_group_id
 
@@ -492,18 +501,60 @@ sequenceDiagram
     System->>Client: Email + SMS + DB notification (1×)
     System->>Caregiver: Email + DB notification (1×)
     System->>Admin: Email + DB notification (1× per admin)
+
+    Note over Guest,Admin: POST-CONFIRM (CRON / SERVICE)
+    System->>Caregiver: 24h before → BookingReminder<br/>Email + DB
+    System->>Client: After payment → BookingReceipt<br/>Email + DB
+    System->>Client+Admin: On payment failure → PaymentFailed<br/>Email + DB
+    System->>Client: 2-26h after end → ReviewReminder<br/>Email (48h+ SMS)
+    System->>Client: 24h after created + unpaid → PaymentSmsReminder<br/>SMS only
 ```
 
 ### Notification Events
 
 For a group with **N dates**, `BookingInvitationSent` creates **N separate `BookingCaregiverNotification` records** (one per booking row). All other events fire **once** regardless of date count.
 
-| Event | Trigger | Fires | Recipients | Channels | Notes |
+| Event / Trigger | When | Fires | Recipients | Channels | Notification Class |
 |---|---|---|---|---|---|
-| `BookingCreated` | Single booking created | 1× per booking | Client, all admins | `database`, `mail` | Uses `BookingCreatedNotification` (SendGrid template) |
-| `BookingGroupCreated` | Multi-date group created | 1× per group | Client, all admins | `mail` only | Uses `ClientGroupBookingCreatedMail` / `AdminGroupBookingCreatedMail` — lists all dates |
-| `BookingInvitationSent` | Admin notifies caregiver(s) | 1× per caregiver | That caregiver | `database`, `mail`, SMS | Creates N `BookingCaregiverNotification` rows (one per booking date) |
-| `BookingAccepted` | Caregiver confirms | 1× per confirm action | Client, caregiver, all admins | `database`, `mail` (+ SMS for client) | Fires once from `CaregiverBookingService::confirm()` — all recipients notified simultaneously |
+| `BookingCreated` | Single booking created | 1× per booking | Client, all admins | `database`, `mail` | `BookingCreatedNotification` |
+| *(same event)* | + if `requires_payment` and `payment_status = pending` | 1× extra | Client | `database`, `mail` | `ClientPaymentRequiredNotification` |
+| `BookingGroupCreated` | Multi-date group created | 1× per group | Client (mail only), all admins | `mail` (client), `mail` (admins) | `ClientGroupBookingCreatedMail` / `AdminGroupBookingCreatedNotification` |
+| *(same event)* | + if `group.requires_payment` | 1× extra | Client | `database`, `mail` | `ClientPaymentRequiredNotification` |
+| `GuestAccountSetup` | Guest user created | 1× per guest | Client | `database` only | `GuestAccountSetupNotification` |
+| `BookingInvitationSent` | Admin notifies caregiver(s) | 1× per caregiver | That caregiver | `database`, `mail` | `BookingInvitationNotification` |
+| `BookingAccepted` | Caregiver confirms | 1× per confirm | Client, caregiver, all admins | `database`, `mail` (+ SMS for client) | `BookingAcceptedNotification` |
+| `BookingCancelled` | Admin cancels booking | 1× per cancellation | Client, assigned caregiver, all admins | `mail` | `BookingCancelledNotification` |
+| `BookingReminderTriggered` | Confirmed booking ~24h before start (cron) | 1× per booking | Caregiver | `database`, `mail` | `BookingReminderNotification` |
+| `BookingReceipt` | Payment succeeded | 1× per booking | Client | `database`, `mail` | `BookingReceiptNotification` |
+| Payment failure | Charge fails (from `JobBillingService`) | 1× per attempt | Client + all admins | `database`, `mail` | `PaymentFailedNotification` |
+| Review reminder | Completed booking 2-26h (email) / 48-72h (SMS) past end (cron) | 1× per booking | Client | `mail` (+ `Sms` after 48h) | `BookingReviewReminderNotification` |
+| Payment SMS reminder | Unpaid booking 24+ h old, no reminder sent yet (cron) | 1× per booking | Client | `Sms` only | `ClientPaymentSmsReminderNotification` |
+
+### Notification Catalog
+
+All 17 notification classes used across the application:
+
+| # | Notification | `via()` Channels | Constructed With | Recipients |
+|---|---|---|---|---|
+| 1 | `BookingCreatedNotification` | `database`, `mail` | `Booking $booking` | Client user + all Admin users |
+| 2 | `BookingAcceptedNotification` | `database`, `mail`, `SmsChannel` (client) | `Booking $booking` | Client, Caregiver, all Admins |
+| 3 | `BookingCancelledNotification` | `mail` | `Booking $booking, string $reason, User $cancelledBy` | Client, Caregiver, all Admins |
+| 4 | `BookingInvitationNotification` | `database`, `mail` | `Booking $booking` | Caregiver user |
+| 5 | `BookingReceiptNotification` | `database`, `mail` | `Booking $booking` | Client user |
+| 6 | `BookingReminderNotification` | `database`, `mail` | `Booking $booking` | Caregiver user |
+| 7 | `BookingReviewReminderNotification` | `mail`, `SmsChannel` (48h+) | `Booking $booking` | Client user |
+| 8 | `ClientPaymentRequiredNotification` | `database`, `mail` | `Booking $booking` | Client user |
+| 9 | `ClientPaymentSmsReminderNotification` | `SmsChannel` | `Booking $booking` | Client user |
+| 10 | `PaymentFailedNotification` | `database`, `mail` | `Booking $booking, int $attemptCount, string $errorMessage, string $recipientType` | Client user + all Admin users |
+| 11 | `AdminGroupBookingCreatedNotification` | `mail` | `BookingGroup $bookingGroup` | All Admin users |
+| 12 | `AdminNewApplicationNotification` | `mail` | `string $applicantName, string $applicantEmail, int $applicationId` | All Admin users |
+| 13 | `AdminCaregiverArchivedNotification` | `mail` | `string $caregiverName, int $caregiverId, int $daysOnHold` | All Admin users |
+| 14 | `AdminCaregiverBackedOutNotification` | `mail` | `string $caregiverName, int $caregiverId, int $bookingId, string $reason` | All Admin users |
+| 15 | `GuestAccountSetupNotification` | `database` | `Booking $booking, string $resetToken` | Client user |
+| 16 | `ReferenceCompletedNotification` | `mail` | `string $referenceName, string $applicantName` | All Admin users |
+| 17 | *(no notification class)* | — | — | — |
+
+All notification classes implement `ShouldQueue` and use the `Queueable` trait.
 
 ### Notification Channels by Recipient
 
@@ -513,6 +564,18 @@ For a group with **N dates**, `BookingInvitationSent` creates **N separate `Book
 | `mail` (SendGrid) | ✓ | ✓ | ✓ |
 | `Sms` (Twilio) | ✓ | ✗ | ✗ |
 
+### Console Commands Sending Notifications
+
+| Command | Frequency | What It Sends |
+|---|---|---|
+| `app:send-booking-reminders` | hourly | `BookingReminderTriggered` event → `BookingReminderNotification` (mail + database) |
+| `app:send-payment-sms-reminders` | hourly | `ClientPaymentSmsReminderNotification` (SMS only), marks `payment_reminder_sent_at` |
+| `app:send-review-reminders` | every 6h | `BookingReviewReminderNotification` (mail 2-26h, SMS 48-72h after end) |
+| `app:nudge-pending-references` | daily at 09:00 | `ReferenceReminderMail`, `ReferenceFinalReminderMail`, `ApplicantPendingReferencesMail` |
+| `app:nudge-incomplete-applications` | every 6h | `ApplicantResumeApplicationMail` (48h), `ApplicantFinalReminderMail` (7d) |
+| `app:check-in-on-hold-caregivers` | daily at 10:00 | `CaregiverOnHoldCheckinMail` at 30/45/60 day thresholds |
+| `app:archive-long-term-inactive` | daily | `CaregiverArchiveWarningMail` (day 166), `AdminCaregiverArchivedNotification` (day 180) |
+
 ### Environment Guards
 
 In non-production environments, notifications are guarded to prevent accidental delivery to real recipients:
@@ -521,3 +584,11 @@ In non-production environments, notifications are guarded to prevent accidental 
 - **SMS:** The `TwilioService` is replaced with a dry-run implementation that logs to the application log instead of sending via Twilio API.
 
 See `AppServiceProvider::guardMailInNonProduction()` and `AppServiceProvider::guardSmsInNonProduction()`. Both methods are no-ops in production.
+
+### Known Gaps
+
+**Gap 1 — `BookingInvitationNotification` missing SMS.**
+`docs/booking-flow.md:482` documents caregiver receiving "Email + SMS + DB notification" on invitation, but the actual `via()` at `app/Notifications/BookingInvitationNotification.php:19` returns only `['database', 'mail']`. No SMS channel is configured.
+**To fix:** Add `SmsChannel::class` to `via()` and implement a `toSms()` method returning the invitation message (see `BookingAcceptedNotification` for pattern).
+
+

@@ -48,16 +48,18 @@ The account setup section (lines 198-228) renders unconditionally. Existing clie
 
 **Files:** `app/Mail/ClientGroupBookingCreatedMail.php` (rewrite), `app/Mail/AdminGroupBookingCreatedMail.php` (optional)
 
-### 6. Group listener uses `Mail::to()` directly, not Notification system
+### 6. Group listener uses `Mail::to()` directly, not Notification system ✅ FIXED
 
-`SendBookingGroupCreatedNotifications` sends via `Mail::to()->send()` directly, skipping the Notification system. This means:
+~~`SendBookingGroupCreatedNotifications` sends via `Mail::to()->send()` directly, skipping the Notification system. This means:~~
 
-- No database notification is created for multi-date bookings (asymmetry vs single-date)
-- The mailable's `to` must be set explicitly (pattern already fixed for all notifications)
+- ~~No database notification is created for multi-date bookings (asymmetry vs single-date)~~
+- ~~The mailable's `to` must be set explicitly (pattern already fixed for all notifications)~~
 
-**Fix:** Convert `SendBookingGroupCreatedNotifications` to use the notification pattern (like `SendBookingCreatedNotifications`), or keep direct `Mail::to()` but ensure `to` is set on the mailable.
+**Fix:** ~~Convert `SendBookingGroupCreatedNotifications` to use the notification pattern (like `SendBookingCreatedNotifications`), or keep direct `Mail::to()` but ensure `to` is set on the mailable.~~
 
-**Files:** `app/Listeners/SendBookingGroupCreatedNotifications.php`
+**Files:** `app/Listeners/SendBookingGroupCreatedNotifications.php`, `app/Notifications/ClientGroupBookingCreatedNotification.php` (new)
+
+**Resolution:** Created `ClientGroupBookingCreatedNotification` with `database` + `mail` channels. Updated `SendBookingGroupCreatedNotifications` to use `$user->notify(...)` instead of `Mail::to()->send()`. Multi-date bookings now create a database notification, matching single-date behavior.
 
 ### 7. No changes planned for admin emails
 

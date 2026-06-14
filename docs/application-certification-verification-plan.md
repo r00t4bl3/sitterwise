@@ -1,4 +1,4 @@
-# Application Certification Verification
+# Application Certification Verification — ✅ Completed
 
 Add a verify/unverify toggle to certifications on the admin applications show page, with bidirectional sync to the onboarding checklist.
 

@@ -50,11 +50,11 @@ Route::post('webhooks/twilio/inbound', [BroadcastSmsController::class, 'inboundS
 
 // Guest booking routes (public, no auth required)
 Route::get('/book', [GuestBookingController::class, 'create'])->name('guest.bookings.create');
-Route::post('/book', [GuestBookingController::class, 'store'])->name('guest.bookings.store');
+Route::post('/book', [GuestBookingController::class, 'store'])->name('guest.bookings.store')->middleware('throttle:guest-booking');
 Route::get('/book/payment/{token}', [GuestBookingController::class, 'payment'])->name('guest.bookings.payment');
 Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class, 'getSetupIntent'])->name('guest.bookings.setupIntent');
-Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status');
-Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify');
+Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status')->middleware('throttle:guest-booking');
+Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify')->middleware('throttle:guest-booking');
 Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
 
 // Guest review routes (signed URL from email for non-logged-in clients) - outside auth group
@@ -65,23 +65,23 @@ Route::middleware('signed')->group(function () {
 
 // Caregiver application routes (public, no auth required)
 Route::get('/caregiver/apply/verify-email', [CaregiverApplicationController::class, 'showVerifyEmail'])->name('caregiver.apply.verify');
-Route::post('/caregiver/apply/send-otp', [CaregiverApplicationController::class, 'sendOtp'])->name('caregiver.apply.send-otp');
-Route::post('/caregiver/apply/verify-otp', [CaregiverApplicationController::class, 'verifyOtp'])->name('caregiver.apply.verify-otp');
+Route::post('/caregiver/apply/send-otp', [CaregiverApplicationController::class, 'sendOtp'])->name('caregiver.apply.send-otp')->middleware('throttle:caregiver-otp-send');
+Route::post('/caregiver/apply/verify-otp', [CaregiverApplicationController::class, 'verifyOtp'])->name('caregiver.apply.verify-otp')->middleware('throttle:caregiver-otp-verify');
 
 Route::middleware(VerifyEmail::class)->group(function () {
     Route::get('/caregiver/apply', [CaregiverApplicationController::class, 'showWizard'])->name('caregiver.apply');
-    Route::post('/caregiver/apply/save-progress', [CaregiverApplicationController::class, 'saveProgress'])->name('caregiver.apply.save-progress');
-    Route::post('/caregiver/apply/submit', [CaregiverApplicationController::class, 'submit'])->name('caregiver.apply.submit');
+    Route::post('/caregiver/apply/save-progress', [CaregiverApplicationController::class, 'saveProgress'])->name('caregiver.apply.save-progress')->middleware('throttle:caregiver-save-progress');
+    Route::post('/caregiver/apply/submit', [CaregiverApplicationController::class, 'submit'])->name('caregiver.apply.submit')->middleware('throttle:caregiver-submit');
 });
 
 Route::get('/caregiver/apply/thank-you', [CaregiverApplicationController::class, 'thankYou'])->name('caregiver.apply.thank-you');
 Route::get('/caregiver/apply/status/{token}', [CaregiverApplicationController::class, 'showStatus'])->name('caregiver.apply.status');
-Route::post('/caregiver/apply/status/{token}/replace-reference/{referenceRequest}', [CaregiverApplicationController::class, 'replaceReference'])->name('caregiver.apply.replace-reference');
+Route::post('/caregiver/apply/status/{token}/replace-reference/{referenceRequest}', [CaregiverApplicationController::class, 'replaceReference'])->name('caregiver.apply.replace-reference')->middleware('throttle:caregiver-replace-reference');
 
 // Reference portal routes (public, no auth — references receive tokenized links via email)
 
 Route::get('/references/{token}', [ReferenceController::class, 'show'])->name('references.show');
-Route::post('/references/{token}', [ReferenceController::class, 'store'])->name('references.store');
+Route::post('/references/{token}', [ReferenceController::class, 'store'])->name('references.store')->middleware('throttle:reference-submit');
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -184,6 +184,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'toggle'])->name('applications.interview.talking-points.toggle');
         Route::put('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'update'])->name('applications.interview.talking-points.update');
         Route::delete('applications/{application}/interview/talking-points/{point}', [CaregiverInterviewTalkingPointController::class, 'destroy'])->name('applications.interview.talking-points.destroy');
+        Route::post('applications/{application}/interview/talking-points/reorder', [CaregiverInterviewTalkingPointController::class, 'reorder'])->name('applications.interview.talking-points.reorder');
     });
 
     Route::middleware('super_admin')->group(function () {

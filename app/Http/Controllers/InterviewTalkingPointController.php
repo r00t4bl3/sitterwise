@@ -26,13 +26,13 @@ class InterviewTalkingPointController extends Controller
 
         $maxSort = InterviewTalkingPoint::max('sort_order') ?? 0;
 
-        InterviewTalkingPoint::create([
+        $point = InterviewTalkingPoint::create([
             'label' => $validated['label'],
             'description' => $validated['description'] ?? null,
             'sort_order' => $maxSort + 1,
         ]);
 
-        return back()->with('success', 'Talking point added.');
+        return response()->json($point);
     }
 
     public function update(Request $request, InterviewTalkingPoint $talkingPoint)
@@ -44,14 +44,14 @@ class InterviewTalkingPointController extends Controller
 
         $talkingPoint->update($validated);
 
-        return back()->with('success', 'Talking point updated.');
+        return response()->json($talkingPoint);
     }
 
     public function destroy(InterviewTalkingPoint $talkingPoint)
     {
         $talkingPoint->delete();
 
-        return back()->with('success', 'Talking point deleted.');
+        return response()->json(['deleted' => true]);
     }
 
     public function reorder(Request $request)
@@ -65,6 +65,6 @@ class InterviewTalkingPointController extends Controller
             InterviewTalkingPoint::where('id', $id)->update(['sort_order' => $index]);
         }
 
-        return back()->with('success', 'Talking points reordered.');
+        return response()->json(['reordered' => true]);
     }
 }

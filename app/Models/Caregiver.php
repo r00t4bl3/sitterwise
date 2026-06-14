@@ -35,6 +35,16 @@ class Caregiver extends Model
             }
         });
 
+        static::updating(function (Caregiver $caregiver) {
+            if (($caregiver->isDirty('first_name') || $caregiver->isDirty('last_name'))
+                && ! $caregiver->isDirty('slug')) {
+                $caregiver->slug = static::generateSlug(
+                    "{$caregiver->first_name} {$caregiver->last_name}",
+                    $caregiver->id,
+                );
+            }
+        });
+
         static::saved(function (Caregiver $caregiver) {
             if ($caregiver->user) {
                 $caregiver->user->update(['name' => "{$caregiver->first_name} {$caregiver->last_name}"]);

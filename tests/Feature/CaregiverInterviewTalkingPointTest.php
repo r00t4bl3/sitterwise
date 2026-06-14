@@ -181,6 +181,36 @@ it('cannot toggle talking point from other interview', function () {
     $response->assertNotFound();
 });
 
+it('can reorder talking points', function () {
+    $point1 = $this->interview->talkingPoints()->create([
+        'talking_point_id' => null,
+        'label' => 'First',
+        'sort_order' => 0,
+    ]);
+    $point2 = $this->interview->talkingPoints()->create([
+        'talking_point_id' => null,
+        'label' => 'Second',
+        'sort_order' => 1,
+    ]);
+    $point3 = $this->interview->talkingPoints()->create([
+        'talking_point_id' => null,
+        'label' => 'Third',
+        'sort_order' => 2,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->post("/applications/{$this->application->id}/interview/talking-points/reorder", [
+            'ids' => [$point3->id, $point1->id, $point2->id],
+        ], ['Accept' => 'application/json']);
+
+    $response->assertSuccessful();
+    $response->assertJson(['reordered' => true]);
+
+    $this->assertDatabaseHas('caregiver_interview_talking_points', ['id' => $point3->id, 'sort_order' => 0]);
+    $this->assertDatabaseHas('caregiver_interview_talking_points', ['id' => $point1->id, 'sort_order' => 1]);
+    $this->assertDatabaseHas('caregiver_interview_talking_points', ['id' => $point2->id, 'sort_order' => 2]);
+});
+
 it('interview create page returns talkingPoints prop', function () {
     $response = $this->actingAs($this->admin)
         ->get(route('applications.interview', $this->application));

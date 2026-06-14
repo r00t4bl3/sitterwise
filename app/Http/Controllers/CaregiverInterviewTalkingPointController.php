@@ -98,6 +98,20 @@ class CaregiverInterviewTalkingPointController extends Controller
         return response()->json(['deleted' => true]);
     }
 
+    public function reorder(Request $request, CaregiverApplication $application)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|integer|exists:caregiver_interview_talking_points,id',
+        ]);
+
+        foreach ($validated['ids'] as $index => $id) {
+            CaregiverInterviewTalkingPoint::where('id', $id)->update(['sort_order' => $index]);
+        }
+
+        return response()->json(['reordered' => true]);
+    }
+
     private function seedTalkingPoints(CaregiverInterview $interview): void
     {
         $templatePoints = InterviewTalkingPoint::active()->ordered()->get();

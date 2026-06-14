@@ -1,5 +1,22 @@
 import { Head, usePage, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -44,6 +61,138 @@ interface Props {
     };
     talkingPoints: TalkingPoint[];
     [key: string]: unknown;
+}
+
+function SortableTalkingPoint({
+    point,
+    editingPointId,
+    editLabel,
+    editNotes,
+    onToggle,
+    onStartEdit,
+    onSaveEdit,
+    onCancelEdit,
+    onRemove,
+    onEditLabelChange,
+    onEditNotesChange,
+}: {
+    point: TalkingPoint;
+    editingPointId: number | null;
+    editLabel: string;
+    editNotes: string;
+    onToggle: (point: TalkingPoint) => void;
+    onStartEdit: (point: TalkingPoint) => void;
+    onSaveEdit: (point: TalkingPoint) => void;
+    onCancelEdit: () => void;
+    onRemove: (point: TalkingPoint) => void;
+    onEditLabelChange: (value: string) => void;
+    onEditNotesChange: (value: string) => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: point.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex items-start gap-2 rounded-lg border border-border bg-card p-3"
+        >
+            <button
+                type="button"
+                className="mt-0.5 cursor-grab touch-none text-muted-foreground hover:text-foreground"
+                {...attributes}
+                {...listeners}
+            >
+                <GripVertical className="h-4 w-4" />
+            </button>
+            <Checkbox
+                id={`tp-${point.id}`}
+                checked={point.is_checked}
+                onCheckedChange={() => onToggle(point)}
+                className="mt-0.5"
+            />
+            <div className="flex-1 min-w-0">
+                {editingPointId === point.id ? (
+                    <div className="space-y-2">
+                        <Input
+                            value={editLabel}
+                            onChange={(e) => onEditLabelChange(e.target.value)}
+                            className="h-8 text-sm"
+                        />
+                        <Textarea
+                            value={editNotes}
+                            onChange={(e) => onEditNotesChange(e.target.value)}
+                            placeholder="Add notes (optional)..."
+                            className="min-h-[60px] text-sm"
+                        />
+                        <div className="flex gap-2">
+                            <Button
+                                size="sm"
+                                onClick={() => onSaveEdit(point)}
+                                className="h-7 text-xs"
+                            >
+                                Save
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={onCancelEdit}
+                                className="h-7 text-xs"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <label
+                            htmlFor={`tp-${point.id}`}
+                            className={`text-sm cursor-pointer ${point.is_checked ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+                        >
+                            {point.label}
+                        </label>
+                        {point.notes && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {point.notes}
+                            </p>
+                        )}
+                    </>
+                )}
+            </div>
+            <div className="flex shrink-0 gap-1">
+                {editingPointId !== point.id && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onStartEdit(point)}
+                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        Edit
+                    </Button>
+                )}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRemove(point)}
+                    className="h-7 text-xs text-muted-foreground hover:text-red-500"
+                >
+                    Remove
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 const SOFT_SKILLS: Array<{ key: string; label: string; description: string }> = [
@@ -238,6 +387,44 @@ return;
         setEditingPointId(null);
     }
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
+
+    const handleReorder = useCallback(
+        async (event: DragEndEvent) => {
+            const { active, over } = event;
+            if (!over || active.id === over.id) {
+                return;
+            }
+
+            const oldIndex = talkingPoints.findIndex((p) => p.id === active.id);
+            const newIndex = talkingPoints.findIndex((p) => p.id === over.id);
+            if (oldIndex === -1 || newIndex === -1) {
+                return;
+            }
+
+            const reordered = [...talkingPoints];
+            const [moved] = reordered.splice(oldIndex, 1);
+            reordered.splice(newIndex, 0, moved);
+            setTalkingPoints(reordered);
+
+            await fetch(
+                `/applications/${application.id}/interview/talking-points/reorder`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ids: reordered.map((p) => p.id) }),
+                },
+            );
+        },
+        [talkingPoints, token, application.id],
+    );
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Caregiver Applications', href: '/applications' },
@@ -373,89 +560,35 @@ return;
                             </div>
 
                             {talkingPoints.length > 0 ? (
-                                <div className="space-y-2">
-                                    {talkingPoints.map((point) => (
-                                        <div
-                                            key={point.id}
-                                            className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
-                                        >
-                                            <Checkbox
-                                                id={`tp-${point.id}`}
-                                                checked={point.is_checked}
-                                                onCheckedChange={() => toggleTalkingPoint(point)}
-                                                className="mt-0.5"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                {editingPointId === point.id ? (
-                                                    <div className="space-y-2">
-                                                        <Input
-                                                            value={editLabel}
-                                                            onChange={(e) => setEditLabel(e.target.value)}
-                                                            className="h-8 text-sm"
-                                                        />
-                                                        <Textarea
-                                                            value={editNotes}
-                                                            onChange={(e) => setEditNotes(e.target.value)}
-                                                            placeholder="Add notes (optional)..."
-                                                            className="min-h-[60px] text-sm"
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => saveEdit(point)}
-                                                                className="h-7 text-xs"
-                                                            >
-                                                                Save
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={cancelEdit}
-                                                                className="h-7 text-xs"
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <label
-                                                            htmlFor={`tp-${point.id}`}
-                                                            className={`text-sm cursor-pointer ${point.is_checked ? 'line-through text-muted-foreground' : 'text-foreground'}`}
-                                                        >
-                                                            {point.label}
-                                                        </label>
-                                                        {point.notes && (
-                                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                                {point.notes}
-                                                            </p>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-1 shrink-0">
-                                                {editingPointId !== point.id && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => startEdit(point)}
-                                                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => removePoint(point)}
-                                                    className="h-7 text-xs text-muted-foreground hover:text-red-500"
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </div>
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleReorder}
+                                >
+                                    <SortableContext
+                                        items={talkingPoints.map((p) => p.id)}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <div className="space-y-2">
+                                            {talkingPoints.map((point) => (
+                                                <SortableTalkingPoint
+                                                    key={point.id}
+                                                    point={point}
+                                                    editingPointId={editingPointId}
+                                                    editLabel={editLabel}
+                                                    editNotes={editNotes}
+                                                    onToggle={toggleTalkingPoint}
+                                                    onStartEdit={startEdit}
+                                                    onSaveEdit={saveEdit}
+                                                    onCancelEdit={cancelEdit}
+                                                    onRemove={removePoint}
+                                                    onEditLabelChange={setEditLabel}
+                                                    onEditNotesChange={setEditNotes}
+                                                />
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </SortableContext>
+                                </DndContext>
                             ) : (
                                 <p className="text-sm text-muted-foreground py-2">
                                     No talking points defined yet. Add the first one below, or ask a superadmin to set up the template.

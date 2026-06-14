@@ -4,12 +4,11 @@ namespace App\Listeners;
 
 use App\Enums\BookingPaymentStatus;
 use App\Events\BookingGroupCreated;
-use App\Mail\ClientGroupBookingCreatedMail;
 use App\Models\User;
 use App\Notifications\AdminGroupBookingCreatedNotification;
+use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Notifications\ClientPaymentRequiredNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 class SendBookingGroupCreatedNotifications implements ShouldQueue
@@ -21,7 +20,7 @@ class SendBookingGroupCreatedNotifications implements ShouldQueue
         // 1. Notify the Client
         $client = $group->client;
         if ($client && $client->user) {
-            Mail::to($client->user->email)->send(new ClientGroupBookingCreatedMail($group));
+            $client->user->notify(new ClientGroupBookingCreatedNotification($group));
         }
 
         // 2. Notify all Admins

@@ -14,6 +14,7 @@ use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingAccepted;
+use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
 use App\Events\BookingGroupSplit;
@@ -878,6 +879,8 @@ class AdminBookingService implements BookingServiceInterface
                 $assignment->resolve(AssignmentResolution::CancelledBySitterwise, $request->input('reason'));
             }
         });
+
+        event(new BookingCancelled($booking->fresh(), $request->input('reason'), $request->user()));
 
         return redirect()->back()->with('success', 'Booking cancelled successfully.');
     }

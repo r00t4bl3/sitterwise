@@ -103,7 +103,7 @@ describe('Caregiver Job History', function () {
 
     test('job history can be filtered by search', function () {
         $client = Client::factory()->create();
-        $client->user->update(['name' => 'SearchableClient']);
+        $client->update(['last_name' => 'SearchableClient']);
 
         Booking::factory()->forClient($client)->create([
             'caregiver_id' => $this->caregiver->id,

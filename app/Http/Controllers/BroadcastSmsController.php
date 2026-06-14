@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Twilio\Security\RequestValidator;
 
 class BroadcastSmsController extends Controller
 {
@@ -75,6 +76,8 @@ class BroadcastSmsController extends Controller
 
     public function statusCallback(Request $request): JsonResponse
     {
+        $this->validateTwilioRequest($request);
+
         $messageSid = $request->input('MessageSid');
         $messageStatus = $request->input('MessageStatus');
 
@@ -88,6 +91,8 @@ class BroadcastSmsController extends Controller
 
     public function inboundSms(Request $request): JsonResponse
     {
+        $this->validateTwilioRequest($request);
+
         $fromDigits = preg_replace('/\D/', '', (string) $request->input('From'));
         $body = strtoupper(trim((string) $request->input('Body')));
 
@@ -109,5 +114,30 @@ class BroadcastSmsController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    protected function validateTwilioRequest(Request $request): void
+    {
+        if (! app()->isProduction()) {
+            return;
+        }
+
+        $authToken = config('services.twilio.auth_token');
+        $signature = $request->header('X-Twilio-Signature');
+
+        if (! $authToken || ! $signature) {
+            abort(401, 'Missing Twilio signature.');
+        }
+
+        $validator = new RequestValidator($authToken);
+        $isValid = $validator->validate(
+            $signature,
+            $request->fullUrl(),
+            $request->post(),
+        );
+
+        if (! $isValid) {
+            abort(401, 'Invalid Twilio signature.');
+        }
     }
 }

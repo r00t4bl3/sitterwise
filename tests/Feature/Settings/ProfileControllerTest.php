@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -23,10 +24,12 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $client = Client::factory()->create();
+    $user = $client->user;
 
     $response = $this->actingAs($user)->patch('/settings/profile', [
-        'name' => 'Updated Name',
+        'first_name' => 'Updated',
+        'last_name' => 'Name',
         'email' => 'updated@example.com',
     ]);
 
@@ -34,16 +37,20 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    $this->assertEquals('Updated Name', $user->name);
+    $this->assertEquals('Updated', $user->client->first_name);
+    $this->assertEquals('Name', $user->client->last_name);
     $this->assertEquals('updated@example.com', $user->email);
     $this->assertNull($user->email_verified_at);
 });
 
 test('email verification status is unchanged when email is unchanged', function () {
-    $user = User::factory()->create(['email_verified_at' => now()]);
+    $client = Client::factory()->create();
+    $user = $client->user;
+    $user->update(['email_verified_at' => now()]);
 
     $response = $this->actingAs($user)->patch('/settings/profile', [
-        'name' => 'Updated Name',
+        'first_name' => $user->client->first_name,
+        'last_name' => $user->client->last_name,
         'email' => $user->email,
     ]);
 
@@ -52,20 +59,36 @@ test('email verification status is unchanged when email is unchanged', function 
     $this->assertNotNull($user->refresh()->email_verified_at);
 });
 
-test('profile requires valid name', function () {
+test('profile requires first name', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->patch('/settings/profile', [
-        'name' => '',
+        'first_name' => '',
+        'last_name' => 'Name',
+        'email' => $user->email,
     ]);
 
-    $response->assertSessionHasErrors('name');
+    $response->assertSessionHasErrors('first_name');
+});
+
+test('profile requires last name', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->patch('/settings/profile', [
+        'first_name' => 'First',
+        'last_name' => '',
+        'email' => $user->email,
+    ]);
+
+    $response->assertSessionHasErrors('last_name');
 });
 
 test('profile requires valid email', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->patch('/settings/profile', [
+        'first_name' => 'First',
+        'last_name' => 'Last',
         'email' => 'not-an-email',
     ]);
 

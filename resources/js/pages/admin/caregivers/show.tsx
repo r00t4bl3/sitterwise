@@ -6,7 +6,6 @@ import {
     ChevronDown,
     MinusCircle,
     MoreVertical,
-    Shield,
     Users,
     Eye,
     EyeOff,
@@ -305,7 +304,6 @@ const TABS = [
     { key: 'reviews', label: 'Reviews', icon: Star },
     { key: 'internal_rating', label: 'Internal Rating', icon: ClipboardCheck },
     { key: 'job_history', label: 'Job History', icon: Briefcase },
-    { key: 'compliance', label: 'Compliance', icon: Shield },
     { key: 'notes', label: 'Notes', icon: MessageSquare },
 ] as const;
 
@@ -523,6 +521,44 @@ export default function CaregiverShow() {
                                         </div>
                                     ) : null}
                                 </div>
+                                {caregiver.certifications.length > 0 && (
+                                    <div className="mt-3 border-t border-border pt-3">
+                                        <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Certifications</p>
+                                        <div className="space-y-2">
+                                            {caregiver.certifications.map((cert) => (
+                                                <div key={cert.id} className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground">{cert.certification_type.name}</p>
+                                                        {cert.expiration_date && (
+                                                            <p className="text-xs text-muted-foreground">Expires: {cert.expiration_date}</p>
+                                                        )}
+                                                    </div>
+                                                    {(() => {
+                                                        const isExpired = cert.expiration_date && new Date(cert.expiration_date) < new Date();
+
+                                                        if (cert.verified_at && isExpired) {
+                                                            return (
+                                                                <span className="flex items-center gap-1 text-xs text-red-600">
+                                                                    <MinusCircle className="h-3 w-3" /> Expired
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        if (cert.verified_at) {
+                                                            return (
+                                                                <span className="flex items-center gap-1 text-xs text-green-600">
+                                                                    <Check className="h-3 w-3" /> Verified
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        return <span className="text-xs text-muted-foreground">Unverified</span>;
+                                                    })()}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 {caregiver.biography && (
                                     <div className="mt-3 border-t border-border pt-3">
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">Biography</p>
@@ -947,33 +983,6 @@ next.add(ref.id);
                                 ) : (
                                     <p className="text-sm text-muted-foreground">No job history yet.</p>
                                 )}
-                            </div>
-                        )}
-
-                        {/* Compliance tab */}
-                        {activeTab === 'compliance' && (
-                            <div className="space-y-6">
-                                <div className="border border-border bg-card p-6">
-                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">Certifications</h2>
-                                    <div className="space-y-3">
-                                        {caregiver.certifications.length > 0 ? caregiver.certifications.map((cert) => (
-                                            <div key={cert.id} className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm font-medium text-foreground">{cert.certification_type.name}</p>
-                                                    {cert.expiration_date && <p className="text-xs text-muted-foreground">Expires: {cert.expiration_date}</p>}
-                                                    {cert.notes && <p className="text-xs text-muted-foreground">Note: {cert.notes}</p>}
-                                                </div>
-                                                {cert.verified_at ? (
-                                                    <span className="flex items-center gap-1 text-xs text-green-600"><Check className="h-3 w-3" /> Verified</span>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">Unverified</span>
-                                                )}
-                                            </div>
-                                        )) : (
-                                            <p className="text-sm text-muted-foreground">No certifications</p>
-                                        )}
-                                    </div>
-                                </div>
                             </div>
                         )}
 

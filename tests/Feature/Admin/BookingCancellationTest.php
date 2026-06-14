@@ -3,16 +3,22 @@
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
+use App\Events\BookingCancelled;
+use App\Listeners\SendBookingCancelledNotifications;
 use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
+use App\Notifications\BookingCancelledNotification;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -25,6 +31,8 @@ beforeEach(function () {
     $this->admin = User::factory()->create(['role' => 'admin']);
     $this->client = Client::factory()->create();
     $this->clientUser = $this->client->user;
+
+    Notification::fake();
 });
 
 test('admin can cancel a booking via cancel endpoint', function () {
@@ -206,4 +214,137 @@ test('guest cannot cancel a booking', function () {
     $this->patch(route('bookings.update', $booking), [
         'status' => BookingStatus::Cancelled->value,
     ])->assertRedirect(route('login'));
+});
+
+test('cancelling a booking dispatches BookingCancelled event', function () {
+    Event::fake();
+
+    $booking = Booking::factory()
+        ->forClient($this->client)
+        ->withBookingGroup(fn ($group) => $group->state(['service_type' => ServiceType::GroupChildcareInvoiced->value]))
+        ->create([
+            'status' => BookingStatus::Confirmed->value,
+            'start_datetime' => now()->addDays(10),
+            'end_datetime' => now()->addDays(10)->addHours(4),
+        ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('bookings.cancel', $booking), [
+            'reason' => 'Test reason',
+        ]);
+
+    Event::assertDispatched(BookingCancelled::class, function ($event) use ($booking) {
+        return $event->booking->id === $booking->id
+            && $event->reason === 'Test reason'
+            && $event->cancelledBy->id === $this->admin->id;
+    });
+});
+
+test('sanity: direct notify works', function () {
+    $this->clientUser->notify(new BookingCancelledNotification(
+        booking: Booking::factory()->forClient($this->client)->create(),
+        reason: 'test',
+        cancelledBy: $this->admin,
+    ));
+
+    Notification::assertSentTo(
+        $this->clientUser,
+        BookingCancelledNotification::class,
+    );
+});
+
+test('listener notifies client user', function () {
+    $group = BookingGroup::factory()->create([
+        'client_id' => $this->client->id,
+        'service_type' => ServiceType::GroupChildcareInvoiced->value,
+    ]);
+
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'caregiver_id' => null,
+        'status' => BookingStatus::Confirmed->value,
+        'start_datetime' => now()->addDays(10),
+        'end_datetime' => now()->addDays(10)->addHours(4),
+    ]);
+
+    $booking->load('client.user');
+
+    expect($booking->client)->not->toBeNull();
+    expect($booking->client->user)->not->toBeNull();
+
+    $event = new BookingCancelled(
+        booking: $booking,
+        reason: 'Test reason',
+        cancelledBy: $this->admin,
+    );
+
+    $listener = app(SendBookingCancelledNotifications::class);
+    $listener->handle($event);
+
+    Notification::assertSentTo(
+        $this->clientUser,
+        BookingCancelledNotification::class,
+    );
+});
+
+test('listener notifies caregiver when assigned', function () {
+    $caregiver = Caregiver::factory()->create();
+
+    $group = BookingGroup::factory()->create([
+        'client_id' => $this->client->id,
+        'service_type' => ServiceType::GroupChildcareInvoiced->value,
+    ]);
+
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'start_datetime' => now()->addDays(10),
+        'end_datetime' => now()->addDays(10)->addHours(4),
+    ]);
+
+    $event = new BookingCancelled(
+        booking: $booking,
+        reason: 'Test reason',
+        cancelledBy: $this->admin,
+    );
+
+    $listener = app(SendBookingCancelledNotifications::class);
+    $listener->handle($event);
+
+    Notification::assertSentTo(
+        $caregiver->user,
+        BookingCancelledNotification::class,
+    );
+});
+
+test('listener notifies all admins', function () {
+    $group = BookingGroup::factory()->create([
+        'client_id' => $this->client->id,
+        'service_type' => ServiceType::GroupChildcareInvoiced->value,
+    ]);
+
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'caregiver_id' => null,
+        'status' => BookingStatus::Confirmed->value,
+        'start_datetime' => now()->addDays(10),
+        'end_datetime' => now()->addDays(10)->addHours(4),
+    ]);
+
+    $otherAdmin = User::factory()->create(['role' => 'admin']);
+
+    $event = new BookingCancelled(
+        booking: $booking,
+        reason: 'Test reason',
+        cancelledBy: $this->admin,
+    );
+
+    $listener = app(SendBookingCancelledNotifications::class);
+    $listener->handle($event);
+
+    Notification::assertSentTo(
+        [$this->admin, $otherAdmin],
+        BookingCancelledNotification::class,
+    );
 });

@@ -101,7 +101,7 @@ describe('Client Booking History', function () {
 
     test('booking history can be filtered by search', function () {
         $caregiver = Caregiver::factory()->create();
-        $caregiver->user->update(['name' => 'SearchableCaregiver']);
+        $caregiver->update(['last_name' => 'SearchableCaregiver']);
 
         Booking::factory()->forClient($this->client)->create([
             'caregiver_id' => $caregiver->id,
