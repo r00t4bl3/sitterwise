@@ -209,7 +209,9 @@ export function NotifyCaregiversSheet({
                         && !totalAllSelected
                         && caregiverAllIds.length > visibleIds.length;
 
-                    if (!showBanner) return null;
+                    if (!showBanner) {
+return null;
+}
 
                     return (
                         <div className="mx-4 mt-2 flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">

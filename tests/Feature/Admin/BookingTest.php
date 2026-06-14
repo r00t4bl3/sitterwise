@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AssignmentResolution;
 use App\Enums\CaregiverStatus;
 use App\Events\BookingGroupSplit;
 use App\Models\Availability;
@@ -311,6 +312,83 @@ describe('Booking - Admin', function () {
         expect($booking->status)->toBe('confirmed');
     });
 
+    test('unassigning caregiver from confirmed booking reverts status to received', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiver->id,
+                'status' => 'confirmed',
+                'start_datetime' => now()->addDays(10),
+                'end_datetime' => now()->addDays(10)->addHours(4),
+            ]);
+
+        // The saved hook creates an unresolved assignment
+        $assignment = $booking->assignments()->unresolved()->first();
+        expect($assignment)->not->toBeNull();
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => '',
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+            'child_ids' => [$child->id],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $booking->refresh();
+
+        expect($booking->caregiver_id)->toBeNull();
+        expect($booking->status)->toBe('received');
+        $assignment->refresh();
+        expect($assignment->resolution)->toBe(AssignmentResolution::Reassigned->value);
+    });
+
+    test('unassigning caregiver from completed booking does not revert status', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiver->id,
+                'status' => 'completed',
+                'payment_status' => 'paid',
+                'start_datetime' => now()->subDays(2),
+                'end_datetime' => now()->subDays(2)->addHours(4),
+            ]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => '',
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'child_ids' => [$child->id],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $booking->refresh();
+        expect($booking->caregiver_id)->toBeNull();
+        expect($booking->status)->toBe('completed');
+    });
+
     test('admin can update booking vacation rental with platform and address', function () {
         $this->actingAs($this->user);
 
@@ -356,9 +434,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertSoftDeleted('bookings', [
-            'id' => $booking->id,
-        ]);
+        $this->assertModelMissing($booking);
     });
 
     test('admin can search hotels', function () {

@@ -1,14 +1,13 @@
-import { Head, usePage, router } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
 import {
     DndContext,
     closestCenter,
     KeyboardSensor,
     PointerSensor,
     useSensor,
-    useSensors,
-    type DragEndEvent,
+    useSensors
+    
 } from '@dnd-kit/core';
+import type {DragEndEvent} from '@dnd-kit/core';
 import {
     SortableContext,
     sortableKeyboardCoordinates,
@@ -16,7 +15,9 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Head, usePage, router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -395,12 +396,14 @@ return;
     const handleReorder = useCallback(
         async (event: DragEndEvent) => {
             const { active, over } = event;
+
             if (!over || active.id === over.id) {
                 return;
             }
 
             const oldIndex = talkingPoints.findIndex((p) => p.id === active.id);
             const newIndex = talkingPoints.findIndex((p) => p.id === over.id);
+
             if (oldIndex === -1 || newIndex === -1) {
                 return;
             }

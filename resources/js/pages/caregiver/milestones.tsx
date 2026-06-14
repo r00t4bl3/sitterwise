@@ -40,7 +40,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 function StarDisplay({ rating, size = 'md' }: { rating: number | null; size?: 'sm' | 'md' | 'lg' }) {
-    if (rating === null) return <span className="text-muted-foreground">--</span>;
+    if (rating === null) {
+return <span className="text-muted-foreground">--</span>;
+}
 
     const sizeClass = size === 'sm' ? 'h-3.5 w-3.5' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
 

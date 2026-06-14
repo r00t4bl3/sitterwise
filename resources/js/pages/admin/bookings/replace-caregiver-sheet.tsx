@@ -52,7 +52,9 @@ export function ReplaceCaregiverSheet({
     const replaceForm = useForm({ caregiver_id: 0 });
 
     const handleReplace = () => {
-        if (!replaceForm.data.caregiver_id) return;
+        if (!replaceForm.data.caregiver_id) {
+return;
+}
 
         replaceForm.post(`/bookings/${bookingId}/replace-caregiver`, {
             onSuccess: () => {
@@ -165,7 +167,9 @@ export function ReplaceCaregiverSheet({
                                                     const IconComponent = ICON_MAP[iconKey];
                                                     const tooltip = ICON_TOOLTIPS[iconKey];
 
-                                                    if (!IconComponent) return null;
+                                                    if (!IconComponent) {
+return null;
+}
 
                                                     return (
                                                         <Tooltip key={iconKey}>

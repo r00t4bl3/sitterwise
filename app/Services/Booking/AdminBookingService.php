@@ -669,6 +669,26 @@ class AdminBookingService implements BookingServiceInterface
 
         $booking->update($updateData);
 
+        if ($oldCaregiverId && ! $booking->caregiver_id) {
+            $nonRevertableStatuses = [
+                BookingStatus::Completed->value,
+                BookingStatus::Paid->value,
+                BookingStatus::Cancelled->value,
+            ];
+
+            if (! in_array($booking->status, $nonRevertableStatuses, true)) {
+                $booking->updateQuietly(['status' => BookingStatus::Received->value]);
+
+                $assignment = $booking->assignments()->unresolved()->first();
+                if ($assignment) {
+                    $assignment->resolve(
+                        AssignmentResolution::Reassigned,
+                        'Caregiver unassigned via booking edit',
+                    );
+                }
+            }
+        }
+
         $booking->load('bookingGroup');
 
         if ($booking->caregiver_id && $booking->caregiver_id != $oldCaregiverId) {
@@ -930,9 +950,9 @@ class AdminBookingService implements BookingServiceInterface
 
     public function destroy(Booking $booking)
     {
-        $booking->delete();
+        $booking->forceDelete();
 
-        return redirect()->back()->with('success', 'Booking deleted successfully.');
+        return redirect()->back()->with('success', 'Booking deleted permanently.');
     }
 
     public function notify(Request $request, Booking $booking)

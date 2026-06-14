@@ -1,4 +1,4 @@
-import { Link, Head, router, useForm } from '@inertiajs/react';
+import { Link, Head, useForm } from '@inertiajs/react';
 import {
     Calendar,
     ExternalLink,
@@ -30,6 +30,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
@@ -153,6 +154,20 @@ export default function BookingDetail({
     const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
 
     const cancelForm = useForm({ reason: '' });
+
+    const deleteForm = useForm({});
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+    const submitDelete = () => {
+        deleteForm.delete(`/bookings/${booking.ulid}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleteConfirmText('');
+            },
+        });
+    };
 
     const submitCancel = () => {
         cancelForm.post(`/bookings/${booking.ulid}/cancel`, {
@@ -773,6 +788,12 @@ export default function BookingDetail({
                             </Button>
                         </>
                     )}
+                    <Button
+                        variant="destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete Booking
+                    </Button>
                     <Button asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
@@ -826,6 +847,58 @@ export default function BookingDetail({
                             disabled={cancelForm.processing}
                         >
                             {cancelForm.processing ? 'Cancelling...' : 'Cancel Booking'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Booking</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this booking?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                            <ul className="list-disc space-y-1 pl-4">
+                                <li>This action is permanent and cannot be undone.</li>
+                                <li>
+                                    All related data — reviews, ratings,
+                                    transactions — will also be deleted.
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="delete-confirm">
+                                Type <span className="font-mono font-bold">DELETE</span> to confirm:
+                            </Label>
+                            <Input
+                                id="delete-confirm"
+                                value={deleteConfirmText}
+                                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                placeholder="DELETE"
+                                className={deleteConfirmText === 'DELETE' ? 'border-destructive' : ''}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteDialogOpen(false);
+                                setDeleteConfirmText('');
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={submitDelete}
+                            disabled={deleteConfirmText !== 'DELETE' || deleteForm.processing}
+                        >
+                            {deleteForm.processing ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

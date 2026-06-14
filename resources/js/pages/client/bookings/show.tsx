@@ -17,9 +17,9 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { StatusBadge } from '@/components/status-badge';
+import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
