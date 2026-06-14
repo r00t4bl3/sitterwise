@@ -23,7 +23,6 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
         $caregivers = Caregiver::whereIn('id', $caregiverIds)
             ->with([
                 'user',
-                'status',
                 'locations',
                 'specialtyTypes',
                 'certifications',
