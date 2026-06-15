@@ -615,6 +615,12 @@ export default function Bookings() {
                                                 booking.payment_status !==
                                                     'paid';
 
+                                            const bookingPtStart = getPTDate(booking.start_datetime);
+                                            const bookingStartDateStr = bookingPtStart
+                                                ? `${bookingPtStart.getFullYear()}-${String(bookingPtStart.getMonth() + 1).padStart(2, '0')}-${String(bookingPtStart.getDate()).padStart(2, '0')}`
+                                                : null;
+                                            const isStartDay = bookingStartDateStr === dateStr;
+
                                             return (
                                                 <div
                                                     key={booking.id}
@@ -653,16 +659,18 @@ export default function Bookings() {
                                                                   </Tooltip>
                                                               )}
                                                          </div>
-                                                         <div className="flex min-w-0 flex-col items-start text-left">
-                                                             <span className="text-[10px] leading-tight opacity-80">
-                                                                 {formatDisplayTimeInPT(
-                                                                     booking.start_datetime,
-                                                                 )}
-                                                                 -
-                                                                 {formatDisplayTimeInPT(
-                                                                     booking.end_datetime,
-                                                                 )}
-                                                             </span>
+                                                          <div className="flex min-w-0 flex-col items-start text-left">
+                                                              <span className="text-[10px] leading-tight opacity-80">
+                                                                  {isStartDay
+                                                                      ? formatDisplayTimeInPT(
+                                                                            booking.start_datetime,
+                                                                        )
+                                                                      : '12:00 AM'}
+                                                                  -
+                                                                  {formatDisplayTimeInPT(
+                                                                      booking.end_datetime,
+                                                                  )}
+                                                              </span>
                                                               <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
                                                                    {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
                                                                       'Unknown Client'}

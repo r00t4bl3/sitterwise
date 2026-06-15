@@ -43,6 +43,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'profile_photo_path', 'profile_photo_url']),
             ],
+            'vapid_public_key' => config('webpush.vapid.public_key'),
+            'supports_push' => config('app.env') === 'local' || $request->secure(),
+            'push_subscribed' => $request->user()?->pushSubscriptions()->count() > 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'caregiverStatuses' => CaregiverStatus::toArray(),
             'flash' => [

@@ -40,3 +40,6 @@ Schedule::command('app:send-booking-reminders')->hourly();
 
 // Send payment SMS reminders for unpaid bookings that are 24+ hours old
 Schedule::command('app:send-payment-sms-reminders')->hourly();
+
+// Clean up stale push subscriptions
+Schedule::command('webpush:clean')->daily();

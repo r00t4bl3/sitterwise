@@ -25,6 +25,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\PricingRuleController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuickLinkController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\SearchController;
@@ -94,6 +95,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payments/methods', [ClientPaymentController::class, 'storePaymentMethod'])->name('payments.methods.store');
     Route::patch('/payments/methods/{paymentMethod}/default', [ClientPaymentController::class, 'setDefault'])->name('payments.methods.default');
     Route::delete('/payments/methods/{paymentMethod}', [ClientPaymentController::class, 'destroy'])->name('payments.methods.destroy');
+
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])
+        ->name('push-subscriptions.store');
 
     Route::get('/payouts', [CaregiverPayoutController::class, 'index'])->name('payouts.index');
     Route::post('/payouts/stripe/connect', [CaregiverPayoutController::class, 'connect'])->name('payouts.stripe.connect');

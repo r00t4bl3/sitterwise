@@ -42,7 +42,7 @@ export const formatUtcStringFromPt = (ptDate: Date): string => {
     const hr = String(utc.getUTCHours()).padStart(2, '0');
     const mi = String(utc.getUTCMinutes()).padStart(2, '0');
 
-    return `${yr}-${mo}-${da}T${hr}:${mi}`;
+    return `${yr}-${mo}-${da}T${hr}:${mi}Z`;
 };
 
 /**

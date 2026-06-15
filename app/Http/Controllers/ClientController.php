@@ -60,7 +60,7 @@ class ClientController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhereHas('user', fn ($uq) => $uq->where('email', 'like', "%{$search}%"));
             });
         }
 
@@ -69,6 +69,11 @@ class ClientController extends Controller
         }
 
         $clients = $query->orderByDesc('id')->paginate(20)->appends($request->query());
+
+        $clients->getCollection()->transform(fn ($client) => [
+            ...$client->toArray(),
+            'email' => $client->user->email,
+        ]);
 
         return Inertia::render('admin/clients/index', [
             'clients' => $clients,

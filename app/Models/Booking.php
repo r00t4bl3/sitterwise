@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
@@ -194,6 +195,12 @@ class Booking extends Model
 
         if ($value instanceof Carbon) {
             return $value->copy()->setTimezone('UTC')->format('Y-m-d H:i:s');
+        }
+
+        if (is_string($value) && (str_ends_with($value, 'Z') || preg_match('/[+-]\d{2}:\d{2}$/', $value))) {
+            return Carbon::parse($value)
+                ->setTimezone('UTC')
+                ->format('Y-m-d H:i:s');
         }
 
         return Carbon::parse($value, 'America/Los_Angeles')
@@ -470,7 +477,17 @@ class Booking extends Model
 
         $childrenCount = count($group->children ?? []);
         $childrenSummary = collect($group->children ?? [])
-            ->map(fn ($c) => ($c['name'] ?? 'Child').' ('.(isset($c['birth_year']) ? now()->year - $c['birth_year'] : '?').'yr)')
+            ->map(function ($c) {
+                $name = $c['name'] ?? 'Child';
+                $age = null;
+                if (isset($c['birth_year'])) {
+                    $age = now()->year - (int) $c['birth_year'];
+                } elseif (isset($c['birth_date'])) {
+                    $age = Carbon::parse($c['birth_date'])->diffInYears(now());
+                }
+
+                return $age ? "{$name} ({$age}yr)" : $name;
+            })
             ->join(', ');
 
         $clientName = ($group->client?->first_name ?? $group->client_first_name).' '.($group->client?->last_name ?? $group->client_last_name);
@@ -502,13 +519,17 @@ class Booking extends Model
             'is_multi_day' => false,
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
-            'location' => $group->hotel_name ?? $group->hotel?->name ?? $group->address_line1,
+            'location' => $group->location_type === 'hotel'
+                ? ($group->hotel_name ?: $group->hotel?->name ?? 'Hotel').' - '.$group->address_line1
+                : $group->address_line1,
             'address' => trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip),
             'hotel_name' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
             'service_hotel' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
             'is_hotel' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name) : false,
             'is_hotel_text' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name).' Booking' : 'Private Residence',
-            'special_considerations' => collect($group->special_considerations ?? [])->join(', ') ?: 'None',
+            'special_considerations' => collect($group->special_considerations ?? [])
+                ->map(fn ($v) => SpecialConsideration::tryFrom($v)?->label() ?? $v)
+                ->join(', ') ?: 'None',
             'notes' => $group->caregiver_notes,
             'notes_to_sitter' => $group->caregiver_notes,
             'notes_for_sitter' => $group->caregiver_notes,

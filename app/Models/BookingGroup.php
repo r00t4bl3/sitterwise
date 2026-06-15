@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Models\Traits\Phone;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -120,18 +122,29 @@ class BookingGroup extends Model
     {
         $childrenCount = count($this->children ?? []);
         $childrenSummary = collect($this->children ?? [])
-            ->map(fn ($c) => ($c['name'] ?? 'Child').' ('.(isset($c['birth_year']) ? now()->year - $c['birth_year'] : '?').'yr)')
+            ->map(function ($c) {
+                $name = $c['name'] ?? 'Child';
+                $age = null;
+                if (isset($c['birth_year'])) {
+                    $age = now()->year - (int) $c['birth_year'];
+                } elseif (isset($c['birth_date'])) {
+                    $age = Carbon::parse($c['birth_date'])->diffInYears(now());
+                }
+
+                return $age ? "{$name} ({$age}yr)" : $name;
+            })
             ->join(', ');
 
         $clientName = trim($this->client_first_name.' '.$this->client_last_name);
+        $serviceLabel = ServiceType::tryFrom($this->service_type)?->label() ?? $this->service_type;
 
         return [
             'client_first_name' => $this->client_first_name,
             'client_name' => $clientName,
             'client_email' => $this->client_email,
             'client_phone' => $this->client_phone,
-            'service_requested' => $this->service_type,
-            'service_name' => $this->service_type,
+            'service_requested' => $serviceLabel,
+            'service_name' => $serviceLabel,
             'dates' => $this->bookings->map(fn ($booking) => [
                 'date' => $booking->start_datetime->setTimezone('America/Los_Angeles')->format('l, F j, Y'),
                 'start_time' => $booking->start_datetime->setTimezone('America/Los_Angeles')->format('g:i A'),
@@ -140,13 +153,17 @@ class BookingGroup extends Model
             'is_multi_day' => true,
             'kids_count' => $childrenCount.' '.($childrenCount !== 1 ? 'children' : 'child'),
             'children_summary' => $childrenSummary ?: 'None',
-            'location' => $this->hotel_name ?? $this->hotel?->name ?? $this->address_line1,
+            'location' => $this->location_type === 'hotel'
+                ? ($this->hotel_name ?: $this->hotel?->name ?? 'Hotel').' - '.$this->address_line1
+                : $this->address_line1,
             'address' => trim($this->address_line1.' '.$this->address_line2.', '.$this->address_city.', '.$this->address_state.' '.$this->address_zip),
             'hotel_name' => $this->hotel_name ?? $this->hotel?->name ?? 'N/A',
             'service_hotel' => $this->hotel_name ?? $this->hotel?->name ?? 'N/A',
             'is_hotel' => $this->location_type === 'hotel' ? ($this->hotel_name ?? $this->hotel?->name) : false,
             'is_hotel_text' => $this->location_type === 'hotel' ? ($this->hotel_name ?? $this->hotel?->name).' Booking' : 'Private Residence',
-            'special_considerations' => collect($this->special_considerations ?? [])->join(', ') ?: 'None',
+            'special_considerations' => collect($this->special_considerations ?? [])
+                ->map(fn ($v) => SpecialConsideration::tryFrom($v)?->label() ?? $v)
+                ->join(', ') ?: 'None',
             'notes' => $this->caregiver_notes,
             'notes_to_sitter' => $this->caregiver_notes,
             'notes_for_sitter' => $this->caregiver_notes,

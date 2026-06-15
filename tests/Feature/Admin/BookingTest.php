@@ -1775,5 +1775,43 @@ describe('Booking - Admin', function () {
             // → formatDisplayTimeInPT() = "9:00 AM" ✅
         });
 
+        test('Z-suffixed datetime from formatUtcStringFromPt is not double-converted', function () {
+            // formatUtcStringFromPt() now outputs "2026-07-15T20:00Z" (UTC with Z suffix).
+            // This test verifies convertToUtc detects the Z and skips PT→UTC re-conversion.
+
+            $this->actingAs($this->user);
+            $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+            // 1 PM PT = 20:00 UTC → formatUtcStringFromPt outputs "T20:00Z"
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => '2026-07-15T16:00Z',   // 9 AM PT
+                'end_datetime' => '2026-07-15T20:00Z',     // 1 PM PT (NOT double-converted)
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'child_ids' => [$child->id],
+                'address_line1' => '100 Timezone St',
+                'address_line2' => '',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $booking = Booking::latest('id')->first();
+
+            // If double-converted: end would be stored as 2026-07-16 03:00:00 (20:00 PT = 03:00 UTC next day)
+            // Correct: stored as 2026-07-15 20:00:00 (the Z-suffixed input is already UTC)
+            $rawEnd = $booking->getRawOriginal('end_datetime');
+            expect(Carbon::parse($rawEnd)->format('Y-m-d H:i'))->toBe('2026-07-15 20:00');
+
+            // Verify PT display still shows 1:00 PM
+            $ptEnd = $booking->end_datetime->copy()->setTimezone('America/Los_Angeles');
+            expect($ptEnd->format('H:i'))->toBe('13:00');
+        });
+
     });
 });

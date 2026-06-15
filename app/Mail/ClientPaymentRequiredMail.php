@@ -21,6 +21,23 @@ class ClientPaymentRequiredMail extends Mailable
         $data = $this->booking->toEmailData();
         $data['payment_link'] = route('bookings.show', $this->booking);
 
+        $data['first_name'] = $data['client_first_name'] ?? '';
+        $data['service_type'] = $data['service_requested'] ?? '';
+
+        $bookingDate = $data['date'] ?? '';
+        $group = $this->booking->bookingGroup;
+        if ($group && ($group->bookings_count ?? $group->bookings()->count()) > 1) {
+            $firstBooking = $group->bookings()->orderBy('start_datetime')->first();
+            if ($firstBooking) {
+                $firstDate = $firstBooking->start_datetime
+                    ->setTimezone('America/Los_Angeles')
+                    ->format('l, F j, Y');
+                $extraCount = $group->bookings()->count() - 1;
+                $bookingDate = $firstDate." (+{$extraCount} more)";
+            }
+        }
+        $data['booking_date'] = $bookingDate;
+
         $this->sendgrid([
             'personalizations' => [
                 [

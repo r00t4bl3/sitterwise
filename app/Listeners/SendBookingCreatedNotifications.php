@@ -28,6 +28,7 @@ class SendBookingCreatedNotifications implements ShouldQueue
             $event->booking->requires_payment
             && $event->booking->payment_status === BookingPaymentStatus::Pending->value
             && $event->booking->client
+            && ! $event->booking->client->hasPaymentMethod()
             && $event->booking->client->user
         ) {
             $event->booking->client->user->notify(new ClientPaymentRequiredNotification($event->booking));

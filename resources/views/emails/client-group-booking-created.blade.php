@@ -99,12 +99,16 @@
         </div>
         <div class="detail-row">
             <span class="label">Service Type</span>
-            <span class="value">{{ ucfirst($bookingGroup->service_type) }}</span>
+            <span class="value">{{ \App\Enums\ServiceType::tryFrom($bookingGroup->service_type)?->label() ?? $bookingGroup->service_type }}</span>
         </div>
         <div class="detail-row">
             <span class="label">Location</span>
             <span class="value">
-                {{ $bookingGroup->hotel_name ?? $bookingGroup->hotel?->name ?? $bookingGroup->address_line1 }}
+                @if($bookingGroup->location_type === 'hotel')
+                    {{ $bookingGroup->hotel_name ?: $bookingGroup->hotel?->name }} — {{ $bookingGroup->address_line1 }}
+                @else
+                    {{ $bookingGroup->address_line1 }}
+                @endif
                 @if($bookingGroup->address_city), {{ $bookingGroup->address_city }}@endif
             </span>
         </div>
