@@ -31,6 +31,7 @@ interface BookingData {
     address_state: string;
     address_zip: string;
     hotel_name: string | null;
+    sms_consent: boolean;
     dates?: BookingDate[] | null;
 }
 
@@ -203,6 +204,14 @@ export default function PaymentPage({
                                     {booking.address_city},{' '}
                                     {booking.address_state}{' '}
                                     {booking.address_zip}
+                                </dd>
+                            </div>
+                            <div className="flex justify-between">
+                                <dt className="text-muted-foreground">
+                                    SMS Updates
+                                </dt>
+                                <dd className="font-medium">
+                                    {booking.sms_consent ? 'Yes' : 'No'}
                                 </dd>
                             </div>
                             <div className="mt-3 flex justify-between border-t pt-3">

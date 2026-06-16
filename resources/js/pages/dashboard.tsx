@@ -167,7 +167,6 @@ export default function Dashboard() {
         default:
             return (
                 <ClientDashboard
-                    user={{ name: user.name }}
                     stats={{
                         totalBookings: stats?.activeBookings || 0,
                         completedBookings: stats?.pastBookings || 0,

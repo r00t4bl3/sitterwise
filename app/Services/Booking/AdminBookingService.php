@@ -1009,6 +1009,7 @@ class AdminBookingService implements BookingServiceInterface
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
             'age_filter' => 'nullable|in:all,younger,seasoned',
+            'search' => 'nullable|string|max:255',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
@@ -1046,8 +1047,10 @@ class AdminBookingService implements BookingServiceInterface
         ]));
 
         $page = (int) ($validated['page'] ?? 1);
+        $hasSearch = ! empty($validated['search']);
+        $isDefaultQuery = $page === 1 && ($validated['age_filter'] ?? 'all') === 'all' && ! $hasSearch;
 
-        if ($page === 1) {
+        if ($isDefaultQuery) {
             $recommended = $this->recommendationService->getRecommendedCaregivers(
                 $client,
                 $booking,
@@ -1071,6 +1074,12 @@ class AdminBookingService implements BookingServiceInterface
             $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] < 35);
         } elseif (($validated['age_filter'] ?? 'all') === 'seasoned') {
             $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] >= 35);
+        }
+
+        if ($hasSearch) {
+            $recommended = $recommended->filter(
+                fn ($cg) => str_contains(strtolower($cg['name']), strtolower($validated['search']))
+            );
         }
 
         $perPage = (int) ($validated['per_page'] ?? 20);

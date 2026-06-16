@@ -5,6 +5,7 @@ use App\Enums\CaregiverStatus;
 use App\Events\BookingGroupSplit;
 use App\Models\Availability;
 use App\Models\Booking;
+use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -657,7 +658,7 @@ describe('Booking - Admin', function () {
         ]);
     });
 
-    test('notify endpoint prevents duplicate notifications', function () {
+    test('notify endpoint re-notifies existing caregivers', function () {
         // $this->markTestSkipped('CSRF protection prevents this test from running in isolation.');
 
         $this->actingAs($this->user);
@@ -670,13 +671,32 @@ describe('Booking - Admin', function () {
             'caregiver_ids' => [$caregiver->id],
         ]);
 
-        // Second notification to same caregiver
+        $firstNotifiedAt = BookingCaregiverNotification::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiver->id)
+            ->value('notified_at');
+
+        $this->travel(1)->minute();
+
+        // Second notification to same caregiver — updates notified_at and resets response
         $this->post(route('bookings.notify', $booking->id), [
             'caregiver_ids' => [$caregiver->id],
         ]);
 
-        // Should only have one record (updateOrCreate)
         $this->assertDatabaseCount('booking_caregiver_notifications', 1);
+
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'claimed' => false,
+            'responded_at' => null,
+        ]);
+
+        $this->assertNotEquals(
+            $firstNotifiedAt,
+            BookingCaregiverNotification::where('booking_id', $booking->id)
+                ->where('caregiver_id', $caregiver->id)
+                ->value('notified_at'),
+        );
     });
 
     test('notify transitions booking from received to pending', function () {

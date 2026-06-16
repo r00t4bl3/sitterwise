@@ -30,7 +30,7 @@ class CaregiverResource extends JsonResource
             'address_state' => $this->address_state,
             'address_zip' => $this->address_zip,
             'date_of_birth' => $isEdit
-                ? $this->date_of_birth
+                ? ($this->date_of_birth ? $this->date_of_birth->format('Y-m-d') : null)
                 : ($this->date_of_birth
                     ? Carbon::parse($this->date_of_birth)->format('F j, Y')
                     : null),

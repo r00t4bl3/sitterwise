@@ -16,7 +16,7 @@ import {
     Split,
     UserPlus,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { NotifyCaregiversSheet } from './notify-caregivers-sheet';
 import { ReplaceCaregiverSheet } from './replace-caregiver-sheet';
 
 interface Booking {
@@ -148,10 +149,23 @@ export default function BookingDetail({
     booking,
     booking_statuses,
     caregiver_suggestions,
+    caregiver_all_ids,
+    caregiver_total,
 }: PageProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
+    const [notifySheetOpen, setNotifySheetOpen] = useState(false);
+
+    const [caregiverSuggestions, setCaregiverSuggestions] = useState<
+        Array<{ id: number; name: string; age?: number | null; matchIcons?: string[]; hasBeenNotified?: boolean; [key: string]: unknown }>
+    >(caregiver_suggestions);
+    const [caregiverAllIds, setCaregiverAllIds] = useState<number[]>(caregiver_all_ids);
+    const [caregiverTotal, setCaregiverTotal] = useState(caregiver_total);
+    const [caregiverCurrentPage, setCaregiverCurrentPage] = useState(1);
+    const [caregiverLastPage, setCaregiverLastPage] = useState(1);
+    const [loadingCaregiverRecommendations, setLoadingCaregiverRecommendations] = useState(false);
+    const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
 
     const cancelForm = useForm({ reason: '' });
 
@@ -255,6 +269,77 @@ export default function BookingDetail({
         { label: 'Tip', value: booking.tip },
         { label: 'Reimbursement', value: booking.reimbursement },
     ].filter((f) => f.value !== null && f.value !== undefined);
+
+    const fetchCaregivers = async (page = 1, filter = 'all') => {
+        if (page === 1) {
+            setLoadingCaregiverRecommendations(true);
+        }
+
+        try {
+            const params = new URLSearchParams({
+                client_id: booking.client_id.toString(),
+                page: page.toString(),
+                per_page: '20',
+                age_filter: filter,
+            });
+
+            if (booking.id) {
+                params.append('booking_id', booking.id.toString());
+            }
+
+            if (booking.start_datetime) {
+                params.append('start_datetime', booking.start_datetime);
+            }
+
+            if (booking.end_datetime) {
+                params.append('end_datetime', booking.end_datetime);
+            }
+
+            const res = await fetch(`/bookings/recommended-caregivers?${params}`);
+            const json = await res.json();
+            const data = json.data;
+
+            if (page === 1) {
+                setCaregiverSuggestions(data);
+                setCaregiverAllIds(json.all_ids as number[]);
+            } else {
+                setCaregiverSuggestions((prev) => [...prev, ...data]);
+            }
+
+            setCaregiverTotal(json.meta.total as number);
+            setCaregiverCurrentPage(json.meta.current_page as number);
+            setCaregiverLastPage(json.meta.last_page as number);
+        } catch (error) {
+            console.error('Error fetching recommended caregivers:', error);
+        } finally {
+            if (page === 1) {
+                setLoadingCaregiverRecommendations(false);
+            }
+        }
+    };
+
+    const handleLoadMore = async (filter = 'all') => {
+        if (loadingMoreCaregivers || caregiverCurrentPage >= caregiverLastPage) {
+            return;
+        }
+
+        setLoadingMoreCaregivers(true);
+        await fetchCaregivers(caregiverCurrentPage + 1, filter);
+        setLoadingMoreCaregivers(false);
+    };
+
+    const handleAgeFilterChange = (filter: string) => {
+        setCaregiverCurrentPage(1);
+        setCaregiverLastPage(1);
+        fetchCaregivers(1, filter);
+    };
+
+    useEffect(() => {
+        if (notifySheetOpen || replaceSheetOpen) {
+            fetchCaregivers(1, 'all');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [notifySheetOpen, replaceSheetOpen]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -896,6 +981,14 @@ export default function BookingDetail({
                 </div>
 
                 <div className="flex justify-end gap-2">
+                    {['received', 'pending'].includes(booking.status) && (
+                        <Button
+                            variant="outline"
+                            onClick={() => setNotifySheetOpen(true)}
+                        >
+                            Notify Caregivers
+                        </Button>
+                    )}
                     {booking.status !== 'cancelled' && booking.caregiver_id && (
                         <>
                             <Button
@@ -930,7 +1023,29 @@ export default function BookingDetail({
                 onOpenChange={setReplaceSheetOpen}
                 bookingId={booking.id}
                 currentCaregiverName={booking.caregiver_name}
-                caregiverSuggestions={caregiver_suggestions}
+                caregiverSuggestions={caregiverSuggestions}
+                caregiverTotal={caregiverTotal}
+                caregiverCurrentPage={caregiverCurrentPage}
+                caregiverLastPage={caregiverLastPage}
+                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingMoreCaregivers={loadingMoreCaregivers}
+                onLoadMoreCaregivers={handleLoadMore}
+                onAgeFilterChange={handleAgeFilterChange}
+            />
+
+            <NotifyCaregiversSheet
+                open={notifySheetOpen}
+                onOpenChange={setNotifySheetOpen}
+                bookingId={booking.id}
+                caregiverSuggestions={caregiverSuggestions}
+                caregiverAllIds={caregiverAllIds}
+                caregiverTotal={caregiverTotal}
+                caregiverCurrentPage={caregiverCurrentPage}
+                caregiverLastPage={caregiverLastPage}
+                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingMoreCaregivers={loadingMoreCaregivers}
+                onLoadMoreCaregivers={handleLoadMore}
+                onAgeFilterChange={handleAgeFilterChange}
             />
 
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

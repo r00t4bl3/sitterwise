@@ -31,6 +31,10 @@ use Inertia\Inertia;
 
 class CaregiverController extends Controller
 {
+    private const SORTABLE_COLUMNS = [
+        'id', 'first_name', 'last_name', 'rating', 'date_of_birth',
+    ];
+
     public function index(Request $request)
     {
         $query = Caregiver::with(['user', 'specialtyTypes', 'locations', 'certifications']);
@@ -47,7 +51,13 @@ class CaregiverController extends Controller
             $query->where('status', $request->status);
         }
 
-        $caregivers = $query->orderBy('id')->paginate(20)->appends($request->query());
+        $sort = in_array($request->sort, self::SORTABLE_COLUMNS, true) ? $request->sort : 'id';
+        $direction = $request->direction ?? 'asc';
+        if (! in_array(strtolower($direction), ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
+
+        $caregivers = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
@@ -60,6 +70,8 @@ class CaregiverController extends Controller
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status ?? 'all',
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }

@@ -94,6 +94,7 @@ export function BookingSheet({
     loadingCaregiverRecommendations,
     loadingMoreCaregivers,
     onAgeFilterChange,
+    onSearchChange,
 }: BookingSheetProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
 
@@ -470,6 +471,7 @@ export function BookingSheet({
                                 onOpenNotifySheet={populateCaregiverSuggestions}
                                 onLoadMoreCaregivers={loadMoreCaregivers}
                                 onAgeFilterChange={onAgeFilterChange}
+                                onSearchChange={onSearchChange}
                                 sheetMode={sheetMode}
                             />
 

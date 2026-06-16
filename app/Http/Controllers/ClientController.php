@@ -28,6 +28,10 @@ use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    private const SORTABLE_COLUMNS = [
+        'id', 'first_name', 'last_name', 'client_type',
+    ];
+
     protected $paymentService;
 
     public function __construct(ClientPaymentServiceFactory $paymentServiceFactory)
@@ -68,7 +72,13 @@ class ClientController extends Controller
             $query->where('client_type', $request->client_type);
         }
 
-        $clients = $query->orderByDesc('id')->paginate(20)->appends($request->query());
+        $sort = in_array($request->sort, self::SORTABLE_COLUMNS, true) ? $request->sort : 'id';
+        $direction = $request->direction ?? 'desc';
+        if (! in_array(strtolower($direction), ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $clients = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
 
         $clients->getCollection()->transform(fn ($client) => [
             ...$client->toArray(),
@@ -81,6 +91,8 @@ class ClientController extends Controller
             'filters' => [
                 'search' => $request->search,
                 'client_type' => $request->client_type ?? 'all',
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }

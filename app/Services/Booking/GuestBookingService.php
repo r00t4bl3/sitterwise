@@ -119,6 +119,7 @@ class GuestBookingService
             'emergency_instructions' => 'nullable|string',
             'special_needs_notes' => 'nullable|string',
             'how_did_you_hear' => 'required|string|max:255',
+            'sms_consent' => 'required|boolean',
             'new_children' => 'required|array|min:1',
             'new_children.*.name' => 'required|string|max:255',
             'new_children.*.gender' => 'nullable|in:male,female',
@@ -212,6 +213,7 @@ class GuestBookingService
             'address_state' => $pendingData['address_state'],
             'address_zip' => $pendingData['address_zip'],
             'hotel_name' => $pendingData['hotel_name'] ?? null,
+            'sms_consent' => $pendingData['sms_consent'] ?? false,
             'dates' => $pendingData['dates'] ?? null,
         ];
     }
@@ -414,6 +416,8 @@ class GuestBookingService
 
             $client = $user->client;
             if ($client) {
+                $client->update(['sms_opted_out' => ! $data['sms_consent']]);
+
                 $this->attachPaymentMethod($client, $paymentMethodId);
 
                 return [
@@ -428,6 +432,7 @@ class GuestBookingService
                 'first_name' => $data['client_first_name'],
                 'last_name' => $data['client_last_name'],
                 'phone' => $data['client_phone'],
+                'sms_opted_out' => ! $data['sms_consent'],
             ]);
 
             $this->attachPaymentMethod($client, $paymentMethodId);
@@ -452,6 +457,7 @@ class GuestBookingService
             'first_name' => $data['client_first_name'],
             'last_name' => $data['client_last_name'],
             'phone' => $data['client_phone'],
+            'sms_opted_out' => ! $data['sms_consent'],
         ]);
 
         $this->attachPaymentMethod($client, $paymentMethodId);

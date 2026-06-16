@@ -25,6 +25,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+    Route::inertia('settings/push-notifications', 'settings/push-notifications')
+        ->name('push-notifications.edit');
 
     Route::get('settings/caregiver/pause', [CaregiverPauseController::class, 'show'])->name('settings.caregiver.pause');
     Route::post('settings/caregiver/pause', [CaregiverPauseController::class, 'pause'])->name('settings.caregiver.pause.store');

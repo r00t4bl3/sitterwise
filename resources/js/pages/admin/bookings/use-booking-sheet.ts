@@ -150,6 +150,7 @@ export function useBookingSheet({
         setLoadingCaregiverRecommendations,
     ] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
+    const [caregiverSearch, setCaregiverSearch] = useState('');
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [bookingChildren, setBookingChildren] = useState<
         Array<{
@@ -234,6 +235,7 @@ export function useBookingSheet({
     const populateCaregiverSuggestions = async (
         page = 1,
         ageFilter = 'all',
+        search = '',
     ) => {
         const clientId =
             editingBooking?.booking_group?.client_id ?? form.data.client_id;
@@ -253,6 +255,7 @@ export function useBookingSheet({
                 per_page: '20',
                 age_filter: ageFilter,
             });
+            params.append('search', search);
 
             if (editingBooking?.id) {
                 params.append('booking_id', editingBooking.id.toString());
@@ -411,7 +414,7 @@ export function useBookingSheet({
         }
 
         setLoadingMoreCaregivers(true);
-        await populateCaregiverSuggestions(caregiverCurrentPage + 1, ageFilter);
+        await populateCaregiverSuggestions(caregiverCurrentPage + 1, ageFilter, caregiverSearch);
         setLoadingMoreCaregivers(false);
     };
 
@@ -1281,7 +1284,11 @@ export function useBookingSheet({
         populateCaregiverSuggestions,
         loadMoreCaregivers,
         onAgeFilterChange: (filter: string) =>
-            populateCaregiverSuggestions(1, filter),
+            populateCaregiverSuggestions(1, filter, caregiverSearch),
+        onSearchChange: (query: string, filter: string) => {
+            setCaregiverSearch(query);
+            populateCaregiverSuggestions(1, filter, query);
+        },
         caregiverAllIds,
         caregiverTotal,
         caregiverCurrentPage,

@@ -9,7 +9,7 @@ import {
     MapPin,
     MapPinCheckInside,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -50,6 +50,7 @@ interface NotifyCaregiversSheetProps {
     loadingMoreCaregivers: boolean;
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
+    onSearchChange?: (query: string, filter: string) => void;
 }
 
 export function NotifyCaregiversSheet({
@@ -66,10 +67,36 @@ export function NotifyCaregiversSheet({
     loadingMoreCaregivers,
     onLoadMoreCaregivers,
     onAgeFilterChange,
+    onSearchChange,
 }: NotifyCaregiversSheetProps) {
     const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>(
         'all',
     );
+    const [searchInput, setSearchInput] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearchInput = (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const value = e.target.value;
+        setSearchInput(value);
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            onSearchChange?.(value, ageFilter);
+        }, 300);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, []);
 
     const notifyForm = useForm({
         caregiver_ids: initialCaregiverId
@@ -202,6 +229,14 @@ export function NotifyCaregiversSheet({
                             </Button>
                         </div>
                     </div>
+
+                    <input
+                        type="text"
+                        value={searchInput}
+                        onChange={handleSearchInput}
+                        placeholder="Search by name..."
+                        className="w-full rounded-md border border-border px-3 py-1.5 text-xs outline-none focus:border-primary"
+                    />
                 </div>
 
                 {(() => {

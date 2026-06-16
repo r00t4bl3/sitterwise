@@ -80,6 +80,8 @@ interface Props {
     filters: {
         search: string | null;
         client_type: string | null;
+        sort: string;
+        direction: 'asc' | 'desc';
     };
 }
 
@@ -94,6 +96,14 @@ export default function ClientsIndex() {
     );
     const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+    const sortFieldRef = useRef(filters.sort || 'id');
+    const sortDirRef = useRef<'asc' | 'desc'>(
+        (filters.direction as 'asc' | 'desc') || 'desc',
+    );
+
+    const sortField = filters.sort || 'id';
+    const sortDir = (filters.direction as 'asc' | 'desc') || 'desc';
+
     const applyFilters = (search: string, type: string | null) => {
         const params: Record<string, string> = {};
 
@@ -105,10 +115,23 @@ export default function ClientsIndex() {
             params.client_type = type;
         }
 
+        if (sortFieldRef.current !== 'id' || sortDirRef.current !== 'desc') {
+            params.sort = sortFieldRef.current;
+            params.direction = sortDirRef.current;
+        }
+
         router.get('/clients', params, {
             preserveState: true,
             replace: true,
         });
+    };
+
+    const handleSort = (field: string) => {
+        const newDir =
+            field === sortField && sortDir === 'asc' ? 'desc' : 'asc';
+        sortFieldRef.current = field;
+        sortDirRef.current = newDir;
+        applyFilters(searchQuery, typeFilter);
     };
 
     const handleSearchChange = (value: string) => {
@@ -127,6 +150,12 @@ export default function ClientsIndex() {
     useEffect(() => {
         return () => clearTimeout(debounceTimer.current);
     }, []);
+
+    useEffect(() => {
+        sortFieldRef.current = filters.sort || 'id';
+        sortDirRef.current =
+            (filters.direction as 'asc' | 'desc') || 'desc';
+    }, [filters.sort, filters.direction]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -217,13 +246,31 @@ export default function ClientsIndex() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    ID
+                                    <button onClick={() => handleSort('id')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        ID
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'id' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'id' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Name
+                                    <button onClick={() => handleSort('last_name')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        Name
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'last_name' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'last_name' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Type
+                                    <button onClick={() => handleSort('client_type')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        Type
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'client_type' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'client_type' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Children
@@ -246,7 +293,8 @@ export default function ClientsIndex() {
                             {clients.data.map((client) => (
                                 <tr
                                     key={client.id}
-                                    className="border-b border-border transition hover:bg-blush"
+                                    onClick={() => router.visit(`/clients/${client.id}`)}
+                                    className="cursor-pointer border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {client.id}
@@ -267,6 +315,7 @@ export default function ClientsIndex() {
                                             />
                                             <Link
                                                 href={`/clients/${client.id}`}
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"
                                             >
                                                 {client.first_name}{' '}
@@ -292,13 +341,15 @@ export default function ClientsIndex() {
                                         {formatPhoneDisplay(client.phone)}
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
-                                        <Button asChild className="h-8">
-                                            <Link
-                                                href={`/clients/${client.id}`}
-                                            >
-                                                View
-                                            </Link>
-                                        </Button>
+                                        <span onClick={(e) => e.stopPropagation()}>
+                                            <Button asChild className="h-8">
+                                                <Link
+                                                    href={`/clients/${client.id}`}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </span>
                                     </td>
                                 </tr>
                             ))}

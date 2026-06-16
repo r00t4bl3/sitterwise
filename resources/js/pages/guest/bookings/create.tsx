@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/phone-input';
 import {
+    RadioGroup,
+    RadioGroupItem,
+} from '@/components/ui/radio-group';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -149,6 +153,10 @@ function validateForm(
         errors.how_did_you_hear = 'Please tell us how you found us.';
     }
 
+    if (formData.sms_consent !== true && formData.sms_consent !== false) {
+        errors.sms_consent = 'Please select your SMS consent preference.';
+    }
+
     return errors;
 }
 
@@ -249,6 +257,7 @@ export default function GuestBookingCreate() {
         other_adults_present: '',
         emergency_instructions: '',
         special_needs_notes: '',
+        sms_consent: true,
         how_did_you_hear: '',
         new_children: [
             {
@@ -718,6 +727,75 @@ export default function GuestBookingCreate() {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* CARD: COMMUNICATION PREFERENCES */}
+                <div className="overflow-hidden rounded-[3px] border border-border bg-card">
+                    <div className="flex w-full items-center justify-between bg-teal-bg px-[22px] py-4">
+                        <div>
+                            <h2 className="m-0 font-serif text-base font-semibold text-foreground">
+                                Communication Preferences
+                            </h2>
+                            <p className="mt-[3px] text-xs text-muted-foreground italic">
+                                Help us keep you informed about your booking.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="space-y-4 p-6">
+                        <div>
+                            <Label className="text-sm font-medium text-foreground">
+                                SMS Consent{' '}
+                                <span className="text-primary" aria-hidden="true">*</span>
+                            </Label>
+                            <RadioGroup
+                                value={form.data.sms_consent ? 'yes' : 'no'}
+                                onValueChange={(value) =>
+                                    form.setData('sms_consent', value === 'yes')
+                                }
+                                className="mt-2 flex gap-4"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="yes" id="sms-yes" />
+                                    <Label htmlFor="sms-yes">Yes</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="no" id="sms-no" />
+                                    <Label htmlFor="sms-no">No</Label>
+                                </div>
+                            </RadioGroup>
+                            {(validationErrors.sms_consent || form.errors.sms_consent) && (
+                                <InputError
+                                    message={validationErrors.sms_consent || form.errors.sms_consent}
+                                />
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            By selecting "Yes," I agree to receive SMS text messages from Sitterwise
+                            about my booking, including confirmations, reminders, schedule changes,
+                            and post-job follow-up at the phone number I provided. Message frequency
+                            varies. Message and data rates may apply. Reply STOP to opt out at any
+                            time, or HELP for assistance. Sitterwise does not share phone numbers
+                            with third parties for marketing purposes. See our{' '}
+                            <a
+                                href="https://sitterwise.com/privacy/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                            >
+                                Privacy Policy
+                            </a>{' '}
+                            and{' '}
+                            <a
+                                href="https://sitterwise.com/sms-terms/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                            >
+                                SMS Terms
+                            </a>{' '}
+                            for details.
+                        </p>
+                    </div>
                 </div>
 
                 {/* CARD 2: ABOUT YOUR BOOKING */}

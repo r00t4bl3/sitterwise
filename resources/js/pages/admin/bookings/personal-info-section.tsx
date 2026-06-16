@@ -123,6 +123,7 @@ interface PersonalInfoSectionProps {
     onOpenNotifySheet?: () => void;
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
+    onSearchChange?: (query: string, filter: string) => void;
     sheetMode?: string;
 }
 
@@ -174,6 +175,7 @@ export function PersonalInfoSection({
     onOpenNotifySheet,
     onLoadMoreCaregivers,
     onAgeFilterChange,
+    onSearchChange,
     sheetMode,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
@@ -293,6 +295,7 @@ export function PersonalInfoSection({
                     loadingMoreCaregivers={loadingMoreCaregivers}
                     onLoadMoreCaregivers={onLoadMoreCaregivers}
                     onAgeFilterChange={onAgeFilterChange}
+                    onSearchChange={onSearchChange}
                 />
             )}
 
@@ -328,7 +331,15 @@ export function PersonalInfoSection({
                                 loading={loadingSuggestions}
                                 displayValue={selectedClientName}
                                 showAddNew={true}
-                                onAddNew={() => setClientMode('input')}
+                                onAddNew={(query) => {
+                                    const [firstName, ...rest] = query.trim().split(/\s+/);
+                                    form.setData('new_client', {
+                                        ...form.data.new_client,
+                                        first_name: firstName || '',
+                                        last_name: rest.join(' ') || '',
+                                    });
+                                    setClientMode('input');
+                                }}
                             />
                         </div>
                         {form.errors.client_id && (
