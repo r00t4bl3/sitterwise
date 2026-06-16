@@ -95,7 +95,7 @@ class User extends Authenticatable
         }
 
         if ($this->isCaregiver()) {
-            return $this->caregiver?->phone;
+            return $this->caregiver && ! $this->caregiver->sms_opted_out ? $this->caregiver->phone : null;
         }
 
         return null;

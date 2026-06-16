@@ -31,6 +31,14 @@ class SmsChannel
         try {
             $this->twilio->send($to, $message->message);
         } catch (TwilioException $e) {
+            if ($e->getCode() === 21610) {
+                if ($notifiable->isClient() && $notifiable->client) {
+                    $notifiable->client->update(['sms_opted_out' => true]);
+                } elseif ($notifiable->isCaregiver() && $notifiable->caregiver) {
+                    $notifiable->caregiver->update(['sms_opted_out' => true]);
+                }
+            }
+
             Log::warning('SMS failed for user {user}: {error}', [
                 'user' => $notifiable->getKey(),
                 'to' => $to,

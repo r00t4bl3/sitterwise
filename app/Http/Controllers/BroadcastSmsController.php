@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\SendBroadcastMessage;
 use App\Models\BroadcastMessage;
 use App\Models\Caregiver;
+use App\Models\Client;
 use App\Models\SmsBroadcast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -97,19 +98,26 @@ class BroadcastSmsController extends Controller
         $body = strtoupper(trim((string) $request->input('Body')));
 
         if (in_array($body, ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT'])) {
+            $normPhoneDigits = fn ($phone) => preg_replace('/\D/', '', $phone);
+            $matchPhone = fn ($phone) => $normPhoneDigits($phone) === $fromDigits
+                || (strlen($fromDigits) >= 10
+                    && strlen((string) $normPhoneDigits($phone)) >= 10
+                    && substr($normPhoneDigits($phone), -10) === substr($fromDigits, -10));
+
             $caregiver = Caregiver::whereNotNull('phone')
                 ->get()
-                ->first(function ($c) use ($fromDigits) {
-                    $phoneDigits = preg_replace('/\D/', '', $c->phone);
-
-                    return $phoneDigits === $fromDigits
-                        || (strlen($fromDigits) >= 10
-                            && strlen($phoneDigits) >= 10
-                            && substr($phoneDigits, -10) === substr($fromDigits, -10));
-                });
+                ->first(fn ($c) => $matchPhone($c->phone));
 
             if ($caregiver) {
                 $caregiver->update(['sms_opted_out' => true]);
+            } else {
+                $client = Client::whereNotNull('phone')
+                    ->get()
+                    ->first(fn ($c) => $matchPhone($c->phone));
+
+                if ($client) {
+                    $client->update(['sms_opted_out' => true]);
+                }
             }
         }
 
