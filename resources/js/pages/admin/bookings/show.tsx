@@ -166,6 +166,7 @@ export default function BookingDetail({
     const [caregiverLastPage, setCaregiverLastPage] = useState(1);
     const [loadingCaregiverRecommendations, setLoadingCaregiverRecommendations] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
+    const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
 
     const cancelForm = useForm({ reason: '' });
 
@@ -270,7 +271,7 @@ export default function BookingDetail({
         { label: 'Reimbursement', value: booking.reimbursement },
     ].filter((f) => f.value !== null && f.value !== undefined);
 
-    const fetchCaregivers = async (page = 1, filter = 'all') => {
+    const fetchCaregivers = async (page = 1, filter = 'all', search = '') => {
         if (page === 1) {
             setLoadingCaregiverRecommendations(true);
         }
@@ -282,6 +283,10 @@ export default function BookingDetail({
                 per_page: '20',
                 age_filter: filter,
             });
+
+            if (search) {
+                params.append('search', search);
+            }
 
             if (booking.id) {
                 params.append('booking_id', booking.id.toString());
@@ -324,18 +329,26 @@ export default function BookingDetail({
         }
 
         setLoadingMoreCaregivers(true);
-        await fetchCaregivers(caregiverCurrentPage + 1, filter);
+        await fetchCaregivers(caregiverCurrentPage + 1, filter, caregiverSearchQuery);
         setLoadingMoreCaregivers(false);
     };
 
     const handleAgeFilterChange = (filter: string) => {
         setCaregiverCurrentPage(1);
         setCaregiverLastPage(1);
-        fetchCaregivers(1, filter);
+        fetchCaregivers(1, filter, caregiverSearchQuery);
+    };
+
+    const handleSearchChange = (query: string, filter: string) => {
+        setCaregiverSearchQuery(query);
+        setCaregiverCurrentPage(1);
+        setCaregiverLastPage(1);
+        fetchCaregivers(1, filter, query);
     };
 
     useEffect(() => {
         if (notifySheetOpen || replaceSheetOpen) {
+            setCaregiverSearchQuery('');
             fetchCaregivers(1, 'all');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1031,6 +1044,7 @@ export default function BookingDetail({
                 loadingMoreCaregivers={loadingMoreCaregivers}
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}
+                onSearchChange={handleSearchChange}
             />
 
             <NotifyCaregiversSheet
@@ -1046,6 +1060,7 @@ export default function BookingDetail({
                 loadingMoreCaregivers={loadingMoreCaregivers}
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}
+                onSearchChange={handleSearchChange}
             />
 
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

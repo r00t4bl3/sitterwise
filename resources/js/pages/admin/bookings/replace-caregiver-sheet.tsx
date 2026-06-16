@@ -10,7 +10,7 @@ import {
     MapPin,
     MapPinCheckInside,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -48,6 +48,7 @@ interface ReplaceCaregiverSheetProps {
     loadingMoreCaregivers?: boolean;
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
+    onSearchChange?: (query: string, filter: string) => void;
 }
 
 export function ReplaceCaregiverSheet({
@@ -63,9 +64,33 @@ export function ReplaceCaregiverSheet({
     loadingMoreCaregivers,
     onLoadMoreCaregivers,
     onAgeFilterChange,
+    onSearchChange,
 }: ReplaceCaregiverSheetProps) {
     const replaceForm = useForm({ caregiver_id: 0 });
     const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>('all');
+    const [searchInput, setSearchInput] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchInput(value);
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            onSearchChange?.(value, ageFilter);
+        }, 300);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, []);
 
     const handleReplace = () => {
         if (!replaceForm.data.caregiver_id) {
@@ -161,6 +186,16 @@ export function ReplaceCaregiverSheet({
                         </div>
                     </div>
                 )}
+
+                <div className="px-4 pt-2">
+                    <input
+                        type="text"
+                        value={searchInput}
+                        onChange={handleSearchInput}
+                        placeholder="Search by name..."
+                        className="w-full rounded-md border border-border px-3 py-1.5 text-xs outline-none focus:border-primary"
+                    />
+                </div>
 
                 <div className="flex-1 space-y-2 overflow-y-auto px-4 pt-4">
                     {loadingCaregiverRecommendations ? (
