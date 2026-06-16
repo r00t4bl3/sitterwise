@@ -9,10 +9,11 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Sichikawa\LaravelSendgridDriver\SendGrid;
 
 class CaregiverBookingCancelledMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, SendGrid, SerializesModels;
 
     public function __construct(
         public Booking $booking,
@@ -21,6 +22,23 @@ class CaregiverBookingCancelledMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
+        $data = $this->booking->toEmailData();
+
+        $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
+
+        $data['service_time_pretty'] = $start->format('g:i A');
+        $data['caregiver_first_name'] = $this->booking->caregiver?->first_name ?? 'Sitter';
+        $data['cancellation_reason'] = $this->reason;
+
+        $this->sendgrid([
+            'personalizations' => [
+                [
+                    'dynamic_template_data' => $data,
+                ],
+            ],
+            'template_id' => 'd-2a539fde38bb46788fc96baf7fb6366b',
+        ]);
+
         return new Envelope(
             from: config('mail.from.address', 'admin@sitterwise.io'),
             subject: 'Job #'.$this->booking->id.' Has Been Cancelled',
@@ -30,7 +48,7 @@ class CaregiverBookingCancelledMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.caregiver-booking-cancelled',
+            htmlString: ' ',
         );
     }
 

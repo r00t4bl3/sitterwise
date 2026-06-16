@@ -11,7 +11,10 @@ import {
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateTimeInPT,
+    formatDisplayTimeInPT,
+} from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -39,9 +42,6 @@ interface BookingStatus {
 }
 
 interface ClientDashboardProps {
-    user: {
-        name: string;
-    };
     client: {
         firstName: string;
         nextBooking: Booking & {
@@ -68,7 +68,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function ClientDashboard({
-    user,
     stats,
     client,
     bookingStatuses,
@@ -242,9 +241,9 @@ export default function ClientDashboard({
                                                                 )}
                                                             </p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                    {booking.caregiver
-                                                                        ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
-                                                                        : ''}
+                                                                {booking.caregiver
+                                                                    ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                    : ''}
                                                             </p>
                                                         </div>
                                                     </div>

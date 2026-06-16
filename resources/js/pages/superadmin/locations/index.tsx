@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
@@ -141,10 +141,14 @@ export default function LocationsIndex() {
         const trimmed = newCityInput.trim();
 
         if (!trimmed) {
-return;
-}
+            return;
+        }
 
-        if (cityEditorCities.map((c) => c.toLowerCase()).includes(trimmed.toLowerCase())) {
+        if (
+            cityEditorCities
+                .map((c) => c.toLowerCase())
+                .includes(trimmed.toLowerCase())
+        ) {
             return;
         }
 
@@ -155,12 +159,6 @@ return;
     const handleRemoveCity = (index: number) => {
         setCityEditorCities((prev) => prev.filter((_, i) => i !== index));
     };
-
-    const allAssignedCities = new Set(
-        locations
-            .flatMap((l) => l.cities)
-            .map((c) => c.toLowerCase()),
-    );
 
     const allAssignedExcludingCurrent = new Set(
         locations
@@ -174,7 +172,11 @@ return;
     );
 
     const handleAssignUnassigned = (city: string) => {
-        if (!cityEditorCities.map((c) => c.toLowerCase()).includes(city.toLowerCase())) {
+        if (
+            !cityEditorCities
+                .map((c) => c.toLowerCase())
+                .includes(city.toLowerCase())
+        ) {
             setCityEditorCities((prev) => [...prev, city]);
         }
     };
@@ -200,17 +202,30 @@ return;
                     <table className="w-full min-w-[600px]">
                         <thead>
                             <tr className="bg-table-header">
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Icon</th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Name</th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Cities</th>
-                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">Active</th>
-                                <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">Actions</th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Icon
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Name
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Cities
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Active
+                                </th>
+                                <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {locations.map((location) => (
-                                <tr key={location.id} className="border-b border-border transition hover:bg-blush">
-                                    <td className="px-4 py-3 flex items-center">
+                                <tr
+                                    key={location.id}
+                                    className="border-b border-border transition hover:bg-blush"
+                                >
+                                    <td className="flex items-center px-4 py-3">
                                         {location.svg_icon ? (
                                             <div
                                                 className="h-4 w-4"
@@ -224,20 +239,41 @@ return;
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-sm font-medium text-foreground">{location.name}</td>
+                                    <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                        {location.name}
+                                    </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                         {location.cities.length > 0
                                             ? location.cities.join(', ')
                                             : '—'}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${location.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {location.is_active ? 'Active' : 'Inactive'}
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${location.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                                        >
+                                            {location.is_active
+                                                ? 'Active'
+                                                : 'Inactive'}
                                         </span>
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
-                                        <Button onClick={() => openEditSheet(location)} className="h-8">Edit</Button>
-                                        <Button variant="secondary" onClick={() => handleDelete(location.id)} className="h-8">Delete</Button>
+                                        <Button
+                                            onClick={() =>
+                                                openEditSheet(location)
+                                            }
+                                            className="h-8"
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() =>
+                                                handleDelete(location.id)
+                                            }
+                                            className="h-8"
+                                        >
+                                            Delete
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -249,21 +285,57 @@ return;
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                     <SheetContent side="right">
                         <SheetHeader>
-                            <SheetTitle>{editingId ? 'Edit Location' : 'Add Location'}</SheetTitle>
-                            <SheetDescription>Add or edit a service location.</SheetDescription>
+                            <SheetTitle>
+                                {editingId ? 'Edit Location' : 'Add Location'}
+                            </SheetTitle>
+                            <SheetDescription>
+                                Add or edit a service location.
+                            </SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 px-4">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="space-y-4 px-4"
+                        >
                             <div className="space-y-2">
                                 <Label>Name</Label>
-                                <Input type="text" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
+                                <Input
+                                    type="text"
+                                    value={form.data.name}
+                                    onChange={(e) =>
+                                        form.setData('name', e.target.value)
+                                    }
+                                    required
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>SVG Icon</Label>
-                                <Textarea value={form.data.svg_icon} onChange={(e) => form.setData('svg_icon', e.target.value)} className="font-mono" rows={4} placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="..."/></svg>' />
+                                <Textarea
+                                    value={form.data.svg_icon}
+                                    onChange={(e) =>
+                                        form.setData('svg_icon', e.target.value)
+                                    }
+                                    className="font-mono"
+                                    rows={4}
+                                    placeholder='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="..."/></svg>'
+                                />
                             </div>
                             <div className="flex items-center gap-2">
-                                <Checkbox id="is_active" checked={form.data.is_active} onCheckedChange={(checked) => form.setData('is_active', checked as boolean)} />
-                                <Label htmlFor="is_active" className="text-sm font-normal text-foreground">Active</Label>
+                                <Checkbox
+                                    id="is_active"
+                                    checked={form.data.is_active}
+                                    onCheckedChange={(checked) =>
+                                        form.setData(
+                                            'is_active',
+                                            checked as boolean,
+                                        )
+                                    }
+                                />
+                                <Label
+                                    htmlFor="is_active"
+                                    className="text-sm font-normal text-foreground"
+                                >
+                                    Active
+                                </Label>
                             </div>
 
                             <hr className="border-border" />
@@ -279,7 +351,9 @@ return;
                                             {city}
                                             <button
                                                 type="button"
-                                                onClick={() => handleRemoveCity(index)}
+                                                onClick={() =>
+                                                    handleRemoveCity(index)
+                                                }
                                                 className="ml-1 cursor-pointer text-muted-foreground hover:text-destructive"
                                             >
                                                 <Trash2 className="h-3 w-3" />
@@ -287,7 +361,9 @@ return;
                                         </span>
                                     ))}
                                     {cityEditorCities.length === 0 && (
-                                        <p className="text-sm text-muted-foreground italic">No cities assigned</p>
+                                        <p className="text-sm text-muted-foreground italic">
+                                            No cities assigned
+                                        </p>
                                     )}
                                 </div>
 
@@ -296,7 +372,9 @@ return;
                                         type="text"
                                         placeholder="Add a city..."
                                         value={newCityInput}
-                                        onChange={(e) => setNewCityInput(e.target.value)}
+                                        onChange={(e) =>
+                                            setNewCityInput(e.target.value)
+                                        }
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 e.preventDefault();
@@ -304,34 +382,57 @@ return;
                                             }
                                         }}
                                     />
-                                    <Button type="button" size="icon" variant="outline" onClick={handleAddCity}>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="outline"
+                                        onClick={handleAddCity}
+                                    >
                                         <Plus className="h-4 w-4" />
                                     </Button>
                                 </div>
 
                                 {unassignedCities.filter(
-                                    (city) => !cityEditorCities.map((c) => c.toLowerCase()).includes(city.toLowerCase()),
+                                    (city) =>
+                                        !cityEditorCities
+                                            .map((c) => c.toLowerCase())
+                                            .includes(city.toLowerCase()),
                                 ).length > 0 && (
                                     <div>
-                                        <Label className="text-sm text-muted-foreground">Not yet assigned to any area</Label>
+                                        <Label className="text-sm text-muted-foreground">
+                                            Not yet assigned to any area
+                                        </Label>
                                         <div className="mt-1 flex flex-wrap gap-1">
                                             {unassignedCities
                                                 .filter(
-                                                    (city) => !cityEditorCities.map((c) => c.toLowerCase()).includes(city.toLowerCase()),
+                                                    (city) =>
+                                                        !cityEditorCities
+                                                            .map((c) =>
+                                                                c.toLowerCase(),
+                                                            )
+                                                            .includes(
+                                                                city.toLowerCase(),
+                                                            ),
                                                 )
                                                 .map((city) => (
                                                     <Tooltip key={city}>
                                                         <TooltipTrigger asChild>
                                                             <span
                                                                 className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
-                                                                onClick={() => handleAssignUnassigned(city)}
+                                                                onClick={() =>
+                                                                    handleAssignUnassigned(
+                                                                        city,
+                                                                    )
+                                                                }
                                                             >
                                                                 {city}
                                                                 <Plus className="h-3 w-3" />
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            Assign to {form.data.name || 'this location'}
+                                                            Assign to{' '}
+                                                            {form.data.name ||
+                                                                'this location'}
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 ))}
@@ -341,8 +442,17 @@ return;
                             </div>
 
                             <div className="w-full space-y-2">
-                                <Button type="submit" className="w-full">{form.processing ? 'Saving...' : 'Save'}</Button>
-                                <Button variant="secondary" type="button" onClick={() => setIsSheetOpen(false)} className="mt-2 w-full">Cancel</Button>
+                                <Button type="submit" className="w-full">
+                                    {form.processing ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    type="button"
+                                    onClick={() => setIsSheetOpen(false)}
+                                    className="mt-2 w-full"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </form>
                     </SheetContent>
@@ -353,11 +463,24 @@ return;
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>Confirm Delete</DialogTitle>
-                            <DialogDescription>Are you sure you want to delete this location? This action cannot be undone.</DialogDescription>
+                            <DialogDescription>
+                                Are you sure you want to delete this location?
+                                This action cannot be undone.
+                            </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
-                            <Button variant="outline" onClick={handleCancelDelete}>Cancel</Button>
-                            <Button onClick={handleConfirmDelete} disabled={form.processing}>{form.processing ? 'Deleting...' : 'Delete'}</Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelDelete}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmDelete}
+                                disabled={form.processing}
+                            >
+                                {form.processing ? 'Deleting...' : 'Delete'}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

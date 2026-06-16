@@ -363,9 +363,11 @@ class CaregiverRecommendationService
         $allDateKeys = [];
         $requiredSlotsPerDate = [];
 
+        $tz = new \DateTimeZone('America/Los_Angeles');
+
         foreach ($dateRanges as $range) {
-            $start = new \DateTime($range['start']);
-            $end = new \DateTime($range['end']);
+            $start = (new \DateTime($range['start']))->setTimezone($tz);
+            $end = (new \DateTime($range['end']))->setTimezone($tz);
 
             $current = clone $start;
             while ($current <= $end) {

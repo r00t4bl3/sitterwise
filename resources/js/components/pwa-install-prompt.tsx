@@ -10,20 +10,22 @@ export default function PWAInstallPrompt() {
         iosInstructions,
     } = usePWAInstall();
     const [dismissed, setDismissed] = useState(
-        () => localStorage.getItem('pwa-install-dismissed') === 'true'
+        () => localStorage.getItem('pwa-install-dismissed') === 'true',
     );
 
-    if (isStandalone || !isInstallable || dismissed) return null;
+    if (isStandalone || !isInstallable || dismissed) {
+        return null;
+    }
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
+        <div className="fixed right-4 bottom-4 z-50 w-full max-w-sm">
             <div className="relative rounded-xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
                 <button
                     onClick={() => {
                         setDismissed(true);
                         localStorage.setItem('pwa-install-dismissed', 'true');
                     }}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    className="absolute top-3 right-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                     aria-label="Dismiss"
                 >
                     <svg

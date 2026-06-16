@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { usePushSubscription } from '@/hooks/use-push-subscription';
 import { pushTest } from '@/routes/settings';
 
@@ -13,7 +13,9 @@ export default function PushTestCard() {
         usePushSubscription();
     const [testSending, setTestSending] = useState(false);
 
-    if (!isSupported) return null;
+    if (!isSupported) {
+        return null;
+    }
 
     const handleSendTest = () => {
         setTestSending(true);
@@ -23,7 +25,7 @@ export default function PushTestCard() {
             {
                 preserveScroll: true,
                 onFinish: () => setTestSending(false),
-            }
+            },
         );
     };
 
@@ -43,10 +45,7 @@ export default function PushTestCard() {
                         <p className="text-sm text-muted-foreground">
                             Push notifications are enabled for your browser.
                         </p>
-                        <Button
-                            onClick={handleSendTest}
-                            disabled={testSending}
-                        >
+                        <Button onClick={handleSendTest} disabled={testSending}>
                             {testSending ? 'Sending...' : 'Send Test Push'}
                         </Button>
                     </div>

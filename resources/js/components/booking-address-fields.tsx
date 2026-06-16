@@ -201,7 +201,8 @@ export function BookingAddressFields({
                 }
             });
 
-            const outsideArea = state !== 'CA' || !SERVICE_AREA_CITIES.includes(city);
+            const outsideArea =
+                state !== 'CA' || !SERVICE_AREA_CITIES.includes(city);
 
             form.setData('address_line1', line1);
             form.setData('address_line2', line2);
@@ -363,7 +364,9 @@ export function BookingAddressFields({
                     aria-expanded={showPredictions}
                     aria-controls={listboxId}
                     aria-activedescendant={
-                        activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+                        activeIndex >= 0
+                            ? `${listboxId}-option-${activeIndex}`
+                            : undefined
                     }
                     aria-autocomplete="list"
                     value={inputValue}
@@ -407,7 +410,9 @@ export function BookingAddressFields({
                                 aria-selected={activeIndex === index}
                                 id={`${listboxId}-option-${index}`}
                                 className={`cursor-pointer px-3 py-2 text-sm ${
-                                    activeIndex === index ? 'bg-muted' : 'hover:bg-muted'
+                                    activeIndex === index
+                                        ? 'bg-muted'
+                                        : 'hover:bg-muted'
                                 }`}
                                 onClick={() =>
                                     handleSelectPrediction(suggestion)
@@ -448,9 +453,7 @@ export function BookingAddressFields({
             {errors.address_state && (
                 <InputError message={errors.address_state} />
             )}
-            {errors.address_zip && (
-                <InputError message={errors.address_zip} />
-            )}
+            {errors.address_zip && <InputError message={errors.address_zip} />}
             <input type="hidden" value={form.data.address_line1 || ''} />
             <input type="hidden" value={form.data.address_line2 || ''} />
             <input type="hidden" value={form.data.address_city || ''} />

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { store as storePushSubscription } from '@/routes/push-subscriptions';
 
 function csrfToken(): string {
@@ -10,12 +10,16 @@ function csrfToken(): string {
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
+
     for (let i = 0; i < rawData.length; ++i) {
         outputArray[i] = rawData.charCodeAt(i);
     }
+
     return outputArray;
 }
 
@@ -24,9 +28,13 @@ export function usePushSubscription() {
         vapid_public_key?: string;
         supports_push?: boolean;
     }>();
-    const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+    const [subscription, setSubscription] = useState<PushSubscription | null>(
+        null,
+    );
     const [permission, setPermission] = useState<NotificationPermission>(
-        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+        typeof Notification !== 'undefined'
+            ? Notification.permission
+            : 'default',
     );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -39,7 +47,10 @@ export function usePushSubscription() {
         (location.protocol === 'https:' || location.hostname === 'localhost');
 
     useEffect(() => {
-        if (!isSupported) return;
+        if (!isSupported) {
+            return;
+        }
+
         navigator.serviceWorker.ready
             .then((reg) => reg.pushManager.getSubscription())
             .then((sub) => setSubscription(sub))
@@ -47,18 +58,32 @@ export function usePushSubscription() {
     }, [isSupported]);
 
     const serviceWorkerReady = useCallback(async (timeoutMs = 8000) => {
-        const timeout = new Promise<ServiceWorkerRegistration>(
-            (_, reject) => setTimeout(() => reject(new Error('Service worker timed out. Push notifications require HTTPS or localhost.')), timeoutMs)
+        const timeout = new Promise<ServiceWorkerRegistration>((_, reject) =>
+            setTimeout(
+                () =>
+                    reject(
+                        new Error(
+                            'Service worker timed out. Push notifications require HTTPS or localhost.',
+                        ),
+                    ),
+                timeoutMs,
+            ),
         );
+
         return Promise.race([navigator.serviceWorker.ready, timeout]);
     }, []);
 
     const subscribe = async () => {
         if (!isSupported) {
             setError('Push not supported');
+
             return false;
         }
-        if (loadingRef.current) return false;
+
+        if (loadingRef.current) {
+            return false;
+        }
+
         loadingRef.current = true;
         setLoading(true);
         setError(null);
@@ -66,19 +91,24 @@ export function usePushSubscription() {
         try {
             const perm = await Notification.requestPermission();
             setPermission(perm);
-            if (perm !== 'granted') throw new Error('Permission denied');
+
+            if (perm !== 'granted') {
+                throw new Error('Permission denied');
+            }
 
             const reg = await serviceWorkerReady();
             const existing = await reg.pushManager.getSubscription();
+
             if (existing) {
                 setSubscription(existing);
+
                 return true;
             }
 
             const newSub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(
-                    props.vapid_public_key!
+                    props.vapid_public_key!,
                 ) as BufferSource,
             });
 
@@ -92,13 +122,16 @@ export function usePushSubscription() {
                 body: JSON.stringify(JSON.parse(JSON.stringify(newSub))),
             });
 
-            if (!res.ok) throw new Error('Failed to save subscription');
+            if (!res.ok) {
+                throw new Error('Failed to save subscription');
+            }
 
             setSubscription(newSub);
 
             return true;
         } catch (err) {
             setError((err as Error).message);
+
             return false;
         } finally {
             loadingRef.current = false;

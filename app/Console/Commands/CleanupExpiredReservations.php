@@ -34,7 +34,7 @@ class CleanupExpiredReservations extends Command
             ->update([
                 'reserved_by' => null,
                 'reservation_expires_at' => null,
-                'status' => 'received',
+                'status' => 'pending',
             ]);
 
         if ($expired > 0) {

@@ -15,7 +15,9 @@ class MilestoneController extends Controller
             ->whereIn('status', ['completed', 'paid'])
             ->count();
 
-        $rating = $caregiver->rating;
+        $rating = $caregiver->rating !== null
+            ? round($caregiver->rating * 2) / 2
+            : null;
 
         $effectiveReliability = $caregiver->internalRating?->effectiveReliability();
         $reliabilityPercent = $effectiveReliability !== null ? round($effectiveReliability * 20) : null;

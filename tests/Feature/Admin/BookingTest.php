@@ -389,6 +389,44 @@ describe('Booking - Admin', function () {
         expect($booking->status)->toBe('completed');
     });
 
+    test('assigning caregiver to received booking auto-confirms', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => null,
+                'status' => 'received',
+                'start_datetime' => now()->addDays(10),
+                'end_datetime' => now()->addDays(10)->addHours(4),
+            ]);
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => $caregiver->id,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'child_ids' => [$child->id],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $booking->refresh();
+
+        expect($booking->caregiver_id)->toBe($caregiver->id);
+        expect($booking->status)->toBe('confirmed');
+
+        $assignment = $booking->assignments()->where('caregiver_id', $caregiver->id)->unresolved()->first();
+        expect($assignment)->not->toBeNull();
+    });
+
     test('admin can update booking vacation rental with platform and address', function () {
         $this->actingAs($this->user);
 
@@ -639,6 +677,47 @@ describe('Booking - Admin', function () {
 
         // Should only have one record (updateOrCreate)
         $this->assertDatabaseCount('booking_caregiver_notifications', 1);
+    });
+
+    test('notify transitions booking from received to pending', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'received']);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $booking->refresh();
+        expect($booking->status)->toBe('pending');
+    });
+
+    test('notify from pending keeps status as pending', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'pending']);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $booking->refresh();
+        expect($booking->status)->toBe('pending');
+    });
+
+    test('notify from confirmed booking returns error', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'confirmed']);
+        $caregiver = Caregiver::factory()->create();
+
+        $response = $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $response->assertSessionHas('error');
     });
 
     test('admin can create a booking with new children and save to profile', function () {

@@ -9,9 +9,9 @@
 | AdminGroupBookingCreatedNotification | admin | `BookingGroupCreated` event | email | Blade `emails.admin-group-booking-created` | none |
 | AdminNewApplicationNotification | admin | application submitted | email | Blade `emails.admin-new-application` | none |
 | BookingAcceptedNotification | client, caregiver, admin | `BookingAccepted` event | email, db, sms(client) | SendGrid `d-636...`, `d-3f3...`, `d-3cd...` | ✅ `BookingAcceptedNotificationTest.php` |
-| BookingCancelledNotification | client, caregiver, admin | `BookingCancelled` event | email | Blade `emails.*-booking-cancelled` | none |
+| BookingCancelledNotification | client, caregiver, admin | `BookingCancelled` event | email | SendGrid `d-2a5...`, `d-97b...`, `d-34a...` | none |
 | BookingCreatedNotification | client, admin | `BookingCreated` event | email, db | SendGrid `d-53f...` / `d-de8...` | ✅ `BookingCreatedNotificationTest.php` |
-| BookingInvitationNotification | caregiver | `BookingInvitationSent` event | email, db | SendGrid (no template_id) | ✅ `BookingInvitationNotificationTest.php` |
+| BookingInvitationNotification | caregiver | `BookingInvitationSent` event | email, db, sms, push | Blade `emails.booking-notification` | ✅ `BookingInvitationNotificationTest.php` |
 | BookingReceiptNotification | client | `BookingReceipt` event | email, db | SendGrid `d-ade...` | ✅ `BookingReceiptNotificationTest.php` |
 | BookingReminderNotification | caregiver | `SendBookingReminders` command | email, db | SendGrid `d-c14...` | ✅ `BookingNotificationTest.php` |
 | BookingReviewReminderNotification | client | `SendReviewReminders` command | email, sms | Blade `emails.review-reminder` | ✅ `BookingReviewReminderTest.php` |
@@ -75,12 +75,15 @@
 | `d-c141f95e479746dd8af8d96aa1c64067` | `CaregiverBookingReminderMail` |
 | `d-ade9c101da2d40d78a2742577e6d3efe` | `ClientReceiptMail` |
 | `d-9f4b24bb450140d9bd2c1628b705fbc1` | `ClientPaymentRequiredMail` |
+| `d-2a539fde38bb46788fc96baf7fb6366b` | `CaregiverBookingCancelledMail` |
+| `d-97bbdd77080441da98575c65f9bd1901` | `AdminBookingCancelledMail` |
+| `d-34a42e715fa541e484c9c17030cdebbe` | `ClientBookingCancelledMail` |
 
 ## Totals
 
 - **17** notification classes, **30** mailable classes
 - **8** with dedicated tests, **9** untested notifications
-- **8** SendGrid template IDs, **13** Blade email views
-- **3** notifications use SMS (`SmsChannel` → Twilio)
+- **11** SendGrid template IDs, **10** Blade email views
+- **4** notifications use SMS (`SmsChannel` → Twilio)
 - **1** database-only notification (`GuestAccountSetupNotification`)
 - **11** standalone mailables sent directly via `Mail::to()` (no notification wrapper)

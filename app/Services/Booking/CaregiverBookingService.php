@@ -14,6 +14,7 @@ use App\Models\BookingCaregiverNotification;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use Closure;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -52,7 +53,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                     $booking->update([
                         'reserved_by' => null,
                         'reservation_expires_at' => null,
-                        'status' => 'received',
+                        'status' => 'pending',
                     ]);
                 }
 
@@ -86,6 +87,16 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
         return Inertia::render('caregiver/bookings/index', [
             'bookings' => $bookings,
         ]);
+    }
+
+    public function create(Request $request): RedirectResponse
+    {
+        return redirect()->route('dashboard');
+    }
+
+    public function recommendedCaregivers(Request $request): RedirectResponse
+    {
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -127,7 +138,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             $booking->update([
                 'reserved_by' => null,
                 'reservation_expires_at' => null,
-                'status' => 'received',
+                'status' => 'pending',
             ]);
         }
 
@@ -234,7 +245,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
 
             $updated = DB::table('bookings')
                 ->whereIn('id', $siblingIds)
-                ->whereIn('status', ['received', 'reserved'])
+                ->whereIn('status', ['received', 'pending', 'reserved'])
                 ->where(function ($query) {
                     $query->whereNull('reserved_by')
                         ->orWhere('reservation_expires_at', '<', now());
@@ -318,7 +329,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 ->update([
                     'reserved_by' => null,
                     'reservation_expires_at' => null,
-                    'status' => 'received',
+                    'status' => 'pending',
                 ]);
 
             foreach ($siblingIds as $id) {

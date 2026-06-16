@@ -104,9 +104,19 @@ const graduationYears = Array.from(
     (_, i) => String(startYear + i),
 );
 
-const maxDob = new Date(currentYear - 18, new Date().getMonth(), new Date().getDate());
+const maxDob = new Date(
+    currentYear - 18,
+    new Date().getMonth(),
+    new Date().getDate(),
+);
 
-export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEmail?: string; foreignLanguages?: Record<string, string> }) {
+export default function Wizard({
+    verifiedEmail,
+    foreignLanguages,
+}: {
+    verifiedEmail?: string;
+    foreignLanguages?: Record<string, string>;
+}) {
     const validatedRef = useRef(false);
     const [currentStep, setCurrentStep] = useState<number>(() => {
         const saved = sessionStorage.getItem('caregiver_application_draft');
@@ -310,7 +320,7 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         if (Object.keys(form.errors).length > 0) {
             form.clearErrors();
         }
-    }, [form.data]);
+    }, [form.data, form]);
 
     // Sync employment status with first experience's "present" checkbox
     useEffect(() => {
@@ -323,7 +333,7 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 },
             }));
         }
-    }, [verifiedEmail]);
+    }, [verifiedEmail, form]);
 
     useEffect(() => {
         form.setData((prev) => {
@@ -352,11 +362,16 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
             }),
         );
 
-        const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+        const token =
+            document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+                ?.content ?? '';
 
         fetch('/caregiver/apply/save-progress', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
             body: JSON.stringify({ step: currentStep }),
         }).catch(() => {});
     };
@@ -368,12 +383,18 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
 
         if (step === 1) {
             if (!data.sponsor.first_name?.trim()) {
-                form.setError('sponsor.first_name', 'Sponsor first name is required.');
+                form.setError(
+                    'sponsor.first_name',
+                    'Sponsor first name is required.',
+                );
                 hasError = true;
             }
 
             if (!data.sponsor.last_name?.trim()) {
-                form.setError('sponsor.last_name', 'Sponsor last name is required.');
+                form.setError(
+                    'sponsor.last_name',
+                    'Sponsor last name is required.',
+                );
                 hasError = true;
             }
 
@@ -410,12 +431,19 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
                 let age = currentYear - birthDate.getFullYear();
                 const monthDiff = new Date().getMonth() - birthDate.getMonth();
 
-                if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) {
+                if (
+                    monthDiff < 0 ||
+                    (monthDiff === 0 &&
+                        new Date().getDate() < birthDate.getDate())
+                ) {
                     age--;
                 }
 
                 if (age < 18) {
-                    form.setError('personal.dob', 'You must be at least 18 years old to apply.');
+                    form.setError(
+                        'personal.dob',
+                        'You must be at least 18 years old to apply.',
+                    );
                     hasError = true;
                 }
             }
@@ -427,36 +455,62 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         }
 
         if (step === 2) {
-            if (!data.position.babysitting && !data.position.petsitting && !data.position.group_events) {
-                form.setError('position', 'Please select at least one position.');
+            if (
+                !data.position.babysitting &&
+                !data.position.petsitting &&
+                !data.position.group_events
+            ) {
+                form.setError(
+                    'position',
+                    'Please select at least one position.',
+                );
                 hasError = true;
             }
         }
 
         if (step === 3) {
             if (!data.employment_status) {
-                form.setError('employment_status', 'Employment status is required.');
+                form.setError(
+                    'employment_status',
+                    'Employment status is required.',
+                );
                 hasError = true;
             }
 
-            if ((data.employment_status === 'full_time' || data.employment_status === 'part_time') && !data.current_employer?.trim()) {
-                form.setError('current_employer', 'Current employer is required.');
+            if (
+                (data.employment_status === 'full_time' ||
+                    data.employment_status === 'part_time') &&
+                !data.current_employer?.trim()
+            ) {
+                form.setError(
+                    'current_employer',
+                    'Current employer is required.',
+                );
                 hasError = true;
             }
 
             data.experiences.forEach((exp, index) => {
                 if (!exp.start_date || exp.start_date.length < 7) {
-                    form.setError(`experiences.${index}.start_date`, 'Start date is required.');
+                    form.setError(
+                        `experiences.${index}.start_date`,
+                        'Start date is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!exp.description?.trim()) {
-                    form.setError(`experiences.${index}.description`, 'Description is required.');
+                    form.setError(
+                        `experiences.${index}.description`,
+                        'Description is required.',
+                    );
                     hasError = true;
                 }
 
                 if (exp.ages_served.length === 0) {
-                    form.setError(`experiences.${index}.ages_served`, 'Please select at least one age group.');
+                    form.setError(
+                        `experiences.${index}.ages_served`,
+                        'Please select at least one age group.',
+                    );
                     hasError = true;
                 }
             });
@@ -464,23 +518,35 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
 
         if (step === 4) {
             if (data.allergic_to_pets === 'yes' && !data.allergic_to_what) {
-                form.setError('allergic_to_what', 'Please select which pet you are allergic to.');
+                form.setError(
+                    'allergic_to_what',
+                    'Please select which pet you are allergic to.',
+                );
                 hasError = true;
             }
 
             if (data.visible_tattoos === 'yes' && !data.tattoo_description) {
-                form.setError('tattoo_description', 'Please describe your tattoos and whether they can be covered.');
+                form.setError(
+                    'tattoo_description',
+                    'Please describe your tattoos and whether they can be covered.',
+                );
                 hasError = true;
             }
 
             if (data.has_children === 'yes' && !data.children_ages) {
-                form.setError('children_ages', 'Please enter your children\'s ages.');
+                form.setError(
+                    'children_ages',
+                    "Please enter your children's ages.",
+                );
                 hasError = true;
             }
 
             if (data.cpr_certified === 'yes') {
                 if (!data.cpr_expiration) {
-                    form.setError('cpr_expiration', 'CPR expiration date is required.');
+                    form.setError(
+                        'cpr_expiration',
+                        'CPR expiration date is required.',
+                    );
                     hasError = true;
                 }
 
@@ -494,40 +560,65 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         if (step === 5) {
             data.references.forEach((ref, index) => {
                 if (!ref.first_name?.trim()) {
-                    form.setError(`references.${index}.first_name`, 'Reference first name is required.');
+                    form.setError(
+                        `references.${index}.first_name`,
+                        'Reference first name is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!ref.last_name?.trim()) {
-                    form.setError(`references.${index}.last_name`, 'Reference last name is required.');
+                    form.setError(
+                        `references.${index}.last_name`,
+                        'Reference last name is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!ref.email?.trim()) {
-                    form.setError(`references.${index}.email`, 'Reference email is required.');
+                    form.setError(
+                        `references.${index}.email`,
+                        'Reference email is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!ref.phone?.trim()) {
-                    form.setError(`references.${index}.phone`, 'Reference phone is required.');
+                    form.setError(
+                        `references.${index}.phone`,
+                        'Reference phone is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!ref.relationship?.trim()) {
-                    form.setError(`references.${index}.relationship`, 'Relationship is required.');
+                    form.setError(
+                        `references.${index}.relationship`,
+                        'Relationship is required.',
+                    );
                     hasError = true;
                 }
 
                 if (!ref.years_known) {
-                    form.setError(`references.${index}.years_known`, 'Years known is required.');
+                    form.setError(
+                        `references.${index}.years_known`,
+                        'Years known is required.',
+                    );
                     hasError = true;
                 }
             });
         }
 
         if (step === 6) {
-            if (!data.location.north_county && !data.location.south_east_county && !data.location.flexible) {
-                form.setError('location', 'Please select at least one location.');
+            if (
+                !data.location.north_county &&
+                !data.location.south_east_county &&
+                !data.location.flexible
+            ) {
+                form.setError(
+                    'location',
+                    'Please select at least one location.',
+                );
                 hasError = true;
             }
         }
@@ -541,12 +632,18 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
 
         if (step === 8) {
             if (!data.verification.signature?.trim()) {
-                form.setError('verification.signature', 'Signature is required.');
+                form.setError(
+                    'verification.signature',
+                    'Signature is required.',
+                );
                 hasError = true;
             }
 
             if (!data.verification.agree) {
-                form.setError('verification.agree', 'You must agree to proceed.');
+                form.setError(
+                    'verification.agree',
+                    'You must agree to proceed.',
+                );
                 hasError = true;
             }
 
@@ -568,8 +665,8 @@ export default function Wizard({ verifiedEmail, foreignLanguages }: { verifiedEm
         if (!validateStep(currentStep)) {
             validatedRef.current = true;
 
-return;
-}
+            return;
+        }
 
         validatedRef.current = false;
         saveDraft();
@@ -583,8 +680,8 @@ return;
 
     const goToStep = (step: number) => {
         if (step > currentStep && !validateStep(currentStep)) {
-return;
-}
+            return;
+        }
 
         saveDraft();
         setCurrentStep(step);
@@ -592,8 +689,8 @@ return;
 
     const handleSubmit = () => {
         if (!validateStep(8)) {
-return;
-}
+            return;
+        }
 
         form.post('/caregiver/apply/submit', {
             onSuccess: () => {
@@ -679,12 +776,15 @@ return;
                             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                             <div>
                                 <p className="mb-1 font-medium">
-                                    Please fix the following errors before submitting:
+                                    Please fix the following errors before
+                                    submitting:
                                 </p>
                                 <ul className="list-inside list-disc space-y-0.5">
                                     {Object.entries(form.errors).map(
                                         ([key, message]) => (
-                                            <li key={key}>{message as string}</li>
+                                            <li key={key}>
+                                                {message as string}
+                                            </li>
                                         ),
                                     )}
                                 </ul>
@@ -728,7 +828,13 @@ return;
                                             }
                                         />
                                         {form.errors['sponsor.first_name'] && (
-                                            <p className="text-sm text-destructive">{form.errors['sponsor.first_name']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'sponsor.first_name'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
@@ -751,7 +857,13 @@ return;
                                             }
                                         />
                                         {form.errors['sponsor.last_name'] && (
-                                            <p className="text-sm text-destructive">{form.errors['sponsor.last_name']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'sponsor.last_name'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
@@ -774,12 +886,19 @@ return;
                                             }
                                         />
                                         {form.errors['sponsor.email'] && (
-                                            <p className="text-sm text-destructive">{form.errors['sponsor.email']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors['sponsor.email']}
+                                            </p>
                                         )}
                                     </div>
                                     <PhoneInput
                                         value={form.data.sponsor.phone}
-                                        onChange={(value) => form.setData('sponsor', { ...form.data.sponsor, phone: value })}
+                                        onChange={(value) =>
+                                            form.setData('sponsor', {
+                                                ...form.data.sponsor,
+                                                phone: value,
+                                            })
+                                        }
                                         label="Phone"
                                         placeholder="(619) 555-0000"
                                     />
@@ -833,7 +952,13 @@ return;
                                             }
                                         />
                                         {form.errors['personal.first_name'] && (
-                                            <p className="text-sm text-destructive">{form.errors['personal.first_name']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'personal.first_name'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
@@ -856,7 +981,13 @@ return;
                                             }
                                         />
                                         {form.errors['personal.last_name'] && (
-                                            <p className="text-sm text-destructive">{form.errors['personal.last_name']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'personal.last_name'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
@@ -868,7 +999,12 @@ return;
                                     </div>
                                     <PhoneInput
                                         value={form.data.personal.phone}
-                                        onChange={(value) => form.setData('personal', { ...form.data.personal, phone: value })}
+                                        onChange={(value) =>
+                                            form.setData('personal', {
+                                                ...form.data.personal,
+                                                phone: value,
+                                            })
+                                        }
                                         label="Phone"
                                         placeholder="(858) 555-1234"
                                         required
@@ -894,7 +1030,9 @@ return;
                                             }
                                         />
                                         {form.errors['personal.email'] && (
-                                            <p className="text-sm text-destructive">{form.errors['personal.email']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors['personal.email']}
+                                            </p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
@@ -921,7 +1059,9 @@ return;
                                             defaultMonth={maxDob}
                                         />
                                         {form.errors['personal.dob'] && (
-                                            <p className="text-sm text-destructive">{form.errors['personal.dob']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors['personal.dob']}
+                                            </p>
                                         )}
                                     </div>
                                     {/* Profile Photo upload disabled */}
@@ -961,7 +1101,8 @@ return;
                                 </h3>
                                 <p className="mb-3 text-sm text-muted-foreground">
                                     What are you applying for? Check all that
-                                    apply. <span className="text-destructive">*</span>
+                                    apply.{' '}
+                                    <span className="text-destructive">*</span>
                                 </p>
                                 {(
                                     [
@@ -989,7 +1130,9 @@ return;
                                     </label>
                                 ))}
                                 {form.errors.position && (
-                                    <p className="text-sm text-destructive">{form.errors.position}</p>
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.position}
+                                    </p>
                                 )}
                             </div>
 
@@ -1206,45 +1349,39 @@ return;
                                             }
                                         />
                                     </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="education-high-school-graduation-year">
-                                                    High School Graduation Year
-                                                </Label>
-                                                <Select
-                                                    value={
-                                                        form.data.education
-                                                            .high_school_graduation_year
-                                                    }
-                                                    onValueChange={(value) =>
-                                                        form.setData(
-                                                            'education',
-                                                            {
-                                                                ...form.data
-                                                                    .education,
-                                                                high_school_graduation_year:
-                                                                    value,
-                                                            },
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger id="education-high-school-graduation-year">
-                                                        <SelectValue placeholder="Select year" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {graduationYears.map(
-                                                            (y) => (
-                                                                <SelectItem
-                                                                    key={y}
-                                                                    value={y}
-                                                                >
-                                                                    {y}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="education-high-school-graduation-year">
+                                            High School Graduation Year
+                                        </Label>
+                                        <Select
+                                            value={
+                                                form.data.education
+                                                    .high_school_graduation_year
+                                            }
+                                            onValueChange={(value) =>
+                                                form.setData('education', {
+                                                    ...form.data.education,
+                                                    high_school_graduation_year:
+                                                        value,
+                                                })
+                                            }
+                                        >
+                                            <SelectTrigger id="education-high-school-graduation-year">
+                                                <SelectValue placeholder="Select year" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {graduationYears.map((y) => (
+                                                    <SelectItem
+                                                        key={y}
+                                                        value={y}
+                                                    >
+                                                        {y}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1268,7 +1405,10 @@ return;
                                 <Select
                                     value={form.data.employment_status ?? ''}
                                     onValueChange={(value) => {
-                                        form.setData('employment_status', value);
+                                        form.setData(
+                                            'employment_status',
+                                            value,
+                                        );
                                         saveDraft();
                                     }}
                                 >
@@ -1289,7 +1429,9 @@ return;
                                     </SelectContent>
                                 </Select>
                                 {form.errors.employment_status && (
-                                    <p className="text-sm text-destructive">{form.errors.employment_status}</p>
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.employment_status}
+                                    </p>
                                 )}
                             </div>
 
@@ -1299,7 +1441,9 @@ return;
                                 <div className="mb-6 space-y-2">
                                     <Label htmlFor="current-employer">
                                         Current Employer{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         id="current-employer"
@@ -1314,7 +1458,9 @@ return;
                                         }
                                     />
                                     {form.errors.current_employer && (
-                                        <p className="text-sm text-destructive">{form.errors.current_employer}</p>
+                                        <p className="text-sm text-destructive">
+                                            {form.errors.current_employer}
+                                        </p>
                                     )}
                                 </div>
                             )}
@@ -1353,24 +1499,23 @@ return;
                                                     value={
                                                         exp.start_date
                                                             ? exp.start_date
-                                                                      .length >=
-                                                                  7
+                                                                  .length >= 7
                                                                 ? exp.start_date.slice(
                                                                       5,
                                                                       7,
                                                                   )
-                                                                : exp.start_date
-                                                                          .startsWith(
-                                                                              '-',
-                                                                          ) &&
-                                                                    exp.start_date
+                                                                : exp.start_date.startsWith(
+                                                                        '-',
+                                                                    ) &&
+                                                                    exp
+                                                                        .start_date
                                                                         .length ===
                                                                         3
-                                                                    ? exp.start_date.slice(
-                                                                          1,
-                                                                          3,
-                                                                      )
-                                                                    : ''
+                                                                  ? exp.start_date.slice(
+                                                                        1,
+                                                                        3,
+                                                                    )
+                                                                  : ''
                                                             : ''
                                                     }
                                                     onValueChange={(month) => {
@@ -1391,7 +1536,8 @@ return;
                                                                   );
                                                         newExp[
                                                             index
-                                                        ].start_date = `${year}-${month}`;
+                                                        ].start_date =
+                                                            `${year}-${month}`;
                                                         form.setData(
                                                             'experiences',
                                                             newExp,
@@ -1431,28 +1577,29 @@ return;
                                                         const month =
                                                             exp.start_date
                                                                 ? exp.start_date
-                                                                          .length >=
-                                                                      7
+                                                                      .length >=
+                                                                  7
                                                                     ? exp.start_date.slice(
                                                                           5,
                                                                           7,
                                                                       )
-                                                                    : exp.start_date
-                                                                              .startsWith(
-                                                                                  '-',
-                                                                              ) &&
-                                                                        exp.start_date
+                                                                    : exp.start_date.startsWith(
+                                                                            '-',
+                                                                        ) &&
+                                                                        exp
+                                                                            .start_date
                                                                             .length ===
                                                                             3
-                                                                        ? exp.start_date.slice(
-                                                                              1,
-                                                                              3,
-                                                                          )
-                                                                        : ''
+                                                                      ? exp.start_date.slice(
+                                                                            1,
+                                                                            3,
+                                                                        )
+                                                                      : ''
                                                                 : '';
                                                         newExp[
                                                             index
-                                                        ].start_date = `${year}-${month || '01'}`;
+                                                        ].start_date =
+                                                            `${year}-${month || '01'}`;
                                                         form.setData(
                                                             'experiences',
                                                             newExp,
@@ -1474,8 +1621,16 @@ return;
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            {form.errors[`experiences.${index}.start_date`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.start_date`]}</p>
+                                            {form.errors[
+                                                `experiences.${index}.start_date`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `experiences.${index}.start_date`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -1484,55 +1639,58 @@ return;
                                                     <Label>End Date</Label>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <Select
-                                                    value={
-                                                        exp.end_date
-                                                            ? exp.end_date
-                                                                      .length >=
-                                                                  7
-                                                                ? exp.end_date.slice(
-                                                                      5,
-                                                                      7,
-                                                                  )
-                                                                : exp.end_date
-                                                                          .startsWith(
-                                                                              '-',
-                                                                          ) &&
-                                                                    exp.end_date
-                                                                        .length ===
-                                                                        3
-                                                                    ? exp.end_date.slice(
-                                                                          1,
-                                                                          3,
-                                                                      )
+                                                            value={
+                                                                exp.end_date
+                                                                    ? exp
+                                                                          .end_date
+                                                                          .length >=
+                                                                      7
+                                                                        ? exp.end_date.slice(
+                                                                              5,
+                                                                              7,
+                                                                          )
+                                                                        : exp.end_date.startsWith(
+                                                                                '-',
+                                                                            ) &&
+                                                                            exp
+                                                                                .end_date
+                                                                                .length ===
+                                                                                3
+                                                                          ? exp.end_date.slice(
+                                                                                1,
+                                                                                3,
+                                                                            )
+                                                                          : ''
                                                                     : ''
-                                                            : ''
-                                                    }
-                                                    onValueChange={(
-                                                        month,
-                                                    ) => {
-                                                        const newExp = [
-                                                            ...form.data
-                                                                .experiences,
-                                                        ];
-                                                        const year =
-                                                            exp.end_date &&
-                                                            exp.end_date
-                                                                .length >= 4
-                                                                ? exp.end_date.slice(
-                                                                      0,
-                                                                      4,
-                                                                  )
-                                                                : String(
-                                                                      currentYear,
-                                                                  );
-                                                        newExp[
-                                                            index
-                                                        ].end_date = `${year}-${month}`;
-                                                        form.setData(
-                                                            'experiences',
-                                                            newExp,
-                                                        );
-                                                    }}
+                                                            }
+                                                            onValueChange={(
+                                                                month,
+                                                            ) => {
+                                                                const newExp = [
+                                                                    ...form.data
+                                                                        .experiences,
+                                                                ];
+                                                                const year =
+                                                                    exp.end_date &&
+                                                                    exp.end_date
+                                                                        .length >=
+                                                                        4
+                                                                        ? exp.end_date.slice(
+                                                                              0,
+                                                                              4,
+                                                                          )
+                                                                        : String(
+                                                                              currentYear,
+                                                                          );
+                                                                newExp[
+                                                                    index
+                                                                ].end_date =
+                                                                    `${year}-${month}`;
+                                                                form.setData(
+                                                                    'experiences',
+                                                                    newExp,
+                                                                );
+                                                            }}
                                                         >
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Month" />
@@ -1624,28 +1782,29 @@ return;
                                                                     ...form.data
                                                                         .experiences,
                                                                 ];
-                                                            const month =
-                                                                exp.end_date
-                                                                    ? exp.end_date
+                                                                const month =
+                                                                    exp.end_date
+                                                                        ? exp
+                                                                              .end_date
                                                                               .length >=
                                                                           7
-                                                                        ? exp.end_date.slice(
-                                                                              5,
-                                                                              7,
-                                                                          )
-                                                                        : exp.end_date
-                                                                                  .startsWith(
-                                                                                      '-',
-                                                                                  ) &&
-                                                                            exp.end_date
-                                                                                .length ===
-                                                                                3
                                                                             ? exp.end_date.slice(
-                                                                                  1,
-                                                                                  3,
+                                                                                  5,
+                                                                                  7,
                                                                               )
-                                                                            : ''
-                                                                    : '';
+                                                                            : exp.end_date.startsWith(
+                                                                                    '-',
+                                                                                ) &&
+                                                                                exp
+                                                                                    .end_date
+                                                                                    .length ===
+                                                                                    3
+                                                                              ? exp.end_date.slice(
+                                                                                    1,
+                                                                                    3,
+                                                                                )
+                                                                              : ''
+                                                                        : '';
 
                                                                 if (
                                                                     month &&
@@ -1662,19 +1821,20 @@ return;
                                                                             7,
                                                                         );
 
-                                                                if (
-                                                                    year ===
-                                                                        startYear &&
-                                                                    month <=
-                                                                        startMonth
-                                                                ) {
-                                                                    return;
+                                                                    if (
+                                                                        year ===
+                                                                            startYear &&
+                                                                        month <=
+                                                                            startMonth
+                                                                    ) {
+                                                                        return;
+                                                                    }
                                                                 }
-                                                            }
 
-                                                            newExp[
-                                                                index
-                                                            ].end_date = `${year}-${month || '01'}`;
+                                                                newExp[
+                                                                    index
+                                                                ].end_date =
+                                                                    `${year}-${month || '01'}`;
                                                                 form.setData(
                                                                     'experiences',
                                                                     newExp,
@@ -1735,46 +1895,49 @@ return;
                                                 </div>
                                             )}
                                             {index === 0 && (
-                                            <label
-                                                className={`flex items-center gap-2 ${form.data.employment_status === 'full_time' || form.data.employment_status === 'part_time' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                                            >
-                                                <Checkbox
-                                                    checked={exp.present}
-                                                    disabled={
-                                                        form.data
-                                                            .employment_status ===
-                                                            'full_time' ||
-                                                        form.data
-                                                            .employment_status ===
-                                                            'part_time'
-                                                    }
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) => {
-                                                        const newExp = [
-                                                            ...form.data
-                                                                .experiences,
-                                                        ];
-                                                        newExp[index].present =
-                                                            checked === true;
-
-                                                        if (checked) {
+                                                <label
+                                                    className={`flex items-center gap-2 ${form.data.employment_status === 'full_time' || form.data.employment_status === 'part_time' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                                >
+                                                    <Checkbox
+                                                        checked={exp.present}
+                                                        disabled={
+                                                            form.data
+                                                                .employment_status ===
+                                                                'full_time' ||
+                                                            form.data
+                                                                .employment_status ===
+                                                                'part_time'
+                                                        }
+                                                        onCheckedChange={(
+                                                            checked,
+                                                        ) => {
+                                                            const newExp = [
+                                                                ...form.data
+                                                                    .experiences,
+                                                            ];
                                                             newExp[
                                                                 index
-                                                            ].end_date = '';
-                                                        }
+                                                            ].present =
+                                                                checked ===
+                                                                true;
 
-                                                        form.setData(
-                                                            'experiences',
-                                                            newExp,
-                                                        );
-                                                        saveDraft();
-                                                    }}
-                                                />
-                                                <span className="text-xs text-muted-foreground">
-                                                    I currently work here
-                                                </span>
-                                            </label>
+                                                            if (checked) {
+                                                                newExp[
+                                                                    index
+                                                                ].end_date = '';
+                                                            }
+
+                                                            form.setData(
+                                                                'experiences',
+                                                                newExp,
+                                                            );
+                                                            saveDraft();
+                                                        }}
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">
+                                                        I currently work here
+                                                    </span>
+                                                </label>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -1852,12 +2015,25 @@ return;
                                                     );
                                                 }}
                                             />
-                                            {form.errors[`experiences.${index}.description`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.description`]}</p>
+                                            {form.errors[
+                                                `experiences.${index}.description`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `experiences.${index}.description`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label>Ages Served <span className="text-destructive">*</span></Label>
+                                            <Label>
+                                                Ages Served{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
+                                            </Label>
                                             <p className="text-sm text-muted-foreground">
                                                 Select all age groups you worked
                                                 with in this role.
@@ -1924,8 +2100,16 @@ return;
                                                     </label>
                                                 ))}
                                             </div>
-                                            {form.errors[`experiences.${index}.ages_served`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`experiences.${index}.ages_served`]}</p>
+                                            {form.errors[
+                                                `experiences.${index}.ages_served`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `experiences.${index}.ages_served`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                     </div>
@@ -1955,22 +2139,39 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Authorized to work in the U.S.?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
-                                        value={form.data.authorized_to_work ?? ''}
+                                        value={
+                                            form.data.authorized_to_work ?? ''
+                                        }
                                         onValueChange={(value) =>
-                                            form.setData('authorized_to_work', value)
+                                            form.setData(
+                                                'authorized_to_work',
+                                                value,
+                                            )
                                         }
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="authorized-yes" />
-                                            <Label htmlFor="authorized-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="authorized-yes"
+                                            />
+                                            <Label htmlFor="authorized-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="authorized-no" />
-                                            <Label htmlFor="authorized-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="authorized-no"
+                                            />
+                                            <Label htmlFor="authorized-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                     {form.data.authorized_to_work === 'no' && (
@@ -1991,7 +2192,9 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Do you smoke?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.smokes ?? ''}
@@ -2001,12 +2204,22 @@ return;
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="smokes-yes" />
-                                            <Label htmlFor="smokes-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="smokes-yes"
+                                            />
+                                            <Label htmlFor="smokes-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="smokes-no" />
-                                            <Label htmlFor="smokes-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="smokes-no"
+                                            />
+                                            <Label htmlFor="smokes-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2015,7 +2228,9 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Do you drink alcohol?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <Select
                                         value={form.data.alcohol ?? ''}
@@ -2044,7 +2259,9 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Substance abuse history?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <Textarea
                                         rows={3}
@@ -2063,7 +2280,9 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Physical/psychological limitations?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <Textarea
                                         rows={3}
@@ -2082,26 +2301,44 @@ return;
                                 <div className="space-y-2">
                                     <Label>
                                         Allergic to dogs or cats?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.allergic_to_pets ?? ''}
                                         onValueChange={(value) => {
-                                            form.setData('allergic_to_pets', value);
+                                            form.setData(
+                                                'allergic_to_pets',
+                                                value,
+                                            );
 
                                             if (value === 'no') {
-form.setData('allergic_to_what', '');
-}
+                                                form.setData(
+                                                    'allergic_to_what',
+                                                    '',
+                                                );
+                                            }
                                         }}
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="allergic-yes" />
-                                            <Label htmlFor="allergic-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="allergic-yes"
+                                            />
+                                            <Label htmlFor="allergic-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="allergic-no" />
-                                            <Label htmlFor="allergic-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="allergic-no"
+                                            />
+                                            <Label htmlFor="allergic-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2110,25 +2347,40 @@ form.setData('allergic_to_what', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Allergic to which?{' '}
-                                            <span className="text-destructive">*</span>
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <Select
-                                            value={form.data.allergic_to_what ?? ''}
+                                            value={
+                                                form.data.allergic_to_what ?? ''
+                                            }
                                             onValueChange={(value) =>
-                                                form.setData('allergic_to_what', value)
+                                                form.setData(
+                                                    'allergic_to_what',
+                                                    value,
+                                                )
                                             }
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="dogs">Dogs</SelectItem>
-                                                <SelectItem value="cats">Cats</SelectItem>
-                                                <SelectItem value="both">Both</SelectItem>
+                                                <SelectItem value="dogs">
+                                                    Dogs
+                                                </SelectItem>
+                                                <SelectItem value="cats">
+                                                    Cats
+                                                </SelectItem>
+                                                <SelectItem value="both">
+                                                    Both
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {form.errors.allergic_to_what && (
-                                            <p className="text-sm text-destructive">{form.errors.allergic_to_what}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.allergic_to_what}
+                                            </p>
                                         )}
                                     </div>
                                 )}
@@ -2137,26 +2389,44 @@ form.setData('allergic_to_what', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Visible tattoos?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.visible_tattoos ?? ''}
                                         onValueChange={(value) => {
-                                            form.setData('visible_tattoos', value);
+                                            form.setData(
+                                                'visible_tattoos',
+                                                value,
+                                            );
 
                                             if (value === 'no') {
-form.setData('tattoo_description', '');
-}
+                                                form.setData(
+                                                    'tattoo_description',
+                                                    '',
+                                                );
+                                            }
                                         }}
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="tattoos-yes" />
-                                            <Label htmlFor="tattoos-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="tattoos-yes"
+                                            />
+                                            <Label htmlFor="tattoos-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="tattoos-no" />
-                                            <Label htmlFor="tattoos-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="tattoos-no"
+                                            />
+                                            <Label htmlFor="tattoos-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2164,19 +2434,31 @@ form.setData('tattoo_description', '');
                                 {form.data.visible_tattoos === 'yes' && (
                                     <div className="space-y-2">
                                         <Label>
-                                            Please describe location and whether they can be covered with standard work attire{' '}
-                                            <span className="text-destructive">*</span>
+                                            Please describe location and whether
+                                            they can be covered with standard
+                                            work attire{' '}
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <Textarea
                                             rows={2}
                                             placeholder="Describe location and whether they can be covered..."
-                                            value={form.data.tattoo_description ?? ''}
+                                            value={
+                                                form.data.tattoo_description ??
+                                                ''
+                                            }
                                             onChange={(e) =>
-                                                form.setData('tattoo_description', e.target.value)
+                                                form.setData(
+                                                    'tattoo_description',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         {form.errors.tattoo_description && (
-                                            <p className="text-sm text-destructive">{form.errors.tattoo_description}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.tattoo_description}
+                                            </p>
                                         )}
                                     </div>
                                 )}
@@ -2185,22 +2467,37 @@ form.setData('tattoo_description', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Reliable vehicle?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.reliable_vehicle ?? ''}
                                         onValueChange={(value) =>
-                                            form.setData('reliable_vehicle', value)
+                                            form.setData(
+                                                'reliable_vehicle',
+                                                value,
+                                            )
                                         }
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="vehicle-yes" />
-                                            <Label htmlFor="vehicle-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="vehicle-yes"
+                                            />
+                                            <Label htmlFor="vehicle-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="vehicle-no" />
-                                            <Label htmlFor="vehicle-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="vehicle-no"
+                                            />
+                                            <Label htmlFor="vehicle-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2209,7 +2506,9 @@ form.setData('tattoo_description', '');
                                 <div className="space-y-2">
                                     <Label>
                                         CPR & First Aid certified?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
                                         value={form.data.cpr_certified ?? ''}
@@ -2219,11 +2518,17 @@ form.setData('tattoo_description', '');
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="cpr-yes" />
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="cpr-yes"
+                                            />
                                             <Label htmlFor="cpr-yes">Yes</Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="cpr-no" />
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="cpr-no"
+                                            />
                                             <Label htmlFor="cpr-no">No</Label>
                                         </div>
                                     </RadioGroup>
@@ -2234,19 +2539,26 @@ form.setData('tattoo_description', '');
                                     <div className="space-y-2">
                                         <Label>
                                             CPR & First Aid Expiration Date{' '}
-                                            <span className="text-destructive">*</span>
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <DatePicker
                                             value={form.data.cpr_expiration}
                                             onChange={(date) =>
-                                                form.setData('cpr_expiration', date)
+                                                form.setData(
+                                                    'cpr_expiration',
+                                                    date,
+                                                )
                                             }
                                             fromYear={currentYear - 2}
                                             toYear={currentYear + 10}
                                             placeholder="Select expiration date"
                                         />
                                         {form.errors.cpr_expiration && (
-                                            <p className="text-sm text-destructive">{form.errors.cpr_expiration}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.cpr_expiration}
+                                            </p>
                                         )}
                                     </div>
                                 )}
@@ -2256,17 +2568,24 @@ form.setData('tattoo_description', '');
                                     <div className="space-y-2">
                                         <Label>
                                             CPR & First Aid Card Upload{' '}
-                                            <span className="text-destructive">*</span>
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             type="file"
                                             accept="image/*,.pdf"
                                             onChange={(e) =>
-                                                form.setData('cpr_card', e.target.files?.[0] || null)
+                                                form.setData(
+                                                    'cpr_card',
+                                                    e.target.files?.[0] || null,
+                                                )
                                             }
                                         />
                                         {form.errors.cpr_card && (
-                                            <p className="text-sm text-destructive">{form.errors.cpr_card}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.cpr_card}
+                                            </p>
                                         )}
                                     </div>
                                 )}
@@ -2275,22 +2594,39 @@ form.setData('tattoo_description', '');
                                 <div className="space-y-2">
                                     <Label>
                                         Trustline certified?{' '}
-                                        <span className="text-destructive">*</span>
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
                                     </Label>
                                     <RadioGroup
-                                        value={form.data.trustline_certified ?? ''}
+                                        value={
+                                            form.data.trustline_certified ?? ''
+                                        }
                                         onValueChange={(value) =>
-                                            form.setData('trustline_certified', value)
+                                            form.setData(
+                                                'trustline_certified',
+                                                value,
+                                            )
                                         }
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="trustline-yes" />
-                                            <Label htmlFor="trustline-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="trustline-yes"
+                                            />
+                                            <Label htmlFor="trustline-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="trustline-no" />
-                                            <Label htmlFor="trustline-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="trustline-no"
+                                            />
+                                            <Label htmlFor="trustline-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2300,13 +2636,18 @@ form.setData('tattoo_description', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Trustline Upload{' '}
-                                            <span className="text-destructive">*</span>
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             type="file"
                                             accept="image/*,.pdf"
                                             onChange={(e) =>
-                                                form.setData('trustline_upload', e.target.files?.[0] || null)
+                                                form.setData(
+                                                    'trustline_upload',
+                                                    e.target.files?.[0] || null,
+                                                )
                                             }
                                         />
                                     </div>
@@ -2314,64 +2655,91 @@ form.setData('tattoo_description', '');
 
                                 {/* Languages */}
                                 <div className="space-y-2">
-                                    <Label>Languages (other than English)</Label>
+                                    <Label>
+                                        Languages (other than English)
+                                    </Label>
                                     <p className="text-sm text-muted-foreground">
                                         Check all that apply.
                                     </p>
                                     <div className="grid gap-2 md:grid-cols-2">
                                         {foreignLanguages &&
-                                            Object.entries(foreignLanguages).map(
-                                                ([value, label]) => (
-                                                    <label
-                                                        key={value}
-                                                        className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${(form.data.languages as string[]).includes(value) ? 'border-accent bg-secondary' : 'bg-background'}`}
-                                                    >
-                                                        <Checkbox
-                                                            checked={(form.data.languages as string[]).includes(value)}
-                                                            onCheckedChange={(checked) => {
-                                                                const current = form.data.languages as string[];
-                                                                form.setData(
-                                                                    'languages',
-                                                                    checked
-                                                                        ? [...current, value]
-                                                                        : current.filter(
-                                                                              (l) =>
-                                                                                  l !==
-                                                                                  value,
-                                                                          ),
-                                                                );
-                                                            }}
-                                                        />
-                                                        <span className="text-sm">
-                                                            {label}
-                                                        </span>
-                                                    </label>
-                                                ),
-                                            )}
+                                            Object.entries(
+                                                foreignLanguages,
+                                            ).map(([value, label]) => (
+                                                <label
+                                                    key={value}
+                                                    className={`flex cursor-pointer items-center gap-2 rounded border p-3 transition-colors ${(form.data.languages as string[]).includes(value) ? 'border-accent bg-secondary' : 'bg-background'}`}
+                                                >
+                                                    <Checkbox
+                                                        checked={(
+                                                            form.data
+                                                                .languages as string[]
+                                                        ).includes(value)}
+                                                        onCheckedChange={(
+                                                            checked,
+                                                        ) => {
+                                                            const current = form
+                                                                .data
+                                                                .languages as string[];
+                                                            form.setData(
+                                                                'languages',
+                                                                checked
+                                                                    ? [
+                                                                          ...current,
+                                                                          value,
+                                                                      ]
+                                                                    : current.filter(
+                                                                          (l) =>
+                                                                              l !==
+                                                                              value,
+                                                                      ),
+                                                            );
+                                                        }}
+                                                    />
+                                                    <span className="text-sm">
+                                                        {label}
+                                                    </span>
+                                                </label>
+                                            ))}
                                     </div>
                                 </div>
 
                                 {/* Do you have children of your own? */}
                                 <div className="space-y-2">
-                                    <Label>Do you have children of your own?</Label>
+                                    <Label>
+                                        Do you have children of your own?
+                                    </Label>
                                     <RadioGroup
                                         value={form.data.has_children ?? ''}
                                         onValueChange={(value) => {
                                             form.setData('has_children', value);
 
                                             if (value === 'no') {
-form.setData('children_ages', '');
-}
+                                                form.setData(
+                                                    'children_ages',
+                                                    '',
+                                                );
+                                            }
                                         }}
                                         className="flex gap-4"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="yes" id="children-yes" />
-                                            <Label htmlFor="children-yes">Yes</Label>
+                                            <RadioGroupItem
+                                                value="yes"
+                                                id="children-yes"
+                                            />
+                                            <Label htmlFor="children-yes">
+                                                Yes
+                                            </Label>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <RadioGroupItem value="no" id="children-no" />
-                                            <Label htmlFor="children-no">No</Label>
+                                            <RadioGroupItem
+                                                value="no"
+                                                id="children-no"
+                                            />
+                                            <Label htmlFor="children-no">
+                                                No
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
@@ -2380,24 +2748,31 @@ form.setData('children_ages', '');
                                     <div className="space-y-2">
                                         <Label>
                                             Children ages{' '}
-                                            <span className="text-destructive">*</span>
+                                            <span className="text-destructive">
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             type="text"
                                             placeholder="e.g., 2, 5, 8"
-                                            value={form.data.children_ages ?? ''}
+                                            value={
+                                                form.data.children_ages ?? ''
+                                            }
                                             onChange={(e) =>
-                                                form.setData('children_ages', e.target.value)
+                                                form.setData(
+                                                    'children_ages',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         {form.errors.children_ages && (
-                                            <p className="text-sm text-destructive">{form.errors.children_ages}</p>
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.children_ages}
+                                            </p>
                                         )}
                                     </div>
                                 )}
                             </div>
-
-
                         </div>
                     )}
 
@@ -2447,8 +2822,16 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
-                                            {form.errors[`references.${index}.first_name`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.first_name`]}</p>
+                                            {form.errors[
+                                                `references.${index}.first_name`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `references.${index}.first_name`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -2477,8 +2860,16 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
-                                            {form.errors[`references.${index}.last_name`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.last_name`]}</p>
+                                            {form.errors[
+                                                `references.${index}.last_name`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `references.${index}.last_name`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -2507,21 +2898,41 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
-                                            {form.errors[`references.${index}.email`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.email`]}</p>
+                                            {form.errors[
+                                                `references.${index}.email`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `references.${index}.email`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <PhoneInput
                                             value={ref.phone}
                                             onChange={(value) => {
-                                                const newRefs = [...form.data.references];
-                                                newRefs[index] = { ...newRefs[index], phone: value };
-                                                form.setData('references', newRefs);
+                                                const newRefs = [
+                                                    ...form.data.references,
+                                                ];
+                                                newRefs[index] = {
+                                                    ...newRefs[index],
+                                                    phone: value,
+                                                };
+                                                form.setData(
+                                                    'references',
+                                                    newRefs,
+                                                );
                                             }}
                                             label="Phone"
                                             placeholder="(619) 555-0000"
                                             required
-                                            error={form.errors[`references.${index}.phone`]}
+                                            error={
+                                                form.errors[
+                                                    `references.${index}.phone`
+                                                ]
+                                            }
                                         />
                                         <div className="space-y-2">
                                             <Label
@@ -2551,8 +2962,16 @@ form.setData('children_ages', '');
                                                     );
                                                 }}
                                             />
-                                            {form.errors[`references.${index}.relationship`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.relationship`]}</p>
+                                            {form.errors[
+                                                `references.${index}.relationship`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `references.${index}.relationship`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
@@ -2601,8 +3020,16 @@ form.setData('children_ages', '');
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            {form.errors[`references.${index}.years_known`] && (
-                                                <p className="text-sm text-destructive">{form.errors[`references.${index}.years_known`]}</p>
+                                            {form.errors[
+                                                `references.${index}.years_known`
+                                            ] && (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors[
+                                                            `references.${index}.years_known`
+                                                        ]
+                                                    }
+                                                </p>
                                             )}
                                         </div>
                                     </div>
@@ -2623,7 +3050,8 @@ form.setData('children_ages', '');
                                     Location Preferences
                                 </h3>
                                 <p className="mb-3 text-sm text-muted-foreground">
-                                    Where are you willing to work? <span className="text-destructive">*</span>
+                                    Where are you willing to work?{' '}
+                                    <span className="text-destructive">*</span>
                                 </p>
                                 {(
                                     [
@@ -2656,7 +3084,9 @@ form.setData('children_ages', '');
                                     </label>
                                 ))}
                                 {form.errors.location && (
-                                    <p className="text-sm text-destructive">{form.errors.location}</p>
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.location}
+                                    </p>
                                 )}
                             </div>
 
@@ -2852,7 +3282,9 @@ form.setData('children_ages', '');
                                                 }
                                             />
                                             {form.errors.bio && (
-                                                <p className="text-sm text-destructive">{form.errors.bio}</p>
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.bio}
+                                                </p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -2920,8 +3352,16 @@ form.setData('children_ages', '');
                                                 })
                                             }
                                         />
-                                        {form.errors['verification.signature'] && (
-                                            <p className="text-sm text-destructive">{form.errors['verification.signature']}</p>
+                                        {form.errors[
+                                            'verification.signature'
+                                        ] && (
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'verification.signature'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                         {form.data.verification.signature &&
                                             form.data.verification.signature !==
@@ -2964,7 +3404,9 @@ form.setData('children_ages', '');
                                     </span>
                                 </label>
                                 {form.errors['verification.agree'] && (
-                                    <p className="text-sm text-destructive">{form.errors['verification.agree']}</p>
+                                    <p className="text-sm text-destructive">
+                                        {form.errors['verification.agree']}
+                                    </p>
                                 )}
                             </div>
 
@@ -2983,10 +3425,9 @@ form.setData('children_ages', '');
                                     Sitterwise caregivers are W-2 employees and
                                     that all pay is processed through OnPay,
                                     with applicable taxes withheld. I agree to
-                                    maintain current CPR certification
-                                    and to submit a Trustline application within
-                                    7 days of activation, as conditions of
-                                    employment.
+                                    maintain current CPR certification and to
+                                    submit a Trustline application within 7 days
+                                    of activation, as conditions of employment.
                                 </p>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
@@ -3011,7 +3452,13 @@ form.setData('children_ages', '');
                                             }
                                         />
                                         {form.errors['agreement.signature'] && (
-                                            <p className="text-sm text-destructive">{form.errors['agreement.signature']}</p>
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    form.errors[
+                                                        'agreement.signature'
+                                                    ]
+                                                }
+                                            </p>
                                         )}
                                         {form.data.agreement.signature &&
                                             form.data.agreement.signature !==
@@ -3054,7 +3501,9 @@ form.setData('children_ages', '');
                                     </span>
                                 </label>
                                 {form.errors['agreement.agree'] && (
-                                    <p className="text-sm text-destructive">{form.errors['agreement.agree']}</p>
+                                    <p className="text-sm text-destructive">
+                                        {form.errors['agreement.agree']}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -3079,7 +3528,8 @@ form.setData('children_ages', '');
                                 onClick={nextStep}
                                 disabled={
                                     (currentStep === 4 &&
-                                        form.data.authorized_to_work === 'no') ||
+                                        form.data.authorized_to_work ===
+                                            'no') ||
                                     (validatedRef.current &&
                                         Object.keys(form.errors).length > 0)
                                 }

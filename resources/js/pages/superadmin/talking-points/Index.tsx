@@ -4,10 +4,9 @@ import {
     KeyboardSensor,
     PointerSensor,
     useSensor,
-    useSensors
-    
+    useSensors,
 } from '@dnd-kit/core';
-import type {DragEndEvent} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
 import {
     SortableContext,
     sortableKeyboardCoordinates,
@@ -76,7 +75,14 @@ function SortableRow({
     onEdit: (p: TalkingPoint) => void;
     onDelete: (id: number) => void;
 }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
         id: point.id,
     });
 
@@ -152,11 +158,14 @@ export default function TalkingPointsIndex() {
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
     );
 
     const token =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.content ?? '';
 
     const openCreateSheet = () => {
         setEditingId(null);
@@ -184,7 +193,10 @@ export default function TalkingPointsIndex() {
                         'X-CSRF-TOKEN': token,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ label: formLabel, description: formDescription }),
+                    body: JSON.stringify({
+                        label: formLabel,
+                        description: formDescription,
+                    }),
                 });
                 const updated: TalkingPoint = await res.json();
                 setPoints((prev) =>
@@ -197,7 +209,10 @@ export default function TalkingPointsIndex() {
                         'X-CSRF-TOKEN': token,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ label: formLabel, description: formDescription }),
+                    body: JSON.stringify({
+                        label: formLabel,
+                        description: formDescription,
+                    }),
                 });
                 const created: TalkingPoint = await res.json();
                 setPoints((prev) => [...prev, created]);
@@ -422,7 +437,9 @@ export default function TalkingPointsIndex() {
                             >
                                 Cancel
                             </Button>
-                            <Button onClick={handleConfirmDelete}>Delete</Button>
+                            <Button onClick={handleConfirmDelete}>
+                                Delete
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

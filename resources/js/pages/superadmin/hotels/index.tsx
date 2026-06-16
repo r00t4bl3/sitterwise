@@ -219,7 +219,11 @@ export default function HotelsIndex() {
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                         {hotel.contact_name ||
-                                            (hotel.contact_phone ? formatPhoneDisplay(hotel.contact_phone) : null) ||
+                                            (hotel.contact_phone
+                                                ? formatPhoneDisplay(
+                                                      hotel.contact_phone,
+                                                  )
+                                                : null) ||
                                             '—'}
                                     </td>
                                     <td className="px-4 py-3">
@@ -364,7 +368,9 @@ export default function HotelsIndex() {
                                         name="contact_phone"
                                         label="Contact Phone"
                                         value={form.data.contact_phone}
-                                        onChange={(v) => form.setData('contact_phone', v)}
+                                        onChange={(v) =>
+                                            form.setData('contact_phone', v)
+                                        }
                                     />
                                 </div>
                             </div>

@@ -13,6 +13,7 @@ use App\Models\Client;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use Carbon\CarbonImmutable;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -529,5 +530,59 @@ describe('Recommendation Service - Caregiver', function () {
             ->and($result['matchIcons'])->toContain('available')
             ->and($result['matchIcons'])->toContain('specialty')
             ->and($result['matchIcons'])->toContain('location_preferred');
+    });
+
+    test('matches caregiver for evening PT booking that crosses UTC midnight', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => '2026-06-20',
+            'time_slots' => ['evening'],
+        ]);
+
+        // 7–10 PM PT on June 20 = 2–5 AM UTC June 21
+        $startDate = CarbonImmutable::parse('2026-06-20 19:00:00', 'America/Los_Angeles');
+        $endDate = CarbonImmutable::parse('2026-06-20 22:00:00', 'America/Los_Angeles');
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result)->not->toBeNull()
+            ->and($result['matchIcons'])->toContain('available');
+    });
+
+    test('daytime PT booking still matches (no regression)', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => '2026-06-20',
+            'time_slots' => ['morning'],
+        ]);
+
+        // 9 AM–12 PM PT on June 20 = 4–7 PM UTC June 20 (same UTC date)
+        $startDate = CarbonImmutable::parse('2026-06-20 09:00:00', 'America/Los_Angeles');
+        $endDate = CarbonImmutable::parse('2026-06-20 12:00:00', 'America/Los_Angeles');
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result)->not->toBeNull()
+            ->and($result['matchIcons'])->toContain('available');
     });
 });

@@ -182,7 +182,12 @@ interface Props {
     references: ReferenceInfo[];
     certifications: CertificationInfo[];
     checklistItems: ChecklistItemInfo[];
-    caregiverStatuses: Array<{ value: string; label: string; color: string; is_terminal: boolean }>;
+    caregiverStatuses: Array<{
+        value: string;
+        label: string;
+        color: string;
+        is_terminal: boolean;
+    }>;
     [key: string]: unknown;
 }
 
@@ -198,30 +203,69 @@ interface Action {
     confirm?: string;
 }
 
-function getActions(status: string, caregiverStatuses: Array<{ value: string; label: string; color: string; is_terminal: boolean }>): Action[] {
+function getActions(
+    status: string,
+    caregiverStatuses: Array<{
+        value: string;
+        label: string;
+        color: string;
+        is_terminal: boolean;
+    }>,
+): Action[] {
     const actions: Action[] = [];
     const current = caregiverStatuses.find((s) => s.value === status);
 
     switch (status) {
         case 'applicant':
-            actions.push({ label: 'Approve', route: 'approve', color: 'default', confirm: 'Move this application to Under Review?' });
+            actions.push({
+                label: 'Approve',
+                route: 'approve',
+                color: 'default',
+                confirm: 'Move this application to Under Review?',
+            });
             break;
         case 'under_review':
-            actions.push({ label: 'Schedule Interview', route: 'schedule-interview', color: 'default', confirm: 'Mark interview as scheduled?' });
+            actions.push({
+                label: 'Schedule Interview',
+                route: 'schedule-interview',
+                color: 'default',
+                confirm: 'Mark interview as scheduled?',
+            });
             break;
         case 'interview_scheduled':
-            actions.push({ label: 'Start Background Check', route: 'background-check', color: 'default', confirm: 'Start background check process?' });
+            actions.push({
+                label: 'Start Background Check',
+                route: 'background-check',
+                color: 'default',
+                confirm: 'Start background check process?',
+            });
             break;
         case 'background_check':
-            actions.push({ label: 'Hire', route: 'hire', color: 'default', confirm: 'Hire this caregiver?' });
+            actions.push({
+                label: 'Hire',
+                route: 'hire',
+                color: 'default',
+                confirm: 'Hire this caregiver?',
+            });
             break;
         case 'hired_onboarding':
-            actions.push({ label: 'Complete Onboarding', route: 'complete-onboarding', color: 'default', confirm: 'Complete onboarding and activate this caregiver?' });
+            actions.push({
+                label: 'Complete Onboarding',
+                route: 'complete-onboarding',
+                color: 'default',
+                confirm: 'Complete onboarding and activate this caregiver?',
+            });
             break;
     }
 
     if (!current?.is_terminal) {
-        actions.push({ label: 'Decline', route: 'decline', color: 'destructive', confirm: 'Decline this application? The applicant will be notified.' });
+        actions.push({
+            label: 'Decline',
+            route: 'decline',
+            color: 'destructive',
+            confirm:
+                'Decline this application? The applicant will be notified.',
+        });
     }
 
     return actions;
@@ -307,15 +351,29 @@ function CollapsibleSection({
 }
 
 export default function ApplicationShow() {
-    const { application, references, certifications, checklistItems, caregiverStatuses } = usePage<Props>().props;
+    const {
+        application,
+        references,
+        certifications,
+        checklistItems,
+        caregiverStatuses,
+    } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [togglingItem, setTogglingItem] = useState<number | null>(null);
     const [declineNote, setDeclineNote] = useState('');
     const [showDeclineNote, setShowDeclineNote] = useState(false);
     const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
-    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
-        open: false, title: '', message: '', onConfirm: () => {},
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        open: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
     });
 
     const toggleRef = (id: number) => {
@@ -323,17 +381,22 @@ export default function ApplicationShow() {
             const next = new Set(prev);
 
             if (next.has(id)) {
-next.delete(id);
-} else {
-next.add(id);
-}
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
 
             return next;
         });
     };
 
     const data = application.data;
-    const personal = data.personal ?? { first_name: '', last_name: '', phone: '', dob: '' };
+    const personal = data.personal ?? {
+        first_name: '',
+        last_name: '',
+        phone: '',
+        dob: '',
+    };
     const sponsor = data.sponsor;
     const completedRefs = references.filter((r) => r.submitted_at);
     const status = application.caregiver.status;
@@ -350,7 +413,10 @@ next.add(id);
                 router.post(
                     `/applications/${application.id}/references/${refId}/resend`,
                     {},
-                    { preserveScroll: true, onFinish: () => setResending(null) },
+                    {
+                        preserveScroll: true,
+                        onFinish: () => setResending(null),
+                    },
                 );
             },
         });
@@ -386,7 +452,10 @@ next.add(id);
         editForm.setData('rating_maturity', ref.rating_maturity);
         editForm.setData('rating_communication', ref.rating_communication);
         editForm.setData('rating_warmth', ref.rating_warmth);
-        editForm.setData('rating_overall_recommendation', ref.rating_overall_recommendation);
+        editForm.setData(
+            'rating_overall_recommendation',
+            ref.rating_overall_recommendation,
+        );
         editForm.setData('strengths', ref.strengths ?? '');
         editForm.setData('concerns', ref.concerns ?? '');
         editForm.setData('additional_comments', ref.additional_comments ?? '');
@@ -395,8 +464,8 @@ next.add(id);
 
     function handleSaveEdit() {
         if (!editingRefId) {
-return;
-}
+            return;
+        }
 
         editForm.patch(
             `/applications/${application.id}/references/${editingRefId}`,
@@ -440,7 +509,10 @@ return;
             router.post(
                 `/applications/${application.id}/${action.route}`,
                 { note: declineNote },
-                { preserveScroll: true, onFinish: () => setActionLoading(null) },
+                {
+                    preserveScroll: true,
+                    onFinish: () => setActionLoading(null),
+                },
             );
 
             return;
@@ -455,7 +527,15 @@ return;
     }
 
     return (
-        <AppLayout breadcrumbs={[...breadcrumbs, { title: `${personal.first_name} ${personal.last_name}`, href: `/applications/${application.id}` }]}>
+        <AppLayout
+            breadcrumbs={[
+                ...breadcrumbs,
+                {
+                    title: `${personal.first_name} ${personal.last_name}`,
+                    href: `/applications/${application.id}`,
+                },
+            ]}
+        >
             <Head
                 title={`Application - ${personal.first_name} ${personal.last_name}`}
             />
@@ -500,7 +580,8 @@ return;
                                         Name
                                     </p>
                                     <p className="text-sm font-medium text-foreground">
-                                        {personal.first_name} {personal.last_name}
+                                        {personal.first_name}{' '}
+                                        {personal.last_name}
                                     </p>
                                 </div>
                                 <div>
@@ -508,7 +589,8 @@ return;
                                         Phone
                                     </p>
                                     <p className="text-sm font-medium text-foreground">
-                                        {formatPhoneDisplay(personal.phone) || '-'}
+                                        {formatPhoneDisplay(personal.phone) ||
+                                            '-'}
                                     </p>
                                 </div>
                                 <div>
@@ -539,7 +621,12 @@ return;
                                         Date of Birth
                                     </p>
                                     <p className="text-sm font-medium text-foreground">
-                                        {personal.dob ? format(new Date(personal.dob), 'MMMM d, yyyy') : '—'}
+                                        {personal.dob
+                                            ? format(
+                                                  new Date(personal.dob),
+                                                  'MMMM d, yyyy',
+                                              )
+                                            : '—'}
                                     </p>
                                 </div>
                                 <div>
@@ -547,7 +634,9 @@ return;
                                         Age
                                     </p>
                                     <p className="text-sm font-medium text-foreground">
-                                        {personal.dob ? `${calculateAgeFromDate(personal.dob)} years old` : '—'}
+                                        {personal.dob
+                                            ? `${calculateAgeFromDate(personal.dob)} years old`
+                                            : '—'}
                                     </p>
                                 </div>
                                 {data.bio && (
@@ -573,7 +662,8 @@ return;
                                                 Name
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {sponsor.first_name} {sponsor.last_name}
+                                                {sponsor.first_name}{' '}
+                                                {sponsor.last_name}
                                             </p>
                                         </div>
                                         <div>
@@ -612,13 +702,18 @@ return;
                                             Highest Level
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {({
-                                                high_school: 'High School',
-                                                associate: 'Associate Degree',
-                                                bachelor: "Bachelor's Degree",
-                                                master: "Master's Degree",
-                                                phd: 'PhD',
-                                            } as Record<string, string>)[data.education.level] ?? data.education.level}
+                                            {(
+                                                {
+                                                    high_school: 'High School',
+                                                    associate:
+                                                        'Associate Degree',
+                                                    bachelor:
+                                                        "Bachelor's Degree",
+                                                    master: "Master's Degree",
+                                                    phd: 'PhD',
+                                                } as Record<string, string>
+                                            )[data.education.level] ??
+                                                data.education.level}
                                         </p>
                                     </div>
                                     {data.education.level !== 'high_school' && (
@@ -628,7 +723,8 @@ return;
                                                     Degree / Major
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.education.degree || '-'}
+                                                    {data.education.degree ||
+                                                        '-'}
                                                 </p>
                                             </div>
                                             <div>
@@ -636,7 +732,8 @@ return;
                                                     College
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.education.college || '-'}
+                                                    {data.education.college ||
+                                                        '-'}
                                                 </p>
                                             </div>
                                             <div>
@@ -644,7 +741,8 @@ return;
                                                     Graduation Year
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.education.graduation_year || '-'}
+                                                    {data.education
+                                                        .graduation_year || '-'}
                                                 </p>
                                             </div>
                                         </>
@@ -656,7 +754,9 @@ return;
                                                     High School
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.education.high_school_name || '-'}
+                                                    {data.education
+                                                        .high_school_name ||
+                                                        '-'}
                                                 </p>
                                             </div>
                                             <div>
@@ -664,7 +764,9 @@ return;
                                                     Grad Year
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.education.high_school_graduation_year || '-'}
+                                                    {data.education
+                                                        .high_school_graduation_year ||
+                                                        '-'}
                                                 </p>
                                             </div>
                                         </>
@@ -675,9 +777,18 @@ return;
 
                         {/* Experience */}
                         {data.experiences && data.experiences.length > 0 && (
-                            <CollapsibleSection title={`Experience (${data.experiences.length})`}>
+                            <CollapsibleSection
+                                title={`Experience (${data.experiences.length})`}
+                            >
                                 {data.experiences.map((exp, index) => (
-                                    <div key={index} className={index > 0 ? 'mt-4 border-t border-border pt-4' : ''}>
+                                    <div
+                                        key={index}
+                                        className={
+                                            index > 0
+                                                ? 'mt-4 border-t border-border pt-4'
+                                                : ''
+                                        }
+                                    >
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <div>
                                                 <p className="text-xs tracking-wider text-muted-foreground uppercase">
@@ -700,7 +811,10 @@ return;
                                                     Duration
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {exp.start_date} — {exp.present ? 'Present' : exp.end_date || '-'}
+                                                    {exp.start_date} —{' '}
+                                                    {exp.present
+                                                        ? 'Present'
+                                                        : exp.end_date || '-'}
                                                 </p>
                                             </div>
                                             <div>
@@ -708,7 +822,9 @@ return;
                                                     Ages Served
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {exp.ages_served?.join(', ') || '-'}
+                                                    {exp.ages_served?.join(
+                                                        ', ',
+                                                    ) || '-'}
                                                 </p>
                                             </div>
                                             {exp.description && (
@@ -736,30 +852,43 @@ return;
                                             Employment Status
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {( ({
-                                                full_time: 'Full-Time',
-                                                part_time: 'Part-Time',
-                                                no: 'Not Employed',
-                                                student: 'Student',
-                                            } as Record<string, string>)[data.employment_status ?? ''] ?? data.employment_status) || '-'}
+                                            {((
+                                                {
+                                                    full_time: 'Full-Time',
+                                                    part_time: 'Part-Time',
+                                                    no: 'Not Employed',
+                                                    student: 'Student',
+                                                } as Record<string, string>
+                                            )[data.employment_status ?? ''] ??
+                                                data.employment_status) ||
+                                                '-'}
                                         </p>
                                     </div>
-                                    {data.employment_status && data.employment_status !== 'no' && data.employment_status !== 'student' && (
-                                        <div>
-                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                                Current Employer
-                                            </p>
-                                            <p className="text-sm font-medium text-foreground">
-                                                {data.current_employer || '-'}
-                                            </p>
-                                        </div>
-                                    )}
+                                    {data.employment_status &&
+                                        data.employment_status !== 'no' &&
+                                        data.employment_status !==
+                                            'student' && (
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    Current Employer
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.current_employer ||
+                                                        '-'}
+                                                </p>
+                                            </div>
+                                        )}
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                             Authorized to Work in U.S.
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.authorized_to_work === 'yes' ? 'Yes' : data.authorized_to_work === 'no' ? 'No' : '-'}
+                                            {data.authorized_to_work === 'yes'
+                                                ? 'Yes'
+                                                : data.authorized_to_work ===
+                                                    'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -767,7 +896,11 @@ return;
                                             Smokes
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.smokes === 'yes' ? 'Yes' : data.smokes === 'no' ? 'No' : '-'}
+                                            {data.smokes === 'yes'
+                                                ? 'Yes'
+                                                : data.smokes === 'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -775,11 +908,16 @@ return;
                                             Alcohol
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {( ({
-                                                no: 'No',
-                                                socially: 'Socially/Occasionally',
-                                                regularly: 'Regularly',
-                                            } as Record<string, string>)[data.alcohol ?? ''] ?? data.alcohol) || '-'}
+                                            {((
+                                                {
+                                                    no: 'No',
+                                                    socially:
+                                                        'Socially/Occasionally',
+                                                    regularly: 'Regularly',
+                                                } as Record<string, string>
+                                            )[data.alcohol ?? ''] ??
+                                                data.alcohol) ||
+                                                '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -790,8 +928,8 @@ return;
                                             {data.allergic_to_pets === 'yes'
                                                 ? `Yes — ${({ dogs: 'Dogs', cats: 'Cats', both: 'Both' } as Record<string, string>)[data.allergic_to_what ?? ''] ?? data.allergic_to_what}`
                                                 : data.allergic_to_pets === 'no'
-                                                    ? 'No'
-                                                    : '-'}
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -799,7 +937,11 @@ return;
                                             Visible Tattoos
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.visible_tattoos === 'yes' ? 'Yes' : data.visible_tattoos === 'no' ? 'No' : '-'}
+                                            {data.visible_tattoos === 'yes'
+                                                ? 'Yes'
+                                                : data.visible_tattoos === 'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -807,7 +949,11 @@ return;
                                             Reliable Vehicle
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.reliable_vehicle === 'yes' ? 'Yes' : data.reliable_vehicle === 'no' ? 'No' : '-'}
+                                            {data.reliable_vehicle === 'yes'
+                                                ? 'Yes'
+                                                : data.reliable_vehicle === 'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -815,25 +961,35 @@ return;
                                             CPR & First Aid Certified
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.cpr_certified === 'yes' ? 'Yes' : data.cpr_certified === 'no' ? 'No' : '-'}
+                                            {data.cpr_certified === 'yes'
+                                                ? 'Yes'
+                                                : data.cpr_certified === 'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
-                                    {data.cpr_certified === 'yes' && data.cpr_expiration && (
-                                        <div>
-                                            <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                                CPR & First Aid Expiration
-                                            </p>
-                                            <p className="text-sm font-medium text-foreground">
-                                                {data.cpr_expiration}
-                                            </p>
-                                        </div>
-                                    )}
+                                    {data.cpr_certified === 'yes' &&
+                                        data.cpr_expiration && (
+                                            <div>
+                                                <p className="text-xs tracking-wider text-muted-foreground uppercase">
+                                                    CPR & First Aid Expiration
+                                                </p>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {data.cpr_expiration}
+                                                </p>
+                                            </div>
+                                        )}
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                             Trustline Certified
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.trustline_certified === 'yes' ? 'Yes' : data.trustline_certified === 'no' ? 'No' : '-'}
+                                            {data.trustline_certified === 'yes'
+                                                ? 'Yes'
+                                                : data.trustline_certified ===
+                                                    'no'
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     <div>
@@ -848,9 +1004,14 @@ return;
                                                           className="mr-1 inline-block rounded bg-secondary px-2 py-0.5 text-xs"
                                                       >
                                                           {lang
-                                                              .replace(/_/g, ' ')
-                                                              .replace(/\b\w/g, (l) =>
-                                                                  l.toUpperCase(),
+                                                              .replace(
+                                                                  /_/g,
+                                                                  ' ',
+                                                              )
+                                                              .replace(
+                                                                  /\b\w/g,
+                                                                  (l) =>
+                                                                      l.toUpperCase(),
                                                               )}
                                                       </span>
                                                   ))
@@ -865,8 +1026,8 @@ return;
                                             {data.has_children === 'yes'
                                                 ? `Yes — ${data.children_ages || 'ages not specified'}`
                                                 : data.has_children === 'no'
-                                                    ? 'No'
-                                                    : '-'}
+                                                  ? 'No'
+                                                  : '-'}
                                         </p>
                                     </div>
                                     {data.tattoo_description && (
@@ -884,7 +1045,7 @@ return;
                                             <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                                 Substance Abuse History
                                             </p>
-                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            <p className="text-sm whitespace-pre-wrap text-foreground">
                                                 {data.substance_abuse}
                                             </p>
                                         </div>
@@ -892,9 +1053,10 @@ return;
                                     {data.limitations && (
                                         <div className="sm:col-span-2">
                                             <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                                                Physical/Psychological Limitations
+                                                Physical/Psychological
+                                                Limitations
                                             </p>
-                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            <p className="text-sm whitespace-pre-wrap text-foreground">
                                                 {data.limitations}
                                             </p>
                                         </div>
@@ -912,7 +1074,9 @@ return;
                                             On-Call Babysitting
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.position.babysitting ? 'Yes' : 'No'}
+                                            {data.position.babysitting
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                     <div>
@@ -920,7 +1084,9 @@ return;
                                             On-Call Petsitting
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.position.petsitting ? 'Yes' : 'No'}
+                                            {data.position.petsitting
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                     <div>
@@ -928,7 +1094,9 @@ return;
                                             Group Events
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.position.group_events ? 'Yes' : 'No'}
+                                            {data.position.group_events
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                 </div>
@@ -940,7 +1108,10 @@ return;
                                                     Weekday Mornings
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.availability.weekday_mornings ? 'Yes' : 'No'}
+                                                    {data.availability
+                                                        .weekday_mornings
+                                                        ? 'Yes'
+                                                        : 'No'}
                                                 </p>
                                             </div>
                                             <div>
@@ -948,7 +1119,10 @@ return;
                                                     Weekday Afternoons
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.availability.weekday_afternoons ? 'Yes' : 'No'}
+                                                    {data.availability
+                                                        .weekday_afternoons
+                                                        ? 'Yes'
+                                                        : 'No'}
                                                 </p>
                                             </div>
                                             <div>
@@ -956,7 +1130,10 @@ return;
                                                     Weekday Evenings
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.availability.weekday_evenings ? 'Yes' : 'No'}
+                                                    {data.availability
+                                                        .weekday_evenings
+                                                        ? 'Yes'
+                                                        : 'No'}
                                                 </p>
                                             </div>
                                             <div>
@@ -964,7 +1141,9 @@ return;
                                                     Weekends
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.availability.weekends ? 'Yes' : 'No'}
+                                                    {data.availability.weekends
+                                                        ? 'Yes'
+                                                        : 'No'}
                                                 </p>
                                             </div>
                                             <div>
@@ -972,7 +1151,10 @@ return;
                                                     Overnights
                                                 </p>
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {data.availability.overnights ? 'Yes' : 'No'}
+                                                    {data.availability
+                                                        .overnights
+                                                        ? 'Yes'
+                                                        : 'No'}
                                                 </p>
                                             </div>
                                         </div>
@@ -981,7 +1163,7 @@ return;
                                                 <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                                     Availability Notes
                                                 </p>
-                                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                                <p className="text-sm whitespace-pre-wrap text-foreground">
                                                     {data.availability.notes}
                                                 </p>
                                             </div>
@@ -1000,13 +1182,16 @@ return;
                                             special_needs: 'Special Needs Care',
                                             companion_care: 'Companion Care',
                                             sick_care: 'Sick Care',
-                                            work_from_home: 'Work-From-Home Parents',
+                                            work_from_home:
+                                                'Work-From-Home Parents',
                                             driving: 'Driving',
                                             dogsitting: 'Dogsitting',
                                             swimming: 'Swimming',
                                             overnight_care: 'Overnight Care',
                                         };
-                                        const selected = Object.entries(data.qualifications)
+                                        const selected = Object.entries(
+                                            data.qualifications,
+                                        )
                                             .filter(([, v]) => v)
                                             .map(([k]) => labels[k] ?? k);
 
@@ -1037,7 +1222,7 @@ return;
                                             <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                                 Things I Bring to a Job
                                             </p>
-                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            <p className="text-sm whitespace-pre-wrap text-foreground">
                                                 {data.things_i_bring}
                                             </p>
                                         </div>
@@ -1047,7 +1232,7 @@ return;
                                             <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                                 Interests & Hobbies
                                             </p>
-                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            <p className="text-sm whitespace-pre-wrap text-foreground">
                                                 {data.interests}
                                             </p>
                                         </div>
@@ -1065,7 +1250,9 @@ return;
                                             North County
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.location.north_county ? 'Yes' : 'No'}
+                                            {data.location.north_county
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                     <div>
@@ -1073,7 +1260,9 @@ return;
                                             South / East County
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.location.south_east_county ? 'Yes' : 'No'}
+                                            {data.location.south_east_county
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                     <div>
@@ -1081,7 +1270,9 @@ return;
                                             Flexible
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {data.location.flexible ? 'Yes' : 'No'}
+                                            {data.location.flexible
+                                                ? 'Yes'
+                                                : 'No'}
                                         </p>
                                     </div>
                                 </div>
@@ -1092,7 +1283,9 @@ return;
                                                 Babies
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {data.age_groups.babies ? 'Yes' : 'No'}
+                                                {data.age_groups.babies
+                                                    ? 'Yes'
+                                                    : 'No'}
                                             </p>
                                         </div>
                                         <div>
@@ -1100,7 +1293,9 @@ return;
                                                 Toddlers
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {data.age_groups.toddlers ? 'Yes' : 'No'}
+                                                {data.age_groups.toddlers
+                                                    ? 'Yes'
+                                                    : 'No'}
                                             </p>
                                         </div>
                                         <div>
@@ -1108,7 +1303,9 @@ return;
                                                 Preschool
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {data.age_groups.preschool ? 'Yes' : 'No'}
+                                                {data.age_groups.preschool
+                                                    ? 'Yes'
+                                                    : 'No'}
                                             </p>
                                         </div>
                                         <div>
@@ -1116,7 +1313,9 @@ return;
                                                 School Age
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {data.age_groups.school_age ? 'Yes' : 'No'}
+                                                {data.age_groups.school_age
+                                                    ? 'Yes'
+                                                    : 'No'}
                                             </p>
                                         </div>
                                     </div>
@@ -1125,7 +1324,9 @@ return;
                         )}
 
                         {/* References */}
-                        <CollapsibleSection title={`References (${completedRefs.length}/${references.length} completed)`}>
+                        <CollapsibleSection
+                            title={`References (${completedRefs.length}/${references.length} completed)`}
+                        >
                             <div className="space-y-3">
                                 {references.length === 0 && (
                                     <p className="text-sm text-muted-foreground">
@@ -1143,7 +1344,10 @@ return;
                                         'rating_overall_recommendation',
                                     ] as const;
                                     const ratings = ratingKeys
-                                        .map((k) => ref[k as keyof ReferenceInfo])
+                                        .map(
+                                            (k) =>
+                                                ref[k as keyof ReferenceInfo],
+                                        )
                                         .filter((r): r is number => r !== null);
                                     const avg =
                                         ratings.length > 0
@@ -1161,7 +1365,7 @@ return;
                                             key={ref.id}
                                             className={`rounded-lg border p-4 ${
                                                 isCompleted
-                                                    ? 'border-border bg-card border-l-4 border-l-green-500'
+                                                    ? 'border-l-4 border-border border-l-green-500 bg-card'
                                                     : 'border-border bg-card'
                                             }`}
                                         >
@@ -1171,20 +1375,20 @@ return;
                                                         <span className="truncate text-sm font-medium text-foreground">
                                                             {ref.reference_name}
                                                         </span>
-{ref.is_sponsor && (
-                                                             <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
-                                                                 Sponsor
-                                                             </span>
-                                                         )}
-                                                         {isCompleted ? (
-                                                             <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
-                                                                 Completed
-                                                             </span>
-                                                         ) : (
-                                                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-                                                                 Pending
-                                                             </span>
-                                                         )}
+                                                        {ref.is_sponsor && (
+                                                            <span className="shrink-0 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                                                                Sponsor
+                                                            </span>
+                                                        )}
+                                                        {isCompleted ? (
+                                                            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                                                                Completed
+                                                            </span>
+                                                        ) : (
+                                                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                                                                Pending
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <p className="mt-1 truncate text-xs text-muted-foreground">
                                                         {ref.reference_email}
@@ -1209,8 +1413,8 @@ return;
                                                                     )
                                                                 }
                                                                 className="inline-flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-                                                             >
-                                                                 Details
+                                                            >
+                                                                Details
                                                                 <svg
                                                                     className={`h-3 w-3 transition-transform ${
                                                                         expanded
@@ -1224,7 +1428,9 @@ return;
                                                                     <path
                                                                         strokeLinecap="round"
                                                                         strokeLinejoin="round"
-                                                                        strokeWidth={2}
+                                                                        strokeWidth={
+                                                                            2
+                                                                        }
                                                                         d="M19 9l-7 7-7-7"
                                                                     />
                                                                 </svg>
@@ -1236,24 +1442,27 @@ return;
                                                             <div className="mt-3 space-y-2 border-t border-border pt-3">
                                                                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                                                     {ratingKeys.map(
-                                                                        (key) => {
+                                                                        (
+                                                                            key,
+                                                                        ) => {
                                                                             const labels: Record<
                                                                                 string,
                                                                                 string
-                                                                            > = {
-                                                                                rating_reliability:
-                                                                                    'Reliability',
-                                                                                rating_trustworthiness:
-                                                                                    'Trustworthiness',
-                                                                                rating_maturity:
-                                                                                    'Maturity',
-                                                                                rating_communication:
-                                                                                    'Communication',
-                                                                                rating_warmth:
-                                                                                    'Warmth',
-                                                                                rating_overall_recommendation:
-                                                                                    'Overall',
-                                                                            };
+                                                                            > =
+                                                                                {
+                                                                                    rating_reliability:
+                                                                                        'Reliability',
+                                                                                    rating_trustworthiness:
+                                                                                        'Trustworthiness',
+                                                                                    rating_maturity:
+                                                                                        'Maturity',
+                                                                                    rating_communication:
+                                                                                        'Communication',
+                                                                                    rating_warmth:
+                                                                                        'Warmth',
+                                                                                    rating_overall_recommendation:
+                                                                                        'Overall',
+                                                                                };
                                                                             const val =
                                                                                 ref[
                                                                                     key as keyof ReferenceInfo
@@ -1274,7 +1483,8 @@ return;
                                                                                         }
                                                                                     </span>
                                                                                     <span className="font-medium text-foreground">
-                                                                                        {val ?? '—'}
+                                                                                        {val ??
+                                                                                            '—'}
                                                                                         /5
                                                                                     </span>
                                                                                 </div>
@@ -1331,14 +1541,17 @@ return;
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() =>
-                                                                handleResend(ref.id)
+                                                                handleResend(
+                                                                    ref.id,
+                                                                )
                                                             }
                                                             disabled={
                                                                 resending ===
                                                                 ref.id
                                                             }
                                                         >
-                                                            {resending === ref.id
+                                                            {resending ===
+                                                            ref.id
                                                                 ? 'Resending...'
                                                                 : 'Resend'}
                                                         </Button>
@@ -1360,7 +1573,7 @@ return;
                                     Status
                                 </h2>
                                 <Badge
-                                    className="text-sm px-3 py-1"
+                                    className="px-3 py-1 text-sm"
                                     style={{
                                         backgroundColor:
                                             (caregiverStatuses.find(
@@ -1444,74 +1657,111 @@ return;
                             )}
                         </div>
 
-
-                        {status === 'hired_onboarding' && checklistItems.length > 0 && (
-                            <div className="border border-border bg-card p-6">
-                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
-                                    Onboarding Checklist
-                                </h2>
-                                <div className="space-y-3">
-                                    {checklistItems.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => handleToggleChecklistItem(item.id)}
-                                            onKeyDown={(e) => {
- if (e.key === 'Enter' || e.key === ' ') {
-handleToggleChecklistItem(item.id);
-} 
-}}
-                                            className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50 ${
-                                                togglingItem === item.id ? 'pointer-events-none opacity-60' : ''
-                                            }`}
-                                        >
+                        {status === 'hired_onboarding' &&
+                            checklistItems.length > 0 && (
+                                <div className="border border-border bg-card p-6">
+                                    <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                        Onboarding Checklist
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {checklistItems.map((item) => (
                                             <div
-                                                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                                    item.completed_at
-                                                        ? 'border-green-500 bg-green-500 text-white'
-                                                        : 'border-border'
+                                                key={item.id}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() =>
+                                                    handleToggleChecklistItem(
+                                                        item.id,
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (
+                                                        e.key === 'Enter' ||
+                                                        e.key === ' '
+                                                    ) {
+                                                        handleToggleChecklistItem(
+                                                            item.id,
+                                                        );
+                                                    }
+                                                }}
+                                                className={`flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50 ${
+                                                    togglingItem === item.id
+                                                        ? 'pointer-events-none opacity-60'
+                                                        : ''
                                                 }`}
                                             >
-                                                {item.completed_at && (
-                                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-center gap-1.5">
-                                                    <p className={`text-sm font-medium ${item.completed_at ? 'text-green-600 line-through' : 'text-foreground'}`}>
-                                                        {item.label}
-                                                    </p>
-                                                    {item.description && (
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground hover:bg-table-header hover:text-background"
-                                                                >
-                                                                    ?
-                                                                </button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {item.description}
-                                                            </TooltipContent>
-                                                        </Tooltip>
+                                                <div
+                                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                                                        item.completed_at
+                                                            ? 'border-green-500 bg-green-500 text-white'
+                                                            : 'border-border'
+                                                    }`}
+                                                >
+                                                    {item.completed_at && (
+                                                        <svg
+                                                            className="h-3 w-3"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={3}
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
                                                     )}
                                                 </div>
-                                                {item.completed_at && (
-                                                    <Badge className="mt-1 bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
-                                                        Done · {format(new Date(item.completed_at), 'MMM d')}
-                                                    </Badge>
-                                                )}
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p
+                                                            className={`text-sm font-medium ${item.completed_at ? 'text-green-600 line-through' : 'text-foreground'}`}
+                                                        >
+                                                            {item.label}
+                                                        </p>
+                                                        {item.description && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        className="inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground hover:bg-table-header hover:text-background"
+                                                                    >
+                                                                        ?
+                                                                    </button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {
+                                                                        item.description
+                                                                    }
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                    </div>
+                                                    {item.completed_at && (
+                                                        <Badge className="mt-1 bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                                                            Done ·{' '}
+                                                            {format(
+                                                                new Date(
+                                                                    item.completed_at,
+                                                                ),
+                                                                'MMM d',
+                                                            )}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                         <div className="border border-border bg-card p-6">
                             <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
@@ -1534,7 +1784,13 @@ handleToggleChecklistItem(item.id);
                                             </p>
                                             {cert.expiration_date && (
                                                 <p className="text-xs text-muted-foreground">
-                                                    Expires: {format(new Date(cert.expiration_date), 'MMMM d, yyyy')}
+                                                    Expires:{' '}
+                                                    {format(
+                                                        new Date(
+                                                            cert.expiration_date,
+                                                        ),
+                                                        'MMMM d, yyyy',
+                                                    )}
                                                 </p>
                                             )}
                                             {cert.file_url && (
@@ -1591,7 +1847,9 @@ handleToggleChecklistItem(item.id);
                                                     : 'text-muted-foreground hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/50 dark:hover:text-green-300'
                                             }`}
                                         >
-                                            {cert.verified_at ? 'Unverify' : 'Verify'}
+                                            {cert.verified_at
+                                                ? 'Unverify'
+                                                : 'Verify'}
                                         </button>
                                     </div>
                                 ))}
@@ -1603,17 +1861,26 @@ handleToggleChecklistItem(item.id);
 
             <Dialog
                 open={confirmDialog.open}
-                onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+                onOpenChange={(open) =>
+                    setConfirmDialog((prev) => ({ ...prev, open }))
+                }
             >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{confirmDialog.title}</DialogTitle>
-                        <DialogDescription>{confirmDialog.message}</DialogDescription>
+                        <DialogDescription>
+                            {confirmDialog.message}
+                        </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+                            onClick={() =>
+                                setConfirmDialog((prev) => ({
+                                    ...prev,
+                                    open: false,
+                                }))
+                            }
                         >
                             Cancel
                         </Button>
@@ -1628,8 +1895,8 @@ handleToggleChecklistItem(item.id);
                 open={editingRefId !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-setEditingRefId(null);
-}
+                        setEditingRefId(null);
+                    }
                 }}
             >
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -1703,7 +1970,9 @@ setEditingRefId(null);
                                     Years Known
                                 </Label>
                                 <Select
-                                    value={editForm.data.years_known || undefined}
+                                    value={
+                                        editForm.data.years_known || undefined
+                                    }
                                     onValueChange={(value) =>
                                         editForm.setData('years_known', value)
                                     }
@@ -1713,11 +1982,26 @@ setEditingRefId(null);
                                     </SelectTrigger>
                                     <SelectContent>
                                         {[
-                                            { value: '<1', label: 'Less than 1 year' },
-                                            { value: '1-3', label: '1-3 years' },
-                                            { value: '3-5', label: '3-5 years' },
-                                            { value: '5-10', label: '5-10 years' },
-                                            { value: '10+', label: '10+ years' },
+                                            {
+                                                value: '<1',
+                                                label: 'Less than 1 year',
+                                            },
+                                            {
+                                                value: '1-3',
+                                                label: '1-3 years',
+                                            },
+                                            {
+                                                value: '3-5',
+                                                label: '3-5 years',
+                                            },
+                                            {
+                                                value: '5-10',
+                                                label: '5-10 years',
+                                            },
+                                            {
+                                                value: '10+',
+                                                label: '10+ years',
+                                            },
                                         ].map((option) => (
                                             <SelectItem
                                                 key={option.value}
@@ -1749,23 +2033,41 @@ setEditingRefId(null);
                                 Ratings
                             </h4>
                             <div className="space-y-2">
-                                {([
-                                    ['rating_reliability', 'Reliability & Dependability'],
-                                    ['rating_trustworthiness', 'Trustworthiness'],
-                                    ['rating_maturity', 'Maturity'],
-                                    ['rating_communication', 'Communication'],
-                                    ['rating_warmth', 'Warmth & Compassion'],
+                                {(
                                     [
-                                        'rating_overall_recommendation',
-                                        'Overall Recommendation',
-                                    ],
-                                ] as const).map(([key, label]) => (
+                                        [
+                                            'rating_reliability',
+                                            'Reliability & Dependability',
+                                        ],
+                                        [
+                                            'rating_trustworthiness',
+                                            'Trustworthiness',
+                                        ],
+                                        ['rating_maturity', 'Maturity'],
+                                        [
+                                            'rating_communication',
+                                            'Communication',
+                                        ],
+                                        [
+                                            'rating_warmth',
+                                            'Warmth & Compassion',
+                                        ],
+                                        [
+                                            'rating_overall_recommendation',
+                                            'Overall Recommendation',
+                                        ],
+                                    ] as const
+                                ).map(([key, label]) => (
                                     <div key={key}>
                                         <Label className="text-xs font-normal">
                                             {label}
                                         </Label>
                                         <StarRating
-                                            value={editForm.data[key as keyof typeof editForm.data] as number | null}
+                                            value={
+                                                editForm.data[
+                                                    key as keyof typeof editForm.data
+                                                ] as number | null
+                                            }
                                             onChange={(val) =>
                                                 editForm.setData(
                                                     key as keyof typeof editForm.data,
@@ -1785,7 +2087,10 @@ setEditingRefId(null);
                                 rows={2}
                                 value={editForm.data.strengths}
                                 onChange={(e) =>
-                                    editForm.setData('strengths', e.target.value)
+                                    editForm.setData(
+                                        'strengths',
+                                        e.target.value,
+                                    )
                                 }
                             />
                         </div>

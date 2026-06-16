@@ -29,7 +29,9 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { auth } = usePage().props as unknown as { auth: { user: { role: string } | null } };
+    const { auth } = usePage().props as unknown as {
+        auth: { user: { role: string } | null };
+    };
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     const visibleItems = sidebarNavItems.filter((item) => {

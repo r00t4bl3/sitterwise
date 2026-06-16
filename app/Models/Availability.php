@@ -35,6 +35,6 @@ class Availability extends Model
 
     public function scopeInTheFuture($query)
     {
-        return $query->where('date', '>=', now()->toDateString());
+        return $query->where('date', '>=', now('America/Los_Angeles')->toDateString());
     }
 }

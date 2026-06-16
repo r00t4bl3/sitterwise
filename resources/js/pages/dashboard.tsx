@@ -131,8 +131,10 @@ export default function Dashboard() {
                         ytdPercentChange: stats?.ytdPercentChange ?? null,
                         ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
                         troubledUnassigned: stats?.troubledUnassigned ?? 0,
-                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
-                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
+                        troubledMissingPayment:
+                            stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout:
+                            stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );
@@ -153,8 +155,10 @@ export default function Dashboard() {
                         ytdPercentChange: stats?.ytdPercentChange ?? null,
                         ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
                         troubledUnassigned: stats?.troubledUnassigned ?? 0,
-                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
-                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
+                        troubledMissingPayment:
+                            stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout:
+                            stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );

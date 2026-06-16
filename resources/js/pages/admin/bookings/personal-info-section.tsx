@@ -1,7 +1,4 @@
-import {
-    ChevronDown,
-    ChevronUp,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -112,7 +109,10 @@ interface PersonalInfoSectionProps {
     }>;
     selectedHotelName: string;
     handleHotelSearch: (query: string) => void;
-    calculateAge: (birthYear: number | null, birthMonth: number | null) => string;
+    calculateAge: (
+        birthYear: number | null,
+        birthMonth: number | null,
+    ) => string;
     pet_types: Array<{ value: string; label: string }>;
     isAddressLocked: boolean;
     setIsAddressLocked: (locked: boolean) => void;
@@ -189,18 +189,30 @@ export function PersonalInfoSection({
                     <div>
                         <p className="font-semibold">
                             {(() => {
-                                const client = editingBooking.client ?? editingBooking.booking_group?.client;
+                                const client =
+                                    editingBooking.client ??
+                                    editingBooking.booking_group?.client;
 
                                 return `${client?.first_name ?? ''} ${client?.last_name ?? ''} - `;
                             })()}
-                            {(editingBooking.client ?? editingBooking.booking_group?.client)?.phone ? (
+                            {(
+                                editingBooking.client ??
+                                editingBooking.booking_group?.client
+                            )?.phone ? (
                                 <a
                                     href={`tel:${(editingBooking.client ?? editingBooking.booking_group?.client)?.phone}`}
                                     className="text-primary hover:underline"
                                 >
-                                    {formatPhoneDisplay((editingBooking.client ?? editingBooking.booking_group?.client)?.phone ?? '')}
+                                    {formatPhoneDisplay(
+                                        (
+                                            editingBooking.client ??
+                                            editingBooking.booking_group?.client
+                                        )?.phone ?? '',
+                                    )}
                                 </a>
-                            ) : 'No phone'}
+                            ) : (
+                                'No phone'
+                            )}
                         </p>
                         <p className="text-sm text-muted-foreground">
                             {formatDisplayDateTimeRangeInPT(
@@ -212,7 +224,8 @@ export function PersonalInfoSection({
                             {editingBooking.booking_group?.children_notes
                                 ? editingBooking.booking_group?.children_notes
                                 : editingBooking.booking_group?.children &&
-                                    editingBooking.booking_group?.children.length > 0
+                                    editingBooking.booking_group?.children
+                                        .length > 0
                                   ? editingBooking.booking_group?.children.map(
                                         (child, index) => (
                                             <span key={`child-${index}`}>
@@ -225,8 +238,8 @@ export function PersonalInfoSection({
                                                       )})`
                                                     : ''}
                                                 {index <
-                                                editingBooking.booking_group?.children!
-                                                    .length -
+                                                editingBooking.booking_group
+                                                    ?.children!.length -
                                                     1
                                                     ? ', '
                                                     : ''}
@@ -239,7 +252,7 @@ export function PersonalInfoSection({
                                 ` • ${editingBooking.booking_group?.pets.length} pet${editingBooking.booking_group?.pets.length > 1 ? 's' : ''}`}
                         </p>
                     </div>
-                    {form.data.status === 'received' &&
+                    {['received', 'pending'].includes(form.data.status) &&
                         sheetMode !== 'duplicate' && (
                             <Button
                                 size="sm"
@@ -255,7 +268,12 @@ export function PersonalInfoSection({
             )}
 
             {editingBooking && (
-                <ClientInfoPanel client={(editingBooking.client ?? editingBooking.booking_group?.client) as any} />
+                <ClientInfoPanel
+                    client={
+                        (editingBooking.client ??
+                            editingBooking.booking_group?.client) as any
+                    }
+                />
             )}
 
             {editingBooking && (
@@ -269,7 +287,9 @@ export function PersonalInfoSection({
                     caregiverTotal={caregiverTotal}
                     caregiverCurrentPage={caregiverCurrentPage}
                     caregiverLastPage={caregiverLastPage}
-                    loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                    loadingCaregiverRecommendations={
+                        loadingCaregiverRecommendations
+                    }
                     loadingMoreCaregivers={loadingMoreCaregivers}
                     onLoadMoreCaregivers={onLoadMoreCaregivers}
                     onAgeFilterChange={onAgeFilterChange}
@@ -694,7 +714,10 @@ export function PersonalInfoSection({
                                                 );
 
                                                 if (hotel) {
-                                                    form.setData('hotel_name', hotel.name);
+                                                    form.setData(
+                                                        'hotel_name',
+                                                        hotel.name,
+                                                    );
                                                     form.setData(
                                                         'address_line1',
                                                         hotel.line1 || '',
@@ -747,7 +770,10 @@ export function PersonalInfoSection({
                                         <Input
                                             value={form.data.hotel_name || ''}
                                             onChange={(e) =>
-                                                form.setData('hotel_name', e.target.value)
+                                                form.setData(
+                                                    'hotel_name',
+                                                    e.target.value,
+                                                )
                                             }
                                             placeholder="Enter hotel name"
                                         />
@@ -764,9 +790,11 @@ export function PersonalInfoSection({
                                     </>
                                 )}
                             </div>
-                            {(form.errors.hotel_id || form.errors.hotel_name) && (
+                            {(form.errors.hotel_id ||
+                                form.errors.hotel_name) && (
                                 <p className="mt-1 text-sm text-destructive">
-                                    {form.errors.hotel_id || form.errors.hotel_name}
+                                    {form.errors.hotel_id ||
+                                        form.errors.hotel_name}
                                 </p>
                             )}
                         </div>
@@ -934,6 +962,11 @@ export function PersonalInfoSection({
                                 ))}
                             </SelectContent>
                         </Select>
+                        {form.errors.how_did_you_hear && (
+                            <p className="mt-1 text-sm text-destructive">
+                                {form.errors.how_did_you_hear}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">

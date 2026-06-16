@@ -10,7 +10,6 @@ import {
     MapPinCheckInside,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
@@ -53,8 +52,8 @@ export function ReplaceCaregiverSheet({
 
     const handleReplace = () => {
         if (!replaceForm.data.caregiver_id) {
-return;
-}
+            return;
+        }
 
         replaceForm.post(`/bookings/${bookingId}/replace-caregiver`, {
             onSuccess: () => {
@@ -98,9 +97,15 @@ return;
                             <SheetTitle>Replace Caregiver</SheetTitle>
                             <SheetDescription>
                                 {currentCaregiverName ? (
-                                    <>Select a new caregiver to replace <strong>{currentCaregiverName}</strong>.</>
+                                    <>
+                                        Select a new caregiver to replace{' '}
+                                        <strong>{currentCaregiverName}</strong>.
+                                    </>
                                 ) : (
-                                    <>Select a caregiver to assign to this booking.</>
+                                    <>
+                                        Select a caregiver to assign to this
+                                        booking.
+                                    </>
                                 )}
                             </SheetDescription>
                         </div>
@@ -127,7 +132,12 @@ return;
                                 <button
                                     key={caregiver.id}
                                     type="button"
-                                    onClick={() => replaceForm.setData('caregiver_id', caregiver.id)}
+                                    onClick={() =>
+                                        replaceForm.setData(
+                                            'caregiver_id',
+                                            caregiver.id,
+                                        )
+                                    }
                                     className={`flex w-full items-center justify-between gap-2 rounded-lg border p-3 text-left transition-colors ${
                                         isSelected
                                             ? 'border-primary bg-primary/5 ring-1 ring-primary'
@@ -161,31 +171,50 @@ return;
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {matchIcons && matchIcons.length > 0 && (
-                                            <div className="flex items-center gap-1">
-                                                {matchIcons.map((iconKey) => {
-                                                    const IconComponent = ICON_MAP[iconKey];
-                                                    const tooltip = ICON_TOOLTIPS[iconKey];
+                                        {matchIcons &&
+                                            matchIcons.length > 0 && (
+                                                <div className="flex items-center gap-1">
+                                                    {matchIcons.map(
+                                                        (iconKey) => {
+                                                            const IconComponent =
+                                                                ICON_MAP[
+                                                                    iconKey
+                                                                ];
+                                                            const tooltip =
+                                                                ICON_TOOLTIPS[
+                                                                    iconKey
+                                                                ];
 
-                                                    if (!IconComponent) {
-return null;
-}
+                                                            if (
+                                                                !IconComponent
+                                                            ) {
+                                                                return null;
+                                                            }
 
-                                                    return (
-                                                        <Tooltip key={iconKey}>
-                                                            <TooltipTrigger asChild>
-                                                                <span className="flex cursor-default items-center">
-                                                                    <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {tooltip}
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                                            return (
+                                                                <Tooltip
+                                                                    key={
+                                                                        iconKey
+                                                                    }
+                                                                >
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <span className="flex cursor-default items-center">
+                                                                            <IconComponent className="h-4 w-4 text-muted-foreground" />
+                                                                        </span>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        {
+                                                                            tooltip
+                                                                        }
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            )}
                                         {caregiver.age && (
                                             <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
                                                 {caregiver.age}y

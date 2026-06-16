@@ -143,7 +143,9 @@ export default function JobDetail({ booking }: PageProps) {
                                                 href={`sms:${booking.client_phone}`}
                                                 className="text-blue-500 hover:underline"
                                             >
-                                                {formatPhoneDisplay(booking.client_phone)}
+                                                {formatPhoneDisplay(
+                                                    booking.client_phone,
+                                                )}
                                             </a>
                                         </span>
                                     </div>
@@ -180,7 +182,9 @@ export default function JobDetail({ booking }: PageProps) {
                                         {formatDisplayDateInPT(
                                             booking.start_datetime,
                                         ) !==
-                                        formatDisplayDateInPT(booking.end_datetime)
+                                        formatDisplayDateInPT(
+                                            booking.end_datetime,
+                                        )
                                             ? `${formatDisplayDateInPT(
                                                   booking.end_datetime,
                                               )} `
@@ -425,7 +429,8 @@ export default function JobDetail({ booking }: PageProps) {
                                                 <span className="ml-2 text-sm text-muted-foreground">
                                                     (
                                                     {
-                                                        booking.caregiver_rating!
+                                                        booking
+                                                            .caregiver_rating!
                                                             .rating
                                                     }
                                                     /5)

@@ -3,6 +3,7 @@
 use App\Models\Availability;
 use App\Models\Caregiver;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -119,5 +120,26 @@ describe('Availability - Admin', function () {
         $this->assertDatabaseMissing('availabilities', [
             'id' => $availability->id,
         ]);
+    });
+
+    test('admin index query includes PT-today availabilities during UTC night', function () {
+        $this->travelTo(CarbonImmutable::parse('2026-06-17 03:00:00', 'UTC'));
+
+        Availability::factory()->create([
+            'caregiver_id' => $this->caregiver->id,
+            'date' => '2026-06-16',
+            'time_slots' => ['morning'],
+        ]);
+
+        $this->actingAs($this->user);
+
+        $this->get(route('availabilities.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page
+                ->component('admin/availabilities/index')
+                ->reloadOnly('caregivers', fn ($page) => $page
+                    ->where('caregivers.data.0.id', $this->caregiver->id)
+                )
+            );
     });
 });

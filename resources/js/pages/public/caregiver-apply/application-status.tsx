@@ -34,12 +34,24 @@ interface Props {
 }
 
 export default function ApplicationStatus() {
-    const { status, caregiver_name, reference_requests, checklist_items, token } = usePage<Props>().props;
+    const {
+        status,
+        caregiver_name,
+        reference_requests,
+        checklist_items,
+        token,
+    } = usePage<Props>().props;
     const [replacing, setReplacing] = useState<number | null>(null);
-    const [form, setForm] = useState({ reference_name: '', reference_email: '', relationship: '' });
+    const [form, setForm] = useState({
+        reference_name: '',
+        reference_email: '',
+        relationship: '',
+    });
     const [submitting, setSubmitting] = useState(false);
 
-    const completedCount = reference_requests.filter((r) => r.is_completed).length;
+    const completedCount = reference_requests.filter(
+        (r) => r.is_completed,
+    ).length;
     const totalCount = reference_requests.length;
 
     function startReplace(ref: ReferenceRequest) {
@@ -53,8 +65,8 @@ export default function ApplicationStatus() {
 
     function submitReplace(refId: number) {
         if (!form.reference_name.trim() || !form.reference_email.trim()) {
-return;
-}
+            return;
+        }
 
         setSubmitting(true);
         router.post(
@@ -86,13 +98,13 @@ return;
                         </p>
                     </div>
 
-                    <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
                         <h2 className="text-lg font-semibold text-foreground">
                             Application Status
                         </h2>
                         <div className="mt-3">
                             <Badge
-                                className="text-sm px-3 py-1"
+                                className="px-3 py-1 text-sm"
                                 style={{
                                     backgroundColor: status.color + '20',
                                     color: status.color,
@@ -104,7 +116,7 @@ return;
                     </div>
 
                     {checklist_items && checklist_items.length > 0 && (
-                        <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                        <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
                             <h2 className="text-lg font-semibold text-foreground">
                                 Onboarding Checklist
                             </h2>
@@ -144,7 +156,13 @@ return;
                                                 )}
                                                 {item.completed_at && (
                                                     <Badge className="mt-1.5 bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
-                                                        Done · {format(new Date(item.completed_at), 'MMM d')}
+                                                        Done ·{' '}
+                                                        {format(
+                                                            new Date(
+                                                                item.completed_at,
+                                                            ),
+                                                            'MMM d',
+                                                        )}
                                                     </Badge>
                                                 )}
                                             </div>
@@ -154,13 +172,18 @@ return;
                             </div>
                             <div className="mt-4 border-t border-border pt-4">
                                 <p className="text-xs text-muted-foreground">
-                                    {checklist_items.filter((i) => i.completed).length}/{checklist_items.length} completed
+                                    {
+                                        checklist_items.filter(
+                                            (i) => i.completed,
+                                        ).length
+                                    }
+                                    /{checklist_items.length} completed
                                 </p>
                             </div>
                         </div>
                     )}
 
-                    <div className="rounded-lg bg-card p-6 shadow-xs border border-border">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-foreground">
                                 Reference Check
@@ -183,65 +206,82 @@ return;
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-sm text-foreground">
+                                                <span className="text-sm font-semibold text-foreground">
                                                     {ref.reference_name}
                                                 </span>
                                                 {ref.is_sponsor && (
-                                                    <Badge variant="outline" className="text-xs">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
                                                         Sponsor
                                                     </Badge>
                                                 )}
                                                 <Badge
-                                                    variant={ref.is_completed ? 'default' : 'secondary'}
+                                                    variant={
+                                                        ref.is_completed
+                                                            ? 'default'
+                                                            : 'secondary'
+                                                    }
                                                     className={
                                                         ref.is_completed
                                                             ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                                                             : 'bg-muted text-muted-foreground'
                                                     }
                                                 >
-                                                    {ref.is_completed ? 'Completed' : 'Pending'}
+                                                    {ref.is_completed
+                                                        ? 'Completed'
+                                                        : 'Pending'}
                                                 </Badge>
                                             </div>
                                             <p className="mt-1 text-xs text-muted-foreground">
                                                 {ref.reference_email}
-                                                {ref.relationship && ` · ${ref.relationship}`}
+                                                {ref.relationship &&
+                                                    ` · ${ref.relationship}`}
                                             </p>
                                         </div>
 
-                                        {!ref.is_completed && replacing !== ref.id && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => startReplace(ref)}
-                                            >
-                                                Replace
-                                            </Button>
-                                        )}
+                                        {!ref.is_completed &&
+                                            replacing !== ref.id && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        startReplace(ref)
+                                                    }
+                                                >
+                                                    Replace
+                                                </Button>
+                                            )}
                                     </div>
 
                                     {replacing === ref.id && (
                                         <div className="mt-4 space-y-3 border-t border-border pt-4">
                                             <div>
-                                                <Label>
-                                                    Name
-                                                </Label>
+                                                <Label>Name</Label>
                                                 <Input
                                                     type="text"
                                                     value={form.reference_name}
                                                     onChange={(e) =>
-                                                        setForm({ ...form, reference_name: e.target.value })
+                                                        setForm({
+                                                            ...form,
+                                                            reference_name:
+                                                                e.target.value,
+                                                        })
                                                     }
                                                 />
                                             </div>
                                             <div>
-                                                <Label>
-                                                    Email
-                                                </Label>
+                                                <Label>Email</Label>
                                                 <Input
                                                     type="email"
                                                     value={form.reference_email}
                                                     onChange={(e) =>
-                                                        setForm({ ...form, reference_email: e.target.value })
+                                                        setForm({
+                                                            ...form,
+                                                            reference_email:
+                                                                e.target.value,
+                                                        })
                                                     }
                                                 />
                                             </div>
@@ -253,22 +293,32 @@ return;
                                                     type="text"
                                                     value={form.relationship}
                                                     onChange={(e) =>
-                                                        setForm({ ...form, relationship: e.target.value })
+                                                        setForm({
+                                                            ...form,
+                                                            relationship:
+                                                                e.target.value,
+                                                        })
                                                     }
                                                 />
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => submitReplace(ref.id)}
+                                                    onClick={() =>
+                                                        submitReplace(ref.id)
+                                                    }
                                                     disabled={submitting}
                                                 >
-                                                    {submitting ? 'Saving...' : 'Save & Re-send'}
+                                                    {submitting
+                                                        ? 'Saving...'
+                                                        : 'Save & Re-send'}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => setReplacing(null)}
+                                                    onClick={() =>
+                                                        setReplacing(null)
+                                                    }
                                                 >
                                                     Cancel
                                                 </Button>
@@ -280,11 +330,18 @@ return;
                         </div>
                     </div>
 
-                    <div className="rounded-lg border border-border-teal bg-teal-bg p-4 text-sm text-foreground leading-relaxed">
+                    <div className="rounded-lg border border-border-teal bg-teal-bg p-4 text-sm leading-relaxed text-foreground">
                         <strong className="mb-1 block font-semibold">
                             Need help?
                         </strong>
-                        Reach out to <a href="mailto:hello@sitterwise.com" className="font-semibold text-primary">hello@sitterwise.com</a> or text us at 619-663-4379 if anything's blocking you.
+                        Reach out to{' '}
+                        <a
+                            href="mailto:hello@sitterwise.com"
+                            className="font-semibold text-primary"
+                        >
+                            hello@sitterwise.com
+                        </a>{' '}
+                        or text us at 619-663-4379 if anything's blocking you.
                     </div>
                 </div>
             </div>

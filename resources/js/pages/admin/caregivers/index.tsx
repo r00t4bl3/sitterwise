@@ -367,9 +367,18 @@ export default function CaregiversIndex() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {caregiver.phone
-                                            ? <a href={`tel:${caregiver.phone}`} className="text-primary hover:underline">{formatPhoneDisplay(caregiver.phone)}</a>
-                                            : '—'}
+                                        {caregiver.phone ? (
+                                            <a
+                                                href={`tel:${caregiver.phone}`}
+                                                className="text-primary hover:underline"
+                                            >
+                                                {formatPhoneDisplay(
+                                                    caregiver.phone,
+                                                )}
+                                            </a>
+                                        ) : (
+                                            '—'
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">

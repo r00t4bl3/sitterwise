@@ -79,14 +79,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
     {
         $client = $this->getClient();
 
-        if (! $client->stripe_customer_id) {
-            $stripeCustomer = $this->stripe->customers->create([
-                'email' => $client->user->email,
-                'name' => $client->full_name,
-            ]);
-
-            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
-        }
+        $this->ensureStripeCustomer($client);
 
         $checkoutSession = $this->stripe->checkout->sessions->create([
             'customer' => $client->stripe_customer_id,
@@ -151,14 +144,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
     {
         $client = $this->getClient();
 
-        if (! $client->stripe_customer_id) {
-            $stripeCustomer = $this->stripe->customers->create([
-                'email' => $client->user->email,
-                'name' => $client->full_name,
-            ]);
-
-            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
-        }
+        $this->ensureStripeCustomer($client);
 
         $existingCount = ClientPaymentMethod::where('client_id', $client->id)->count();
 
@@ -198,6 +184,8 @@ class ClientPaymentService implements ClientPaymentServiceInterface
     public function setDefaultPaymentMethod(int $paymentMethodId): array
     {
         $client = $this->getClient();
+
+        $this->ensureStripeCustomer($client);
 
         $paymentMethod = ClientPaymentMethod::where('client_id', $client->id)
             ->findOrFail($paymentMethodId);
@@ -244,5 +232,21 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'success' => true,
             'message' => 'Payment method removed',
         ];
+    }
+
+    protected function ensureStripeCustomer(Client $client): void
+    {
+        if ($client->stripe_customer_id && str_starts_with($client->stripe_customer_id, 'pm_')) {
+            $client->update(['stripe_customer_id' => null]);
+        }
+
+        if (! $client->stripe_customer_id) {
+            $stripeCustomer = $this->stripe->customers->create([
+                'email' => $client->user->email,
+                'name' => $client->full_name,
+            ]);
+
+            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
+        }
     }
 }

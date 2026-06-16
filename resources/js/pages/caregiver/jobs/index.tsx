@@ -1,5 +1,12 @@
 import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, MapPin, Building, Star, TriangleAlert } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    Building,
+    Star,
+    TriangleAlert,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -142,14 +149,26 @@ function parsePT(value: string): Date {
     const date = new Date(value);
     const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Los_Angeles',
-        year: 'numeric', month: 'numeric', day: 'numeric',
-        hour: 'numeric', minute: 'numeric', second: 'numeric',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
         hour12: false,
     });
     const parts = formatter.formatToParts(date);
-    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? '0', 10);
+    const get = (type: string) =>
+        parseInt(parts.find((p) => p.type === type)?.value ?? '0', 10);
 
-    return new Date(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+    return new Date(
+        get('year'),
+        get('month') - 1,
+        get('day'),
+        get('hour'),
+        get('minute'),
+        get('second'),
+    );
 }
 
 export default function CaregiverJobsIndex() {
@@ -247,15 +266,18 @@ export default function CaregiverJobsIndex() {
 
     const handleBackOut = () => {
         if (!cancellingJob?.assignment_id) {
-return;
-}
+            return;
+        }
 
-        cancelForm.post(`/assignments/${cancellingJob.assignment_id}/back-out`, {
-            onSuccess: () => {
-                setIsCancelDialogOpen(false);
-                setCancellingJob(null);
+        cancelForm.post(
+            `/assignments/${cancellingJob.assignment_id}/back-out`,
+            {
+                onSuccess: () => {
+                    setIsCancelDialogOpen(false);
+                    setCancellingJob(null);
+                },
             },
-        });
+        );
     };
 
     const checkoutForm = useForm({
@@ -522,20 +544,25 @@ return;
                                                         <TooltipTrigger asChild>
                                                             <div className="flex cursor-default items-center gap-1">
                                                                 {[
-                                                                    1, 2, 3, 4, 5,
-                                                                ].map((star) => (
-                                                                    <Star
-                                                                        key={star}
-                                                                        className={`h-4 w-4 ${
-                                                                            star <=
-                                                                            job
-                                                                                .client_rating!
-                                                                                .rating
-                                                                                ? 'fill-yellow-400 text-yellow-400'
-                                                                                : 'text-gray-300'
-                                                                        }`}
-                                                                    />
-                                                                ))}
+                                                                    1, 2, 3, 4,
+                                                                    5,
+                                                                ].map(
+                                                                    (star) => (
+                                                                        <Star
+                                                                            key={
+                                                                                star
+                                                                            }
+                                                                            className={`h-4 w-4 ${
+                                                                                star <=
+                                                                                job
+                                                                                    .client_rating!
+                                                                                    .rating
+                                                                                    ? 'fill-yellow-400 text-yellow-400'
+                                                                                    : 'text-gray-300'
+                                                                            }`}
+                                                                        />
+                                                                    ),
+                                                                )}
                                                                 <span className="ml-1 text-xs text-muted-foreground">
                                                                     (
                                                                     {
@@ -574,20 +601,25 @@ return;
                                                         <TooltipTrigger asChild>
                                                             <div className="flex cursor-default items-center gap-1">
                                                                 {[
-                                                                    1, 2, 3, 4, 5,
-                                                                ].map((star) => (
-                                                                    <Star
-                                                                        key={star}
-                                                                        className={`h-4 w-4 ${
-                                                                            star <=
-                                                                            job
-                                                                                .caregiver_rating!
-                                                                                .rating
-                                                                                ? 'fill-yellow-400 text-yellow-400'
-                                                                                : 'text-gray-300'
-                                                                        }`}
-                                                                    />
-                                                                ))}
+                                                                    1, 2, 3, 4,
+                                                                    5,
+                                                                ].map(
+                                                                    (star) => (
+                                                                        <Star
+                                                                            key={
+                                                                                star
+                                                                            }
+                                                                            className={`h-4 w-4 ${
+                                                                                star <=
+                                                                                job
+                                                                                    .caregiver_rating!
+                                                                                    .rating
+                                                                                    ? 'fill-yellow-400 text-yellow-400'
+                                                                                    : 'text-gray-300'
+                                                                            }`}
+                                                                        />
+                                                                    ),
+                                                                )}
                                                                 <span className="ml-1 text-xs text-muted-foreground">
                                                                     (
                                                                     {
@@ -632,23 +664,22 @@ return;
                                                 'confirmed' &&
                                                 !job.assignment_resolution && (
                                                     <Button
-                                                         size="sm"
-                                                         variant="default"
-                                                         onClick={() =>
-                                                             openCancelDialog(
-                                                                 job,
-                                                             )
-                                                         }
-                                                     >
-                                                         Cancel Job
-                                                     </Button>
+                                                        size="sm"
+                                                        variant="default"
+                                                        onClick={() =>
+                                                            openCancelDialog(
+                                                                job,
+                                                            )
+                                                        }
+                                                    >
+                                                        Cancel Job
+                                                    </Button>
                                                 )}
 
                                             {job.status.toLowerCase() ===
                                                 'confirmed' &&
-                                                new Date(
-                                                    job.end_datetime,
-                                                ) < new Date() && (
+                                                new Date(job.end_datetime) <
+                                                    new Date() && (
                                                     <Button
                                                         size="sm"
                                                         onClick={() =>
@@ -780,9 +811,7 @@ return;
                                             value={
                                                 checkoutForm.data.start_datetime
                                             }
-                                            onChange={
-                                                handleStartDateTimeChange
-                                            }
+                                            onChange={handleStartDateTimeChange}
                                             placeholder="Select start date and time"
                                         />
                                     </div>
@@ -911,7 +940,10 @@ return;
                 </SheetContent>
             </Sheet>
 
-            <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+            <Dialog
+                open={isCancelDialogOpen}
+                onOpenChange={setIsCancelDialogOpen}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
@@ -925,16 +957,44 @@ return;
                                 <div className="mt-3 rounded-lg border border-border bg-muted p-3 text-left text-sm text-foreground">
                                     <strong className="block">
                                         {cancellingJob.client_name ?? 'Client'}
-                                        {cancellingJob.client?.children && cancellingJob.client.children.length > 0 && (
-                                            <> &middot; {cancellingJob.client.children.length} child{cancellingJob.client.children.length !== 1 ? 'ren' : ''}</>
-                                        )}
+                                        {cancellingJob.client?.children &&
+                                            cancellingJob.client.children
+                                                .length > 0 && (
+                                                <>
+                                                    {' '}
+                                                    &middot;{' '}
+                                                    {
+                                                        cancellingJob.client
+                                                            .children.length
+                                                    }{' '}
+                                                    child
+                                                    {cancellingJob.client
+                                                        .children.length !== 1
+                                                        ? 'ren'
+                                                        : ''}
+                                                </>
+                                            )}
                                     </strong>
-                                    {formatDisplayDateInPT(cancellingJob.start_datetime)}{'\u00B7'}{' '}
-                                    {formatDisplayTimeInPT(cancellingJob.start_datetime)}{'\u2013'}{' '}
-                                    {formatDisplayTimeInPT(cancellingJob.end_datetime)}
+                                    {formatDisplayDateInPT(
+                                        cancellingJob.start_datetime,
+                                    )}
+                                    {'\u00B7'}{' '}
+                                    {formatDisplayTimeInPT(
+                                        cancellingJob.start_datetime,
+                                    )}
+                                    {'\u2013'}{' '}
+                                    {formatDisplayTimeInPT(
+                                        cancellingJob.end_datetime,
+                                    )}
                                     <br />
                                     {cancellingJob.hotel?.name ??
-                                        [cancellingJob.address_line1, cancellingJob.address_city, cancellingJob.address_state].filter(Boolean).join(', ') ??
+                                        [
+                                            cancellingJob.address_line1,
+                                            cancellingJob.address_city,
+                                            cancellingJob.address_state,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(', ') ??
                                         cancellingJob.location_type}
                                 </div>
                             )}
@@ -942,9 +1002,10 @@ return;
                     </DialogHeader>
 
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                        <strong>Heads up:</strong> This will count as a back-out on
-                        your reliability record. If something has come up that we can
-                        help with, text us at 619-663-4379 before canceling.
+                        <strong>Heads up:</strong> This will count as a back-out
+                        on your reliability record. If something has come up
+                        that we can help with, text us at 619-663-4379 before
+                        canceling.
                     </div>
 
                     <div className="space-y-2">
@@ -955,16 +1016,20 @@ return;
                         <Textarea
                             id="reason"
                             value={cancelForm.data.reason}
-                            onChange={(e) => cancelForm.setData('reason', e.target.value)}
+                            onChange={(e) =>
+                                cancelForm.setData('reason', e.target.value)
+                            }
                             placeholder="Briefly tell us what's going on. The team will see this."
                             className="min-h-[80px]"
                         />
                         {cancelForm.errors.reason && (
-                            <p className="text-sm text-destructive">{cancelForm.errors.reason}</p>
+                            <p className="text-sm text-destructive">
+                                {cancelForm.errors.reason}
+                            </p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                            Required. This helps us understand whether there's something
-                            we should know about.
+                            Required. This helps us understand whether there's
+                            something we should know about.
                         </p>
                     </div>
 
@@ -982,7 +1047,9 @@ return;
                             onClick={handleBackOut}
                             disabled={cancelForm.processing}
                         >
-                            {cancelForm.processing ? 'Cancelling...' : 'Cancel this job'}
+                            {cancelForm.processing
+                                ? 'Cancelling...'
+                                : 'Cancel this job'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

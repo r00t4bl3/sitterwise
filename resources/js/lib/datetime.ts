@@ -26,11 +26,16 @@ export const formatUtcStringFromPt = (ptDate: Date): string => {
             hour12: false,
         }).formatToParts(candidate);
 
-        const get = (type: string) => parseInt(
-            parts.find((p) => p.type === type)!.value, 10,
-        );
+        const get = (type: string) =>
+            parseInt(parts.find((p) => p.type === type)!.value, 10);
 
-        const ptEpoch = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'));
+        const ptEpoch = Date.UTC(
+            get('year'),
+            get('month') - 1,
+            get('day'),
+            get('hour'),
+            get('minute'),
+        );
 
         epoch += Date.UTC(y, m, d, h, min) - ptEpoch;
     }
@@ -176,8 +181,8 @@ export const formatDisplayDateTimeRangeInPT = (
     endStr: string | null | undefined,
 ): string => {
     if (!startStr || !endStr) {
-return '';
-}
+        return '';
+    }
 
     const startShort = formatDisplayDateShortInPT(startStr);
     const endShort = formatDisplayDateShortInPT(endStr);

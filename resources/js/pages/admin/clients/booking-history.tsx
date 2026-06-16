@@ -308,14 +308,24 @@ export default function BookingHistory() {
                                                 }
                                             />
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap font-medium text-ring">
-                                            {booking.caregiver
-                                                ? (
-                                                    <Link href={`/caregivers/${booking.caregiver.id}`} className="hover:underline">
-                                                        {booking.caregiver.first_name} {booking.caregiver.last_name}
-                                                    </Link>
-                                                )
-                                                : '—'}
+                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap text-ring">
+                                            {booking.caregiver ? (
+                                                <Link
+                                                    href={`/caregivers/${booking.caregiver.id}`}
+                                                    className="hover:underline"
+                                                >
+                                                    {
+                                                        booking.caregiver
+                                                            .first_name
+                                                    }{' '}
+                                                    {
+                                                        booking.caregiver
+                                                            .last_name
+                                                    }
+                                                </Link>
+                                            ) : (
+                                                '—'
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                             {booking.hotel?.name ??

@@ -145,7 +145,10 @@ export function useBookingSheet({
     const [caregiverTotal, setCaregiverTotal] = useState(0);
     const [caregiverCurrentPage, setCaregiverCurrentPage] = useState(1);
     const [caregiverLastPage, setCaregiverLastPage] = useState(1);
-    const [loadingCaregiverRecommendations, setLoadingCaregiverRecommendations] = useState(false);
+    const [
+        loadingCaregiverRecommendations,
+        setLoadingCaregiverRecommendations,
+    ] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [bookingChildren, setBookingChildren] = useState<
@@ -228,10 +231,12 @@ export function useBookingSheet({
         children_notes: '',
     });
 
-    const populateCaregiverSuggestions = async (page = 1, ageFilter = 'all') => {
+    const populateCaregiverSuggestions = async (
+        page = 1,
+        ageFilter = 'all',
+    ) => {
         const clientId =
-            editingBooking?.booking_group?.client_id ??
-            form.data.client_id;
+            editingBooking?.booking_group?.client_id ?? form.data.client_id;
 
         if (!clientId) {
             return;
@@ -398,7 +403,10 @@ export function useBookingSheet({
     };
 
     const loadMoreCaregivers = async (ageFilter = 'all') => {
-        if (loadingMoreCaregivers || caregiverCurrentPage >= caregiverLastPage) {
+        if (
+            loadingMoreCaregivers ||
+            caregiverCurrentPage >= caregiverLastPage
+        ) {
             return;
         }
 
@@ -551,12 +559,8 @@ export function useBookingSheet({
                         tempId: `client-${c.id}`,
                         name: c.name || '',
                         gender: c.gender || '',
-                        birth_month: c.birth_month
-                            ? String(c.birth_month)
-                            : '',
-                        birth_year: c.birth_year
-                            ? String(c.birth_year)
-                            : '',
+                        birth_month: c.birth_month ? String(c.birth_month) : '',
+                        birth_year: c.birth_year ? String(c.birth_year) : '',
                     })) || [];
                 const clientPets =
                     data.client.pets?.map((p: any) => ({
@@ -703,7 +707,10 @@ export function useBookingSheet({
             });
             const fullBooking = await response.json();
 
-            const client = clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null;
+            const client =
+                clients?.find(
+                    (c) => c.id === booking.booking_group?.client_id,
+                ) ?? null;
 
             setSelectedClientName('');
             setClientSuggestions([]);
@@ -768,12 +775,14 @@ export function useBookingSheet({
 
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
-                setCaregiverSuggestions([{
-                    ...caregiver,
-                    age: null,
-                    matchIcons: [],
-                    hasBeenNotified: false,
-                }] as unknown as Array<{
+                setCaregiverSuggestions([
+                    {
+                        ...caregiver,
+                        age: null,
+                        matchIcons: [],
+                        hasBeenNotified: false,
+                    },
+                ] as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
@@ -945,7 +954,9 @@ export function useBookingSheet({
                 })) || [];
 
             const client = booking.booking_group?.client_id
-                ? clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null
+                ? (clients?.find(
+                      (c) => c.id === booking.booking_group?.client_id,
+                  ) ?? null)
                 : null;
 
             setSelectedClientName('');
@@ -1012,7 +1023,9 @@ export function useBookingSheet({
             setHotelSuggestions([]);
 
             if (booking.booking_group?.hotel_id) {
-                const hotel = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
+                const hotel = hotels.find(
+                    (h) => h.id === booking.booking_group?.hotel_id,
+                );
 
                 if (hotel) {
                     setSelectedHotelName(hotel.name);
@@ -1267,7 +1280,8 @@ export function useBookingSheet({
         openDuplicateSheet,
         populateCaregiverSuggestions,
         loadMoreCaregivers,
-        onAgeFilterChange: (filter: string) => populateCaregiverSuggestions(1, filter),
+        onAgeFilterChange: (filter: string) =>
+            populateCaregiverSuggestions(1, filter),
         caregiverAllIds,
         caregiverTotal,
         caregiverCurrentPage,

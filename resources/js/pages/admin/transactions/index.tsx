@@ -228,7 +228,9 @@ export default function TransactionsIndex() {
 
         // Two-way: update checkout_at based on start_datetime + hours
         if (selectedBooking.start_datetime && hours > 0) {
-            const startDate = new Date(selectedBooking.start_datetime.replace(/\.\d+Z$/, 'Z'));
+            const startDate = new Date(
+                selectedBooking.start_datetime.replace(/\.\d+Z$/, 'Z'),
+            );
 
             if (!isNaN(startDate.getTime())) {
                 const newCheckout = new Date(
@@ -249,7 +251,9 @@ export default function TransactionsIndex() {
     };
 
     const parseFromUtc = (str: string): Date | null => {
-        const d = new Date(str.endsWith('Z') ? str.replace(/\.\d+Z$/, 'Z') : str + 'Z');
+        const d = new Date(
+            str.endsWith('Z') ? str.replace(/\.\d+Z$/, 'Z') : str + 'Z',
+        );
 
         return isNaN(d.getTime()) ? null : d;
     };
@@ -271,7 +275,9 @@ export default function TransactionsIndex() {
                 const diffHours = diffMs / (1000 * 60 * 60);
 
                 if (diffHours < 4) {
-                    const startFromUtc = parseFromUtc(selectedBooking.start_datetime);
+                    const startFromUtc = parseFromUtc(
+                        selectedBooking.start_datetime,
+                    );
                     const minCheckout = startFromUtc
                         ? new Date(startFromUtc.getTime() + 4 * 60 * 60 * 1000)
                         : null;

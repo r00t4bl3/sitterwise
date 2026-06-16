@@ -12,7 +12,7 @@ use function Pest\Laravel\artisan;
 uses(RefreshDatabase::class);
 
 describe('Cleanup Expired Reservations Command', function () {
-    test('releases expired reservations back to received status', function () {
+    test('releases expired reservations back to pending status', function () {
         $user = User::factory()->create(['role' => 'caregiver']);
         $caregiver = Caregiver::create([
             'user_id' => $user->id,
@@ -51,7 +51,7 @@ describe('Cleanup Expired Reservations Command', function () {
         $stillReserved->refresh();
         $received->refresh();
 
-        expect($expiredReserved->status)->toBe(BookingStatus::Received->value);
+        expect($expiredReserved->status)->toBe(BookingStatus::Pending->value);
         expect($expiredReserved->reserved_by)->toBeNull();
         expect($expiredReserved->reservation_expires_at)->toBeNull();
 

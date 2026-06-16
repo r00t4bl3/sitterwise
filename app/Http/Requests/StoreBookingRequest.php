@@ -85,7 +85,7 @@ class StoreBookingRequest extends FormRequest
             'new_client' => ['nullable', 'array'],
             'new_client.first_name' => ['nullable', 'required_without:client_id', 'string'],
             'new_client.last_name' => ['nullable', 'string'],
-            'new_client.email' => ['nullable', 'email'],
+            'new_client.email' => ['nullable', 'email', 'unique:users,email'],
             'new_client.phone' => ['nullable', 'string'],
             'new_client.client_type' => ['nullable', 'string'],
             'child_ids' => ['nullable', 'array'],

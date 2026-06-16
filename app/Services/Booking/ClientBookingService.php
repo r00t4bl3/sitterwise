@@ -23,6 +23,7 @@ use App\Models\Hotel;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -149,6 +150,11 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'sitter_preferences' => $sitterPreferences,
             'discovery_sources' => $discoverySources,
         ]);
+    }
+
+    public function recommendedCaregivers(Request $request): RedirectResponse
+    {
+        return redirect()->route('dashboard');
     }
 
     /**

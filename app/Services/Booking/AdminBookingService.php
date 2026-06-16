@@ -34,11 +34,13 @@ use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -172,6 +174,11 @@ class AdminBookingService implements BookingServiceInterface
         ]);
     }
 
+    public function create(Request $request): RedirectResponse
+    {
+        return redirect()->route('bookings.index');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validated();
@@ -191,12 +198,22 @@ class AdminBookingService implements BookingServiceInterface
 
         // Create new client if new_client data provided
         if (! empty($validated['new_client']['first_name'])) {
-            $user = User::create([
-                'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
-                'email' => $validated['new_client']['email'],
-                'password' => \Hash::make(\Str::random(16)),
-                'role' => 'client',
-            ]);
+            try {
+                $user = User::create([
+                    'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
+                    'email' => $validated['new_client']['email'],
+                    'password' => \Hash::make(\Str::random(16)),
+                    'role' => 'client',
+                ]);
+            } catch (QueryException $e) {
+                if ($e->getCode() === '23000') {
+                    throw ValidationException::withMessages([
+                        'new_client.email' => 'This email is already registered to another account.',
+                    ]);
+                }
+
+                throw $e;
+            }
 
             $client = Client::create([
                 'user_id' => $user->id,
@@ -689,6 +706,10 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
+        if ($booking->caregiver_id && ! $oldCaregiverId && $booking->getOriginal('status') === BookingStatus::Received->value) {
+            $booking->updateQuietly(['status' => BookingStatus::Confirmed->value]);
+        }
+
         $booking->load('bookingGroup');
 
         if ($booking->caregiver_id && $booking->caregiver_id != $oldCaregiverId) {
@@ -962,7 +983,16 @@ class AdminBookingService implements BookingServiceInterface
             'caregiver_ids.*' => 'exists:caregivers,id',
         ]);
 
+        $notifiableStatuses = [BookingStatus::Received->value, BookingStatus::Pending->value];
+        if (! in_array($booking->status, $notifiableStatuses, true)) {
+            return redirect()->back()->with('error', 'Cannot notify caregivers for a booking with status '.$booking->status.'.');
+        }
+
         NotifyCaregiversJob::dispatch($booking, $validated['caregiver_ids']);
+
+        if ($booking->status === BookingStatus::Received->value) {
+            $booking->updateQuietly(['status' => BookingStatus::Pending->value]);
+        }
 
         return redirect()->back()->with('success', 'Notifications queued.');
     }
@@ -1076,6 +1106,8 @@ class AdminBookingService implements BookingServiceInterface
 
     public function splitGroup(Request $request, BookingGroup $group): RedirectResponse
     {
+        $group->loadMissing('bookings');
+
         $validated = $request->validate([
             'booking_ids' => ['required', 'array', 'min:1'],
             'booking_ids.*' => ['required', 'integer', 'exists:bookings,id'],
@@ -1083,15 +1115,18 @@ class AdminBookingService implements BookingServiceInterface
 
         $extractedIds = $validated['booking_ids'];
 
-        $group->loadMissing('bookings');
         $groupBookingIds = $group->bookings->pluck('id')->toArray();
         $invalidIds = array_diff($extractedIds, $groupBookingIds);
 
         if (! empty($invalidIds)) {
+            logger()->debug('splitGroup guard: invalid IDs');
+
             return back()->with('error', 'Some booking IDs do not belong to this group.');
         }
 
         if (count($extractedIds) >= $group->bookings->count()) {
+            logger()->debug('splitGroup guard: would empty group');
+
             return back()->with('error', 'Cannot move all bookings — group would be empty.');
         }
 

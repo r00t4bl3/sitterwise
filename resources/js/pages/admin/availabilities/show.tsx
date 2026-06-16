@@ -324,9 +324,9 @@ export default function ManageAvailability() {
                                                         delete the availability
                                                         for{' '}
                                                         {selectedDate
-? formatDisplayDateInPT(
-                                        selectedDate,
-                                    )
+                                                            ? formatDisplayDateInPT(
+                                                                  selectedDate,
+                                                              )
                                                             : 'this date'}
                                                         ? This action cannot be
                                                         undone.

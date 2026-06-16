@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Booking;
+use App\Models\BookingGroup;
+use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
@@ -62,6 +65,28 @@ class DatabaseSeeder extends Seeder
         Client::factory()->create([
             'user_id' => $client->id,
         ]);
+
+        $caregiverModel = Caregiver::where('user_id', $caregiver->id)->first();
+        $clientModel = Client::where('user_id', $client->id)->first();
+
+        $booking = Booking::factory()
+            ->completed()
+            ->create([
+                'booking_group_id' => BookingGroup::factory()->create([
+                    'client_id' => $clientModel->id,
+                ])->id,
+                'caregiver_id' => $caregiverModel->id,
+            ]);
+
+        BookingRating::create([
+            'booking_id' => $booking->id,
+            'rater_id' => $client->id,
+            'ratable_type' => Caregiver::class,
+            'ratable_id' => $caregiverModel->id,
+            'rating' => 4.48,
+        ]);
+
+        $caregiverModel->update(['rating' => 4.48]);
 
         $this->call([
             // ApplicantSeeder::class,          // Seed a test applicant for development/staging

@@ -67,10 +67,14 @@ export function NotifyCaregiversSheet({
     onLoadMoreCaregivers,
     onAgeFilterChange,
 }: NotifyCaregiversSheetProps) {
-    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>('all');
+    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>(
+        'all',
+    );
 
     const notifyForm = useForm({
-        caregiver_ids: initialCaregiverId ? [initialCaregiverId] : [] as number[],
+        caregiver_ids: initialCaregiverId
+            ? [initialCaregiverId]
+            : ([] as number[]),
     });
 
     const toggleCaregiver = (id: number) => {
@@ -106,8 +110,7 @@ export function NotifyCaregiversSheet({
                         <div className="space-y-1">
                             <SheetTitle>Notify Caregivers</SheetTitle>
                             <SheetDescription>
-                                Select caregivers to notify about this
-                                booking.
+                                Select caregivers to notify about this booking.
                             </SheetDescription>
                         </div>
                     </div>
@@ -115,7 +118,8 @@ export function NotifyCaregiversSheet({
 
                 <div className="flex flex-col gap-2 border-b border-border px-4 py-2">
                     <div className="items-center text-xs text-muted-foreground">
-                        Showing {caregiverSuggestions.length} of {caregiverTotal} caregivers
+                        Showing {caregiverSuggestions.length} of{' '}
+                        {caregiverTotal} caregivers
                     </div>
                     <div className="flex gap-2">
                         <button
@@ -166,9 +170,13 @@ export function NotifyCaregiversSheet({
                                 size="sm"
                                 className="cursor-pointer"
                                 onClick={() => {
-                                    const visibleIds = caregiverSuggestions.map((cg) => cg.id);
+                                    const visibleIds = caregiverSuggestions.map(
+                                        (cg) => cg.id,
+                                    );
                                     const allSelected = visibleIds.every((id) =>
-                                        notifyForm.data.caregiver_ids.includes(id),
+                                        notifyForm.data.caregiver_ids.includes(
+                                            id,
+                                        ),
                                     );
 
                                     notifyForm.setData(
@@ -180,9 +188,12 @@ export function NotifyCaregiversSheet({
                             >
                                 {(() => {
                                     const total = caregiverSuggestions.length;
-                                    const allSelected = caregiverSuggestions.every((cg) =>
-                                        notifyForm.data.caregiver_ids.includes(cg.id),
-                                    );
+                                    const allSelected =
+                                        caregiverSuggestions.every((cg) =>
+                                            notifyForm.data.caregiver_ids.includes(
+                                                cg.id,
+                                            ),
+                                        );
 
                                     return allSelected
                                         ? `Deselect All (${total})`
@@ -195,23 +206,26 @@ export function NotifyCaregiversSheet({
 
                 {(() => {
                     const visibleIds = caregiverSuggestions.map((cg) => cg.id);
-                    const visibleAllSelected = visibleIds.length > 0
-                        && visibleIds.every((id) =>
+                    const visibleAllSelected =
+                        visibleIds.length > 0 &&
+                        visibleIds.every((id) =>
                             notifyForm.data.caregiver_ids.includes(id),
                         );
 
-                    const totalAllSelected = caregiverAllIds.length > 0
-                        && caregiverAllIds.every((id) =>
+                    const totalAllSelected =
+                        caregiverAllIds.length > 0 &&
+                        caregiverAllIds.every((id) =>
                             notifyForm.data.caregiver_ids.includes(id),
                         );
 
-                    const showBanner = visibleAllSelected
-                        && !totalAllSelected
-                        && caregiverAllIds.length > visibleIds.length;
+                    const showBanner =
+                        visibleAllSelected &&
+                        !totalAllSelected &&
+                        caregiverAllIds.length > visibleIds.length;
 
                     if (!showBanner) {
-return null;
-}
+                        return null;
+                    }
 
                     return (
                         <div className="mx-4 mt-2 flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
@@ -227,7 +241,8 @@ return null;
                                         );
                                     }}
                                 >
-                                    Select all {caregiverAllIds.length} matching caregivers.
+                                    Select all {caregiverAllIds.length} matching
+                                    caregivers.
                                 </button>
                             </span>
                             <button
@@ -269,30 +284,23 @@ return null;
                                     recent_work: Briefcase,
                                 };
 
-                                const ICON_TOOLTIPS: Record<
-                                    string,
-                                    string
-                                > = {
+                                const ICON_TOOLTIPS: Record<string, string> = {
                                     favorited: 'Favorited by client',
                                     previous_work:
                                         'Previously worked with this family',
                                     available: 'Available for booking dates',
-                                    specialty:
-                                        'Specializes in this age group',
-                                    location_preferred:
-                                        'Based in booking area',
+                                    specialty: 'Specializes in this age group',
+                                    location_preferred: 'Based in booking area',
                                     location_willing:
                                         'Willing to travel to booking area',
-                                    recent_work:
-                                        'Actively working recently',
+                                    recent_work: 'Actively working recently',
                                 };
 
                                 return caregiverSuggestions.map((caregiver) => {
                                     const hasBeenNotified = (caregiver as any)
                                         .hasBeenNotified;
-                                    const matchIcons = (
-                                        caregiver as any
-                                    ).matchIcons as string[] | undefined;
+                                    const matchIcons = (caregiver as any)
+                                        .matchIcons as string[] | undefined;
 
                                     return (
                                         <Label
@@ -357,7 +365,9 @@ return null;
                                                                                 iconKey
                                                                             }
                                                                         >
-                                                                            <TooltipTrigger asChild>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
                                                                                 <span className="flex cursor-default items-center">
                                                                                     <IconComponent className="h-4 w-4 text-muted-foreground" />
                                                                                 </span>
@@ -389,7 +399,9 @@ return null;
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => onLoadMoreCaregivers?.(ageFilter)}
+                                        onClick={() =>
+                                            onLoadMoreCaregivers?.(ageFilter)
+                                        }
                                         disabled={loadingMoreCaregivers}
                                         className="cursor-pointer"
                                     >

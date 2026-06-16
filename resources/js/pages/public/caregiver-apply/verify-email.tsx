@@ -99,7 +99,7 @@ export default function VerifyEmail() {
                                 type="text"
                                 required
                                 maxLength={6}
-                                className="w-full text-center tracking-widest text-lg"
+                                className="w-full text-center text-lg tracking-widest"
                                 placeholder="000000"
                                 value={otpForm.data.otp}
                                 onChange={(e) =>

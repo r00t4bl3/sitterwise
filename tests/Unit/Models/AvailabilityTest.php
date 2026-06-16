@@ -3,11 +3,31 @@
 use App\Enums\CaregiverStatus;
 use App\Models\Availability;
 use App\Models\Caregiver;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
+
+function createCaregiver(): Caregiver
+{
+    $user = User::factory()->create(['role' => 'caregiver']);
+
+    return Caregiver::query()->create([
+        'user_id' => $user->id,
+        'first_name' => 'Test',
+        'last_name' => 'Caregiver',
+        'slug' => 'test-caregiver-'.Str::random(5),
+        'phone' => '123-456-7890',
+        'address_city' => 'San Diego',
+        'address_state' => 'CA',
+        'address_zip' => '92000',
+        'date_of_birth' => '1990-01-01',
+        'status' => CaregiverStatus::Active->value,
+    ]);
+}
 
 test('can be instantiated', function () {
     $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
@@ -58,20 +78,37 @@ test('defines caregiver relationship', function () {
     $this->assertInstanceOf(Caregiver::class, $relation->getRelated());
 });
 
-test('in the future scope returns future dates', function () {
-    $caregiver = Caregiver::factory()->make(['status' => CaregiverStatus::Active->value]);
-    $future = Availability::factory()->make([
+test('in the future scope includes PT-today during UTC night', function () {
+    $caregiver = createCaregiver();
+
+    // Freeze time at 2026-06-17 03:00 UTC = 2026-06-16 20:00 PT (PDT, UTC-7)
+    $this->travelTo(CarbonImmutable::parse('2026-06-17 03:00:00', 'UTC'));
+
+    $availability = Availability::factory()->create([
         'caregiver_id' => $caregiver->id,
-        'date' => now()->addDays(5)->toDateString(),
-        'time_slots' => ['morning'],
-    ]);
-    $past = Availability::factory()->make([
-        'caregiver_id' => $caregiver->id,
-        'date' => now()->subDays(5)->toDateString(),
+        'date' => '2026-06-16',
         'time_slots' => ['morning'],
     ]);
 
-    // Test the scope query logic directly
-    $query = Availability::query()->where('date', '>=', now()->toDateString());
-    $this->assertStringContainsString('>=', $query->toSql());
+    $result = Availability::inTheFuture()->get();
+
+    expect($result)->toHaveCount(1);
+    expect($result->first()->id)->toBe($availability->id);
+});
+
+test('in the future scope excludes past dates', function () {
+    $caregiver = createCaregiver();
+
+    // Freeze time at 2026-06-17 12:00 UTC = 2026-06-17 05:00 PT (midday UTC = morning PT)
+    $this->travelTo(CarbonImmutable::parse('2026-06-17 12:00:00', 'UTC'));
+
+    Availability::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'date' => '2026-06-16',
+        'time_slots' => ['morning'],
+    ]);
+
+    $result = Availability::inTheFuture()->get();
+
+    expect($result)->toBeEmpty();
 });

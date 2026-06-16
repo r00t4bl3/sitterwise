@@ -16,7 +16,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
     {
         $perPage = 20;
 
-        $caregiverIds = Availability::where('date', '>=', now()->toDateString())
+        $caregiverIds = Availability::where('date', '>=', now('America/Los_Angeles')->toDateString())
             ->distinct()
             ->pluck('caregiver_id');
 

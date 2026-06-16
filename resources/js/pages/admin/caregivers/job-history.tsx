@@ -190,41 +190,50 @@ export default function JobHistory() {
 
     const handleExcuse = () => {
         if (!excuseDialog.booking?.assignment_id) {
-return;
-}
+            return;
+        }
 
-        excuseForm.post(`/assignments/${excuseDialog.booking.assignment_id}/excuse`, {
-            onSuccess: () => {
-                setExcuseDialog({ open: false, booking: null });
-                excuseForm.reset();
+        excuseForm.post(
+            `/assignments/${excuseDialog.booking.assignment_id}/excuse`,
+            {
+                onSuccess: () => {
+                    setExcuseDialog({ open: false, booking: null });
+                    excuseForm.reset();
+                },
             },
-        });
+        );
     };
 
     const handleNoShow = () => {
         if (!noShowDialog.booking?.assignment_id) {
-return;
-}
+            return;
+        }
 
-        noShowForm.post(`/assignments/${noShowDialog.booking.assignment_id}/no-show`, {
-            onSuccess: () => {
-                setNoShowDialog({ open: false, booking: null });
-                noShowForm.reset();
+        noShowForm.post(
+            `/assignments/${noShowDialog.booking.assignment_id}/no-show`,
+            {
+                onSuccess: () => {
+                    setNoShowDialog({ open: false, booking: null });
+                    noShowForm.reset();
+                },
             },
-        });
+        );
     };
 
     const handleLateArrival = () => {
         if (!lateArrivalDialog.booking?.assignment_id) {
-return;
-}
+            return;
+        }
 
-        lateArrivalForm.post(`/assignments/${lateArrivalDialog.booking.assignment_id}/late-arrival`, {
-            onSuccess: () => {
-                setLateArrivalDialog({ open: false, booking: null });
-                lateArrivalForm.reset();
+        lateArrivalForm.post(
+            `/assignments/${lateArrivalDialog.booking.assignment_id}/late-arrival`,
+            {
+                onSuccess: () => {
+                    setLateArrivalDialog({ open: false, booking: null });
+                    lateArrivalForm.reset();
+                },
             },
-        });
+        );
     };
 
     const openExcuseDialog = (booking: Booking) => {
@@ -410,18 +419,28 @@ return;
                                                 }
                                             />
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap font-medium text-ring">
-                                            {booking.client
-                                                ? (
-                                                    <Link href={`/clients/${booking.client.id}`} className="hover:underline">
-                                                        {booking.client.first_name} {booking.client.last_name}
-                                                    </Link>
-                                                )
-                                                : '—'}
+                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap text-ring">
+                                            {booking.client ? (
+                                                <Link
+                                                    href={`/clients/${booking.client.id}`}
+                                                    className="hover:underline"
+                                                >
+                                                    {booking.client.first_name}{' '}
+                                                    {booking.client.last_name}
+                                                </Link>
+                                            ) : (
+                                                '—'
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                             {booking.hotel?.name ||
-                                                [booking.address_line1, booking.address_city, booking.address_state].filter(Boolean).join(', ') ||
+                                                [
+                                                    booking.address_line1,
+                                                    booking.address_city,
+                                                    booking.address_state,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(', ') ||
                                                 locationTypes.find(
                                                     (l) =>
                                                         l.value ===
@@ -435,10 +454,14 @@ return;
                                                     className="inline-block rounded-[3px] px-2 py-0.5 text-[10px] font-semibold"
                                                     style={{
                                                         backgroundColor: `${booking.assignment_resolution_color ?? '#6b7280'}20`,
-                                                        color: booking.assignment_resolution_color ?? '#6b7280',
+                                                        color:
+                                                            booking.assignment_resolution_color ??
+                                                            '#6b7280',
                                                     }}
                                                 >
-                                                    {booking.assignment_resolution_label}
+                                                    {
+                                                        booking.assignment_resolution_label
+                                                    }
                                                 </span>
                                             ) : (
                                                 <span className="text-xs text-muted-foreground italic">
@@ -464,22 +487,34 @@ return;
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             {booking.assignment_id && (
                                                 <div className="flex flex-col gap-1">
-                                                    {(!booking.assignment_resolution || booking.assignment_resolution === 'backed_out') && (
+                                                    {(!booking.assignment_resolution ||
+                                                        booking.assignment_resolution ===
+                                                            'backed_out') && (
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
                                                             className="h-7 text-[11px]"
-                                                            onClick={() => openExcuseDialog(booking)}
+                                                            onClick={() =>
+                                                                openExcuseDialog(
+                                                                    booking,
+                                                                )
+                                                            }
                                                         >
                                                             Excuse
                                                         </Button>
                                                     )}
-                                                    {(!booking.assignment_resolution || booking.assignment_resolution === 'backed_out') && (
+                                                    {(!booking.assignment_resolution ||
+                                                        booking.assignment_resolution ===
+                                                            'backed_out') && (
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
                                                             className="h-7 text-[11px]"
-                                                            onClick={() => openNoShowDialog(booking)}
+                                                            onClick={() =>
+                                                                openNoShowDialog(
+                                                                    booking,
+                                                                )
+                                                            }
                                                         >
                                                             No-Show
                                                         </Button>
@@ -488,7 +523,11 @@ return;
                                                         size="sm"
                                                         variant="outline"
                                                         className="h-7 text-[11px]"
-                                                        onClick={() => openLateArrivalDialog(booking)}
+                                                        onClick={() =>
+                                                            openLateArrivalDialog(
+                                                                booking,
+                                                            )
+                                                        }
                                                     >
                                                         Late
                                                     </Button>
@@ -545,12 +584,18 @@ return;
                 )}
             </div>
 
-            <Dialog open={excuseDialog.open} onOpenChange={(open) => setExcuseDialog({ open, booking: null })}>
+            <Dialog
+                open={excuseDialog.open}
+                onOpenChange={(open) =>
+                    setExcuseDialog({ open, booking: null })
+                }
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Excuse Back-Out</DialogTitle>
                         <DialogDescription>
-                            Mark this back-out as excused. A note is required explaining why.
+                            Mark this back-out as excused. A note is required
+                            explaining why.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">
@@ -560,26 +605,45 @@ return;
                         <Textarea
                             id="excuse-note"
                             value={excuseForm.data.note}
-                            onChange={(e) => excuseForm.setData('note', e.target.value)}
+                            onChange={(e) =>
+                                excuseForm.setData('note', e.target.value)
+                            }
                             placeholder="Explain why this back-out is excused..."
                             className="min-h-[80px]"
                         />
                         {excuseForm.errors.note && (
-                            <p className="text-sm text-destructive">{excuseForm.errors.note}</p>
+                            <p className="text-sm text-destructive">
+                                {excuseForm.errors.note}
+                            </p>
                         )}
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setExcuseDialog({ open: false, booking: null })}>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setExcuseDialog({ open: false, booking: null })
+                            }
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleExcuse} disabled={excuseForm.processing}>
-                            {excuseForm.processing ? 'Saving...' : 'Mark as Excused'}
+                        <Button
+                            onClick={handleExcuse}
+                            disabled={excuseForm.processing}
+                        >
+                            {excuseForm.processing
+                                ? 'Saving...'
+                                : 'Mark as Excused'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={noShowDialog.open} onOpenChange={(open) => setNoShowDialog({ open, booking: null })}>
+            <Dialog
+                open={noShowDialog.open}
+                onOpenChange={(open) =>
+                    setNoShowDialog({ open, booking: null })
+                }
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Log No-Show</DialogTitle>
@@ -592,23 +656,41 @@ return;
                         <Textarea
                             id="noshow-note"
                             value={noShowForm.data.note}
-                            onChange={(e) => noShowForm.setData('note', e.target.value)}
+                            onChange={(e) =>
+                                noShowForm.setData('note', e.target.value)
+                            }
                             placeholder="Any additional details..."
                             className="min-h-[80px]"
                         />
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setNoShowDialog({ open: false, booking: null })}>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setNoShowDialog({ open: false, booking: null })
+                            }
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleNoShow} disabled={noShowForm.processing} variant="destructive">
-                            {noShowForm.processing ? 'Saving...' : 'Log No-Show'}
+                        <Button
+                            onClick={handleNoShow}
+                            disabled={noShowForm.processing}
+                            variant="destructive"
+                        >
+                            {noShowForm.processing
+                                ? 'Saving...'
+                                : 'Log No-Show'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={lateArrivalDialog.open} onOpenChange={(open) => setLateArrivalDialog({ open, booking: null })}>
+            <Dialog
+                open={lateArrivalDialog.open}
+                onOpenChange={(open) =>
+                    setLateArrivalDialog({ open, booking: null })
+                }
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Log Late Arrival</DialogTitle>
@@ -621,17 +703,32 @@ return;
                         <Textarea
                             id="late-note"
                             value={lateArrivalForm.data.note}
-                            onChange={(e) => lateArrivalForm.setData('note', e.target.value)}
+                            onChange={(e) =>
+                                lateArrivalForm.setData('note', e.target.value)
+                            }
                             placeholder="How late were they?"
                             className="min-h-[80px]"
                         />
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setLateArrivalDialog({ open: false, booking: null })}>
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                setLateArrivalDialog({
+                                    open: false,
+                                    booking: null,
+                                })
+                            }
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleLateArrival} disabled={lateArrivalForm.processing}>
-                            {lateArrivalForm.processing ? 'Saving...' : 'Log Late Arrival'}
+                        <Button
+                            onClick={handleLateArrival}
+                            disabled={lateArrivalForm.processing}
+                        >
+                            {lateArrivalForm.processing
+                                ? 'Saving...'
+                                : 'Log Late Arrival'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

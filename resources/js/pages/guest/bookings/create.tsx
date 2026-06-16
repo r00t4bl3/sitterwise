@@ -23,7 +23,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import GuestLayout from '@/layouts/guest-layout';
 import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
-import { autoSetEndDateTime, formatDateTimeLocal, validateMinimumDuration } from '@/lib/datetime';
+import {
+    autoSetEndDateTime,
+    formatDateTimeLocal,
+    validateMinimumDuration,
+} from '@/lib/datetime';
 import { validatePhone } from '@/lib/phone';
 
 interface NewChild {
@@ -48,7 +52,10 @@ interface DateEntry {
     end_datetime: string;
 }
 
-function validateForm(formData: Record<string, any>, isAddressLocked: boolean = false): Record<string, string> {
+function validateForm(
+    formData: Record<string, any>,
+    isAddressLocked: boolean = false,
+): Record<string, string> {
     const errors: Record<string, string> = {};
 
     if (!formData.client_first_name?.trim()) {
@@ -77,7 +84,8 @@ function validateForm(formData: Record<string, any>, isAddressLocked: boolean = 
 
     if (formData.location_type !== 'hotel') {
         if (!isAddressLocked) {
-            errors.address_line1 = 'Please select a valid San Diego area address from the suggestions.';
+            errors.address_line1 =
+                'Please select a valid San Diego area address from the suggestions.';
         }
 
         if (!formData.address_line1?.trim()) {
@@ -123,8 +131,8 @@ function validateForm(formData: Record<string, any>, isAddressLocked: boolean = 
         }
 
         if (errors.dates) {
-break;
-}
+            break;
+        }
     }
 
     if (formData.location_type === 'hotel') {
@@ -148,9 +156,7 @@ function generateId(): string {
     return Math.random().toString(36).substr(2, 9);
 }
 
-function findDateOverlaps(
-    dates: DateEntry[],
-): Record<string, string[]> {
+function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
     const overlaps: Record<string, string[]> = {};
 
     for (let i = 0; i < dates.length; i++) {
@@ -226,7 +232,9 @@ export default function GuestBookingCreate() {
         location_type: 'private_home',
         start_datetime: defaultStartStr,
         end_datetime: defaultEndStr,
-        dates: [{ start_datetime: defaultStartStr, end_datetime: defaultEndStr }] as Array<{ start_datetime: string; end_datetime: string }>,
+        dates: [
+            { start_datetime: defaultStartStr, end_datetime: defaultEndStr },
+        ] as Array<{ start_datetime: string; end_datetime: string }>,
         hotel_id: null as number | null,
         hotel_name: '',
         rental_platform: '',
@@ -243,7 +251,13 @@ export default function GuestBookingCreate() {
         special_needs_notes: '',
         how_did_you_hear: '',
         new_children: [
-            { tempId: generateId(), name: '', gender: '', birth_month: '', birth_year: '' },
+            {
+                tempId: generateId(),
+                name: '',
+                gender: '',
+                birth_month: '',
+                birth_year: '',
+            },
         ] as NewChild[],
         new_pets: [] as NewPet[],
     });
@@ -263,7 +277,9 @@ export default function GuestBookingCreate() {
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
     const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
-    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+    const [validationErrors, setValidationErrors] = useState<
+        Record<string, string>
+    >({});
 
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
@@ -274,8 +290,8 @@ export default function GuestBookingCreate() {
     const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const dateOverlaps = findDateOverlaps(dates);
 
-    const sameDayWarning = dates.some(
-        (d) => d.start_datetime?.startsWith(todayDateStr),
+    const sameDayWarning = dates.some((d) =>
+        d.start_datetime?.startsWith(todayDateStr),
     );
 
     const hotelSuggestions = hotels
@@ -291,7 +307,10 @@ export default function GuestBookingCreate() {
             form.setData('end_datetime', allDates[0].end_datetime);
             form.setData(
                 'dates',
-                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+                allDates.map((d) => ({
+                    start_datetime: d.start_datetime,
+                    end_datetime: d.end_datetime,
+                })),
             );
         }
     };
@@ -437,7 +456,8 @@ export default function GuestBookingCreate() {
         });
     };
 
-    const isFormIncomplete = Object.keys(validateForm(form.data, isAddressLocked)).length > 0;
+    const isFormIncomplete =
+        Object.keys(validateForm(form.data, isAddressLocked)).length > 0;
 
     const hasNewChildren = form.data.new_children.length > 0;
     const hasNewPets = form.data.new_pets.length > 0;
@@ -446,7 +466,7 @@ export default function GuestBookingCreate() {
         <GuestLayout>
             <Head title="Book a Caregiver" />
             <ToasterMessage />
-            <div className="mx-auto w-full max-w-[900px] flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="mx-auto flex h-full w-full max-w-[900px] flex-1 flex-col gap-6 p-4">
                 {/* HERO */}
                 <div className="py-3 pb-5 text-center">
                     <h1 className="mb-4 font-serif text-[32px] font-medium text-foreground">
@@ -472,7 +492,8 @@ export default function GuestBookingCreate() {
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                         <div>
                             <p className="mb-1 font-medium">
-                                Please fix the following errors before continuing:
+                                Please fix the following errors before
+                                continuing:
                             </p>
                             <ul className="list-inside list-disc space-y-0.5">
                                 {Object.entries(form.errors).map(
@@ -511,7 +532,12 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         First Name{' '}
-                                        <span className="text-primary" aria-hidden="true">*</span>
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         aria-required="true"
@@ -548,7 +574,12 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         Last Name{' '}
-                                        <span className="text-primary" aria-hidden="true">*</span>
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         aria-required="true"
@@ -588,7 +619,12 @@ export default function GuestBookingCreate() {
                                 <div>
                                     <Label>
                                         Email{' '}
-                                        <span className="text-primary" aria-hidden="true">*</span>
+                                        <span
+                                            className="text-primary"
+                                            aria-hidden="true"
+                                        >
+                                            *
+                                        </span>
                                     </Label>
                                     <Input
                                         type="email"
@@ -607,9 +643,7 @@ export default function GuestBookingCreate() {
                                             )
                                         }
                                         onBlur={() =>
-                                            handleBlurValidate(
-                                                'client_email',
-                                            )
+                                            handleBlurValidate('client_email')
                                         }
                                         placeholder="your@email.com"
                                     />
@@ -631,9 +665,7 @@ export default function GuestBookingCreate() {
                                             form.setData('client_phone', v)
                                         }
                                         onBlur={() =>
-                                            handleBlurValidate(
-                                                'client_phone',
-                                            )
+                                            handleBlurValidate('client_phone')
                                         }
                                         error={
                                             validationErrors.client_phone ||
@@ -645,7 +677,15 @@ export default function GuestBookingCreate() {
                             </div>
 
                             <div>
-                                <Label>How did you find us? <span className="text-primary" aria-hidden="true">*</span></Label>
+                                <Label>
+                                    How did you find us?{' '}
+                                    <span
+                                        className="text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        *
+                                    </span>
+                                </Label>
                                 <Select
                                     value={form.data.how_did_you_hear || ''}
                                     onValueChange={(value) =>
@@ -666,9 +706,13 @@ export default function GuestBookingCreate() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {(validationErrors.how_did_you_hear || form.errors.how_did_you_hear) && (
+                                {(validationErrors.how_did_you_hear ||
+                                    form.errors.how_did_you_hear) && (
                                     <InputError
-                                        message={validationErrors.how_did_you_hear || form.errors.how_did_you_hear}
+                                        message={
+                                            validationErrors.how_did_you_hear ||
+                                            form.errors.how_did_you_hear
+                                        }
                                     />
                                 )}
                             </div>
@@ -793,10 +837,15 @@ export default function GuestBookingCreate() {
                                                 <Autocomplete
                                                     value={form.data.hotel_id}
                                                     onChange={(id) => {
-                                                        form.setData('hotel_id', id);
-                                                        const hotel = hotels.find(
-                                                            (h) => h.id === id,
+                                                        form.setData(
+                                                            'hotel_id',
+                                                            id,
                                                         );
+                                                        const hotel =
+                                                            hotels.find(
+                                                                (h) =>
+                                                                    h.id === id,
+                                                            );
 
                                                         if (hotel) {
                                                             form.setData(
@@ -805,19 +854,23 @@ export default function GuestBookingCreate() {
                                                             );
                                                             form.setData(
                                                                 'address_line1',
-                                                                hotel.line1 || '',
+                                                                hotel.line1 ||
+                                                                    '',
                                                             );
                                                             form.setData(
                                                                 'address_line2',
-                                                                hotel.line2 || '',
+                                                                hotel.line2 ||
+                                                                    '',
                                                             );
                                                             form.setData(
                                                                 'address_city',
-                                                                hotel.city || '',
+                                                                hotel.city ||
+                                                                    '',
                                                             );
                                                             form.setData(
                                                                 'address_state',
-                                                                hotel.state || '',
+                                                                hotel.state ||
+                                                                    '',
                                                             );
                                                             form.setData(
                                                                 'address_zip',
@@ -826,20 +879,34 @@ export default function GuestBookingCreate() {
                                                             setAddressValue(
                                                                 `${hotel.line1 || ''}${hotel.line2 ? `, ${hotel.line2}` : ''}, ${hotel.city || ''}, ${hotel.state || ''} ${hotel.zip || ''}`.trim(),
                                                             );
-                                                            setIsAddressLocked(true);
+                                                            setIsAddressLocked(
+                                                                true,
+                                                            );
                                                         }
                                                     }}
-                                                    suggestions={hotelSuggestions}
+                                                    suggestions={
+                                                        hotelSuggestions
+                                                    }
                                                     onSearch={setHotelSearch}
                                                     placeholder="Search hotel..."
-                                                    displayValue={selectedHotelName}
+                                                    displayValue={
+                                                        selectedHotelName
+                                                    }
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setShowUnlistedHotel(true);
-                                                        form.setData('hotel_id', null);
-                                                        form.setData('hotel_name', '');
+                                                        setShowUnlistedHotel(
+                                                            true,
+                                                        );
+                                                        form.setData(
+                                                            'hotel_id',
+                                                            null,
+                                                        );
+                                                        form.setData(
+                                                            'hotel_name',
+                                                            '',
+                                                        );
                                                     }}
                                                     className="mt-1 cursor-pointer text-sm text-primary hover:underline"
                                                 >
@@ -851,15 +918,23 @@ export default function GuestBookingCreate() {
                                                 <Input
                                                     value={form.data.hotel_name}
                                                     onChange={(e) =>
-                                                        form.setData('hotel_name', e.target.value)
+                                                        form.setData(
+                                                            'hotel_name',
+                                                            e.target.value,
+                                                        )
                                                     }
                                                     placeholder="Enter hotel name"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setShowUnlistedHotel(false);
-                                                        form.setData('hotel_name', '');
+                                                        setShowUnlistedHotel(
+                                                            false,
+                                                        );
+                                                        form.setData(
+                                                            'hotel_name',
+                                                            '',
+                                                        );
                                                     }}
                                                     className="mt-1 cursor-pointer text-sm text-primary hover:underline"
                                                 >
@@ -867,9 +942,13 @@ export default function GuestBookingCreate() {
                                                 </button>
                                             </>
                                         )}
-                                        {(validationErrors.hotel_name || form.errors.hotel_name) && (
+                                        {(validationErrors.hotel_name ||
+                                            form.errors.hotel_name) && (
                                             <InputError
-                                                message={validationErrors.hotel_name || form.errors.hotel_name}
+                                                message={
+                                                    validationErrors.hotel_name ||
+                                                    form.errors.hotel_name
+                                                }
                                             />
                                         )}
                                     </div>
@@ -974,10 +1053,14 @@ export default function GuestBookingCreate() {
                                                 />
                                             </div>
                                         </div>
-                                        {dateOverlaps[dateEntry.id]?.length > 0 && (
+                                        {dateOverlaps[dateEntry.id]?.length >
+                                            0 && (
                                             <p className="mt-2 text-xs text-amber-700">
                                                 ⚠ This overlaps with{' '}
-                                                {dateOverlaps[dateEntry.id].join(', ')}.
+                                                {dateOverlaps[
+                                                    dateEntry.id
+                                                ].join(', ')}
+                                                .
                                             </p>
                                         )}
                                     </div>
@@ -1239,7 +1322,8 @@ export default function GuestBookingCreate() {
                                     </div>
                                 )}
 
-                                {(validationErrors.new_children || form.errors.new_children) && (
+                                {(validationErrors.new_children ||
+                                    form.errors.new_children) && (
                                     <InputError
                                         message={
                                             validationErrors.new_children ||
@@ -1554,7 +1638,9 @@ export default function GuestBookingCreate() {
                     </p>
                     <Button
                         onClick={handleSubmit}
-                        aria-disabled={isFormIncomplete || isFormSubmitting || undefined}
+                        aria-disabled={
+                            isFormIncomplete || isFormSubmitting || undefined
+                        }
                     >
                         {isFormSubmitting ? <Spinner /> : null}
                         {isFormSubmitting

@@ -60,7 +60,7 @@ class ClientController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn ($uq) => $uq->where('email', 'like', "%{$search}%"));
+                    ->orWhereHas('user', fn ($uq) => $uq->where('users.email', 'like', "%{$search}%"));
             });
         }
 
@@ -130,7 +130,7 @@ class ClientController extends Controller
                     $q->where(function ($q) use ($term) {
                         $q->where('first_name', 'like', "%{$term}%")
                             ->orWhere('last_name', 'like', "%{$term}%")
-                            ->orWhereHas('user', fn ($q) => $q->where('email', 'like', "%{$term}%"));
+                            ->orWhereHas('user', fn ($q) => $q->where('users.email', 'like', "%{$term}%"));
                     });
                 }
             });

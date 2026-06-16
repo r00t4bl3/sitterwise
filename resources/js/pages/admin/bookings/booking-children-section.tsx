@@ -32,7 +32,10 @@ interface BookingChildrenSectionProps {
     onAdd: () => void;
     onRemove: (tempId: string) => void;
     onUpdate: (tempId: string, field: string, value: string | boolean) => void;
-    calculateAge: (birthYear: number | null, birthMonth: number | null) => string;
+    calculateAge: (
+        birthYear: number | null,
+        birthMonth: number | null,
+    ) => string;
     serviceType?: string;
 }
 
@@ -50,11 +53,7 @@ export function BookingChildrenSection({
                 <Label className="text-sm font-medium text-foreground">
                     Children
                 </Label>
-                <Button
-                    type="button"
-                    onClick={onAdd}
-                    size="xs"
-                >
+                <Button type="button" onClick={onAdd} size="xs">
                     <Plus className="h-3 w-3" />
                     Add Child
                 </Button>
@@ -71,9 +70,7 @@ export function BookingChildrenSection({
                             </p>
                             <Button
                                 type="button"
-                                onClick={() =>
-                                    onRemove(child.tempId)
-                                }
+                                onClick={() => onRemove(child.tempId)}
                                 size="sm"
                             >
                                 <Trash2 className="h-4 w-4" />
@@ -103,11 +100,7 @@ export function BookingChildrenSection({
                                 <Select
                                     value={child.gender || ''}
                                     onValueChange={(value) =>
-                                        onUpdate(
-                                            child.tempId,
-                                            'gender',
-                                            value,
-                                        )
+                                        onUpdate(child.tempId, 'gender', value)
                                     }
                                 >
                                     <SelectTrigger>
@@ -130,9 +123,7 @@ export function BookingChildrenSection({
                                         Month
                                     </Label>
                                     <Select
-                                        value={
-                                            child.birth_month || ''
-                                        }
+                                        value={child.birth_month || ''}
                                         onValueChange={(value) =>
                                             onUpdate(
                                                 child.tempId,
@@ -146,28 +137,19 @@ export function BookingChildrenSection({
                                         </SelectTrigger>
                                         <SelectContent>
                                             {MONTH_ABBR.map(
-                                                (
-                                                    monthAbbr,
-                                                    index,
-                                                ) => {
-                                                    if (
-                                                        index === 0
-                                                    ) {
+                                                (monthAbbr, index) => {
+                                                    if (index === 0) {
                                                         return null;
                                                     }
 
                                                     return (
                                                         <SelectItem
-                                                            key={
-                                                                monthAbbr
-                                                            }
+                                                            key={monthAbbr}
                                                             value={String(
                                                                 index,
                                                             )}
                                                         >
-                                                            {
-                                                                monthAbbr
-                                                            }
+                                                            {monthAbbr}
                                                         </SelectItem>
                                                     );
                                                 },
@@ -180,9 +162,7 @@ export function BookingChildrenSection({
                                         Year
                                     </Label>
                                     <Select
-                                        value={
-                                            child.birth_year || ''
-                                        }
+                                        value={child.birth_year || ''}
                                         onValueChange={(value) =>
                                             onUpdate(
                                                 child.tempId,
@@ -199,9 +179,7 @@ export function BookingChildrenSection({
                                                 (year) => (
                                                     <SelectItem
                                                         key={year}
-                                                        value={String(
-                                                            year,
-                                                        )}
+                                                        value={String(year)}
                                                     >
                                                         {year}
                                                     </SelectItem>
@@ -217,12 +195,10 @@ export function BookingChildrenSection({
                                     <p className="flex h-11 items-center text-sm text-foreground">
                                         {child.birth_year
                                             ? calculateAge(
-                                                  parseInt(
-                                                      child.birth_year,
-                                                  ) || null,
-                                                  parseInt(
-                                                      child.birth_month,
-                                                  ) || null,
+                                                  parseInt(child.birth_year) ||
+                                                      null,
+                                                  parseInt(child.birth_month) ||
+                                                      null,
                                               )
                                             : '-'}
                                     </p>
@@ -240,8 +216,7 @@ export function BookingChildrenSection({
                 )}
             </div>
             {children.length === 0 &&
-                serviceType !==
-                    'group_childcare_invoiced' && (
+                serviceType !== 'group_childcare_invoiced' && (
                     <p className="text-sm text-destructive">
                         At least one child is required.
                     </p>

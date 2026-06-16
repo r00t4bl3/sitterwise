@@ -4,11 +4,13 @@ namespace App\Services\CaregiverRecommendation;
 
 class TimeSlotHelper
 {
+    private const PT = 'America/Los_Angeles';
+
     /**
      * Determine required time slots for a date range.
      *
-     * Each date maps to morning (06:00-12:00), afternoon (12:00-18:00),
-     * and/or evening (18:00-23:00) based on the booking's start/end times.
+     * Each date maps to morning (06:00-12:00 PT), afternoon (12:00-18:00 PT),
+     * and/or evening (18:00-23:00 PT) based on the booking's PT wall-clock times.
      *
      * @return array<string, string[]> e.g. ['2026-06-10' => ['morning', 'afternoon']]
      */
@@ -16,8 +18,10 @@ class TimeSlotHelper
         string|\DateTimeInterface $startDate,
         string|\DateTimeInterface $endDate,
     ): array {
-        $start = new \DateTime($startDate);
-        $end = new \DateTime($endDate);
+        $tz = new \DateTimeZone(self::PT);
+
+        $start = (new \DateTime($startDate))->setTimezone($tz);
+        $end = (new \DateTime($endDate))->setTimezone($tz);
 
         $requiredSlots = [];
 
@@ -28,18 +32,18 @@ class TimeSlotHelper
 
             $dayStart = ($current->format('Y-m-d') === $start->format('Y-m-d'))
                 ? $start
-                : new \DateTime($dateKey.' 00:00:00');
+                : new \DateTime($dateKey.' 00:00:00', $tz);
 
             $dayEnd = ($current->format('Y-m-d') === $end->format('Y-m-d'))
                 ? $end
-                : new \DateTime($dateKey.' 23:59:59');
+                : new \DateTime($dateKey.' 23:59:59', $tz);
 
-            $morningStart = new \DateTime($dateKey.' 06:00:00');
-            $morningEnd = new \DateTime($dateKey.' 12:00:00');
-            $afternoonStart = new \DateTime($dateKey.' 12:00:00');
-            $afternoonEnd = new \DateTime($dateKey.' 18:00:00');
-            $eveningStart = new \DateTime($dateKey.' 18:00:00');
-            $eveningEnd = new \DateTime($dateKey.' 23:00:00');
+            $morningStart = new \DateTime($dateKey.' 06:00:00', $tz);
+            $morningEnd = new \DateTime($dateKey.' 12:00:00', $tz);
+            $afternoonStart = new \DateTime($dateKey.' 12:00:00', $tz);
+            $afternoonEnd = new \DateTime($dateKey.' 18:00:00', $tz);
+            $eveningStart = new \DateTime($dateKey.' 18:00:00', $tz);
+            $eveningEnd = new \DateTime($dateKey.' 23:00:00', $tz);
 
             if ($dayStart < $morningEnd && $dayEnd > $morningStart) {
                 $slots[] = 'morning';

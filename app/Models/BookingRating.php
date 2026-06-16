@@ -43,4 +43,14 @@ class BookingRating extends Model
     {
         return $this->morphTo();
     }
+
+    protected static function booted(): void
+    {
+        static::deleted(function (BookingRating $rating) {
+            $ratable = $rating->ratable;
+            if ($ratable && method_exists($ratable, 'recalculateRating')) {
+                $ratable->recalculateRating();
+            }
+        });
+    }
 }

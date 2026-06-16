@@ -169,6 +169,7 @@ class DashboardController extends Controller
                     ->get(),
                 'todaysBookings' => Booking::with(['client.user', 'caregiver.user'])
                     ->inToday()
+                    ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('start_datetime', 'asc')
                     ->get(),
                 'recentBookings' => Booking::with(['client.user'])

@@ -56,9 +56,7 @@ export function BookingPetsSection({
                             </p>
                             <Button
                                 type="button"
-                                onClick={() =>
-                                    onRemove(pet.tempId)
-                                }
+                                onClick={() => onRemove(pet.tempId)}
                                 size="sm"
                             >
                                 <Trash2 className="h-4 w-4" />
@@ -88,11 +86,7 @@ export function BookingPetsSection({
                                 <Select
                                     value={pet.type || ''}
                                     onValueChange={(value) =>
-                                        onUpdate(
-                                            pet.tempId,
-                                            'type',
-                                            value,
-                                        )
+                                        onUpdate(pet.tempId, 'type', value)
                                     }
                                 >
                                     <SelectTrigger>

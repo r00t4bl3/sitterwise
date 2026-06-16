@@ -28,7 +28,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -41,17 +45,28 @@ const getPTDate = (str: string): Date | null => {
     const d = new Date(str.replace(/\.\d+Z$/, 'Z'));
 
     if (isNaN(d.getTime())) {
-return null;
-}
+        return null;
+    }
 
     const parts = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Los_Angeles',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
     }).formatToParts(d);
-    const g = (t: string) => parseInt(parts.find(x => x.type === t)!.value, 10);
+    const g = (t: string) =>
+        parseInt(parts.find((x) => x.type === t)!.value, 10);
 
-    return new Date(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
+    return new Date(
+        g('year'),
+        g('month') - 1,
+        g('day'),
+        g('hour'),
+        g('minute'),
+    );
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -123,7 +138,8 @@ export default function Bookings() {
     } = usePage<Props>().props;
 
     const serviceTypeLabels = useMemo(
-        () => Object.fromEntries(service_types.map((st) => [st.value, st.label])),
+        () =>
+            Object.fromEntries(service_types.map((st) => [st.value, st.label])),
         [service_types],
     );
 
@@ -294,14 +310,22 @@ export default function Bookings() {
         if (debouncedSearch.trim()) {
             const query = debouncedSearch.toLowerCase().trim();
             result = result.filter((booking) => {
-                const clientName =
-                    (booking.booking_group?.client_first_name + ' ' + booking.booking_group?.client_last_name).toLowerCase();
-                const caregiverName =
-                    booking.caregiver
-                        ? (booking.caregiver.first_name + ' ' + booking.caregiver.last_name).toLowerCase()
-                        : '';
+                const clientName = (
+                    booking.booking_group?.client_first_name +
+                    ' ' +
+                    booking.booking_group?.client_last_name
+                ).toLowerCase();
+                const caregiverName = booking.caregiver
+                    ? (
+                          booking.caregiver.first_name +
+                          ' ' +
+                          booking.caregiver.last_name
+                      ).toLowerCase()
+                    : '';
                 const hotelName = (() => {
-                    const h = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
+                    const h = hotels.find(
+                        (h) => h.id === booking.booking_group?.hotel_id,
+                    );
 
                     return h?.name?.toLowerCase() || '';
                 })();
@@ -315,7 +339,7 @@ export default function Bookings() {
         }
 
         return result;
-    }, [bookings, statusFilter, debouncedSearch]);
+    }, [bookings, statusFilter, debouncedSearch, hotels]);
 
     const bookingsByDate = useMemo(() => {
         const grouped: Record<string, FullBooking[]> = {};
@@ -327,11 +351,26 @@ export default function Bookings() {
                 return;
             }
 
-            const start = new Date(ptStart.getFullYear(), ptStart.getMonth(), ptStart.getDate());
-            const end = new Date(ptEnd.getFullYear(), ptEnd.getMonth(), ptEnd.getDate());
+            const start = new Date(
+                ptStart.getFullYear(),
+                ptStart.getMonth(),
+                ptStart.getDate(),
+            );
+            const end = new Date(
+                ptEnd.getFullYear(),
+                ptEnd.getMonth(),
+                ptEnd.getDate(),
+            );
 
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                if (d.getFullYear() !== currentYear || d.getMonth() + 1 !== currentMonth) {
+            for (
+                let d = new Date(start);
+                d <= end;
+                d.setDate(d.getDate() + 1)
+            ) {
+                if (
+                    d.getFullYear() !== currentYear ||
+                    d.getMonth() + 1 !== currentMonth
+                ) {
                     continue;
                 }
 
@@ -553,14 +592,22 @@ export default function Bookings() {
                                 const dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                 const dayBookings = (
                                     bookingsByDate[dateStr] || []
-                                ).sort(
-                                    (a, b) => {
-                                        const ae = new Date(a.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
-                                        const be = new Date(b.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+                                ).sort((a, b) => {
+                                    const ae = new Date(
+                                        a.start_datetime.replace(
+                                            /\.\d+Z$/,
+                                            'Z',
+                                        ),
+                                    ).getTime();
+                                    const be = new Date(
+                                        b.start_datetime.replace(
+                                            /\.\d+Z$/,
+                                            'Z',
+                                        ),
+                                    ).getTime();
 
-                                        return (ae || 0) - (be || 0);
-                                    },
-                                );
+                                    return (ae || 0) - (be || 0);
+                                });
                                 const displayBookings = dayBookings.slice(0, 5);
                                 const remainingCount = dayBookings.length - 5;
 
@@ -607,7 +654,8 @@ export default function Bookings() {
                                             const colors = statusObj?.colors;
                                             const ServiceIcon =
                                                 serviceTypeIcons[
-                                                    booking.booking_group?.service_type
+                                                    booking.booking_group
+                                                        ?.service_type
                                                 ] || CalendarIcon;
                                             const canCharge =
                                                 (statusKey === 'completed' ||
@@ -615,11 +663,15 @@ export default function Bookings() {
                                                 booking.payment_status !==
                                                     'paid';
 
-                                            const bookingPtStart = getPTDate(booking.start_datetime);
-                                            const bookingStartDateStr = bookingPtStart
-                                                ? `${bookingPtStart.getFullYear()}-${String(bookingPtStart.getMonth() + 1).padStart(2, '0')}-${String(bookingPtStart.getDate()).padStart(2, '0')}`
-                                                : null;
-                                            const isStartDay = bookingStartDateStr === dateStr;
+                                            const bookingPtStart = getPTDate(
+                                                booking.start_datetime,
+                                            );
+                                            const bookingStartDateStr =
+                                                bookingPtStart
+                                                    ? `${bookingPtStart.getFullYear()}-${String(bookingPtStart.getMonth() + 1).padStart(2, '0')}-${String(bookingPtStart.getDate()).padStart(2, '0')}`
+                                                    : null;
+                                            const isStartDay =
+                                                bookingStartDateStr === dateStr;
 
                                             return (
                                                 <div
@@ -627,56 +679,74 @@ export default function Bookings() {
                                                     className="group relative"
                                                 >
                                                     <button
-                                                         onClick={() =>
-                                                             sheet.openEditSheet(
-                                                                 booking as unknown as FullBooking,
-                                                             )
-                                                         }
-                                                          className={`flex w-full cursor-pointer items-start gap-2 rounded-[3px] border px-1.5 py-1 text-xs transition-colors hover:brightness-95 ${
-                                                              colors?.bg ||
-                                                              'bg-primary/10'
-                                                          } ${
-                                                              colors?.text ||
-                                                              'text-primary'
-                                                          } ${
-                                                              colors?.border ||
-                                                              'border-primary/20'
-                                                          }`}
-                                                     >
-                                                         <div className="flex flex-col items-center gap-0.5">
-                                                              <Tooltip>
-                                                                  <TooltipTrigger asChild>
-                                                                      <ServiceIcon className="h-4 w-4 flex-shrink-0 opacity-90" />
-                                                                  </TooltipTrigger>
-                                                                  <TooltipContent>{serviceTypeLabels[booking.booking_group?.service_type ?? ''] || 'Booking'}</TooltipContent>
-                                                              </Tooltip>
-                                                               {(booking.booking_group?.bookings_count ?? 0) > 1 && (
-                                                                  <Tooltip>
-                                                                      <TooltipTrigger asChild>
-                                                                          <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
-                                                                      </TooltipTrigger>
-                                                                      <TooltipContent>Multi-date booking</TooltipContent>
-                                                                  </Tooltip>
-                                                              )}
-                                                         </div>
-                                                          <div className="flex min-w-0 flex-col items-start text-left">
-                                                              <span className="text-[10px] leading-tight opacity-80">
-                                                                  {isStartDay
-                                                                      ? formatDisplayTimeInPT(
-                                                                            booking.start_datetime,
-                                                                        )
-                                                                      : '12:00 AM'}
-                                                                  -
-                                                                  {formatDisplayTimeInPT(
-                                                                      booking.end_datetime,
-                                                                  )}
-                                                              </span>
-                                                              <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
-                                                                   {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
-                                                                      'Unknown Client'}
-                                                              </span>
-                                                         </div>
-                                                     </button>
+                                                        onClick={() =>
+                                                            sheet.openEditSheet(
+                                                                booking as unknown as FullBooking,
+                                                            )
+                                                        }
+                                                        className={`flex w-full cursor-pointer items-start gap-2 rounded-[3px] border px-1.5 py-1 text-xs transition-colors hover:brightness-95 ${
+                                                            colors?.bg ||
+                                                            'bg-primary/10'
+                                                        } ${
+                                                            colors?.text ||
+                                                            'text-primary'
+                                                        } ${
+                                                            colors?.border ||
+                                                            'border-primary/20'
+                                                        }`}
+                                                    >
+                                                        <div className="flex flex-col items-center gap-0.5">
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <ServiceIcon className="h-4 w-4 flex-shrink-0 opacity-90" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    {serviceTypeLabels[
+                                                                        booking
+                                                                            .booking_group
+                                                                            ?.service_type ??
+                                                                            ''
+                                                                    ] ||
+                                                                        'Booking'}
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            {(booking
+                                                                .booking_group
+                                                                ?.bookings_count ??
+                                                                0) > 1 && (
+                                                                <Tooltip>
+                                                                    <TooltipTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        Multi-date
+                                                                        booking
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex min-w-0 flex-col items-start text-left">
+                                                            <span className="text-[10px] leading-tight opacity-80">
+                                                                {isStartDay
+                                                                    ? formatDisplayTimeInPT(
+                                                                          booking.start_datetime,
+                                                                      )
+                                                                    : '12:00 AM'}
+                                                                -
+                                                                {formatDisplayTimeInPT(
+                                                                    booking.end_datetime,
+                                                                )}
+                                                            </span>
+                                                            <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
+                                                                {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
+                                                                    'Unknown Client'}
+                                                            </span>
+                                                        </div>
+                                                    </button>
                                                     {/* eslint-disable-next-line no-constant-binary-expression */}
                                                     {false && canCharge && (
                                                         <button
@@ -769,30 +839,43 @@ export default function Bookings() {
                                         </tr>
                                     ) : (
                                         [...currentMonthBookings]
-                                            .sort(
-                                                (a, b) => {
-                                                    const ae = new Date(a.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
-                                                    const be = new Date(b.start_datetime.replace(/\.\d+Z$/, 'Z')).getTime();
+                                            .sort((a, b) => {
+                                                const ae = new Date(
+                                                    a.start_datetime.replace(
+                                                        /\.\d+Z$/,
+                                                        'Z',
+                                                    ),
+                                                ).getTime();
+                                                const be = new Date(
+                                                    b.start_datetime.replace(
+                                                        /\.\d+Z$/,
+                                                        'Z',
+                                                    ),
+                                                ).getTime();
 
-                                                    return (ae || 0) - (be || 0);
-                                                })
+                                                return (ae || 0) - (be || 0);
+                                            })
                                             .map((booking) => {
                                                 const statusKey =
                                                     booking.status?.toLowerCase() ||
                                                     'received';
                                                 const isHotel =
-                                                    booking.booking_group?.location_type ===
+                                                    booking.booking_group
+                                                        ?.location_type ===
                                                     'hotel';
                                                 const hotel = isHotel
                                                     ? hotels.find(
                                                           (h) =>
                                                               h.id ===
-                                                              booking.booking_group?.hotel_id,
+                                                              booking
+                                                                  .booking_group
+                                                                  ?.hotel_id,
                                                       )
                                                     : null;
                                                 const location = isHotel
                                                     ? hotel?.name
-                                                    : booking.booking_group?.address_line1;
+                                                    : booking.booking_group
+                                                          ?.address_line1;
                                                 const addressQuery =
                                                     isHotel && hotel
                                                         ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
@@ -833,34 +916,57 @@ export default function Bookings() {
                                                         <td className="px-4 py-3 text-sm font-medium text-ring">
                                                             <div className="flex items-center justify-between">
                                                                 <Link
-                                                                     href={`/clients/${booking.booking_group?.client_id}`}
-                                                                    onClick={(e) =>
+                                                                    href={`/clients/${booking.booking_group?.client_id}`}
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
                                                                         e.stopPropagation()
                                                                     }
                                                                     className="hover:underline"
                                                                 >
                                                                     {
-                                                                         booking.booking_group?.client_first_name
-                                                                     }{' '}
-                                                                     {
-                                                                         booking.booking_group?.client_last_name
-                                                                     }
+                                                                        booking
+                                                                            .booking_group
+                                                                            ?.client_first_name
+                                                                    }{' '}
+                                                                    {
+                                                                        booking
+                                                                            .booking_group
+                                                                            ?.client_last_name
+                                                                    }
                                                                 </Link>
                                                                 <div className="flex items-center gap-1">
-                                                                    {booking.booking_group?.service_type === 'corporate_invoiced' && (
+                                                                    {booking
+                                                                        .booking_group
+                                                                        ?.service_type ===
+                                                                        'corporate_invoiced' && (
                                                                         <Tooltip>
-                                                                            <TooltipTrigger asChild>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
                                                                                 <Building className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
                                                                             </TooltipTrigger>
-                                                                            <TooltipContent>Corporate (Invoiced)</TooltipContent>
+                                                                            <TooltipContent>
+                                                                                Corporate
+                                                                                (Invoiced)
+                                                                            </TooltipContent>
                                                                         </Tooltip>
                                                                     )}
-                                                                    {(booking.booking_group?.bookings_count ?? 0) > 1 && (
+                                                                    {(booking
+                                                                        .booking_group
+                                                                        ?.bookings_count ??
+                                                                        0) >
+                                                                        1 && (
                                                                         <Tooltip>
-                                                                            <TooltipTrigger asChild>
+                                                                            <TooltipTrigger
+                                                                                asChild
+                                                                            >
                                                                                 <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
                                                                             </TooltipTrigger>
-                                                                            <TooltipContent>Multi-date booking</TooltipContent>
+                                                                            <TooltipContent>
+                                                                                Multi-date
+                                                                                booking
+                                                                            </TooltipContent>
                                                                         </Tooltip>
                                                                     )}
                                                                 </div>
@@ -883,7 +989,9 @@ export default function Bookings() {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    onClick={(e) =>
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
                                                                         e.stopPropagation()
                                                                     }
                                                                     className="text-ring hover:underline"
@@ -911,7 +1019,9 @@ export default function Bookings() {
                                                             {booking.caregiver ? (
                                                                 <Link
                                                                     href={`/caregivers/${booking.caregiver.id}`}
-                                                                    onClick={(e) =>
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
                                                                         e.stopPropagation()
                                                                     }
                                                                     className="font-medium text-ring hover:underline"
@@ -957,7 +1067,9 @@ export default function Bookings() {
                                                                             variant="ghost"
                                                                             size="icon"
                                                                             className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                                            onClick={(e) => {
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) => {
                                                                                 e.stopPropagation();
                                                                                 window.location.href =
                                                                                     '/admin/bookings/charge?booking_id=' +
@@ -969,7 +1081,9 @@ export default function Bookings() {
                                                                         </Button>
                                                                     )}
                                                                 <Button
-                                                                    onClick={(e) => {
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
                                                                         e.stopPropagation();
                                                                         sheet.openDuplicateSheet(
                                                                             booking as unknown as FullBooking,
@@ -980,7 +1094,9 @@ export default function Bookings() {
                                                                     Duplicate
                                                                 </Button>
                                                                 <Button
-                                                                    onClick={(e) => {
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
                                                                         e.stopPropagation();
                                                                         sheet.openEditSheet(
                                                                             booking as unknown as FullBooking,
@@ -1020,7 +1136,9 @@ export default function Bookings() {
                                 Bookings for{' '}
                                 {selectedDay &&
                                     format(
-                                        new Date(selectedDay.date + 'T12:00:00'),
+                                        new Date(
+                                            selectedDay.date + 'T12:00:00',
+                                        ),
                                         'PPPP',
                                     )}
                             </DialogTitle>
@@ -1038,8 +1156,9 @@ export default function Bookings() {
                                     );
                                 const colors = statusObj?.colors;
                                 const ServiceIcon =
-                                    serviceTypeIcons[booking.booking_group?.service_type] ||
-                                    CalendarIcon;
+                                    serviceTypeIcons[
+                                        booking.booking_group?.service_type
+                                    ] || CalendarIcon;
 
                                 return (
                                     <button
@@ -1053,7 +1172,8 @@ export default function Bookings() {
                                         className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border p-3 text-left transition hover:brightness-95 ${
                                             colors?.bg || 'bg-primary/10'
                                         } ${colors?.text || 'text-primary'} ${
-                                            colors?.border || 'border-primary/20'
+                                            colors?.border ||
+                                            'border-primary/20'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
@@ -1062,7 +1182,14 @@ export default function Bookings() {
                                                     <TooltipTrigger asChild>
                                                         <ServiceIcon className="h-4 w-4" />
                                                     </TooltipTrigger>
-                                                    <TooltipContent>{serviceTypeLabels[booking.booking_group?.service_type ?? ''] || 'Booking'}</TooltipContent>
+                                                    <TooltipContent>
+                                                        {serviceTypeLabels[
+                                                            booking
+                                                                .booking_group
+                                                                ?.service_type ??
+                                                                ''
+                                                        ] || 'Booking'}
+                                                    </TooltipContent>
                                                 </Tooltip>
                                             </div>
                                             <div className="overflow-hidden">
@@ -1097,7 +1224,7 @@ export default function Bookings() {
                         onClick={() =>
                             window.scrollTo({ top: 0, behavior: 'smooth' })
                         }
-                        className="fixed bottom-6 right-6 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg transition-all hover:bg-accent"
+                        className="fixed right-6 bottom-6 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg transition-all hover:bg-accent"
                         type="button"
                     >
                         <ChevronUp className="h-5 w-5" />

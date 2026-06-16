@@ -12,6 +12,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use Carbon\CarbonImmutable;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -134,6 +135,31 @@ describe('AvailabilityReservationService', function () {
         $count = BookingAvailabilitySlot::where('booking_id', $booking->id)->count();
 
         expect($count)->toBe(0);
+    });
+
+    test('reserve creates slots with correct PT date for evening booking crossing UTC midnight', function () {
+        $caregiver = makeCaregiverWithSlots([
+            'date' => '2026-06-20',
+            'time_slots' => ['evening'],
+        ]);
+
+        $group = BookingGroup::factory()->create();
+        $booking = Booking::factory()->create([
+            'booking_group_id' => $group->id,
+            'caregiver_id' => $caregiver->id,
+            // 7–10 PM PT June 20 = 2–5 AM UTC June 21
+            'start_datetime' => CarbonImmutable::parse('2026-06-20 19:00:00', 'America/Los_Angeles'),
+            'end_datetime' => CarbonImmutable::parse('2026-06-20 22:00:00', 'America/Los_Angeles'),
+            'payment_status' => BookingPaymentStatus::Pending->value,
+        ]);
+
+        $this->reservationService->reserve($booking);
+
+        $slots = BookingAvailabilitySlot::where('booking_id', $booking->id)->get();
+
+        expect($slots)->toHaveCount(1);
+        expect($slots->first()->date)->toBe('2026-06-20');
+        expect($slots->first()->time_slot)->toBe('evening');
     });
 });
 

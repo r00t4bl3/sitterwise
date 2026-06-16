@@ -47,12 +47,7 @@ class GuestBookingService
                 'zip' => $h->zip,
             ]);
 
-        $serviceTypes = array_values(
-            array_map(
-                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
-                array_filter(ServiceType::cases(), fn ($type) => (! str_contains($type->value, 'invoiced')) && (! str_contains($type->value, 'comped')) && (! str_contains($type->value, 'companion')))
-            )
-        );
+        $serviceTypes = $this->getServiceTypes();
 
         $locationTypes = array_values(
             array_map(
@@ -495,5 +490,15 @@ class GuestBookingService
         } catch (\Exception $e) {
             Log::error('Failed to attach payment method: '.$e->getMessage());
         }
+    }
+
+    private function getServiceTypes(): array
+    {
+        return array_values(
+            array_map(
+                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
+                array_filter(ServiceType::cases(), fn ($type) => ! str_contains($type->value, 'invoiced') && ! str_contains($type->value, 'comped') && ! str_contains($type->value, 'companion'))
+            )
+        );
     }
 }

@@ -5,12 +5,14 @@
 ```mermaid
 stateDiagram-v2
     [*] --> received : Booking created
-    received --> reserved : Caregiver reserves (60s TTL)
-    reserved --> received : TTL expires / Caregiver releases
+    received --> pending : Admin notifies caregivers
+    pending --> reserved : Caregiver reserves (60s TTL)
+    reserved --> pending : TTL expires / Caregiver releases
     reserved --> confirmed : Caregiver confirms within TTL
     confirmed --> completed : Caregiver checks out
     completed --> paid : Admin processes payment
     received --> cancelled : Cancel
+    pending --> cancelled : Cancel
     reserved --> cancelled : Cancel
     confirmed --> cancelled : Cancel
     paid --> [*]
@@ -73,7 +75,7 @@ sequenceDiagram
     participant Caregiver
 
     Admin->>System: Select caregivers & notify
-    System->>System: Create BookingCaregiverNotification records
+    System->>System: Create BookingCaregiverNotification records<br/>status = pending
     System->>Caregiver: Send email/SMS invitation
 
     Caregiver->>System: Click "Reserve"
@@ -87,7 +89,7 @@ sequenceDiagram
         System->>System: Reserve availability slots<br/>(BookingAvailabilitySlot)
         System-->>Caregiver: Fire BookingAccepted (confirmation email)
     else TTL expires or caregiver releases
-        System->>System: Revert to status = received<br/>Clear reserved_by
+        System->>System: Revert to status = pending<br/>Clear reserved_by
     end
 
     Note over Caregiver,System: Post-confirmation: caregiver can back out
@@ -100,6 +102,9 @@ sequenceDiagram
     end
 ```
 
+**`received → pending` on notify:** When the admin notifies caregivers, the booking transitions from `received` to `pending`. This signals that invitations are out and the booking is awaiting a caregiver to reserve. The "Notify Caregivers" button shows on both `received` and `pending`, so the admin can re-notify additional caregivers from either state; notifying from `pending` keeps the status as `pending` (idempotent).
+
+**`reserved → pending` on TTL expiry or manual release:** When a reservation times out or the caregiver manually releases it, the booking reverts to `pending` (not `received`), preserving the fact that caregivers have already been notified. This differs from admin-initiated actions (unassign, split) which reset to `received` for a fresh notification cycle.
 **Admin assignment** (no caregiver self-service): Admin sets `caregiver_id` directly on the booking → `Booking::saved` hook fires → `AvailabilityReservationService::reserve()` is called automatically.
 
 **Unassign / Cancel:** Setting `caregiver_id = null` or `status = cancelled` → saved hook fires `AvailabilityReservationService::release()` → all `BookingAvailabilitySlot` records for that booking are deleted.

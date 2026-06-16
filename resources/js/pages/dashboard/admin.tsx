@@ -10,7 +10,6 @@ import {
     Plus,
     ExternalLink,
     Link as LinkIcon,
-    MessageSquareText,
     Star,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -19,7 +18,10 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateTimeInPT,
+    formatDisplayTimeInPT,
+} from '@/lib/datetime';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
@@ -197,7 +199,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             {stats.thisMonthCompleted + stats.thisMonthUpcoming}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            {stats.thisMonthCompleted} completed - {stats.thisMonthUpcoming} upcoming
+                            {stats.thisMonthCompleted} completed -{' '}
+                            {stats.thisMonthUpcoming} upcoming
                         </p>
                     </Link>
 
@@ -232,13 +235,18 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">
-                            {stats.troubledUnassigned + stats.troubledMissingPayment + stats.troubledAwaitingCheckout}
+                            {stats.troubledUnassigned +
+                                stats.troubledMissingPayment +
+                                stats.troubledAwaitingCheckout}
                         </p>
                         <p className="text-xs text-muted-foreground">
                             {[
-                                stats.troubledUnassigned > 0 && `${stats.troubledUnassigned} unassigned`,
-                                stats.troubledMissingPayment > 0 && `${stats.troubledMissingPayment} missing payment${stats.troubledMissingPayment > 1 ? 's' : ''}`,
-                                stats.troubledAwaitingCheckout > 0 && `${stats.troubledAwaitingCheckout} awaiting checkout approval`,
+                                stats.troubledUnassigned > 0 &&
+                                    `${stats.troubledUnassigned} unassigned`,
+                                stats.troubledMissingPayment > 0 &&
+                                    `${stats.troubledMissingPayment} missing payment${stats.troubledMissingPayment > 1 ? 's' : ''}`,
+                                stats.troubledAwaitingCheckout > 0 &&
+                                    `${stats.troubledAwaitingCheckout} awaiting checkout approval`,
                             ]
                                 .filter(Boolean)
                                 .join(', ')}
@@ -250,17 +258,27 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                 <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
                     <button
                         type="button"
-                        onClick={() => setNeedsAttentionOpen(!needsAttentionOpen)}
+                        onClick={() =>
+                            setNeedsAttentionOpen(!needsAttentionOpen)
+                        }
                         className="flex w-full items-center justify-between border-b border-border px-6 py-4"
                     >
-                        <h2 className="text-lg font-semibold">HR Needs Attention</h2>
+                        <h2 className="text-lg font-semibold">
+                            HR Needs Attention
+                        </h2>
                         <div className="flex items-center gap-2">
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                                {admin.needsAttention.reduce((s, i) => s + i.count, 0)} total
+                                {admin.needsAttention.reduce(
+                                    (s, i) => s + i.count,
+                                    0,
+                                )}{' '}
+                                total
                             </span>
                             <ChevronDown
                                 className={`h-4 w-4 text-muted-foreground transition-transform ${
-                                    needsAttentionOpen ? 'rotate-0' : '-rotate-90'
+                                    needsAttentionOpen
+                                        ? 'rotate-0'
+                                        : '-rotate-90'
                                 }`}
                             />
                         </div>
@@ -291,7 +309,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="text-lg">
-                                                {iconMap[item.key] ?? '\u{1F4A1}'}
+                                                {iconMap[item.key] ??
+                                                    '\u{1F4A1}'}
                                             </span>
                                             <span className="text-sm text-foreground">
                                                 {item.label}
@@ -301,9 +320,11 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             <span
                                                 className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold ${
                                                     item.count > 0
-                                                        ? item.variant === 'warning'
+                                                        ? item.variant ===
+                                                          'warning'
                                                             ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                                                            : item.variant === 'urgent'
+                                                            : item.variant ===
+                                                                'urgent'
                                                               ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
                                                               : 'bg-primary/10 text-primary'
                                                         : 'bg-muted text-muted-foreground'
@@ -662,7 +683,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                         <div className="mb-4 grid grid-cols-3 gap-4">
                                             <div className="text-center">
                                                 <p className="text-2xl font-bold text-foreground">
-                                                    {admin.reviewAnalytics.avgRatingAll}
+                                                    {
+                                                        admin.reviewAnalytics
+                                                            .avgRatingAll
+                                                    }
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Avg Rating
@@ -670,7 +694,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             </div>
                                             <div className="text-center">
                                                 <p className="text-2xl font-bold text-foreground">
-                                                    {admin.reviewAnalytics.totalReviews}
+                                                    {
+                                                        admin.reviewAnalytics
+                                                            .totalReviews
+                                                    }
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Total
@@ -678,7 +705,10 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             </div>
                                             <div className="text-center">
                                                 <p className="text-2xl font-bold text-foreground">
-                                                    {admin.reviewAnalytics.pendingReviewsCount}
+                                                    {
+                                                        admin.reviewAnalytics
+                                                            .pendingReviewsCount
+                                                    }
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Pending
@@ -686,13 +716,24 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            {[5, 4, 3, 2, 1].map((star, i) => {
-                                                const count = admin.reviewAnalytics!.ratingDistribution[5 - star];
-                                                const max = Math.max(...admin.reviewAnalytics!.ratingDistribution, 1);
+                                            {[5, 4, 3, 2, 1].map((star) => {
+                                                const count =
+                                                    admin.reviewAnalytics!
+                                                        .ratingDistribution[
+                                                        5 - star
+                                                    ];
+                                                const max = Math.max(
+                                                    ...admin.reviewAnalytics!
+                                                        .ratingDistribution,
+                                                    1,
+                                                );
                                                 const pct = (count / max) * 100;
 
                                                 return (
-                                                    <div key={star} className="flex items-center gap-2">
+                                                    <div
+                                                        key={star}
+                                                        className="flex items-center gap-2"
+                                                    >
                                                         <span className="flex w-4 items-center justify-center text-xs text-muted-foreground">
                                                             {star}
                                                         </span>
@@ -700,10 +741,12 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                                                             <div
                                                                 className="h-full rounded-full bg-amber-400"
-                                                                style={{ width: `${pct}%` }}
+                                                                style={{
+                                                                    width: `${pct}%`,
+                                                                }}
                                                             />
                                                         </div>
-                                                        <span className="w-5 text-right text-xs tabular-nums text-muted-foreground">
+                                                        <span className="w-5 text-right text-xs text-muted-foreground tabular-nums">
                                                             {count}
                                                         </span>
                                                     </div>

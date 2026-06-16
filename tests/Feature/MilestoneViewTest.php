@@ -94,7 +94,7 @@ it('displays milestone stats for a caregiver with no data', function () {
             ->has('milestones', fn ($m) => $m
                 ->where('completedJobs', 0)
                 ->where('jobStreak', 0)
-                ->where('rating', '4.50')
+                ->where('rating', 4.5)
                 ->where('ratingCount', 0)
                 ->where('reliabilityPercent', null)
                 ->where('trustlineCertified', false)
