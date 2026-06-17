@@ -138,9 +138,6 @@ describe('Booking Created Notifications', function () {
 
         event(new BookingCreated($booking));
 
-        $listeners = app('events')->getRawListeners()['App\\Events\\BookingCreated'] ?? [];
-        fwrite(STDERR, 'Listeners: ' . json_encode($listeners));
-
         Mail::assertSent(AdminBookingCreatedMail::class, 1);
     });
 

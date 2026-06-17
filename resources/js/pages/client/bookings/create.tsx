@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -238,19 +238,6 @@ export default function ClientBookingCreate() {
     const [showManualAddressInput, setShowManualAddressInput] = useState(false);
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
-
-    useEffect(() => {
-        if (children.length > 0) {
-            form.setData(
-                'new_children',
-                children.map(convertChildToEditable) as Child[],
-            );
-        }
-
-        if (pets.length > 0) {
-            form.setData('new_pets', pets.map(convertPetToEditable) as Pet[]);
-        }
-    }, [children, pets, form]);
 
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,

@@ -2,30 +2,11 @@
 
 namespace App\Providers;
 
-use App\Events\BookingAccepted;
-use App\Events\BookingCancelled;
-use App\Events\BookingCreated;
-use App\Events\BookingGroupCreated;
-use App\Events\BookingInvitationSent;
-use App\Events\BookingReceipt;
-use App\Events\BookingReminderTriggered;
-use App\Events\GuestAccountSetup;
-use App\Listeners\SendBookingAcceptedNotifications;
-use App\Listeners\SendBookingCancelledNotifications;
-use App\Listeners\SendBookingCreatedNotifications;
-use App\Listeners\SendBookingGroupCreatedNotifications;
-use App\Listeners\SendBookingInvitationNotifications;
-use App\Listeners\SendBookingReceiptNotification;
-use App\Listeners\SendBookingReminderNotifications;
-use App\Listeners\SendGuestAccountSetupNotification;
 use App\Listeners\UpdateLastLogin;
 use App\Models\BookingGroup;
 use App\Observers\BookingGroupObserver;
-use App\Services\TwilioService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -60,45 +41,7 @@ class AppServiceProvider extends ServiceProvider
             UpdateLastLogin::class,
         );
 
-        Event::listen(
-            BookingCancelled::class,
-            SendBookingCancelledNotifications::class,
-        );
-
-        Event::listen(
-            BookingCreated::class,
-            SendBookingCreatedNotifications::class,
-        );
-
-        Event::listen(
-            BookingGroupCreated::class,
-            SendBookingGroupCreatedNotifications::class,
-        );
-
-        Event::listen(
-            BookingAccepted::class,
-            SendBookingAcceptedNotifications::class,
-        );
-
-        Event::listen(
-            BookingInvitationSent::class,
-            SendBookingInvitationNotifications::class,
-        );
-
-        Event::listen(
-            BookingReminderTriggered::class,
-            SendBookingReminderNotifications::class,
-        );
-
-        Event::listen(
-            BookingReceipt::class,
-            SendBookingReceiptNotification::class,
-        );
-
-        Event::listen(
-            GuestAccountSetup::class,
-            SendGuestAccountSetupNotification::class,
-        );
+        // All booking listeners are auto-discovered.
     }
 
     /**
