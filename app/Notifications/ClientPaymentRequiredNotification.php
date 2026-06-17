@@ -21,11 +21,7 @@ class ClientPaymentRequiredNotification extends Notification implements ShouldQu
 
     public function toMail(object $notifiable): ClientPaymentRequiredMail
     {
-        $mail = new ClientPaymentRequiredMail($this->booking);
-
-        $mail->to($notifiable->routeNotificationForMail());
-
-        return $mail;
+        return new ClientPaymentRequiredMail($this->booking);
     }
 
     public function toArray(object $notifiable): array

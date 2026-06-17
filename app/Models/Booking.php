@@ -506,6 +506,7 @@ class Booking extends Model
             'date_times' => $start->format('l, F j, Y'),
             'service_date_pretty' => $start->format('D, M j, Y'),
             'start_time' => $start->format('g:i A'),
+            'time' => $start->format('g:i A'),
             'end_time' => $end->format('g:i A'),
             'service_time' => $start->format('g:i A'),
             'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),

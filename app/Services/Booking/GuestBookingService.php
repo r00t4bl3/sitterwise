@@ -416,7 +416,7 @@ class GuestBookingService
 
             $client = $user->client;
             if ($client) {
-                $client->update(['sms_opted_out' => ! $data['sms_consent']]);
+                $client->update(['sms_opted_out' => ! ($data['sms_consent'] ?? true)]);
 
                 $this->attachPaymentMethod($client, $paymentMethodId);
 
@@ -432,7 +432,7 @@ class GuestBookingService
                 'first_name' => $data['client_first_name'],
                 'last_name' => $data['client_last_name'],
                 'phone' => $data['client_phone'],
-                'sms_opted_out' => ! $data['sms_consent'],
+                'sms_opted_out' => ! ($data['sms_consent'] ?? true),
             ]);
 
             $this->attachPaymentMethod($client, $paymentMethodId);
@@ -457,7 +457,7 @@ class GuestBookingService
             'first_name' => $data['client_first_name'],
             'last_name' => $data['client_last_name'],
             'phone' => $data['client_phone'],
-            'sms_opted_out' => ! $data['sms_consent'],
+            'sms_opted_out' => ! ($data['sms_consent'] ?? true),
         ]);
 
         $this->attachPaymentMethod($client, $paymentMethodId);
@@ -498,7 +498,7 @@ class GuestBookingService
         }
     }
 
-    private function getServiceTypes(): array
+    public function getServiceTypes(): array
     {
         return array_values(
             array_map(

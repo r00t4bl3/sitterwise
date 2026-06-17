@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateInPT } from '@/lib/datetime';
+import { extractDateStr, formatDisplayDateInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 interface Status {
@@ -104,7 +104,7 @@ export default function ManageAvailability() {
     const availabilityMap = useMemo(() => {
         return availabilities.reduce(
             (acc, av) => {
-                acc[av.date] = av;
+                acc[extractDateStr(av.date)] = av;
 
                 return acc;
             },

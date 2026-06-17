@@ -620,6 +620,7 @@ export function useBookingSheet({
     };
 
     const openCreateSheet = (date?: string) => {
+        form.clearErrors();
         setEditingBooking(null);
         setSheetMode('create');
 
@@ -644,7 +645,12 @@ export function useBookingSheet({
             location_type: 'private_home',
             start_datetime: formatDateTimeLocal(defaultStart),
             end_datetime: formatDateTimeLocal(defaultEnd),
-            dates: [],
+            dates: [
+                {
+                    start_datetime: formatDateTimeLocal(defaultStart),
+                    end_datetime: formatDateTimeLocal(defaultEnd),
+                },
+            ],
             hotel_id: null,
             address_id: null,
             caregiver_id: null,
@@ -696,6 +702,7 @@ export function useBookingSheet({
     };
 
     const proceedWithEditSheet = async (booking: Booking) => {
+        form.clearErrors();
         setEditingBooking(booking);
         setSheetMode('edit');
         setIsLoading(true);
@@ -802,6 +809,12 @@ export function useBookingSheet({
                 location_type: fullBooking.location_type,
                 start_datetime: fullBooking.start_datetime,
                 end_datetime: fullBooking.end_datetime,
+                dates: [
+                    {
+                        start_datetime: fullBooking.start_datetime,
+                        end_datetime: fullBooking.end_datetime,
+                    },
+                ],
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
@@ -911,6 +924,7 @@ export function useBookingSheet({
     };
 
     const openDuplicateSheet = async (booking: Booking) => {
+        form.clearErrors();
         setEditingBooking(null);
         setSheetMode('duplicate');
         setIsLoading(true);
@@ -980,6 +994,12 @@ export function useBookingSheet({
                 location_type: fullBooking.location_type,
                 start_datetime: fullBooking.start_datetime,
                 end_datetime: fullBooking.end_datetime,
+                dates: [
+                    {
+                        start_datetime: fullBooking.start_datetime,
+                        end_datetime: fullBooking.end_datetime,
+                    },
+                ],
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: null,

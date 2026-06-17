@@ -26,6 +26,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
+use App\Models\ClientPaymentMethod;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
@@ -65,7 +66,7 @@ class AdminBookingService implements BookingServiceInterface
             'id', 'ulid', 'booking_group_id', 'caregiver_id',
             'start_datetime', 'end_datetime', 'status', 'payment_status',
         ])->with([
-            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes',
+            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes,requires_payment',
             'caregiver:id,first_name,last_name',
         ]);
 
@@ -91,6 +92,25 @@ class AdminBookingService implements BookingServiceInterface
             $booking->bookingGroup?->setAttribute('bookings_count', (int) $counts->get($booking->booking_group_id, 1));
             $booking->bookingGroup?->setHidden(['created_at', 'updated_at', 'deleted_at']);
         });
+
+        $clientIds = $bookings->pluck('bookingGroup.client_id')->filter()->unique()->values()->toArray();
+
+        $clientsWithPaymentCapability = [];
+        if (! empty($clientIds)) {
+            $clientsWithStripeCustomer = Client::whereIn('id', $clientIds)
+                ->whereNotNull('stripe_customer_id')
+                ->pluck('id')
+                ->toArray();
+
+            $clientsWithActivePM = ClientPaymentMethod::whereIn('client_id', $clientIds)
+                ->where('status', 'active')
+                ->pluck('client_id')
+                ->toArray();
+
+            $clientsWithPaymentCapability = array_values(array_unique(
+                array_merge($clientsWithStripeCustomer, $clientsWithActivePM)
+            ));
+        }
 
         $serviceTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -170,6 +190,7 @@ class AdminBookingService implements BookingServiceInterface
                 'name' => trim($c->first_name.' '.$c->last_name),
             ])),
             'caregivers' => $caregivers,
+            'clients_with_payment_capability' => $clientsWithPaymentCapability,
 
         ]);
     }

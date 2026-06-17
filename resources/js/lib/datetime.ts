@@ -1,6 +1,33 @@
 const TIMEZONE_PT = 'America/Los_Angeles';
 
 /**
+ * Extracts the date portion (YYYY-MM-DD) from any date string format.
+ * Handles both date-only ("2026-06-17") and ISO 8601 ("2026-06-17T00:00:00.000000Z").
+ */
+export const extractDateStr = (dateStr: string): string => {
+    const tIndex = dateStr.indexOf('T');
+    return tIndex !== -1 ? dateStr.slice(0, tIndex) : dateStr;
+};
+
+/**
+ * Returns today's date in America/Los_Angeles as a YYYY-MM-DD string.
+ */
+export const todayInPT = (): string => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: TIMEZONE_PT,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((p) => p.type === 'year')!.value;
+    const month = parts.find((p) => p.type === 'month')!.value;
+    const day = parts.find((p) => p.type === 'day')!.value;
+
+    return `${year}-${month}-${day}`;
+};
+
+/**
  * Converts a Date with local = PT components back to a UTC wall-clock string.
  * Output example: "2026-05-31T22:15"
  */
@@ -76,7 +103,28 @@ export const formatDisplayDateInPT = (
         return '';
     }
 
-    const date = new Date(dateStr);
+    let date: Date;
+
+    if (dateStr.includes('T')) {
+        // Full datetime string (e.g. "2026-05-28T16:00:00.000000Z")
+        // Parse as UTC per ECMAScript spec
+        date = new Date(dateStr);
+    } else {
+        // Date-only string (e.g. "2026-06-20") — treat as PT date.
+        // new Date("YYYY-MM-DD") would be midnight UTC, which shifts to
+        // the previous day in PT. Use noon UTC as a reference to
+        // determine the PT offset and construct midnight PT.
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const refUtc = Date.UTC(y, m - 1, d, 12, 0, 0);
+        const ptHour = parseInt(
+            new Intl.DateTimeFormat('en-US', {
+                timeZone: TIMEZONE_PT,
+                hour: 'numeric',
+                hour12: false,
+            }).format(new Date(refUtc)),
+        );
+        date = new Date(refUtc - ptHour * 3600000);
+    }
 
     if (isNaN(date.getTime())) {
         return '';
@@ -216,7 +264,7 @@ export const autoSetEndDateTime = (startDatetime: string): string => {
     const hours = String(end.getUTCHours()).padStart(2, '0');
     const minutes = String(end.getUTCMinutes()).padStart(2, '0');
 
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${year}-${month}-${day}T${hours}:${minutes}Z`;
 };
 
 /**

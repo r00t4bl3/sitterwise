@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Sunrise, Sun, Moon } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { extractDateStr, todayInPT } from '@/lib/datetime';
 
 interface Availability {
     id: number;
@@ -72,8 +73,7 @@ export function AvailabilityCalendar({
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const days = getDaysInMonth(year, month);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayStr = todayInPT();
 
     const getSortedTimeSlots = (slots: string[]) => {
         const canonicalOrder = timeSlots.map((slot) => slot.value);
@@ -86,7 +86,7 @@ export function AvailabilityCalendar({
     const availabilityMap = useMemo(() => {
         return availabilities.reduce(
             (acc, av) => {
-                acc[av.date] = av;
+                acc[extractDateStr(av.date)] = av;
 
                 return acc;
             },
@@ -147,14 +147,8 @@ export function AvailabilityCalendar({
                     }
 
                     const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dateObj = new Date(cellYear, cellMonth, day);
-                    const dateOnly = new Date(
-                        dateObj.getFullYear(),
-                        dateObj.getMonth(),
-                        dateObj.getDate(),
-                    );
-                    const isToday = dateOnly.getTime() === today.getTime();
-                    const isPast = dateOnly < today;
+                    const isToday = dateStr === todayStr;
+                    const isPast = dateStr < todayStr;
                     const availability = availabilityMap[dateStr];
                     const hasAvailability =
                         availability && availability.time_slots.length > 0;

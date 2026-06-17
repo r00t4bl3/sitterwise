@@ -76,18 +76,6 @@ class User extends Authenticatable
         };
     }
 
-    /**
-     * Route notifications for the SMS channel.
-     */
-    public function routeNotificationForMail(): string
-    {
-        if ($this->isAdmin() || $this->isSuperAdmin()) {
-            return config('mail.from.address');
-        }
-
-        return $this->email;
-    }
-
     public function routeNotificationForSms(): ?string
     {
         if ($this->isClient()) {

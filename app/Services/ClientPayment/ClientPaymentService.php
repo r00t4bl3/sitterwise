@@ -2,9 +2,14 @@
 
 namespace App\Services\ClientPayment;
 
+use App\Enums\BookingPaymentStatus;
+use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Notifications\BookingCreatedNotification;
+use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Services\ClientPayment\Contracts\ClientPaymentServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Response as InertiaResponse;
@@ -173,6 +178,8 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             ]);
         }
 
+        $this->sendDeferredBookingNotifications($client);
+
         return [
             'id' => $paymentMethod->id,
             'brand' => $paymentMethod->brand,
@@ -232,6 +239,34 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'success' => true,
             'message' => 'Payment method removed',
         ];
+    }
+
+    protected function sendDeferredBookingNotifications(Client $client): void
+    {
+        $user = $client->user;
+
+        if (! $user) {
+            return;
+        }
+
+        $pendingBookings = Booking::whereHas('bookingGroup', fn ($q) => $q
+            ->where('client_id', $client->id)
+            ->where('requires_payment', true))
+            ->where('payment_status', BookingPaymentStatus::Pending->value)
+            ->get();
+
+        foreach ($pendingBookings as $booking) {
+            $user->notify(new BookingCreatedNotification($booking));
+        }
+
+        $pendingGroups = BookingGroup::where('client_id', $client->id)
+            ->where('requires_payment', true)
+            ->has('bookings', '>', 1)
+            ->get();
+
+        foreach ($pendingGroups as $group) {
+            $user->notify(new ClientGroupBookingCreatedNotification($group));
+        }
     }
 
     protected function ensureStripeCustomer(Client $client): void

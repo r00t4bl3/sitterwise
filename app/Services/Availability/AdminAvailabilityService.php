@@ -83,7 +83,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             ->map(function ($availability) {
                 return [
                     'id' => $availability->id,
-                    'date' => $availability->date->format('Y-m-d'),
+                    'date' => $availability->date,
                     'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
                     'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
