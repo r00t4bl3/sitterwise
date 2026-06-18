@@ -32,3 +32,4 @@ yarn-error.log
 /.mimocode
 /tests/Browser/Screenshots
 /tests/Browser/console-logs
+/ssl

@@ -1368,6 +1368,7 @@ class ImportUserService
                     : null,
                 'pets' => self::parsePets($source['pets_text'] ?? null),
                 'special_considerations' => self::mapSpecialConsiderations($source),
+                'requires_payment' => ! $isInvoiced,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

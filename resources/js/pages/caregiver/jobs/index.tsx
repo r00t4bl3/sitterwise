@@ -77,14 +77,14 @@ interface Booking {
     bonus: number;
     paid_to_caregiver_total: number;
     client_name: string;
+    children?: Array<{
+        name: string;
+        gender: string | null;
+        birth_year: number | null;
+        birth_month: number | null;
+    }> | null;
     client: {
         id: number;
-        children?: Array<{
-            id: number;
-            name: string;
-            birth_year?: number;
-            birth_month?: number;
-        }>;
     };
     address_line1: string;
     address_line2: string;
@@ -771,12 +771,12 @@ export default function CaregiverJobsIndex() {
                                             selectedJob.end_datetime,
                                         )}
                                     </p>
-                                    {selectedJob.client.children &&
-                                    selectedJob.client.children.length > 0 ? (
+                                    {selectedJob.children &&
+                                    selectedJob.children.length > 0 ? (
                                         <p className="text-xs text-muted-foreground">
-                                            {selectedJob.client.children.map(
+                                            {selectedJob.children.map(
                                                 (child, index) => (
-                                                    <span key={child.id}>
+                                                    <span key={index}>
                                                         {child.name}
                                                         {child.birth_month &&
                                                         child.birth_year
@@ -786,8 +786,8 @@ export default function CaregiverJobsIndex() {
                                                               )})`
                                                             : ''}
                                                         {index <
-                                                        selectedJob.client
-                                                            .children!.length -
+                                                        selectedJob.children!
+                                                            .length -
                                                             1
                                                             ? ', '
                                                             : ''}
@@ -957,19 +957,19 @@ export default function CaregiverJobsIndex() {
                                 <div className="mt-3 rounded-lg border border-border bg-muted p-3 text-left text-sm text-foreground">
                                     <strong className="block">
                                         {cancellingJob.client_name ?? 'Client'}
-                                        {cancellingJob.client?.children &&
-                                            cancellingJob.client.children
+                                        {cancellingJob.children &&
+                                            cancellingJob.children
                                                 .length > 0 && (
                                                 <>
                                                     {' '}
                                                     &middot;{' '}
                                                     {
-                                                        cancellingJob.client
-                                                            .children.length
+                                                        cancellingJob.children
+                                                            .length
                                                     }{' '}
                                                     child
-                                                    {cancellingJob.client
-                                                        .children.length !== 1
+                                                    {cancellingJob.children
+                                                        .length !== 1
                                                         ? 'ren'
                                                         : ''}
                                                 </>

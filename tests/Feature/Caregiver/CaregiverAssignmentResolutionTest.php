@@ -105,6 +105,41 @@ describe('checkout resolves assignment as completed', function () {
     });
 });
 
+describe('checkout calculates paid_to_caregiver_total', function () {
+    beforeEach(function () {
+        $this->booking = Booking::factory()->forClient($this->client)->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => BookingStatus::Confirmed,
+            'paid_to_caregiver_hourly' => 20.00,
+            'charge_to_client_hourly' => 30.00,
+            'sitterwise_cut_hourly' => 10.00,
+        ]);
+        $this->booking->assignments()->firstOrCreate([
+            'caregiver_id' => $this->caregiver->id,
+            'assigned_at' => now(),
+        ]);
+    });
+
+    it('computes paid_to_caregiver_total from hours and reimbursements', function () {
+        $this->actingAs($this->caregiver->user)
+            ->post(route('jobs.checkout', $this->booking), [
+                'start_datetime' => '2026-05-28T09:00',
+                'end_datetime' => '2026-05-28T17:00',
+                'reimbursement' => 15.00,
+                'bonus' => 10.00,
+            ]);
+
+        $this->booking->refresh();
+
+        $expectedCaregiver = 20.00 * 8; // 160 (8 hours from 09:00 to 17:00)
+        $expectedTotal = $expectedCaregiver + 15.00 + 10.00; // 185
+
+        expect((float) $this->booking->paid_to_caregiver)->toBe(160.00);
+        expect((float) $this->booking->paid_to_caregiver_total)->toBe(185.00);
+        expect((float) $this->booking->total_service_amount)->toBe(240.00 + 15.00 + 10.00); // charge_to_client + reimbursement + bonus
+    });
+});
+
 describe('assignment resolve model method', function () {
     it('can resolve with completed', function () {
         $this->assignment->resolve(AssignmentResolution::Completed);

@@ -68,8 +68,8 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->where('caregiver.lastName', 'Smith')
         ->where('caregiver.status', CaregiverStatus::Active->label())
         ->has('stats', fn ($page) => $page
-            ->where('completed_jobs', 1)
-            ->where('total_earned', 100)
+            ->where('completedJobs', 1)
+            ->where('totalEarned', 0)
             ->where('rating', '4.50')
         )
         ->has('caregiver.nextJob')
@@ -101,8 +101,8 @@ test('client sees dashboard with stats and bookings', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('dashboard')
         ->where('user.role', 'client')
-        ->where('stats.active_bookings', 1)
-        ->where('stats.past_bookings', 1)
+        ->where('stats.totalBookings', 2)
+        ->where('stats.completedBookings', 1)
         ->has('client.nextBooking')
         ->has('client.recentBookings', 1)
     );

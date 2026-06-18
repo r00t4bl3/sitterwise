@@ -53,6 +53,15 @@ class AdminBookingService implements BookingServiceInterface
         protected JobBillingService $billingService
     ) {}
 
+    private function requiresPaymentForServiceType(?string $serviceType): bool
+    {
+        return in_array($serviceType, [
+            ServiceType::Babysitter->value,
+            ServiceType::Petsitter->value,
+            ServiceType::CompanionCare->value,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $month = (int) $request->input('month', now()->month);
@@ -374,7 +383,7 @@ class AdminBookingService implements BookingServiceInterface
             'other_adults_present' => $validated['other_adults_present'] ?? null,
             'special_needs_notes' => $validated['special_needs_notes'] ?? null,
             'emergency_instructions' => $validated['emergency_instructions'] ?? null,
-            'requires_payment' => $validated['requires_payment'] ?? true,
+            'requires_payment' => $this->requiresPaymentForServiceType($validated['service_type'] ?? null),
         ]);
 
         // Create bookings for each date
@@ -698,6 +707,7 @@ class AdminBookingService implements BookingServiceInterface
         $groupUpdateData['children'] = $childrenSnapshot;
         $groupUpdateData['pets'] = $petsSnapshot;
         $groupUpdateData['children_notes'] = $isGroupBooking ? ($validated['children_notes'] ?? null) : null;
+        $groupUpdateData['requires_payment'] = $this->requiresPaymentForServiceType($validated['service_type'] ?? $booking->service_type);
 
         $oldCaregiverId = $booking->caregiver_id;
 

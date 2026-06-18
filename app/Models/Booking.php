@@ -105,6 +105,7 @@ class Booking extends Model
             $this->sitterwise_cut = 0;
             $this->total_service_amount = 0;
             $this->total_amount = 0;
+            $this->paid_to_caregiver_total = 0;
 
             return;
         }
@@ -123,6 +124,7 @@ class Booking extends Model
 
         $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
+        $this->paid_to_caregiver_total = round($this->paid_to_caregiver + $reimbursement + $bonus + $tip, 2);
     }
 
     public function resolveRouteBinding($value, $field = null)

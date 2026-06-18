@@ -355,10 +355,10 @@ class DashboardController extends Controller
                     });
 
                 $stats = [
-                    'total_earned' => $caregiver->bookings()
+                    'totalEarned' => (float) $caregiver->bookings()
                         ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
                         ->sum('paid_to_caregiver_total'),
-                    'completed_jobs' => $caregiver->bookings()
+                    'completedJobs' => $caregiver->bookings()
                         ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
                         ->count(),
                     'rating' => $caregiver->rating,
@@ -409,13 +409,20 @@ class DashboardController extends Controller
             $client = $user->client;
 
             if ($client) {
+                $completedAndPaid = [BookingStatus::Completed->value, BookingStatus::Paid->value];
+
                 $stats = [
-                    'active_bookings' => $client->bookings()
-                        ->where('end_datetime', '>', now())
-                        ->where('status', '!=', BookingStatus::Cancelled->value)
+                    'totalBookings' => $client->bookings()
+                        ->where(function ($q) use ($completedAndPaid) {
+                            $q->whereIn('status', $completedAndPaid)
+                                ->orWhere(function ($q2) {
+                                    $q2->where('end_datetime', '>', now())
+                                        ->where('status', '!=', BookingStatus::Cancelled->value);
+                                });
+                        })
                         ->count(),
-                    'past_bookings' => $client->bookings()
-                        ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
+                    'completedBookings' => $client->bookings()
+                        ->whereIn('status', $completedAndPaid)
                         ->count(),
                     'favorite_caregivers' => $client->favoriteCaregivers()->count(),
                 ];

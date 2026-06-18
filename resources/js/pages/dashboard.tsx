@@ -23,6 +23,7 @@ interface Props {
         totalClients?: number;
         activeBookings?: number;
         totalBookings?: number;
+        completedBookings?: number;
         pastBookings?: number;
         favoriteCaregivers?: number;
         totalEarned?: number;
@@ -168,8 +169,8 @@ export default function Dashboard() {
             return (
                 <ClientDashboard
                     stats={{
-                        totalBookings: stats?.activeBookings || 0,
-                        completedBookings: stats?.pastBookings || 0,
+                        totalBookings: stats?.totalBookings ?? 0,
+                        completedBookings: stats?.completedBookings ?? 0,
                         upcomingBookings: client?.upcomingBookings || [],
                         recentBookings: client?.recentBookings || [],
                     }}

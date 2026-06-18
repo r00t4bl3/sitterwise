@@ -253,6 +253,8 @@ class GuestBookingService
                 'children' => array_map(fn ($child) => [
                     'name' => $child['name'] ?? null,
                     'gender' => $child['gender'] ?? null,
+                    'birth_month' => ! empty($child['birth_month']) ? (int) $child['birth_month'] : null,
+                    'birth_year' => ! empty($child['birth_year']) ? (int) $child['birth_year'] : null,
                     'birth_date' => ! empty($child['birth_month']) && ! empty($child['birth_year'])
                         ? Carbon::createFromDate((int) $child['birth_year'], (int) $child['birth_month'], 1)->format('Y-m-d')
                         : null,

@@ -203,7 +203,13 @@ export function BookingDetailsSection({
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime') {
-                next.end_datetime = autoSetEndDateTime(value);
+                const newStart = new Date(value);
+                const currentEnd = new Date(d.end_datetime);
+                const minEnd = new Date(newStart.getTime() + 4 * 60 * 60 * 1000);
+
+                if (isNaN(currentEnd.getTime()) || currentEnd <= minEnd) {
+                    next.end_datetime = autoSetEndDateTime(value);
+                }
             }
 
             return next;

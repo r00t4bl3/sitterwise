@@ -15,7 +15,14 @@ describe('Pricing Rules - Superadmin', function () {
     });
 
     test('admin can view pricing rules index', function () {
-        PricingRule::factory()->count(3)->create();
+        PricingRule::factory()
+            ->count(3)
+            ->sequence(
+                ['service_type' => 'Babysitter', 'number_of_children' => 1, 'is_for_pets' => false],
+                ['service_type' => 'Petsitter', 'number_of_children' => 1, 'is_for_pets' => true],
+                ['service_type' => 'Companion Care', 'number_of_children' => 2, 'is_for_pets' => false],
+            )
+            ->create();
 
         $response = $this->actingAs($this->user)->get('/pricing-rules');
 

@@ -320,7 +320,7 @@ export default function Wizard({
         if (Object.keys(form.errors).length > 0) {
             form.clearErrors();
         }
-    }, [form.data, form]);
+    }, [form.data]);
 
     // Sync employment status with first experience's "present" checkbox
     useEffect(() => {
@@ -333,7 +333,7 @@ export default function Wizard({
                 },
             }));
         }
-    }, [verifiedEmail, form]);
+    }, [verifiedEmail]);
 
     useEffect(() => {
         form.setData((prev) => {

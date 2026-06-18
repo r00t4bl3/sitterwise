@@ -146,8 +146,8 @@ test('cancelled booking excluded from client dashboard', function () {
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('dashboard')
-        ->where('stats.active_bookings', 1)
-        ->where('stats.past_bookings', 0)
+        ->where('stats.totalBookings', 1)
+        ->where('stats.completedBookings', 0)
     );
 });
 
@@ -174,7 +174,7 @@ test('cancelled booking excluded from caregiver dashboard', function () {
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('dashboard')
-        ->where('stats.completed_jobs', 1)
+        ->where('stats.completedJobs', 1)
     );
 });
 

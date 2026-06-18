@@ -417,6 +417,7 @@ test('calculate total amount does not modify financials for paid booking', funct
         'sitterwise_cut' => 30.00,
         'total_service_amount' => 100.00,
         'total_amount' => 110.00,
+        'paid_to_caregiver_total' => 80.00,
         'charge_to_client_hourly' => 0,
         'total_working_hour' => 0,
     ]);
@@ -428,6 +429,7 @@ test('calculate total amount does not modify financials for paid booking', funct
     $this->assertEquals(30.00, $booking->sitterwise_cut);
     $this->assertEquals(100.00, $booking->total_service_amount);
     $this->assertEquals(110.00, $booking->total_amount);
+    $this->assertEquals(80.00, $booking->paid_to_caregiver_total);
 });
 
 test('calculate total amount zeros financials for cancelled booking', function () {
@@ -444,6 +446,7 @@ test('calculate total amount zeros financials for cancelled booking', function (
         'sitterwise_cut' => 30.00,
         'total_service_amount' => 100.00,
         'total_amount' => 110.00,
+        'paid_to_caregiver_total' => 80.00,
     ]);
 
     $booking->calculateTotalAmount();
@@ -453,6 +456,39 @@ test('calculate total amount zeros financials for cancelled booking', function (
     $this->assertEquals(0.00, $booking->sitterwise_cut);
     $this->assertEquals(0.00, $booking->total_service_amount);
     $this->assertEquals(0.00, $booking->total_amount);
+    $this->assertEquals(0.00, $booking->paid_to_caregiver_total);
+});
+
+test('calculate total amount includes paid_to_caregiver_total for completed booking', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'completed',
+        'start_datetime' => now()->subHours(10),
+        'end_datetime' => now()->subHours(5),
+        'paid_to_caregiver_hourly' => 20.00,
+        'charge_to_client_hourly' => 30.00,
+        'sitterwise_cut_hourly' => 10.00,
+        'reimbursement' => 10.00,
+        'bonus' => 5.00,
+        'tip' => 3.00,
+    ]);
+
+    $booking->calculateTotalAmount();
+
+    $expectedCaregiver = 20.00 * 5; // 100
+    $expectedTotal = $expectedCaregiver + 10.00 + 5.00 + 3.00; // 118
+
+    $this->assertEquals(100.00, $booking->paid_to_caregiver);
+    $this->assertEquals(150.00, $booking->charge_to_client);
+    $this->assertEquals(50.00, $booking->sitterwise_cut);
+    $this->assertEquals(165.00, $booking->total_service_amount);
+    $this->assertEquals(168.00, $booking->total_amount);
+    $this->assertEquals(118.00, $booking->paid_to_caregiver_total);
 });
 
 test('calculate total amount does not modify financials for past-dated confirmed booking', function () {
