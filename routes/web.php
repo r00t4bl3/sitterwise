@@ -118,6 +118,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('bookings/export', [BookingController::class, 'export'])->name('bookings.export')->middleware('admin');
     Route::resource('bookings', BookingController::class)->only(['index', 'create', 'show', 'store', 'update', 'destroy']);
     Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::get('j/{booking}', [JobController::class, 'show'])->name('jobs.short');
     Route::get('jobs/{booking}', [JobController::class, 'show'])->name('jobs.show');
     Route::post('jobs/{booking}/checkout', [JobController::class, 'checkout'])->name('jobs.checkout');
     Route::post('jobs/{booking}/rate', [JobController::class, 'rate'])->name('jobs.rate');

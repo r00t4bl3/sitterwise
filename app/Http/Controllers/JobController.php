@@ -9,6 +9,7 @@ use App\Enums\ServiceType;
 use App\Enums\SpecialConsideration;
 use App\Http\Requests\RateBookingRequest;
 use App\Models\Booking;
+use App\Models\BookingCaregiverNotification;
 use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -100,7 +101,12 @@ class JobController extends Controller
             abort(403, 'Caregiver profile not found');
         }
 
-        if ($booking->caregiver_id !== $caregiver->id) {
+        $isAssigned = $booking->caregiver_id === $caregiver->id;
+        $isInvited = BookingCaregiverNotification::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiver->id)
+            ->exists();
+
+        if (! $isAssigned && ! $isInvited) {
             abort(403, 'You are not authorized to view this job');
         }
 
