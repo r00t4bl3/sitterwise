@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToasterMessage } from '@/components/toaster-message';
 
 interface Experience {
     start_date: string;
@@ -723,6 +724,7 @@ export default function Wizard({
 
     return (
         <div className="min-h-screen bg-background py-12">
+            <ToasterMessage />
             <div className="mx-auto max-w-3xl px-4">
                 {/* Header */}
                 <div className="mb-8 text-center">

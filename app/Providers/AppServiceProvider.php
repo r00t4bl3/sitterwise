@@ -108,11 +108,8 @@ class AppServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
-            return [
-                Limit::perMinute(3)->by($request->ip())
-                    ->response(fn () => back()->withErrors(['email' => 'Too many registration attempts. Please wait a minute.'])),
-                Limit::perHour(1)->by($request->input('email', $request->ip())),
-            ];
+            return Limit::perMinute(3)->by($request->ip())
+                ->response(fn () => back()->withErrors(['email' => 'Too many registration attempts. Please wait a minute.']));
         });
 
         RateLimiter::for('forgot-password', function (Request $request) {
@@ -123,7 +120,8 @@ class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perMinute(3)->by($request->ip())
                     ->response(fn () => back()->withErrors(['email' => 'Too many password reset requests. Please wait a minute.'])),
-                Limit::perHour(1)->by($request->input('email', $request->ip())),
+                Limit::perMinutes(5, 1)->by($request->input('email', $request->ip()))
+                    ->response(fn () => back()->withErrors(['email' => 'Too many password reset requests. Please try again later.'])),
             ];
         });
 
@@ -141,7 +139,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(3)->by($request->ip())
-                ->response(fn () => back()->withErrors(['rate_limit' => 'Too many verification code requests. Please wait a minute.']));
+                ->response(fn () => back()->with('error', 'Too many verification code requests. Please wait a minute.'));
         });
 
         RateLimiter::for('caregiver-otp-verify', function (Request $request) {
@@ -150,7 +148,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(5)->by($request->ip())
-                ->response(fn () => back()->withErrors(['rate_limit' => 'Too many verification attempts. Please wait a minute.']));
+                ->response(fn () => back()->with('error', 'Too many verification attempts. Please wait a minute.'));
         });
 
         RateLimiter::for('caregiver-submit', function (Request $request) {
@@ -158,11 +156,8 @@ class AppServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
-            return [
-                Limit::perMinute(2)->by($request->ip())
-                    ->response(fn () => back()->withErrors(['rate_limit' => 'Too many submission attempts. Please wait a minute.'])),
-                Limit::perHour(1)->by($request->session()->get('verified_email', $request->ip())),
-            ];
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many submission attempts. Please wait a minute.'));
         });
 
         RateLimiter::for('caregiver-save-progress', function (Request $request) {
@@ -179,7 +174,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(3)->by($request->ip())
-                ->response(fn () => back()->withErrors(['rate_limit' => 'Too many requests. Please wait a minute.']));
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
         });
 
         RateLimiter::for('reference-submit', function (Request $request) {
@@ -188,7 +183,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(5)->by($request->ip())
-                ->response(fn () => back()->withErrors(['rate_limit' => 'Too many requests. Please wait a minute.']));
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
         });
 
         RateLimiter::for('guest-booking', function (Request $request) {
@@ -197,7 +192,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(5)->by($request->ip())
-                ->response(fn () => back()->withErrors(['rate_limit' => 'Too many requests. Please wait a minute.']));
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
         });
     }
 }

@@ -2,6 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ToasterMessage } from '@/components/toaster-message';
 
 export default function VerifyEmail() {
     const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -28,6 +29,7 @@ export default function VerifyEmail() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+            <ToasterMessage />
             <div className="w-full max-w-md space-y-8">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">

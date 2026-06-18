@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToasterMessage } from '@/components/toaster-message';
 
 const yearsKnownOptions = [
     { value: '<1', label: 'Less than 1 year' },
@@ -114,6 +115,7 @@ export default function Submit({
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+            <ToasterMessage />
             <div className="w-full max-w-lg">
                 <div className="mb-8 text-center">
                     <img
