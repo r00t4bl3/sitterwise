@@ -26,12 +26,11 @@ class StoreBookingRequest extends FormRequest
                 $serviceType = $this->input('service_type');
 
                 if ($serviceType !== 'group_childcare_invoiced') {
-                    $childIds = $this->input('child_ids', []);
                     $newChildren = $this->input('new_children', []);
 
-                    if (empty($childIds) && empty($newChildren)) {
+                    if (empty($newChildren)) {
                         $validator->errors()->add(
-                            'child_ids',
+                            'new_children',
                             'At least one child is required.',
                         );
                     }
@@ -88,10 +87,6 @@ class StoreBookingRequest extends FormRequest
             'new_client.email' => ['nullable', 'email', 'unique:users,email'],
             'new_client.phone' => ['nullable', 'string'],
             'new_client.client_type' => ['nullable', 'string'],
-            'child_ids' => ['nullable', 'array'],
-            'child_ids.*' => ['integer', 'exists:client_children,id'],
-            'pet_ids' => ['nullable', 'array'],
-            'pet_ids.*' => ['integer', 'exists:client_pets,id'],
             'new_children' => ['nullable', 'array'],
             'new_pets' => ['nullable', 'array'],
             'save_children_pets_to_profile' => ['nullable', 'boolean'],

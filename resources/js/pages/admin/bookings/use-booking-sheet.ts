@@ -94,10 +94,6 @@ interface FormData {
         breed: string;
         notes: string;
     }>;
-    child_ids: number[];
-    pet_ids: number[];
-    deleted_child_ids: number[];
-    deleted_pet_ids: number[];
     save_children_pets_to_profile: boolean;
     children_notes: string;
 }
@@ -224,10 +220,6 @@ export function useBookingSheet({
         },
         new_children: [],
         new_pets: [],
-        child_ids: [],
-        pet_ids: [],
-        deleted_child_ids: [],
-        deleted_pet_ids: [],
         save_children_pets_to_profile: true,
         children_notes: '',
     });
@@ -538,8 +530,6 @@ export function useBookingSheet({
             ...prev,
             client_id: clientId,
             address_id: null,
-            child_ids: [],
-            pet_ids: [],
         }));
         setAddressMode('select');
         setClientMode('select');
@@ -579,11 +569,6 @@ export function useBookingSheet({
 
                 form.setData((prev) => ({
                     ...prev,
-                    child_ids:
-                        data.client.children?.map((c: any) => c.id) || [],
-                    pet_ids: data.client.pets?.map((p: any) => p.id) || [],
-                    new_children: clientChildren,
-                    new_pets: clientPets,
                     location_type: locationType,
                     emergency_instructions:
                         data.client.emergency_instructions || '',
@@ -1030,10 +1015,6 @@ export function useBookingSheet({
                 },
                 new_children: clientChildren,
                 new_pets: clientPets,
-                child_ids: [],
-                pet_ids: [],
-                deleted_child_ids: [],
-                deleted_pet_ids: [],
                 save_children_pets_to_profile: true,
                 children_notes: fullBooking.children_notes || '',
             };

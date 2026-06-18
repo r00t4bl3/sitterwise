@@ -74,7 +74,9 @@ describe('Booking Workflow', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
         ];
 
         actingAs($clientUser)

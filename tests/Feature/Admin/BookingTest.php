@@ -168,7 +168,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -201,7 +203,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Unlisted Hotel Rd',
             'address_line2' => '',
             'address_city' => 'San Diego',
@@ -233,7 +237,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'rental_platform' => 'airbnb',
             'address_line1' => '123 Beach House Way',
             'address_line2' => '',
@@ -271,7 +277,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Home Way',
             'address_line2' => '',
             'address_city' => 'Home City',
@@ -303,7 +311,9 @@ describe('Booking - Admin', function () {
             'end_datetime' => now()->addDays(11)->toISOString(),
             'hotel_id' => $booking->hotel_id,
             'address_id' => $booking->address_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -342,7 +352,9 @@ describe('Booking - Admin', function () {
             'caregiver_id' => '',
             'status' => 'confirmed',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -379,7 +391,9 @@ describe('Booking - Admin', function () {
             'caregiver_id' => '',
             'status' => 'completed',
             'payment_status' => 'paid',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
         ]);
 
         $response->assertRedirect();
@@ -415,7 +429,9 @@ describe('Booking - Admin', function () {
             'caregiver_id' => $caregiver->id,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -445,7 +461,9 @@ describe('Booking - Admin', function () {
             'total_amount' => '200',
             'status' => 'confirmed',
             'payment_status' => 'paid',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'rental_platform' => 'vrbo',
             'address_line1' => '456 Mountain Cabin',
             'address_line2' => '',
@@ -536,7 +554,8 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => $children->pluck('id')->toArray(),
+            'new_children' => $children->map(fn ($c) => ['name' => $c->name, 'gender' => $c->gender, 'birth_month' => $c->birth_month, 'birth_year' => $c->birth_year])->values()->toArray(),
+            'new_pets' => $pets->map(fn ($p) => ['name' => $p->name, 'type' => $p->type, 'breed' => $p->breed, 'notes' => $p->notes])->values()->toArray(),
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -976,7 +995,6 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking without adding new children and retain existing children when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
-        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing children but not saving to profile
         $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
@@ -1020,7 +1038,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => 'Original Child', 'gender' => 'male', 'birth_month' => 5, 'birth_year' => 2020],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1064,7 +1084,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Pet Owner Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1114,7 +1136,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '456 Pet Ave',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1177,7 +1201,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1239,7 +1265,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1307,7 +1335,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1339,7 +1369,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1363,7 +1395,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1394,7 +1428,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->start_datetime->toISOString(),
             'end_datetime' => $booking->end_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1423,7 +1459,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->end_datetime->toISOString(),
             'end_datetime' => $booking->start_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1452,7 +1490,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => now()->subHours(3)->toISOString(),
             'end_datetime' => now()->subHour()->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1515,7 +1555,9 @@ describe('Booking - Admin', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92102',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'children_notes' => 'should be ignored',
         ]);
 
@@ -1551,7 +1593,9 @@ describe('Booking - Admin', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92103',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'children_notes' => 'should be ignored',
         ]);
 
@@ -1821,7 +1865,9 @@ describe('Booking - Admin', function () {
                 'end_datetime' => $endStr,
                 'status' => 'received',
                 'payment_status' => 'pending',
-                'child_ids' => [$child->id],
+                'new_children' => [
+                    ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+                ],
                 'address_line1' => '100 Timezone St',
                 'address_line2' => '',
                 'address_city' => 'San Diego',
@@ -1890,7 +1936,9 @@ describe('Booking - Admin', function () {
                 'end_datetime' => '2026-07-15T20:00Z',     // 1 PM PT (NOT double-converted)
                 'status' => 'received',
                 'payment_status' => 'pending',
-                'child_ids' => [$child->id],
+                'new_children' => [
+                    ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+                ],
                 'address_line1' => '100 Timezone St',
                 'address_line2' => '',
                 'address_city' => 'San Diego',

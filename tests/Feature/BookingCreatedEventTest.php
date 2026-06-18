@@ -76,7 +76,6 @@ describe('BookingCreated fires for single-date submissions', function () {
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
             'address_zip' => '90001',
-            'child_ids' => [],
             'new_children' => [
                 ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
             ],
@@ -106,8 +105,9 @@ describe('BookingCreated fires for single-date submissions', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
-            'child_ids' => [$child->id],
-            'new_children' => [],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'new_pets' => [],
             'sitter_preferences' => [],
             'children_notes' => '',
@@ -188,7 +188,6 @@ describe('BookingGroupCreated fires for multi-date submissions', function () {
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
             'address_zip' => '90001',
-            'child_ids' => [],
             'new_children' => [
                 ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
             ],
@@ -224,8 +223,9 @@ describe('BookingGroupCreated fires for multi-date submissions', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92101',
-            'child_ids' => [$child->id],
-            'new_children' => [],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'new_pets' => [],
             'sitter_preferences' => [],
             'children_notes' => '',

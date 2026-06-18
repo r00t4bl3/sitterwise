@@ -523,7 +523,7 @@ class Booking extends Model
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
             'location' => $group->location_type === 'hotel'
-                ? ($group->hotel_name ?: $group->hotel?->name ?? 'Hotel').' - '.$group->address_line1
+                ? ($group->hotel_name ?: $group->hotel?->name ?? 'Hotel').' - '.trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip)
                 : $group->address_line1,
             'address' => trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip),
             'hotel_name' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',

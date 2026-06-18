@@ -27,12 +27,11 @@ class UpdateBookingRequest extends FormRequest
                 $serviceType = $this->input('service_type');
 
                 if ($serviceType !== 'group_childcare_invoiced') {
-                    $childIds = $this->input('child_ids', []);
                     $newChildren = $this->input('new_children', []);
 
-                    if (empty($childIds) && empty($newChildren)) {
+                    if (empty($newChildren)) {
                         $validator->errors()->add(
-                            'child_ids',
+                            'new_children',
                             'At least one child is required.',
                         );
                     }
@@ -80,10 +79,6 @@ class UpdateBookingRequest extends FormRequest
             'address_city' => ['nullable', 'string'],
             'address_state' => ['nullable', 'string'],
             'address_zip' => ['nullable', 'string'],
-            'deleted_child_ids' => ['nullable', 'array'],
-            'deleted_child_ids.*' => ['integer', 'exists:client_children,id'],
-            'deleted_pet_ids' => ['nullable', 'array'],
-            'deleted_pet_ids.*' => ['integer', 'exists:client_pets,id'],
             'new_children' => ['nullable', 'array'],
             'new_pets' => ['nullable', 'array'],
             'save_children_pets_to_profile' => ['nullable', 'boolean'],

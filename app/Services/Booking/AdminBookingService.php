@@ -282,51 +282,27 @@ class AdminBookingService implements BookingServiceInterface
         $isGroupBooking = $validated['service_type'] === 'group_childcare_invoiced';
         $hasChildrenNotes = ! empty($validated['children_notes']);
 
-        // Prepare children snapshot (filter profile by child_ids + add new_children)
+        // Prepare children snapshot from new_children
         if ($isGroupBooking && $hasChildrenNotes) {
             $childrenSnapshot = null;
-        } else {
-            $childrenQuery = $client?->children ?? collect();
-            if (array_key_exists('child_ids', $validated)) {
-                $selectedChildIds = $validated['child_ids'] ?? [];
-                $childrenQuery = $childrenQuery->filter(fn ($child) => in_array($child->id, $selectedChildIds));
-            }
-
-            $childrenSnapshot = $childrenQuery->map(fn ($child) => [
-                'name' => $child->name,
-                'gender' => $child->gender,
-                'birth_month' => $child->birth_month,
-                'birth_year' => $child->birth_year,
-            ])->values()->toArray();
-
-            if (! empty($validated['new_children'])) {
-                foreach ($validated['new_children'] as $childData) {
-                    if (! empty($childData['name'])) {
-                        $childrenSnapshot[] = [
-                            'name' => $childData['name'],
-                            'gender' => $childData['gender'] ?? null,
-                            'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                            'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
-                        ];
-                    }
+        } elseif (! empty($validated['new_children'])) {
+            $childrenSnapshot = [];
+            foreach ($validated['new_children'] as $childData) {
+                if (! empty($childData['name'])) {
+                    $childrenSnapshot[] = [
+                        'name' => $childData['name'],
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    ];
                 }
             }
+        } else {
+            $childrenSnapshot = [];
         }
 
-        // Prepare pets snapshot (filter profile by pet_ids + add new_pets)
-        $petsQuery = $client?->pets ?? collect();
-        if (array_key_exists('pet_ids', $validated)) {
-            $selectedPetIds = $validated['pet_ids'] ?? [];
-            $petsQuery = $petsQuery->filter(fn ($pet) => in_array($pet->id, $selectedPetIds));
-        }
-
-        $petsSnapshot = $petsQuery->map(fn ($pet) => [
-            'name' => $pet->name,
-            'type' => $pet->type,
-            'breed' => $pet->breed,
-            'notes' => $pet->notes,
-        ])->values()->toArray();
-
+        // Prepare pets snapshot from new_pets
+        $petsSnapshot = [];
         if (! empty($validated['new_pets'])) {
             foreach ($validated['new_pets'] as $petData) {
                 if (! empty($petData['name'])) {
@@ -681,8 +657,6 @@ class AdminBookingService implements BookingServiceInterface
 
         $nonColumnFields = [
             'new_children', 'new_pets',
-            'deleted_child_ids', 'deleted_pet_ids',
-            'child_ids', 'pet_ids',
             'save_children_pets_to_profile',
         ];
 
