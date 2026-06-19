@@ -128,19 +128,6 @@ class CaregiverApplicationController extends Controller
             Session::put('verified_email', $email);
         }
 
-        // Time gate: reject submissions less than 30 seconds after OTP verification
-        if (app()->isProduction()) {
-            $verifiedAt = Session::get('verified_at');
-            if ($verifiedAt && now()->diffInSeconds($verifiedAt) < 30) {
-                Log::channel('submission')->warning('Application submission rejected: too fast', [
-                    'email' => $email,
-                    'elapsed' => now()->diffInSeconds($verifiedAt),
-                ]);
-
-                return back()->withErrors(['general' => 'Please take your time filling out the application.']);
-            }
-        }
-
         Log::channel('submission')->info('Application submission started', [
             'email' => $email,
             'experience_count' => count($request->input('experiences', [])),

@@ -30,7 +30,7 @@ Admin opens the same 8-step wizard with a pre-set email session, bypassing `Veri
 
 - **New:** Admin route that sets `verified_email` session + redirects to wizard
 - **Modified:** `routes/web.php` — new admin route skipping `VerifyEmail` middleware
-- **Modified:** `CaregiverApplicationController::submit()` — accept email from request params when admin-initiated, skip time gate
+- **Modified:** `CaregiverApplicationController::submit()` — accept email from request params when admin-initiated
 - **Modified:** `StoreCaregiverApplicationRequest` — skip signature-must-match-name check for admin
 - **Pro:** Zero new UI, minimal code, full fidelity
 - **Con:** Admin clicks through all 8 steps; wizard UX designed for applicants, not admins; file uploads still single-file inputs
