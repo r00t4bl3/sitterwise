@@ -10,7 +10,10 @@ import {
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeRangeInPT, formatDisplayDateShortInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateTimeRangeInPT,
+    formatDisplayDateShortInPT,
+} from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -148,8 +151,8 @@ export default function CaregiverBookings() {
                 : `single-${booking.id}`;
 
             if (!acc[key]) {
-acc[key] = [];
-}
+                acc[key] = [];
+            }
 
             acc[key].push(booking);
 
@@ -311,7 +314,10 @@ acc[key] = [];
                                                             <div className="flex items-center gap-1 text-yellow-600">
                                                                 <Clock className="h-3.5 w-3.5" />
                                                                 <span className="text-xs font-medium">
-                                                                    {secondsLeft}s
+                                                                    {
+                                                                        secondsLeft
+                                                                    }
+                                                                    s
                                                                 </span>
                                                             </div>
                                                         ) : booking.status ===

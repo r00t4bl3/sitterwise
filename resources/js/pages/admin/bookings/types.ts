@@ -224,6 +224,7 @@ export interface Props {
     clients: Client[];
     hotels: Hotel[];
     caregivers: Caregiver[];
+    clients_with_payment_capability: number[];
     service_types: Array<{ value: string; label: string }>;
     location_types: Array<{ value: string; label: string }>;
     booking_statuses: Array<{

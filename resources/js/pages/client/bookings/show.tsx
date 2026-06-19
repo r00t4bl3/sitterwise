@@ -1,6 +1,7 @@
 import { Link, Head } from '@inertiajs/react';
 import {
     Calendar,
+    CreditCard,
     ExternalLink,
     MapPin,
     User,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { StatusBadge } from '@/components/status-badge';
+import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -82,6 +84,10 @@ interface Booking {
         bookings_count: number;
         sibling_bookings: SiblingBooking[];
     } | null;
+    requires_payment: boolean;
+    payment_status: string | null;
+    payment_setup_intent: string | null;
+    has_payment_method: boolean;
 }
 
 interface BookingStatus {
@@ -163,7 +169,8 @@ export default function BookingDetail({
     const hasReimbursement = booking.reimbursement != null;
     const hasTotal = booking.charge_to_client != null;
 
-    const showFeesSection = hasHourlyRate || hasHours || hasReimbursement || hasTotal;
+    const showFeesSection =
+        hasHourlyRate || hasHours || hasReimbursement || hasTotal;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -202,11 +209,21 @@ export default function BookingDetail({
                                         status={booking.status}
                                         bookingStatuses={booking_statuses}
                                     />
-                                    {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                        <Badge variant="outline" className="text-xs">
-                                            Multi-Day ({booking.booking_group.bookings_count})
-                                        </Badge>
-                                    )}
+                                    {booking.booking_group &&
+                                        booking.booking_group.bookings_count >
+                                            1 && (
+                                            <Badge
+                                                variant="outline"
+                                                className="text-xs"
+                                            >
+                                                Multi-Day (
+                                                {
+                                                    booking.booking_group
+                                                        .bookings_count
+                                                }
+                                                )
+                                            </Badge>
+                                        )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -226,31 +243,51 @@ export default function BookingDetail({
                                     </span>
                                 </div>
 
-                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
-                                        {booking.booking_group.sibling_bookings.map((sibling) => (
-                                            <Link
-                                                key={sibling.id}
-                                                href={`/bookings/${sibling.ulid}`}
-                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
-                                            >
-                                                <span className="text-muted-foreground">
-                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
-                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    {sibling.caregiver_name && (
-                                                        <span className="text-muted-foreground">{sibling.caregiver_name}</span>
-                                                    )}
-                                                    <StatusBadge
-                                                        status={sibling.status}
-                                                        bookingStatuses={booking_statuses}
-                                                    />
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
+                                {booking.booking_group &&
+                                    booking.booking_group.bookings_count >
+                                        1 && (
+                                        <div className="ml-6 space-y-1.5 border-l-2 border-border pl-3">
+                                            {booking.booking_group.sibling_bookings.map(
+                                                (sibling) => (
+                                                    <Link
+                                                        key={sibling.id}
+                                                        href={`/bookings/${sibling.ulid}`}
+                                                        className="flex items-center justify-between rounded px-2 py-1 text-xs transition-colors hover:bg-accent"
+                                                    >
+                                                        <span className="text-muted-foreground">
+                                                            {formatDisplayDateInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            -{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.end_datetime,
+                                                            )}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            {sibling.caregiver_name && (
+                                                                <span className="text-muted-foreground">
+                                                                    {
+                                                                        sibling.caregiver_name
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                            <StatusBadge
+                                                                status={
+                                                                    sibling.status
+                                                                }
+                                                                bookingStatuses={
+                                                                    booking_statuses
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </Link>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
 
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
@@ -272,10 +309,12 @@ export default function BookingDetail({
                                     <div className="flex items-center gap-2">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
                                         <a
-                                        href={`tel:${booking.client_phone}`}
-                                        className="text-sm text-primary hover:underline"
-                                    >
-                                        {formatPhoneDisplay(booking.client_phone)}
+                                            href={`tel:${booking.client_phone}`}
+                                            className="text-sm text-primary hover:underline"
+                                        >
+                                            {formatPhoneDisplay(
+                                                booking.client_phone,
+                                            )}
                                         </a>
                                     </div>
                                 )}
@@ -457,7 +496,10 @@ export default function BookingDetail({
                                                     Hourly Rate
                                                 </span>
                                                 <span className="text-sm font-medium text-foreground">
-                                                    {formatCurrency(booking.charge_to_client_hourly)}/hr
+                                                    {formatCurrency(
+                                                        booking.charge_to_client_hourly,
+                                                    )}
+                                                    /hr
                                                 </span>
                                             </div>
                                         )}
@@ -467,7 +509,9 @@ export default function BookingDetail({
                                                     Hours
                                                 </span>
                                                 <span className="text-sm font-medium text-foreground">
-                                                    {Number(booking.total_working_hour).toFixed(1)}
+                                                    {Number(
+                                                        booking.total_working_hour,
+                                                    ).toFixed(1)}
                                                 </span>
                                             </div>
                                         )}
@@ -478,12 +522,16 @@ export default function BookingDetail({
                                                         Reimbursement
                                                     </span>
                                                     <span className="text-sm font-medium text-foreground">
-                                                        {formatCurrency(booking.reimbursement)}
+                                                        {formatCurrency(
+                                                            booking.reimbursement,
+                                                        )}
                                                     </span>
                                                 </div>
                                                 {booking.reimbursement_description && (
                                                     <p className="-mt-1 text-right text-xs text-muted-foreground">
-                                                        {booking.reimbursement_description}
+                                                        {
+                                                            booking.reimbursement_description
+                                                        }
                                                     </p>
                                                 )}
                                             </>
@@ -496,7 +544,9 @@ export default function BookingDetail({
                                                         Total
                                                     </span>
                                                     <span className="text-sm font-bold text-foreground">
-                                                        {formatCurrency(booking.charge_to_client)}
+                                                        {formatCurrency(
+                                                            booking.charge_to_client,
+                                                        )}
                                                     </span>
                                                 </div>
                                             </>
@@ -504,6 +554,30 @@ export default function BookingDetail({
                                     </div>
                                 </div>
                             )}
+
+                            {booking.requires_payment &&
+                                booking.payment_status === 'pending' &&
+                                !booking.has_payment_method &&
+                                booking.payment_setup_intent && (
+                                    <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-600 dark:bg-yellow-900/20">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <CreditCard className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                            <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                                                Payment Required
+                                            </h3>
+                                        </div>
+                                        <p className="mb-4 text-xs text-yellow-700 dark:text-yellow-300">
+                                            Please add a card to complete your
+                                            booking. Your card won't be charged
+                                            until after care is complete.
+                                        </p>
+                                        <StripeCheckout
+                                            clientSecret={
+                                                booking.payment_setup_intent
+                                            }
+                                        />
+                                    </div>
+                                )}
                         </div>
                     </div>
                 </div>

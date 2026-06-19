@@ -12,13 +12,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 #[Fillable(['name', 'email', 'password', 'role', 'profile_photo_path', 'profile_photo_url', 'last_login_at', 'bubble_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasPushSubscriptions, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -75,26 +76,14 @@ class User extends Authenticatable
         };
     }
 
-    /**
-     * Route notifications for the SMS channel.
-     */
-    public function routeNotificationForMail(): string
-    {
-        if ($this->isAdmin() || $this->isSuperAdmin()) {
-            return config('mail.from.address');
-        }
-
-        return $this->email;
-    }
-
     public function routeNotificationForSms(): ?string
     {
         if ($this->isClient()) {
-            return $this->client?->phone;
+            return $this->client && ! $this->client->sms_opted_out ? $this->client->phone : null;
         }
 
         if ($this->isCaregiver()) {
-            return $this->caregiver?->phone;
+            return $this->caregiver && ! $this->caregiver->sms_opted_out ? $this->caregiver->phone : null;
         }
 
         return null;

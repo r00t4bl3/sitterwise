@@ -39,7 +39,10 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateInPT, formatDisplayDateTimeInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateInPT,
+    formatDisplayDateTimeInPT,
+} from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -55,6 +58,7 @@ interface Availability {
     date: string;
     time_slots: string[];
     specific_time: string | null;
+    booked_slots?: string[];
 }
 
 interface Booking {

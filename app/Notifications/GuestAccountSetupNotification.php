@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Mail\GuestAccountSetupMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,14 +18,7 @@ class GuestAccountSetupNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
-    }
-
-    public function toMail(object $notifiable)
-    {
-        $address = $notifiable->routeNotificationFor('mail', $this);
-
-        return (new GuestAccountSetupMail($this->booking, $this->resetToken))->to($address);
+        return ['database'];
     }
 
     public function toArray(object $notifiable): array

@@ -33,7 +33,7 @@ interface AutocompleteProps {
     loading?: boolean;
     displayValue?: string;
     showAddNew?: boolean;
-    onAddNew?: () => void;
+    onAddNew?: (query: string) => void;
     onItemClick?: (item: { id: number; name: string }) => void;
     renderItem?: (item: { id: number; name: string }) => React.ReactNode;
 }
@@ -158,7 +158,7 @@ export function Autocomplete({
                     showAddNew &&
                     onAddNew
                 ) {
-                    onAddNew();
+                    onAddNew(query);
                     setShowSuggestions(false);
                     setActiveIndex(-1);
                 }
@@ -227,7 +227,7 @@ export function Autocomplete({
                                     id={`${listboxId}-option-${suggestions.length}`}
                                     data-suggestion
                                     onClick={() => {
-                                        onAddNew();
+                                        onAddNew(query);
                                         setShowSuggestions(false);
                                         setActiveIndex(-1);
                                     }}

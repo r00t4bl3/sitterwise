@@ -1103,6 +1103,21 @@ class ImportUserService
         return (string) Str::of($name)->trim()->lower()->title();
     }
 
+    public static function parseNamePart(?string $fullName, string $part): string
+    {
+        if (! $fullName) {
+            return '';
+        }
+
+        $parts = explode(' ', trim($fullName), 2);
+
+        if ($part === 'first') {
+            return self::formatName($parts[0] ?? '');
+        }
+
+        return self::formatName($parts[1] ?? '');
+    }
+
     public static function formatPhone(?string $phone): ?string
     {
         return PhoneTrait::normalizePhone($phone);
@@ -1265,6 +1280,7 @@ class ImportUserService
         $newBookings = [];
         $newBookingExternalIds = [];
         $updateBookings = [];
+        $updateGroups = [];
 
         $i = 0;
         foreach ($hits as $hit) {
@@ -1301,6 +1317,11 @@ class ImportUserService
             $bubbleStatus = strtolower($source['job_status_option_job_status'] ?? 'received');
             $status = $statusMapping[$bubbleStatus] ?? BookingStatus::Received;
 
+            $endDate = self::timestampToDateTime($source['end_date_date'] ?? null);
+            if ($endDate && Carbon::parse($endDate)->isPast() && in_array($status, [BookingStatus::Confirmed, BookingStatus::Received, BookingStatus::Pending], true)) {
+                $status = BookingStatus::Completed;
+            }
+
             $geo = $source['street_address_geographic_address'] ?? [];
             $components = $geo['components'] ?? [];
 
@@ -1331,8 +1352,8 @@ class ImportUserService
                 'address_zip' => $components['zip code'] ?? null,
                 'hotel_id' => self::findHotelId($hotelNameText, $bubbleSlug),
                 'hotel_name' => $resolvedHotelName,
-                'client_first_name' => self::formatName($source['client_first_name1_text'] ?? null),
-                'client_last_name' => self::formatName($source['client_last_name1_text'] ?? null),
+                'client_first_name' => self::formatName($source['client_first_name1_text'] ?? null) ?: self::parseNamePart($source['client_first_name_last_name_text'] ?? null, 'first'),
+                'client_last_name' => self::formatName($source['client_last_name1_text'] ?? null) ?: self::parseNamePart($source['client_first_name_last_name_text'] ?? null, 'last'),
                 'client_email' => $source['client_email_text'] ?? null,
                 'client_phone' => self::formatPhone($source['client_phone_text'] ?? null),
                 'caregiver_notes' => $source['cg_checkout_job_notes_text'] ?? $source['caregiver_notes_text'] ?? null,
@@ -1347,6 +1368,7 @@ class ImportUserService
                     : null,
                 'pets' => self::parsePets($source['pets_text'] ?? null),
                 'special_considerations' => self::mapSpecialConsiderations($source),
+                'requires_payment' => ! $isInvoiced,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -1369,7 +1391,7 @@ class ImportUserService
                 'caregiver_id' => $caregiver?->id,
                 'confirmed_at' => $caregiver ? (self::timestampToDateTime($source['confirmed_at_date'] ?? null) ?? $now) : null,
                 'start_datetime' => self::timestampToDateTime($source['start_date_date'] ?? null),
-                'end_datetime' => self::timestampToDateTime($source['end_date_date'] ?? null),
+                'end_datetime' => $endDate,
                 'status' => $status->value,
                 'total_working_hour' => $hours,
                 'charge_to_client_hourly' => $clientHourly,
@@ -1412,6 +1434,7 @@ class ImportUserService
             if ($existing) {
                 if ($force) {
                     $updateBookings[$existing->id] = $bookingData;
+                    $updateGroups[$existing->booking_group_id] = $groupData;
                 }
             } else {
                 $newGroups[] = $groupData;
@@ -1463,6 +1486,13 @@ class ImportUserService
                 foreach ($chunk as $id) {
                     DB::table('bookings')->where('id', $id)->update($updateBookings[$id]);
                 }
+            }
+        }
+
+        // Bulk update existing booking groups
+        if (! empty($updateGroups)) {
+            foreach ($updateGroups as $groupId => $groupData) {
+                DB::table('booking_groups')->where('id', $groupId)->update($groupData);
             }
         }
 
@@ -2041,6 +2071,13 @@ class ImportUserService
 
             if (empty($baseSlug)) {
                 $baseSlug = 'caregiver';
+            }
+
+            if (
+                Caregiver::where('slug', $baseSlug)->where('id', '!=', $caregiver->id)->exists()
+                && $caregiver->last_name
+            ) {
+                $baseSlug = $firstName.'-'.Str::slug($caregiver->last_name);
             }
 
             $originalSlug = $baseSlug;

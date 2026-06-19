@@ -83,6 +83,8 @@ interface Props {
     filters: {
         search: string | null;
         status: string | null;
+        sort: string;
+        direction: 'asc' | 'desc';
     };
 }
 
@@ -97,6 +99,14 @@ export default function CaregiversIndex() {
         undefined,
     );
 
+    const sortFieldRef = useRef(filters.sort || 'id');
+    const sortDirRef = useRef<'asc' | 'desc'>(
+        (filters.direction as 'asc' | 'desc') || 'asc',
+    );
+
+    const sortField = filters.sort || 'id';
+    const sortDir = (filters.direction as 'asc' | 'desc') || 'asc';
+
     const applyFilters = (search: string, status: string | null) => {
         const params: Record<string, string> = {};
 
@@ -108,10 +118,23 @@ export default function CaregiversIndex() {
             params.status = status;
         }
 
+        if (sortFieldRef.current !== 'id' || sortDirRef.current !== 'asc') {
+            params.sort = sortFieldRef.current;
+            params.direction = sortDirRef.current;
+        }
+
         router.get('/caregivers', params, {
             preserveState: true,
             replace: true,
         });
+    };
+
+    const handleSort = (field: string) => {
+        const newDir =
+            field === sortField && sortDir === 'asc' ? 'desc' : 'asc';
+        sortFieldRef.current = field;
+        sortDirRef.current = newDir;
+        applyFilters(searchQuery, statusFilter);
     };
 
     const handleSearchChange = (value: string) => {
@@ -130,6 +153,12 @@ export default function CaregiversIndex() {
     useEffect(() => {
         return () => clearTimeout(debounceTimer.current);
     }, []);
+
+    useEffect(() => {
+        sortFieldRef.current = filters.sort || 'id';
+        sortDirRef.current =
+            (filters.direction as 'asc' | 'desc') || 'asc';
+    }, [filters.sort, filters.direction]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -220,16 +249,40 @@ export default function CaregiversIndex() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    ID
+                                    <button onClick={() => handleSort('id')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        ID
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'id' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'id' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Name
+                                    <button onClick={() => handleSort('last_name')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        Name
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'last_name' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'last_name' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Rating
+                                    <button onClick={() => handleSort('rating')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        Rating
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'rating' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'rating' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    Age
+                                    <button onClick={() => handleSort('date_of_birth')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                        Age
+                                        <span className="text-[9px] leading-none">
+                                            <span className={sortField === 'date_of_birth' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
+                                            <span className={sortField === 'date_of_birth' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                        </span>
+                                    </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Area
@@ -252,7 +305,8 @@ export default function CaregiversIndex() {
                             {caregivers.data.map((caregiver) => (
                                 <tr
                                     key={caregiver.id}
-                                    className="border-b border-border transition hover:bg-blush"
+                                    onClick={() => router.visit(`/caregivers/${caregiver.id}`)}
+                                    className="cursor-pointer border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {caregiver.id}
@@ -273,6 +327,7 @@ export default function CaregiversIndex() {
                                             />
                                             <Link
                                                 href={`/caregivers/${caregiver.id}`}
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"
                                             >
                                                 {caregiver.first_name}{' '}
@@ -367,9 +422,18 @@ export default function CaregiversIndex() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {caregiver.phone
-                                            ? <a href={`tel:${caregiver.phone}`} className="text-primary hover:underline">{formatPhoneDisplay(caregiver.phone)}</a>
-                                            : '—'}
+                                        {caregiver.phone ? (
+                                            <a
+                                                href={`tel:${caregiver.phone}`}
+                                                className="text-primary hover:underline"
+                                            >
+                                                {formatPhoneDisplay(
+                                                    caregiver.phone,
+                                                )}
+                                            </a>
+                                        ) : (
+                                            '—'
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
@@ -403,13 +467,15 @@ export default function CaregiversIndex() {
                                         )}
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
-                                        <Button asChild className="h-8">
-                                            <Link
-                                                href={`/caregivers/${caregiver.id}`}
-                                            >
-                                                View
-                                            </Link>
-                                        </Button>
+                                        <span onClick={(e) => e.stopPropagation()}>
+                                            <Button asChild className="h-8">
+                                                <Link
+                                                    href={`/caregivers/${caregiver.id}`}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </span>
                                     </td>
                                 </tr>
                             ))}

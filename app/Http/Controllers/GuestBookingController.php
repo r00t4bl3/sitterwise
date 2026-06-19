@@ -66,6 +66,7 @@ class GuestBookingController extends Controller
             'token' => $token,
             'stripe_public_key' => config('services.stripe.public'),
             'session_id' => $sessionId,
+            'service_types' => $this->guestBookingService->getServiceTypes(),
             'location_types' => array_map(
                 fn ($type) => ['value' => $type->value, 'label' => $type->label()],
                 LocationType::cases(),

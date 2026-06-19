@@ -42,6 +42,8 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
             ],
+            'how_did_you_hear' => 'search_engine',
+            'sms_consent' => true,
         ];
 
         $response = $this->post(route('guest.bookings.store'), $guestData);
@@ -71,6 +73,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Kid 1', 'gender' => 'female', 'birth_month' => '5', 'birth_year' => '2021'],
             ],
+            'sms_consent' => true,
         ];
 
         // Setup PricingRule
@@ -134,6 +137,7 @@ describe('Guest Booking Workflow', function () {
                 ['name' => 'Buddy', 'type' => 'dog', 'breed' => 'Golden Retriever', 'notes' => 'Friendly'],
                 ['name' => 'Whiskers', 'type' => 'cat', 'breed' => '', 'notes' => 'Indoor only'],
             ],
+            'sms_consent' => true,
         ];
 
         $mockService = mock(GuestBookingService::class)->makePartial();
@@ -218,6 +222,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'TZ Kid', 'gender' => 'male', 'birth_month' => '6', 'birth_year' => '2022'],
             ],
+            'sms_consent' => true,
         ];
 
         PricingRule::create([
@@ -343,6 +348,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2022'],
             ],
+            'sms_consent' => true,
         ];
 
         $mockService = mock(GuestBookingService::class)->makePartial();
@@ -390,6 +396,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
             ],
+            'sms_consent' => true,
         ];
 
         $mockService = mock(GuestBookingService::class)->makePartial();
@@ -437,6 +444,7 @@ describe('Guest Booking Workflow', function () {
             'new_children' => [
                 ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '3', 'birth_year' => '2023'],
             ],
+            'sms_consent' => true,
         ];
 
         $mockService = mock(GuestBookingService::class)->makePartial();
@@ -450,5 +458,125 @@ describe('Guest Booking Workflow', function () {
 
         expect($client->phone)->toBe('+447900123456');
         expect($booking->client_phone)->toBe('+447900123456');
+    });
+
+    test('validation rejects missing sms_consent', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        $guestData = [
+            'client_first_name' => 'No',
+            'client_last_name' => 'Consent',
+            'client_email' => 'no.consent@example.com',
+            'client_phone' => '+11234567890',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '456 Guest Ln',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Child 1', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
+            ],
+            'how_did_you_hear' => 'search_engine',
+            // sms_consent intentionally omitted
+        ];
+
+        $response = $this->post(route('guest.bookings.store'), $guestData);
+
+        $response->assertSessionHasErrors(['sms_consent']);
+        $response->assertStatus(302);
+    });
+
+    test('sms consent Yes stores sms_opted_out as false', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $pendingData = [
+            'client_first_name' => 'Consent',
+            'client_last_name' => 'Yes',
+            'client_email' => 'consent.yes@example.com',
+            'client_phone' => '+15551234567',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '123 Yes St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2022'],
+            ],
+            'sms_consent' => true,
+        ];
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
+
+        $user = User::where('email', 'consent.yes@example.com')->first();
+        $client = Client::where('user_id', $user->id)->first();
+
+        expect($client->sms_opted_out)->toBeFalse();
+    });
+
+    test('sms consent No stores sms_opted_out as true', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $pendingData = [
+            'client_first_name' => 'Consent',
+            'client_last_name' => 'No',
+            'client_email' => 'consent.no@example.com',
+            'client_phone' => '+15559876543',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '456 No Way',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Kid', 'gender' => 'male', 'birth_month' => '3', 'birth_year' => '2023'],
+            ],
+            'sms_consent' => false,
+        ];
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        $mockService->createBookingWithPayment($pendingData, 'pm_test_token');
+
+        $user = User::where('email', 'consent.no@example.com')->first();
+        $client = Client::where('user_id', $user->id)->first();
+
+        expect($client->sms_opted_out)->toBeTrue();
     });
 });

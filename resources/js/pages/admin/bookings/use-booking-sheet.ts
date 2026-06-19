@@ -94,10 +94,6 @@ interface FormData {
         breed: string;
         notes: string;
     }>;
-    child_ids: number[];
-    pet_ids: number[];
-    deleted_child_ids: number[];
-    deleted_pet_ids: number[];
     save_children_pets_to_profile: boolean;
     children_notes: string;
 }
@@ -123,6 +119,7 @@ export function useBookingSheet({
     const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
     const [sheetMode, setSheetMode] = useState<SheetMode>('create');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showPastBookingDialog, setShowPastBookingDialog] = useState(false);
 
     const [clientSuggestions, setClientSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
@@ -135,14 +132,21 @@ export function useBookingSheet({
             id: number;
             name: string;
             age: number | null;
-            tier: number;
-            tierLabel: string;
             matchIcons: string[];
             hasBeenNotified: boolean;
             [key: string]: unknown;
         }>
     >([]);
-
+    const [caregiverAllIds, setCaregiverAllIds] = useState<number[]>([]);
+    const [caregiverTotal, setCaregiverTotal] = useState(0);
+    const [caregiverCurrentPage, setCaregiverCurrentPage] = useState(1);
+    const [caregiverLastPage, setCaregiverLastPage] = useState(1);
+    const [
+        loadingCaregiverRecommendations,
+        setLoadingCaregiverRecommendations,
+    ] = useState(false);
+    const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
+    const [caregiverSearch, setCaregiverSearch] = useState('');
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [bookingChildren, setBookingChildren] = useState<
         Array<{
@@ -216,25 +220,36 @@ export function useBookingSheet({
         },
         new_children: [],
         new_pets: [],
-        child_ids: [],
-        pet_ids: [],
-        deleted_child_ids: [],
-        deleted_pet_ids: [],
         save_children_pets_to_profile: true,
         children_notes: '',
     });
 
-    const populateCaregiverSuggestions = async () => {
-        if (!editingBooking?.booking_group?.client_id) {
+    const populateCaregiverSuggestions = async (
+        page = 1,
+        ageFilter = 'all',
+        search = '',
+    ) => {
+        const clientId =
+            editingBooking?.booking_group?.client_id ?? form.data.client_id;
+
+        if (!clientId) {
             return;
+        }
+
+        if (page === 1) {
+            setLoadingCaregiverRecommendations(true);
         }
 
         try {
             const params = new URLSearchParams({
-                client_id: editingBooking.booking_group?.client_id.toString(),
+                client_id: clientId.toString(),
+                page: page.toString(),
+                per_page: '20',
+                age_filter: ageFilter,
             });
+            params.append('search', search);
 
-            if (editingBooking.id) {
+            if (editingBooking?.id) {
                 params.append('booking_id', editingBooking.id.toString());
             }
 
@@ -251,7 +266,7 @@ export function useBookingSheet({
             }
 
             const addressCity =
-                editingBooking.booking_group?.address_city ||
+                editingBooking?.booking_group?.address_city ||
                 form.data.address_city;
 
             if (addressCity) {
@@ -261,20 +276,105 @@ export function useBookingSheet({
             const response = await fetch(
                 `/bookings/recommended-caregivers?${params}`,
             );
-            const data = await response.json();
+            const json = await response.json();
+            const data = json.data as unknown as Array<{
+                id: number;
+                name: string;
+                age: number | null;
 
-            setCaregiverSuggestions(
-                data as unknown as Array<{
-                    id: number;
-                    name: string;
-                    age: number | null;
-                    tier: number;
-                    tierLabel: string;
-                    matchIcons: string[];
-                    hasBeenNotified: boolean;
-                    [key: string]: unknown;
-                }>,
+                matchIcons: string[];
+                hasBeenNotified: boolean;
+                [key: string]: unknown;
+            }>;
+
+            if (page === 1) {
+                setCaregiverSuggestions(data);
+                setCaregiverAllIds(json.all_ids as number[]);
+            } else {
+                setCaregiverSuggestions((prev) => [...prev, ...data]);
+            }
+
+            setCaregiverTotal(json.meta.total as number);
+            setCaregiverCurrentPage(json.meta.current_page as number);
+            setCaregiverLastPage(json.meta.last_page as number);
+        } catch (error) {
+            console.error('Error fetching recommended caregivers:', error);
+
+            if (page === 1) {
+                setCaregiverSuggestions(
+                    caregivers.map((c) => ({
+                        id: c.id,
+                        name: c.name,
+                        age: null,
+                        matchIcons: [],
+                        hasBeenNotified: false,
+                    })) as unknown as Array<{
+                        id: number;
+                        name: string;
+                        age: number | null;
+
+                        matchIcons: string[];
+                        hasBeenNotified: boolean;
+                        [key: string]: unknown;
+                    }>,
+                );
+            }
+        } finally {
+            if (page === 1) {
+                setLoadingCaregiverRecommendations(false);
+            }
+        }
+    };
+
+    const fetchRecommendedCaregivers = async (clientId: number) => {
+        try {
+            const params = new URLSearchParams({
+                client_id: clientId.toString(),
+                page: '1',
+                per_page: '20',
+                age_filter: 'all',
+            });
+
+            if (form.data.service_type) {
+                params.append('service_type', form.data.service_type);
+            }
+
+            if (form.data.start_datetime) {
+                params.append('start_datetime', form.data.start_datetime);
+            }
+
+            if (form.data.end_datetime) {
+                params.append('end_datetime', form.data.end_datetime);
+            }
+
+            if (form.data.address_city) {
+                params.append('address_city', form.data.address_city);
+            }
+
+            const response = await fetch(
+                `/bookings/recommended-caregivers?${params}`,
             );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const json = await response.json();
+            const data = json.data as unknown as Array<{
+                id: number;
+                name: string;
+                age: number | null;
+
+                matchIcons: string[];
+                hasBeenNotified: boolean;
+                [key: string]: unknown;
+            }>;
+
+            setCaregiverSuggestions(data);
+            setCaregiverAllIds(json.all_ids as number[]);
+            setCaregiverTotal(json.meta.total as number);
+            setCaregiverCurrentPage(json.meta.current_page as number);
+            setCaregiverLastPage(json.meta.last_page as number);
         } catch (error) {
             console.error('Error fetching recommended caregivers:', error);
             setCaregiverSuggestions(
@@ -282,22 +382,32 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
                 }>,
             );
         }
+    };
+
+    const loadMoreCaregivers = async (ageFilter = 'all') => {
+        if (
+            loadingMoreCaregivers ||
+            caregiverCurrentPage >= caregiverLastPage
+        ) {
+            return;
+        }
+
+        setLoadingMoreCaregivers(true);
+        await populateCaregiverSuggestions(caregiverCurrentPage + 1, ageFilter, caregiverSearch);
+        setLoadingMoreCaregivers(false);
     };
 
     const handleClientSearch = async (query: string) => {
@@ -354,16 +464,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -381,8 +488,6 @@ export function useBookingSheet({
                 id: c.id,
                 name: c.name,
                 age: null,
-                tier: 6,
-                tierLabel: 'Available',
                 matchIcons: [],
                 hasBeenNotified: false,
             })) as unknown as Array<{
@@ -420,82 +525,11 @@ export function useBookingSheet({
         }
     };
 
-    const fetchRecommendedCaregivers = async (clientId: number) => {
-        try {
-            const params = new URLSearchParams({
-                client_id: clientId.toString(),
-            });
-
-            if (form.data.service_type) {
-                params.append('service_type', form.data.service_type);
-            }
-
-            if (form.data.start_datetime) {
-                params.append('start_datetime', form.data.start_datetime);
-            }
-
-            if (form.data.end_datetime) {
-                params.append('end_datetime', form.data.end_datetime);
-            }
-
-            if (form.data.address_city) {
-                params.append('address_city', form.data.address_city);
-            }
-
-            const response = await fetch(
-                `/bookings/recommended-caregivers?${params}`,
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            setCaregiverSuggestions(
-                data as unknown as Array<{
-                    id: number;
-                    name: string;
-                    age: number | null;
-                    tier: number;
-                    tierLabel: string;
-                    matchIcons: string[];
-                    hasBeenNotified: boolean;
-                    [key: string]: unknown;
-                }>,
-            );
-        } catch (error) {
-            console.error('Error fetching recommended caregivers:', error);
-            setCaregiverSuggestions(
-                caregivers.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
-                    matchIcons: [],
-                    hasBeenNotified: false,
-                })) as unknown as Array<{
-                    id: number;
-                    name: string;
-                    age: number | null;
-                    tier: number;
-                    tierLabel: string;
-                    matchIcons: string[];
-                    hasBeenNotified: boolean;
-                    [key: string]: unknown;
-                }>,
-            );
-        }
-    };
-
     const handleClientChange = async (clientId: number | null) => {
         form.setData((prev) => ({
             ...prev,
             client_id: clientId,
             address_id: null,
-            child_ids: [],
-            pet_ids: [],
         }));
         setAddressMode('select');
         setClientMode('select');
@@ -518,12 +552,8 @@ export function useBookingSheet({
                         tempId: `client-${c.id}`,
                         name: c.name || '',
                         gender: c.gender || '',
-                        birth_month: c.birth_month
-                            ? String(c.birth_month)
-                            : '',
-                        birth_year: c.birth_year
-                            ? String(c.birth_year)
-                            : '',
+                        birth_month: c.birth_month ? String(c.birth_month) : '',
+                        birth_year: c.birth_year ? String(c.birth_year) : '',
                     })) || [];
                 const clientPets =
                     data.client.pets?.map((p: any) => ({
@@ -539,11 +569,6 @@ export function useBookingSheet({
 
                 form.setData((prev) => ({
                     ...prev,
-                    child_ids:
-                        data.client.children?.map((c: any) => c.id) || [],
-                    pet_ids: data.client.pets?.map((p: any) => p.id) || [],
-                    new_children: clientChildren,
-                    new_pets: clientPets,
                     location_type: locationType,
                     emergency_instructions:
                         data.client.emergency_instructions || '',
@@ -564,16 +589,13 @@ export function useBookingSheet({
                     id: c.id,
                     name: c.name,
                     age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
                     matchIcons: [],
                     hasBeenNotified: false,
                 })) as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -583,6 +605,7 @@ export function useBookingSheet({
     };
 
     const openCreateSheet = (date?: string) => {
+        form.clearErrors();
         setEditingBooking(null);
         setSheetMode('create');
 
@@ -607,7 +630,12 @@ export function useBookingSheet({
             location_type: 'private_home',
             start_datetime: formatDateTimeLocal(defaultStart),
             end_datetime: formatDateTimeLocal(defaultEnd),
-            dates: [],
+            dates: [
+                {
+                    start_datetime: formatDateTimeLocal(defaultStart),
+                    end_datetime: formatDateTimeLocal(defaultEnd),
+                },
+            ],
             hotel_id: null,
             address_id: null,
             caregiver_id: null,
@@ -658,7 +686,8 @@ export function useBookingSheet({
         setIsSheetOpen(true);
     };
 
-    const openEditSheet = async (booking: Booking) => {
+    const proceedWithEditSheet = async (booking: Booking) => {
+        form.clearErrors();
         setEditingBooking(booking);
         setSheetMode('edit');
         setIsLoading(true);
@@ -673,7 +702,13 @@ export function useBookingSheet({
             });
             const fullBooking = await response.json();
 
-            const client = clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null;
+            const client =
+                clients?.find(
+                    (c) => c.id === booking.booking_group?.client_id,
+                ) ?? null;
+
+            setSelectedClientName('');
+            setClientSuggestions([]);
 
             if (client) {
                 setSelectedClientName(client.name);
@@ -684,9 +719,13 @@ export function useBookingSheet({
                 }>);
             }
 
+            setSelectedClientType(null);
+
             if (fullBooking.client) {
                 setSelectedClientType(fullBooking.client.client_type || null);
             }
+
+            setClientAddresses([]);
 
             if (fullBooking.client?.addresses) {
                 setClientAddresses(
@@ -702,6 +741,9 @@ export function useBookingSheet({
             }
 
             const hotel = hotels.find((h) => h.id === fullBooking.hotel_id);
+
+            setSelectedHotelName('');
+            setHotelSuggestions([]);
 
             if (hotel) {
                 setSelectedHotelName(hotel.name);
@@ -723,21 +765,23 @@ export function useBookingSheet({
                 (cg) => cg.id === fullBooking.caregiver_id,
             );
 
+            setSelectedCaregiverName('');
+            setCaregiverSuggestions([]);
+
             if (caregiver) {
                 setSelectedCaregiverName(caregiver.name);
-                setCaregiverSuggestions([{
-                    ...caregiver,
-                    age: null,
-                    tier: 6,
-                    tierLabel: 'Available',
-                    matchIcons: [],
-                    hasBeenNotified: false,
-                }] as unknown as Array<{
+                setCaregiverSuggestions([
+                    {
+                        ...caregiver,
+                        age: null,
+                        matchIcons: [],
+                        hasBeenNotified: false,
+                    },
+                ] as unknown as Array<{
                     id: number;
                     name: string;
                     age: number | null;
-                    tier: number;
-                    tierLabel: string;
+
                     matchIcons: string[];
                     hasBeenNotified: boolean;
                     [key: string]: unknown;
@@ -750,6 +794,12 @@ export function useBookingSheet({
                 location_type: fullBooking.location_type,
                 start_datetime: fullBooking.start_datetime,
                 end_datetime: fullBooking.end_datetime,
+                dates: [
+                    {
+                        start_datetime: fullBooking.start_datetime,
+                        end_datetime: fullBooking.end_datetime,
+                    },
+                ],
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
@@ -818,6 +868,8 @@ export function useBookingSheet({
             ].filter(Boolean);
             setAddressValue(addressParts.join(', '));
 
+            setIsAddressLocked(false);
+
             if (fullBooking.address_line1) {
                 setIsAddressLocked(true);
             }
@@ -830,7 +882,34 @@ export function useBookingSheet({
         }
     };
 
+    const openEditSheet = async (booking: Booking) => {
+        const endDate = new Date(booking.end_datetime);
+
+        if (endDate < new Date()) {
+            setEditingBooking(booking);
+            setShowPastBookingDialog(true);
+
+            return;
+        }
+
+        await proceedWithEditSheet(booking);
+    };
+
+    const handleConfirmPastBooking = async () => {
+        setShowPastBookingDialog(false);
+
+        if (editingBooking) {
+            await proceedWithEditSheet(editingBooking);
+        }
+    };
+
+    const handleCancelPastBooking = () => {
+        setShowPastBookingDialog(false);
+        setEditingBooking(null);
+    };
+
     const openDuplicateSheet = async (booking: Booking) => {
+        form.clearErrors();
         setEditingBooking(null);
         setSheetMode('duplicate');
         setIsLoading(true);
@@ -877,8 +956,13 @@ export function useBookingSheet({
                 })) || [];
 
             const client = booking.booking_group?.client_id
-                ? clients?.find((c) => c.id === booking.booking_group?.client_id) ?? null
+                ? (clients?.find(
+                      (c) => c.id === booking.booking_group?.client_id,
+                  ) ?? null)
                 : null;
+
+            setSelectedClientName('');
+            setClientSuggestions([]);
 
             if (client) {
                 setSelectedClientName(client.name);
@@ -895,6 +979,12 @@ export function useBookingSheet({
                 location_type: fullBooking.location_type,
                 start_datetime: fullBooking.start_datetime,
                 end_datetime: fullBooking.end_datetime,
+                dates: [
+                    {
+                        start_datetime: fullBooking.start_datetime,
+                        end_datetime: fullBooking.end_datetime,
+                    },
+                ],
                 hotel_id: fullBooking.hotel_id,
                 address_id: fullBooking.address_id,
                 caregiver_id: null,
@@ -925,10 +1015,6 @@ export function useBookingSheet({
                 },
                 new_children: clientChildren,
                 new_pets: clientPets,
-                child_ids: [],
-                pet_ids: [],
-                deleted_child_ids: [],
-                deleted_pet_ids: [],
                 save_children_pets_to_profile: true,
                 children_notes: fullBooking.children_notes || '',
             };
@@ -937,8 +1023,13 @@ export function useBookingSheet({
             setBookingChildren(clientChildren);
             setBookingPets(clientPets);
 
+            setSelectedHotelName('');
+            setHotelSuggestions([]);
+
             if (booking.booking_group?.hotel_id) {
-                const hotel = hotels.find((h) => h.id === booking.booking_group?.hotel_id);
+                const hotel = hotels.find(
+                    (h) => h.id === booking.booking_group?.hotel_id,
+                );
 
                 if (hotel) {
                     setSelectedHotelName(hotel.name);
@@ -1136,6 +1227,7 @@ export function useBookingSheet({
         sheetMode,
         showDeleteDialog,
         setShowDeleteDialog,
+        showPastBookingDialog,
         form,
         clientSuggestions,
         setClientSuggestions,
@@ -1185,10 +1277,25 @@ export function useBookingSheet({
         handleDelete,
         handleConfirmDelete,
         handleCancelDelete,
+        handleConfirmPastBooking,
+        handleCancelPastBooking,
         openCreateSheet,
         openEditSheet,
         openDuplicateSheet,
         populateCaregiverSuggestions,
+        loadMoreCaregivers,
+        onAgeFilterChange: (filter: string) =>
+            populateCaregiverSuggestions(1, filter, caregiverSearch),
+        onSearchChange: (query: string, filter: string) => {
+            setCaregiverSearch(query);
+            populateCaregiverSuggestions(1, filter, query);
+        },
+        caregiverAllIds,
+        caregiverTotal,
+        caregiverCurrentPage,
+        caregiverLastPage,
+        loadingCaregiverRecommendations,
+        loadingMoreCaregivers,
     };
 }
 

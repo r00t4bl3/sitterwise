@@ -13,6 +13,7 @@ use Sichikawa\LaravelSendgridDriver\SendGrid;
 
 class SendGridTemplate extends Mailable
 {
+    // Note: This file is reserved for template testing functions. It is not intended for production use.
     use Queueable, SendGrid, SerializesModels;
 
     /**
@@ -43,6 +44,7 @@ class SendGridTemplate extends Mailable
                 ],
             ],
             'template_id' => 'd-2a539fde38bb46788fc96baf7fb6366b',
+            // d-53f1d52866924c3096bd0d7deae965e6
         ]);
 
         return new Envelope(

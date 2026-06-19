@@ -28,3 +28,18 @@ Schedule::command('app:archive-long-term-inactive')->daily();
 
 // Check for caregivers with 3+ late arrivals in 60 days
 Schedule::command('app:check-late-arrivals')->dailyAt('11:00');
+
+// Recalculate caregiver reliability scores daily
+Schedule::command('app:recalculate-reliability')->dailyAt('02:00');
+
+// Send review reminders for completed bookings (every 6 hours)
+Schedule::command('app:send-review-reminders')->everySixHours();
+
+// Send booking reminders for confirmed bookings starting in ~24 hours
+Schedule::command('app:send-booking-reminders')->hourly();
+
+// Send payment SMS reminders for unpaid bookings that are 24+ hours old
+Schedule::command('app:send-payment-sms-reminders')->hourly();
+
+// Clean up stale push subscriptions
+Schedule::command('webpush:clean')->daily();

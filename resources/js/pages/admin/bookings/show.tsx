@@ -14,8 +14,9 @@ import {
     Building2,
     PartyPopper,
     Split,
+    UserPlus,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { NotifyCaregiversSheet } from './notify-caregivers-sheet';
+import { ReplaceCaregiverSheet } from './replace-caregiver-sheet';
 
 interface Booking {
     id: number;
@@ -45,6 +50,7 @@ interface Booking {
     client_email: string | null;
     caregiver_id: number | null;
     caregiver_name: string | null;
+    assignment_resolution: string | null;
     hotel_id: number | null;
     hotel_name: string | null;
     location_type: string;
@@ -113,6 +119,15 @@ interface BookingStatus {
 interface PageProps {
     booking: Booking;
     booking_statuses: BookingStatus[];
+    caregiver_suggestions: Array<{
+        id: number;
+        name: string;
+        age?: number | null;
+        matchIcons?: string[];
+        hasBeenNotified?: boolean;
+    }>;
+    caregiver_all_ids: number[];
+    caregiver_total: number;
 }
 
 const breadcrumbs = [
@@ -133,11 +148,57 @@ const breadcrumbs = [
 export default function BookingDetail({
     booking,
     booking_statuses,
+    caregiver_suggestions,
+    caregiver_all_ids,
+    caregiver_total,
 }: PageProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
+    const [notifySheetOpen, setNotifySheetOpen] = useState(false);
+
+    const [caregiverSuggestions, setCaregiverSuggestions] = useState<
+        Array<{ id: number; name: string; age?: number | null; matchIcons?: string[]; hasBeenNotified?: boolean; [key: string]: unknown }>
+    >(caregiver_suggestions);
+    const [caregiverAllIds, setCaregiverAllIds] = useState<number[]>(caregiver_all_ids);
+    const [caregiverTotal, setCaregiverTotal] = useState(caregiver_total);
+    const [caregiverCurrentPage, setCaregiverCurrentPage] = useState(1);
+    const [caregiverLastPage, setCaregiverLastPage] = useState(1);
+    const [loadingCaregiverRecommendations, setLoadingCaregiverRecommendations] = useState(false);
+    const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
+    const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
+
+    const cancelForm = useForm({ reason: '' });
+
+    const deleteForm = useForm({});
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+    const submitDelete = () => {
+        deleteForm.delete(`/bookings/${booking.ulid}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleteConfirmText('');
+            },
+        });
+    };
+
+    const submitCancel = () => {
+        cancelForm.post(`/bookings/${booking.ulid}/cancel`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCancelDialogOpen(false);
+                cancelForm.reset();
+            },
+        });
+    };
 
     const currentSiblingIds = booking.booking_group
-        ? [booking.id, ...booking.booking_group.sibling_bookings.map((s) => s.id)]
+        ? [
+              booking.id,
+              ...booking.booking_group.sibling_bookings.map((s) => s.id),
+          ]
         : [];
 
     const splitForm = useForm({
@@ -148,7 +209,10 @@ export default function BookingDetail({
         const current = splitForm.data.booking_ids;
 
         if (current.includes(id)) {
-            splitForm.setData('booking_ids', current.filter((i) => i !== id));
+            splitForm.setData(
+                'booking_ids',
+                current.filter((i) => i !== id),
+            );
         } else {
             splitForm.setData('booking_ids', [...current, id]);
         }
@@ -207,6 +271,89 @@ export default function BookingDetail({
         { label: 'Reimbursement', value: booking.reimbursement },
     ].filter((f) => f.value !== null && f.value !== undefined);
 
+    const fetchCaregivers = async (page = 1, filter = 'all', search = '') => {
+        if (page === 1) {
+            setLoadingCaregiverRecommendations(true);
+        }
+
+        try {
+            const params = new URLSearchParams({
+                client_id: booking.client_id.toString(),
+                page: page.toString(),
+                per_page: '20',
+                age_filter: filter,
+            });
+
+            if (search) {
+                params.append('search', search);
+            }
+
+            if (booking.id) {
+                params.append('booking_id', booking.id.toString());
+            }
+
+            if (booking.start_datetime) {
+                params.append('start_datetime', booking.start_datetime);
+            }
+
+            if (booking.end_datetime) {
+                params.append('end_datetime', booking.end_datetime);
+            }
+
+            const res = await fetch(`/bookings/recommended-caregivers?${params}`);
+            const json = await res.json();
+            const data = json.data;
+
+            if (page === 1) {
+                setCaregiverSuggestions(data);
+                setCaregiverAllIds(json.all_ids as number[]);
+            } else {
+                setCaregiverSuggestions((prev) => [...prev, ...data]);
+            }
+
+            setCaregiverTotal(json.meta.total as number);
+            setCaregiverCurrentPage(json.meta.current_page as number);
+            setCaregiverLastPage(json.meta.last_page as number);
+        } catch (error) {
+            console.error('Error fetching recommended caregivers:', error);
+        } finally {
+            if (page === 1) {
+                setLoadingCaregiverRecommendations(false);
+            }
+        }
+    };
+
+    const handleLoadMore = async (filter = 'all') => {
+        if (loadingMoreCaregivers || caregiverCurrentPage >= caregiverLastPage) {
+            return;
+        }
+
+        setLoadingMoreCaregivers(true);
+        await fetchCaregivers(caregiverCurrentPage + 1, filter, caregiverSearchQuery);
+        setLoadingMoreCaregivers(false);
+    };
+
+    const handleAgeFilterChange = (filter: string) => {
+        setCaregiverCurrentPage(1);
+        setCaregiverLastPage(1);
+        fetchCaregivers(1, filter, caregiverSearchQuery);
+    };
+
+    const handleSearchChange = (query: string, filter: string) => {
+        setCaregiverSearchQuery(query);
+        setCaregiverCurrentPage(1);
+        setCaregiverLastPage(1);
+        fetchCaregivers(1, filter, query);
+    };
+
+    useEffect(() => {
+        if (notifySheetOpen || replaceSheetOpen) {
+            setCaregiverSearchQuery('');
+            fetchCaregivers(1, 'all');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [notifySheetOpen, replaceSheetOpen]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Booking Details" />
@@ -244,11 +391,21 @@ export default function BookingDetail({
                                         status={booking.status}
                                         bookingStatuses={booking_statuses}
                                     />
-                                    {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                        <Badge variant="outline" className="text-xs">
-                                            Multi-Day ({booking.booking_group.bookings_count})
-                                        </Badge>
-                                    )}
+                                    {booking.booking_group &&
+                                        booking.booking_group.bookings_count >
+                                            1 && (
+                                            <Badge
+                                                variant="outline"
+                                                className="text-xs"
+                                            >
+                                                Multi-Day (
+                                                {
+                                                    booking.booking_group
+                                                        .bookings_count
+                                                }
+                                                )
+                                            </Badge>
+                                        )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -268,105 +425,201 @@ export default function BookingDetail({
                                     </span>
                                 </div>
 
-                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
-                                        {booking.booking_group.sibling_bookings.map((sibling) => (
-                                            <Link
-                                                key={sibling.id}
-                                                href={`/bookings/${sibling.ulid}`}
-                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
+                                {booking.booking_group &&
+                                    booking.booking_group.bookings_count >
+                                        1 && (
+                                        <div className="ml-6 space-y-1.5 border-l-2 border-border pl-3">
+                                            {booking.booking_group.sibling_bookings.map(
+                                                (sibling) => (
+                                                    <Link
+                                                        key={sibling.id}
+                                                        href={`/bookings/${sibling.ulid}`}
+                                                        className="flex items-center justify-between rounded px-2 py-1 text-xs transition-colors hover:bg-accent"
+                                                    >
+                                                        <span className="text-muted-foreground">
+                                                            {formatDisplayDateInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            -{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.end_datetime,
+                                                            )}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            {sibling.caregiver_name && (
+                                                                <span className="text-muted-foreground">
+                                                                    {
+                                                                        sibling.caregiver_name
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                            <StatusBadge
+                                                                status={
+                                                                    sibling.status
+                                                                }
+                                                                bookingStatuses={
+                                                                    booking_statuses
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </Link>
+                                                ),
+                                            )}
+                                            <Dialog
+                                                open={splitDialogOpen}
+                                                onOpenChange={
+                                                    setSplitDialogOpen
+                                                }
                                             >
-                                                <span className="text-muted-foreground">
-                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
-                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    {sibling.caregiver_name && (
-                                                        <span className="text-muted-foreground">{sibling.caregiver_name}</span>
-                                                    )}
-                                                    <StatusBadge
-                                                        status={sibling.status}
-                                                        bookingStatuses={booking_statuses}
-                                                    />
-                                                </div>
-                                            </Link>
-                                        ))}
-                                        <Dialog open={splitDialogOpen} onOpenChange={setSplitDialogOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mt-2 text-xs"
-                                                >
-                                                    <Split className="mr-1 h-3 w-3" />
-                                                    Split Group
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Split Group</DialogTitle>
-                                                    <DialogDescription>
-                                                        Select which dates to move to a new group. The current booking cannot be unchecked.
-                                                        Extracted bookings will reset to "received" status and clear caregiver assignment.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                                <div className="space-y-3 py-4">
-                                                    {currentSiblingIds.map((id) => {
-                                                        const isCurrent = id === booking.id;
-                                                        const sib = id === booking.id
-                                                            ? null
-                                                            : booking.booking_group?.sibling_bookings.find((s) => s.id === id);
-
-                                                        return (
-                                                            <div key={id} className="flex items-center gap-3">
-                                                                <Checkbox
-                                                                    id={`split-${id}`}
-                                                                    checked={splitForm.data.booking_ids.includes(id)}
-                                                                    disabled={isCurrent}
-                                                                    onCheckedChange={() => toggleSplitBooking(id)}
-                                                                />
-                                                                <Label
-                                                                    htmlFor={`split-${id}`}
-                                                                    className={`text-sm ${isCurrent ? 'font-medium' : 'text-muted-foreground'}`}
-                                                                >
-                                                                    {isCurrent ? (
-                                                                        <span>
-                                                                            {formatDisplayDateInPT(booking.start_datetime)}{' '}
-                                                                            {formatDisplayTimeInPT(booking.start_datetime)} - {formatDisplayTimeInPT(booking.end_datetime)}
-                                                                            <span className="ml-2 text-xs text-muted-foreground">(this booking)</span>
-                                                                        </span>
-                                                                    ) : sib ? (
-                                                                        <span>
-                                                                            {formatDisplayDateInPT(sib.start_datetime)}{' '}
-                                                                            {formatDisplayTimeInPT(sib.start_datetime)} - {formatDisplayTimeInPT(sib.end_datetime)}
-                                                                            {sib.caregiver_name && (
-                                                                                <span className="ml-2 text-xs text-muted-foreground">({sib.caregiver_name})</span>
-                                                                            )}
-                                                                        </span>
-                                                                    ) : null}
-                                                                </Label>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <DialogFooter>
+                                                <DialogTrigger asChild>
                                                     <Button
                                                         variant="outline"
-                                                        onClick={() => setSplitDialogOpen(false)}
+                                                        size="sm"
+                                                        className="mt-2 text-xs"
                                                     >
-                                                        Cancel
+                                                        <Split className="mr-1 h-3 w-3" />
+                                                        Split Group
                                                     </Button>
-                                                    <Button
-                                                        onClick={submitSplit}
-                                                        disabled={splitForm.processing || splitForm.data.booking_ids.length === 0}
-                                                    >
-                                                        {splitForm.processing ? 'Splitting...' : 'Split Group'}
-                                                    </Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                )}
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>
+                                                            Split Group
+                                                        </DialogTitle>
+                                                        <DialogDescription>
+                                                            Select which dates
+                                                            to move to a new
+                                                            group. The current
+                                                            booking cannot be
+                                                            unchecked. Extracted
+                                                            bookings will reset
+                                                            to "received" status
+                                                            and clear caregiver
+                                                            assignment.
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="space-y-3 py-4">
+                                                        {currentSiblingIds.map(
+                                                            (id) => {
+                                                                const isCurrent =
+                                                                    id ===
+                                                                    booking.id;
+                                                                const sib =
+                                                                    id ===
+                                                                    booking.id
+                                                                        ? null
+                                                                        : booking.booking_group?.sibling_bookings.find(
+                                                                              (
+                                                                                  s,
+                                                                              ) =>
+                                                                                  s.id ===
+                                                                                  id,
+                                                                          );
+
+                                                                return (
+                                                                    <div
+                                                                        key={id}
+                                                                        className="flex items-center gap-3"
+                                                                    >
+                                                                        <Checkbox
+                                                                            id={`split-${id}`}
+                                                                            checked={splitForm.data.booking_ids.includes(
+                                                                                id,
+                                                                            )}
+                                                                            disabled={
+                                                                                isCurrent
+                                                                            }
+                                                                            onCheckedChange={() =>
+                                                                                toggleSplitBooking(
+                                                                                    id,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        <Label
+                                                                            htmlFor={`split-${id}`}
+                                                                            className={`text-sm ${isCurrent ? 'font-medium' : 'text-muted-foreground'}`}
+                                                                        >
+                                                                            {isCurrent ? (
+                                                                                <span>
+                                                                                    {formatDisplayDateInPT(
+                                                                                        booking.start_datetime,
+                                                                                    )}{' '}
+                                                                                    {formatDisplayTimeInPT(
+                                                                                        booking.start_datetime,
+                                                                                    )}{' '}
+                                                                                    -{' '}
+                                                                                    {formatDisplayTimeInPT(
+                                                                                        booking.end_datetime,
+                                                                                    )}
+                                                                                    <span className="ml-2 text-xs text-muted-foreground">
+                                                                                        (this
+                                                                                        booking)
+                                                                                    </span>
+                                                                                </span>
+                                                                            ) : sib ? (
+                                                                                <span>
+                                                                                    {formatDisplayDateInPT(
+                                                                                        sib.start_datetime,
+                                                                                    )}{' '}
+                                                                                    {formatDisplayTimeInPT(
+                                                                                        sib.start_datetime,
+                                                                                    )}{' '}
+                                                                                    -{' '}
+                                                                                    {formatDisplayTimeInPT(
+                                                                                        sib.end_datetime,
+                                                                                    )}
+                                                                                    {sib.caregiver_name && (
+                                                                                        <span className="ml-2 text-xs text-muted-foreground">
+                                                                                            (
+                                                                                            {
+                                                                                                sib.caregiver_name
+                                                                                            }
+                                                                                            )
+                                                                                        </span>
+                                                                                    )}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </Label>
+                                                                    </div>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                setSplitDialogOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            onClick={
+                                                                submitSplit
+                                                            }
+                                                            disabled={
+                                                                splitForm.processing ||
+                                                                splitForm.data
+                                                                    .booking_ids
+                                                                    .length ===
+                                                                    0
+                                                            }
+                                                        >
+                                                            {splitForm.processing
+                                                                ? 'Splitting...'
+                                                                : 'Split Group'}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    )}
 
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
@@ -387,6 +640,40 @@ export default function BookingDetail({
                                         >
                                             {booking.caregiver_name}
                                         </Link>
+                                        {booking.assignment_resolution && (
+                                            <Badge
+                                                variant="outline"
+                                                className="text-xs"
+                                            >
+                                                {{
+                                                    backed_out: 'Backed Out',
+                                                    backed_out_excused:
+                                                        'Backed Out (Excused)',
+                                                    reassigned: 'Reassigned',
+                                                    completed: 'Completed',
+                                                    no_show: 'No-Show',
+                                                    cancelled_by_sitterwise:
+                                                        'Cancelled',
+                                                }[
+                                                    booking
+                                                        .assignment_resolution
+                                                ] ??
+                                                    booking.assignment_resolution}
+                                            </Badge>
+                                        )}
+                                        {booking.status !== 'cancelled' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-6 text-[11px]"
+                                                onClick={() =>
+                                                    setReplaceSheetOpen(true)
+                                                }
+                                            >
+                                                <UserPlus className="mr-1 h-3 w-3" />
+                                                Replace
+                                            </Button>
+                                        )}
                                     </div>
                                 )}
 
@@ -394,10 +681,12 @@ export default function BookingDetail({
                                     <div className="flex items-center gap-2">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
                                         <a
-                                        href={`tel:${booking.client_phone}`}
-                                        className="text-sm text-primary hover:underline"
-                                    >
-                                        {formatPhoneDisplay(booking.client_phone)}
+                                            href={`tel:${booking.client_phone}`}
+                                            className="text-sm text-primary hover:underline"
+                                        >
+                                            {formatPhoneDisplay(
+                                                booking.client_phone,
+                                            )}
                                         </a>
                                     </div>
                                 )}
@@ -704,12 +993,195 @@ export default function BookingDetail({
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    {['received', 'pending'].includes(booking.status) && (
+                        <Button
+                            variant="outline"
+                            onClick={() => setNotifySheetOpen(true)}
+                        >
+                            Notify Caregivers
+                        </Button>
+                    )}
+                    {booking.status !== 'cancelled' && booking.caregiver_id && (
+                        <>
+                            <Button
+                                variant="outline"
+                                onClick={() => setReplaceSheetOpen(true)}
+                            >
+                                <UserPlus className="mr-1 h-4 w-4" />
+                                Replace Caregiver
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setCancelDialogOpen(true)}
+                            >
+                                Cancel Booking
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        variant="destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete Booking
+                    </Button>
                     <Button asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
                 </div>
             </div>
+
+            <ReplaceCaregiverSheet
+                open={replaceSheetOpen}
+                onOpenChange={setReplaceSheetOpen}
+                bookingId={booking.id}
+                currentCaregiverName={booking.caregiver_name}
+                caregiverSuggestions={caregiverSuggestions}
+                caregiverTotal={caregiverTotal}
+                caregiverCurrentPage={caregiverCurrentPage}
+                caregiverLastPage={caregiverLastPage}
+                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingMoreCaregivers={loadingMoreCaregivers}
+                onLoadMoreCaregivers={handleLoadMore}
+                onAgeFilterChange={handleAgeFilterChange}
+                onSearchChange={handleSearchChange}
+            />
+
+            <NotifyCaregiversSheet
+                open={notifySheetOpen}
+                onOpenChange={setNotifySheetOpen}
+                bookingId={booking.id}
+                caregiverSuggestions={caregiverSuggestions}
+                caregiverAllIds={caregiverAllIds}
+                caregiverTotal={caregiverTotal}
+                caregiverCurrentPage={caregiverCurrentPage}
+                caregiverLastPage={caregiverLastPage}
+                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingMoreCaregivers={loadingMoreCaregivers}
+                onLoadMoreCaregivers={handleLoadMore}
+                onAgeFilterChange={handleAgeFilterChange}
+                onSearchChange={handleSearchChange}
+            />
+
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cancel Booking</DialogTitle>
+                        <DialogDescription>
+                            This action will mark the booking as cancelled, zero
+                            out all financial fields, and release the caregiver.
+                            This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="reason">Cancellation Reason</Label>
+                            <Textarea
+                                id="reason"
+                                value={cancelForm.data.reason}
+                                onChange={(e) =>
+                                    cancelForm.setData('reason', e.target.value)
+                                }
+                                placeholder="Explain why this booking is being cancelled..."
+                                rows={3}
+                            />
+                            {cancelForm.errors.reason && (
+                                <p className="text-sm text-destructive">
+                                    {cancelForm.errors.reason}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setCancelDialogOpen(false);
+                                cancelForm.reset();
+                            }}
+                        >
+                            Keep Booking
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={submitCancel}
+                            disabled={cancelForm.processing}
+                        >
+                            {cancelForm.processing
+                                ? 'Cancelling...'
+                                : 'Cancel Booking'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Booking</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this booking?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                            <ul className="list-disc space-y-1 pl-4">
+                                <li>
+                                    This action is permanent and cannot be
+                                    undone.
+                                </li>
+                                <li>
+                                    All related data — reviews, ratings,
+                                    transactions — will also be deleted.
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="delete-confirm">
+                                Type{' '}
+                                <span className="font-mono font-bold">
+                                    DELETE
+                                </span>{' '}
+                                to confirm:
+                            </Label>
+                            <Input
+                                id="delete-confirm"
+                                value={deleteConfirmText}
+                                onChange={(e) =>
+                                    setDeleteConfirmText(e.target.value)
+                                }
+                                placeholder="DELETE"
+                                className={
+                                    deleteConfirmText === 'DELETE'
+                                        ? 'border-destructive'
+                                        : ''
+                                }
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteDialogOpen(false);
+                                setDeleteConfirmText('');
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={submitDelete}
+                            disabled={
+                                deleteConfirmText !== 'DELETE' ||
+                                deleteForm.processing
+                            }
+                        >
+                            {deleteForm.processing ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

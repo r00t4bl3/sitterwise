@@ -89,11 +89,7 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
     const [activeIndex, setActiveIndex] = useState(-1);
     const autocompleteSuggestionRef = useRef<any>(null);
     const formRef = useRef(form);
-
-    // Keep formRef current to avoid stale closures
-    useEffect(() => {
-        formRef.current = form;
-    }, [form]);
+    formRef.current = form;
 
     // Update addressValue when form data changes
     useEffect(() => {

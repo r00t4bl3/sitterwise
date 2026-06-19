@@ -46,10 +46,7 @@ export default function Register() {
             description="Enter your details below to create your account"
         >
             <Head title="Register" />
-            <form
-                onSubmit={submit}
-                className="flex flex-col gap-6"
-            >
+            <form onSubmit={submit} className="flex flex-col gap-6">
                 <div className="grid gap-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
@@ -65,7 +62,9 @@ export default function Register() {
                                 tabIndex={1}
                                 autoComplete="given-name"
                                 value={form.data.first_name}
-                                onChange={(e) => form.setData('first_name', e.target.value)}
+                                onChange={(e) =>
+                                    form.setData('first_name', e.target.value)
+                                }
                                 placeholder="First name"
                             />
                             <InputError
@@ -86,7 +85,9 @@ export default function Register() {
                                 tabIndex={2}
                                 autoComplete="family-name"
                                 value={form.data.last_name}
-                                onChange={(e) => form.setData('last_name', e.target.value)}
+                                onChange={(e) =>
+                                    form.setData('last_name', e.target.value)
+                                }
                                 placeholder="Last name"
                             />
                             <InputError
@@ -114,7 +115,9 @@ export default function Register() {
                             tabIndex={4}
                             autoComplete="email"
                             value={form.data.email}
-                            onChange={(e) => form.setData('email', e.target.value)}
+                            onChange={(e) =>
+                                form.setData('email', e.target.value)
+                            }
                             placeholder="email@example.com"
                         />
                         <InputError message={form.errors.email} />
@@ -128,7 +131,9 @@ export default function Register() {
                             tabIndex={5}
                             autoComplete="new-password"
                             value={form.data.password}
-                            onChange={(e) => form.setData('password', e.target.value)}
+                            onChange={(e) =>
+                                form.setData('password', e.target.value)
+                            }
                             placeholder="Password"
                         />
                         <InputError message={form.errors.password} />
@@ -144,7 +149,12 @@ export default function Register() {
                             tabIndex={6}
                             autoComplete="new-password"
                             value={form.data.password_confirmation}
-                            onChange={(e) => form.setData('password_confirmation', e.target.value)}
+                            onChange={(e) =>
+                                form.setData(
+                                    'password_confirmation',
+                                    e.target.value,
+                                )
+                            }
                             placeholder="Confirm password"
                         />
                         <InputError
@@ -158,7 +168,9 @@ export default function Register() {
                         </Label>
                         <Select
                             value={form.data.how_did_you_hear}
-                            onValueChange={(value) => form.setData('how_did_you_hear', value)}
+                            onValueChange={(value) =>
+                                form.setData('how_did_you_hear', value)
+                            }
                         >
                             <SelectTrigger tabIndex={7}>
                                 <SelectValue placeholder="Select..." />

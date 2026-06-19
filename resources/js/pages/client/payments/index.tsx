@@ -309,7 +309,9 @@ export default function ClientPaymentsIndex() {
                                     className="border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
-                                        {formatDisplayDateTimeInPT(payment.created_at)}
+                                        {formatDisplayDateTimeInPT(
+                                            payment.created_at,
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                                         {formatCurrency(

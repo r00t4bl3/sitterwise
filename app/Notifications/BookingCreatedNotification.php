@@ -22,13 +22,11 @@ class BookingCreatedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable)
     {
-        $address = $notifiable->routeNotificationFor('mail', $this);
-
         if ($notifiable->isAdmin()) {
-            return (new AdminBookingCreatedMail($this->booking))->to($address);
+            return (new AdminBookingCreatedMail($this->booking))->to($notifiable->email);
         }
 
-        return (new ClientBookingCreatedMail($this->booking))->to($address);
+        return (new ClientBookingCreatedMail($this->booking))->to($notifiable->email);
     }
 
     public function toArray(object $notifiable): array

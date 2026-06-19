@@ -3,7 +3,6 @@
 use App\Enums\ServiceType;
 use App\Events\GuestAccountSetup;
 use App\Listeners\SendGuestAccountSetupNotification;
-use App\Mail\GuestAccountSetupMail;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\PricingRule;
@@ -102,15 +101,4 @@ describe('Guest Account Setup Notifications', function () {
         expect($payload['type'])->toBe('account_setup');
     });
 
-    test('mail returns GuestAccountSetupMail with reset token', function () {
-        [$booking] = setupBooking();
-        $clientUser = $booking->client->user;
-
-        $notification = new GuestAccountSetupNotification($booking, 'test-reset-token');
-        $mail = $notification->toMail($clientUser);
-
-        expect($mail)->toBeInstanceOf(GuestAccountSetupMail::class);
-        expect($mail->booking->id)->toBe($booking->id);
-        expect($mail->resetToken)->toBe('test-reset-token');
-    });
 });

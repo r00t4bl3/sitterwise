@@ -7,9 +7,11 @@ use App\Mail\AdminBookingCreatedMail;
 use App\Mail\ClientBookingCreatedMail;
 use App\Models\Booking;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\PricingRule;
 use App\Models\User;
 use App\Notifications\BookingCreatedNotification;
+use App\Notifications\ClientPaymentRequiredNotification;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -17,6 +19,7 @@ use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -71,6 +74,7 @@ describe('Booking Created Notifications', function () {
         Notification::fake();
 
         [$booking] = createdBooking();
+        ClientPaymentMethod::factory()->create(['client_id' => $booking->client->id]);
 
         event(new BookingCreated($booking));
 
@@ -80,23 +84,68 @@ describe('Booking Created Notifications', function () {
         );
     });
 
-    test('sends notification to admin users', function () {
+    test('defers BookingCreatedNotification when client has no payment method', function () {
         Notification::fake();
 
-        [$booking, , $admin] = createdBooking();
+        [$booking] = createdBooking();
 
         event(new BookingCreated($booking));
 
-        Notification::assertSentTo(
-            $admin,
+        Notification::assertNotSentTo(
+            $booking->client->user,
             BookingCreatedNotification::class,
         );
+        Notification::assertSentTo(
+            $booking->client->user,
+            ClientPaymentRequiredNotification::class,
+        );
+    });
+
+    test('sends deferred BookingCreatedNotification after payment method added', function () {
+        Notification::fake();
+
+        [$booking, $client] = createdBooking();
+
+        // First event — no payment method → deferred
+        event(new BookingCreated($booking));
+
+        Notification::assertNotSentTo(
+            $booking->client->user,
+            BookingCreatedNotification::class,
+        );
+
+        // Add payment method
+        ClientPaymentMethod::factory()->create(['client_id' => $client->id]);
+
+        // Second event — now has payment method → sent
+        event(new BookingCreated($booking));
+
+        Notification::assertSentTo(
+            $booking->client->user,
+            BookingCreatedNotification::class,
+        );
+        Notification::assertSentTo(
+            $booking->client->user,
+            ClientPaymentRequiredNotification::class,
+        );
+    });
+
+    test('sends notification to admin users', function () {
+        Mail::fake();
+        Notification::fake();
+
+        [$booking] = createdBooking();
+
+        event(new BookingCreated($booking));
+
+        Mail::assertSent(AdminBookingCreatedMail::class, 1);
     });
 
     test('handles missing client gracefully', function () {
         Notification::fake();
+        Mail::fake();
 
-        [$booking, $client, $admin] = createdBooking();
+        [$booking, $client] = createdBooking();
         $client->delete();
 
         event(new BookingCreated($booking));
@@ -105,16 +154,14 @@ describe('Booking Created Notifications', function () {
             $client->user,
             BookingCreatedNotification::class,
         );
-        Notification::assertSentTo(
-            $admin,
-            BookingCreatedNotification::class,
-        );
+        Mail::assertSent(AdminBookingCreatedMail::class, 1);
     });
 
     test('handles deleted client user gracefully', function () {
         Notification::fake();
+        Mail::fake();
 
-        [$booking, $client, $admin] = createdBooking();
+        [$booking, $client] = createdBooking();
         $client->user->delete();
 
         event(new BookingCreated($booking));
@@ -123,10 +170,7 @@ describe('Booking Created Notifications', function () {
             $client->user,
             BookingCreatedNotification::class,
         );
-        Notification::assertSentTo(
-            $admin,
-            BookingCreatedNotification::class,
-        );
+        Mail::assertSent(AdminBookingCreatedMail::class, 1);
     });
 
     test('admin database payload contains correct data', function () {

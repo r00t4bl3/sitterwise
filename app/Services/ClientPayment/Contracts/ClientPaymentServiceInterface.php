@@ -11,7 +11,7 @@ interface ClientPaymentServiceInterface
 
     public function showPaymentMethods(): array;
 
-    public function createSetupIntent(): array;
+    public function createSetupIntent(?string $returnUrl = null): array;
 
     public function retrieveSetupIntent(string $sessionId): ?array;
 

@@ -30,7 +30,11 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
-import { formatDisplayDateInPT, formatDisplayDateTimeRangeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateInPT,
+    formatDisplayDateTimeRangeInPT,
+    formatDisplayTimeInPT,
+} from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 
 interface SiblingBooking {
@@ -120,7 +124,10 @@ const getBreadcrumbTitle = (clientName: string) => [
     },
 ];
 
-export default function BookingDetail({ booking, booking_statuses }: PageProps) {
+export default function BookingDetail({
+    booking,
+    booking_statuses,
+}: PageProps) {
     const [error, setError] = useState<string | null>(null);
     const [showConfirmSheet, setShowConfirmSheet] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -309,10 +316,10 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                 )}
 
                 {confirmed && (
-                    <div className="flex items-start gap-3 rounded-lg border border-success/20 bg-success/10 p-4">
-                        <CheckCircle className="mt-0.5 h-5 w-5 text-success" />
+                    <div className="border-success/20 bg-success/10 flex items-start gap-3 rounded-lg border p-4">
+                        <CheckCircle className="text-success mt-0.5 h-5 w-5" />
                         <div>
-                            <p className="text-sm font-medium text-success">
+                            <p className="text-success text-sm font-medium">
                                 Booking confirmed! Redirecting to dashboard...
                             </p>
                         </div>
@@ -341,7 +348,9 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                                                 href={`sms:${booking.client_phone}`}
                                                 className="text-primary hover:underline"
                                             >
-                                                {formatPhoneDisplay(booking.client_phone)}
+                                                {formatPhoneDisplay(
+                                                    booking.client_phone,
+                                                )}
                                             </a>
                                         </span>
                                     </div>
@@ -361,11 +370,21 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                                         <span className="text-sm text-foreground">
                                             {booking.service_type}
                                         </span>
-                                        {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                            <Badge variant="outline" className="text-xs">
-                                                Multi-Day ({booking.booking_group.bookings_count})
-                                            </Badge>
-                                        )}
+                                        {booking.booking_group &&
+                                            booking.booking_group
+                                                .bookings_count > 1 && (
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    Multi-Day (
+                                                    {
+                                                        booking.booking_group
+                                                            .bookings_count
+                                                    }
+                                                    )
+                                                </Badge>
+                                            )}
                                     </div>
                                 )}
 
@@ -386,26 +405,42 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                                     </span>
                                 </div>
 
-                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                    <div className="ml-6 border-l-2 border-border pl-3 space-y-1.5">
-                                        {booking.booking_group.sibling_bookings.map((sibling) => (
-                                            <Link
-                                                key={sibling.id}
-                                                href={`/bookings/${sibling.ulid}`}
-                                                className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent transition-colors"
-                                            >
-                                                <span className="text-muted-foreground">
-                                                    {formatDisplayDateInPT(sibling.start_datetime)}{' '}
-                                                    {formatDisplayTimeInPT(sibling.start_datetime)} - {formatDisplayTimeInPT(sibling.end_datetime)}
-                                                </span>
-                                                <StatusBadge
-                                                    status={sibling.status}
-                                                    bookingStatuses={booking_statuses}
-                                                />
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
+                                {booking.booking_group &&
+                                    booking.booking_group.bookings_count >
+                                        1 && (
+                                        <div className="ml-6 space-y-1.5 border-l-2 border-border pl-3">
+                                            {booking.booking_group.sibling_bookings.map(
+                                                (sibling) => (
+                                                    <Link
+                                                        key={sibling.id}
+                                                        href={`/bookings/${sibling.ulid}`}
+                                                        className="flex items-center justify-between rounded px-2 py-1 text-xs transition-colors hover:bg-accent"
+                                                    >
+                                                        <span className="text-muted-foreground">
+                                                            {formatDisplayDateInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.start_datetime,
+                                                            )}{' '}
+                                                            -{' '}
+                                                            {formatDisplayTimeInPT(
+                                                                sibling.end_datetime,
+                                                            )}
+                                                        </span>
+                                                        <StatusBadge
+                                                            status={
+                                                                sibling.status
+                                                            }
+                                                            bookingStatuses={
+                                                                booking_statuses
+                                                            }
+                                                        />
+                                                    </Link>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
 
                                 {booking.hotel_name && (
                                     <div className="flex items-center gap-2">
@@ -598,9 +633,14 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                             <SheetDescription>
                                 You have {countdown} seconds to confirm this
                                 booking. Click "Confirm Booking" to accept
-                                {booking.booking_group && booking.booking_group.sibling_bookings.length > 0
-                                    ? <> <strong>all dates</strong></>
-                                    : null}
+                                {booking.booking_group &&
+                                booking.booking_group.sibling_bookings.length >
+                                    0 ? (
+                                    <>
+                                        {' '}
+                                        <strong>all dates</strong>
+                                    </>
+                                ) : null}
                                 , or "Cancel" to release the reservation and
                                 allow other caregivers to accept it.
                             </SheetDescription>
@@ -619,21 +659,25 @@ export default function BookingDetail({ booking, booking_statuses }: PageProps) 
                                                 booking.end_datetime,
                                             )}
                                         </p>
-                                        {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                            <div className="ml-4 border-l-2 border-border pl-3 space-y-1.5">
-                                                {booking.booking_group.sibling_bookings.map((sibling) => (
-                                                    <p
-                                                        key={sibling.id}
-                                                        className="text-xs text-muted-foreground"
-                                                    >
-                                                        {formatDisplayDateTimeRangeInPT(
-                                                            sibling.start_datetime,
-                                                            sibling.end_datetime,
-                                                        )}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {booking.booking_group &&
+                                            booking.booking_group
+                                                .bookings_count > 1 && (
+                                                <div className="ml-4 space-y-1.5 border-l-2 border-border pl-3">
+                                                    {booking.booking_group.sibling_bookings.map(
+                                                        (sibling) => (
+                                                            <p
+                                                                key={sibling.id}
+                                                                className="text-xs text-muted-foreground"
+                                                            >
+                                                                {formatDisplayDateTimeRangeInPT(
+                                                                    sibling.start_datetime,
+                                                                    sibling.end_datetime,
+                                                                )}
+                                                            </p>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
                                     </div>
                                     <div className="text-center">
                                         <div className="text-3xl font-bold text-foreground">

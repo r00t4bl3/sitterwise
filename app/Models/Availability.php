@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Availability extends Model
 {
@@ -27,8 +28,13 @@ class Availability extends Model
         return $this->belongsTo(Caregiver::class);
     }
 
+    public function usedSlots(): HasMany
+    {
+        return $this->hasMany(BookingAvailabilitySlot::class);
+    }
+
     public function scopeInTheFuture($query)
     {
-        return $query->where('date', '>=', now()->toDateString());
+        return $query->where('date', '>=', now('America/Los_Angeles')->toDateString());
     }
 }

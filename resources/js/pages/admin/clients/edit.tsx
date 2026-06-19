@@ -460,7 +460,9 @@ export default function ClientEdit() {
                             <div className="space-y-2">
                                 <PhoneInput
                                     value={form.data.phone}
-                                    onChange={(value) => form.setData('phone', value)}
+                                    onChange={(value) =>
+                                        form.setData('phone', value)
+                                    }
                                     name="phone"
                                     label="Cell Phone"
                                     required

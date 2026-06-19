@@ -28,7 +28,11 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { autoSetEndDateTime, formatDateTimeLocal, validateMinimumDuration } from '@/lib/datetime';
+import {
+    autoSetEndDateTime,
+    formatDateTimeLocal,
+    validateMinimumDuration,
+} from '@/lib/datetime';
 
 interface DateEntry {
     id: string;
@@ -51,8 +55,14 @@ function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
             const dEnd = new Date(dates[j].end_datetime).getTime();
 
             if (a < dEnd && c < bEnd) {
-                if (!overlaps[dates[i].id]) overlaps[dates[i].id] = [];
-                if (!overlaps[dates[j].id]) overlaps[dates[j].id] = [];
+                if (!overlaps[dates[i].id]) {
+                    overlaps[dates[i].id] = [];
+                }
+
+                if (!overlaps[dates[j].id]) {
+                    overlaps[dates[j].id] = [];
+                }
+
                 overlaps[dates[i].id].push(`Date ${j + 1}`);
                 overlaps[dates[j].id].push(`Date ${i + 1}`);
             }
@@ -72,8 +82,6 @@ interface BookingDetailsSectionProps {
     caregiverSuggestions: Array<{
         id: number;
         name: string;
-        tier?: number;
-        tierLabel?: string;
         matchIcons?: string[];
         [key: string]: unknown;
     }>;
@@ -111,25 +119,40 @@ export function BookingDetailsSection({
         return d;
     }, []);
 
-    const defaultStartStr = useMemo(() => formatDateTimeLocal(tomorrow), [tomorrow]);
-    const defaultEndStr = useMemo(() => formatDateTimeLocal(new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000)), [tomorrow]);
+    const defaultStartStr = useMemo(
+        () => formatDateTimeLocal(tomorrow),
+        [tomorrow],
+    );
+    const defaultEndStr = useMemo(
+        () =>
+            formatDateTimeLocal(
+                new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000),
+            ),
+        [tomorrow],
+    );
 
     const [dates, setDates] = useState<DateEntry[]>(() => {
-        if (sheetMode !== 'create') return [];
-
-        if (form.data.start_datetime && form.data.end_datetime) {
-            return [{
-                id: generateDateId(),
-                start_datetime: form.data.start_datetime,
-                end_datetime: form.data.end_datetime,
-            }];
+        if (sheetMode !== 'create') {
+            return [];
         }
 
-        return [{
-            id: generateDateId(),
-            start_datetime: defaultStartStr,
-            end_datetime: defaultEndStr,
-        }];
+        if (form.data.start_datetime && form.data.end_datetime) {
+            return [
+                {
+                    id: generateDateId(),
+                    start_datetime: form.data.start_datetime,
+                    end_datetime: form.data.end_datetime,
+                },
+            ];
+        }
+
+        return [
+            {
+                id: generateDateId(),
+                start_datetime: defaultStartStr,
+                end_datetime: defaultEndStr,
+            },
+        ];
     });
 
     const syncDatesToForm = (allDates: DateEntry[]) => {
@@ -138,13 +161,18 @@ export function BookingDetailsSection({
             form.setData('end_datetime', allDates[0].end_datetime);
             form.setData(
                 'dates',
-                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+                allDates.map((d) => ({
+                    start_datetime: d.start_datetime,
+                    end_datetime: d.end_datetime,
+                })),
             );
         }
     };
 
     const handleAddDate = () => {
-        const nextDate = new Date(tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000);
+        const nextDate = new Date(
+            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+        );
         const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
         const newEntry: DateEntry = {
             id: generateDateId(),
@@ -162,14 +190,26 @@ export function BookingDetailsSection({
         syncDatesToForm(updated);
     };
 
-    const handleUpdateDate = (id: string, field: 'start_datetime' | 'end_datetime', value: string) => {
+    const handleUpdateDate = (
+        id: string,
+        field: 'start_datetime' | 'end_datetime',
+        value: string,
+    ) => {
         const updated = dates.map((d) => {
-            if (d.id !== id) return d;
+            if (d.id !== id) {
+                return d;
+            }
 
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime') {
-                next.end_datetime = autoSetEndDateTime(value);
+                const newStart = new Date(value);
+                const currentEnd = new Date(d.end_datetime);
+                const minEnd = new Date(newStart.getTime() + 4 * 60 * 60 * 1000);
+
+                if (isNaN(currentEnd.getTime()) || currentEnd <= minEnd) {
+                    next.end_datetime = autoSetEndDateTime(value);
+                }
             }
 
             return next;
@@ -182,21 +222,26 @@ export function BookingDetailsSection({
 
     // Reset dates when sheet opens with fresh form data
     useEffect(() => {
-        if (sheetMode !== 'create') return;
+        if (sheetMode !== 'create') {
+            return;
+        }
 
         const formStart = form.data.start_datetime;
         const currentStart = dates[0]?.start_datetime;
 
         if (formStart && currentStart !== formStart) {
-            const initial = [{
-                id: generateDateId(),
-                start_datetime: formStart,
-                end_datetime: form.data.end_datetime || autoSetEndDateTime(formStart),
-            }];
+            const initial = [
+                {
+                    id: generateDateId(),
+                    start_datetime: formStart,
+                    end_datetime:
+                        form.data.end_datetime || autoSetEndDateTime(formStart),
+                },
+            ];
             setDates(initial);
             syncDatesToForm(initial);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sheetMode, form.data.start_datetime]);
 
     useEffect(() => {
@@ -306,7 +351,9 @@ export function BookingDetailsSection({
                                     {index > 0 && (
                                         <button
                                             type="button"
-                                            onClick={() => handleRemoveDate(dateEntry.id)}
+                                            onClick={() =>
+                                                handleRemoveDate(dateEntry.id)
+                                            }
                                             className="cursor-pointer border-none bg-none p-0 text-xs text-primary"
                                         >
                                             × Remove
@@ -317,19 +364,30 @@ export function BookingDetailsSection({
                                     <div className="grid gap-2">
                                         <Label
                                             className={
-                                                form.errors['dates.' + index + '.start_datetime']
+                                                form.errors[
+                                                    'dates.' +
+                                                        index +
+                                                        '.start_datetime'
+                                                ]
                                                     ? 'text-destructive'
                                                     : ''
                                             }
                                         >
-                                            Start Date/Time <span className="text-red-500">*</span>
+                                            Start Date/Time{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
                                         </Label>
                                         <DateTimePicker
                                             value={dateEntry.start_datetime}
                                             minDate={new Date()}
                                             onChange={(datetime) => {
                                                 if (datetime) {
-                                                    handleUpdateDate(dateEntry.id, 'start_datetime', datetime);
+                                                    handleUpdateDate(
+                                                        dateEntry.id,
+                                                        'start_datetime',
+                                                        datetime,
+                                                    );
                                                 }
                                             }}
                                         />
@@ -337,12 +395,19 @@ export function BookingDetailsSection({
                                     <div className="grid gap-2">
                                         <Label
                                             className={
-                                                form.errors['dates.' + index + '.end_datetime']
+                                                form.errors[
+                                                    'dates.' +
+                                                        index +
+                                                        '.end_datetime'
+                                                ]
                                                     ? 'text-destructive'
                                                     : ''
                                             }
                                         >
-                                            End Date/Time <span className="text-red-500">*</span>
+                                            End Date/Time{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
                                         </Label>
                                         <DateTimePicker
                                             value={dateEntry.end_datetime}
@@ -350,7 +415,11 @@ export function BookingDetailsSection({
                                             minDate={new Date()}
                                             onChange={(datetime) => {
                                                 if (datetime) {
-                                                    handleUpdateDate(dateEntry.id, 'end_datetime', datetime);
+                                                    handleUpdateDate(
+                                                        dateEntry.id,
+                                                        'end_datetime',
+                                                        datetime,
+                                                    );
                                                 }
                                             }}
                                         />
@@ -358,7 +427,8 @@ export function BookingDetailsSection({
                                 </div>
                                 {dateOverlaps[dateEntry.id]?.length > 0 && (
                                     <p className="mt-2 text-xs text-amber-700">
-                                        ⚠ This overlaps with {dateOverlaps[dateEntry.id].join(', ')}.
+                                        ⚠ This overlaps with{' '}
+                                        {dateOverlaps[dateEntry.id].join(', ')}.
                                     </p>
                                 )}
                             </div>
@@ -388,7 +458,9 @@ export function BookingDetailsSection({
                             <DateTimePicker
                                 value={startDatetime}
                                 minDate={
-                                    sheetMode !== 'edit' ? new Date() : undefined
+                                    sheetMode !== 'edit'
+                                        ? new Date()
+                                        : undefined
                                 }
                                 onChange={(datetime) => {
                                     form.setData('start_datetime', datetime);
@@ -415,13 +487,16 @@ export function BookingDetailsSection({
                                         : ''
                                 }
                             >
-                                End DateTime <span className="text-red-500">*</span>
+                                End DateTime{' '}
+                                <span className="text-red-500">*</span>
                             </Label>
                             <DateTimePicker
                                 value={endDatetime}
                                 startTime={startDatetime}
                                 minDate={
-                                    sheetMode !== 'edit' ? new Date() : undefined
+                                    sheetMode !== 'edit'
+                                        ? new Date()
+                                        : undefined
                                 }
                                 onChange={(datetime) => {
                                     form.setData('end_datetime', datetime);
@@ -461,17 +536,15 @@ export function BookingDetailsSection({
                                 | string[]
                                 | undefined;
 
-                            const ICON_MAP: Record<
-                                string,
-                                React.ElementType
-                            > = {
-                                previous_work: History,
-                                available: CalendarCheck,
-                                specialty: Baby,
-                                location_preferred: MapPinCheckInside,
-                                location_willing: MapPin,
-                                recent_work: Briefcase,
-                            };
+                            const ICON_MAP: Record<string, React.ElementType> =
+                                {
+                                    previous_work: History,
+                                    available: CalendarCheck,
+                                    specialty: Baby,
+                                    location_preferred: MapPinCheckInside,
+                                    location_willing: MapPin,
+                                    recent_work: Briefcase,
+                                };
 
                             const ICON_TOOLTIPS: Record<string, string> = {
                                 previous_work:
@@ -490,33 +563,33 @@ export function BookingDetailsSection({
                                     <div className="ml-2 flex items-center gap-1">
                                         {matchIcons &&
                                             matchIcons.length > 0 &&
-                                            matchIcons.map((iconKey: string) => {
-                                                const IconComponent =
-                                                    ICON_MAP[iconKey];
-                                                const tooltip =
-                                                    ICON_TOOLTIPS[iconKey];
+                                            matchIcons.map(
+                                                (iconKey: string) => {
+                                                    const IconComponent =
+                                                        ICON_MAP[iconKey];
+                                                    const tooltip =
+                                                        ICON_TOOLTIPS[iconKey];
 
-                                                if (!IconComponent) {
-                                                    return null;
-                                                }
+                                                    if (!IconComponent) {
+                                                        return null;
+                                                    }
 
-                                                return (
-                                                    <Tooltip
-                                                        key={iconKey}
-                                                    >
-                                                        <TooltipTrigger
-                                                            asChild
-                                                        >
-                                                            <span className="flex cursor-default items-center">
-                                                                <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            {tooltip}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                );
-                                            })}
+                                                    return (
+                                                        <Tooltip key={iconKey}>
+                                                            <TooltipTrigger
+                                                                asChild
+                                                            >
+                                                                <span className="flex cursor-default items-center">
+                                                                    <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                {tooltip}
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    );
+                                                },
+                                            )}
                                     </div>
                                 </div>
                             );
@@ -605,14 +678,16 @@ export function BookingDetailsSection({
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {booking_statuses.map((status) => (
-                                        <SelectItem
-                                            key={status.value}
-                                            value={status.value}
-                                        >
-                                            {status.label}
-                                        </SelectItem>
-                                    ))}
+                                    {booking_statuses
+                                        .filter((s) => s.value !== 'cancelled')
+                                        .map((status) => (
+                                            <SelectItem
+                                                key={status.value}
+                                                value={status.value}
+                                            >
+                                                {status.label}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                             {form.errors.status && (

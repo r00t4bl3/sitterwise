@@ -22,11 +22,16 @@ use App\Services\ClientPayment\ClientPaymentServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    private const SORTABLE_COLUMNS = [
+        'id', 'first_name', 'last_name', 'client_type',
+    ];
+
     protected $paymentService;
 
     public function __construct(ClientPaymentServiceFactory $paymentServiceFactory)
@@ -59,7 +64,7 @@ class ClientController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhereHas('user', fn ($uq) => $uq->where('users.email', 'like', "%{$search}%"));
             });
         }
 
@@ -67,7 +72,18 @@ class ClientController extends Controller
             $query->where('client_type', $request->client_type);
         }
 
-        $clients = $query->orderByDesc('id')->paginate(20)->appends($request->query());
+        $sort = in_array($request->sort, self::SORTABLE_COLUMNS, true) ? $request->sort : 'id';
+        $direction = $request->direction ?? 'desc';
+        if (! in_array(strtolower($direction), ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $clients = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
+
+        $clients->getCollection()->transform(fn ($client) => [
+            ...$client->toArray(),
+            'email' => $client->user->email,
+        ]);
 
         return Inertia::render('admin/clients/index', [
             'clients' => $clients,
@@ -75,6 +91,8 @@ class ClientController extends Controller
             'filters' => [
                 'search' => $request->search,
                 'client_type' => $request->client_type ?? 'all',
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }
@@ -124,8 +142,7 @@ class ClientController extends Controller
                     $q->where(function ($q) use ($term) {
                         $q->where('first_name', 'like', "%{$term}%")
                             ->orWhere('last_name', 'like', "%{$term}%")
-                            ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$term}%"))
-                            ->orWhereHas('user', fn ($q) => $q->where('email', 'like', "%{$term}%"));
+                            ->orWhereHas('user', fn ($q) => $q->where('users.email', 'like', "%{$term}%"));
                     });
                 }
             });
@@ -150,7 +167,7 @@ class ClientController extends Controller
         return response()->json([
             'client' => [
                 'id' => $client->id,
-                'name' => $client->user->name ?? $client->first_name.' '.$client->last_name,
+                'name' => $client->full_name,
                 'client_type' => $client->client_type,
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,
@@ -375,10 +392,18 @@ class ClientController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('caregiver.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhere('location_type', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $search));
+            $query->where(function ($q) use ($terms) {
+                $q->whereHas('caregiver', function ($cq) use ($terms) {
+                    foreach ($terms as $term) {
+                        $cq->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%");
+                        });
+                    }
+                })
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
+                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
             });
         }
 
@@ -658,6 +683,14 @@ class ClientController extends Controller
             $file = $request->file('profile_photo');
             $filename = time().'_'.$file->getClientOriginalName();
             $path = $file->storeAs('profile-photos', $filename, 'public');
+
+            if ($path === false) {
+                Log::error('Failed to store profile photo for client {id}', ['id' => $client->id]);
+
+                return redirect()->route('clients.edit', $client->id)
+                    ->with('error', 'Failed to upload profile photo. Please try again.');
+            }
+
             $client->user->update([
                 'profile_photo_path' => $path,
                 'profile_photo_url' => Storage::disk('public')->url($path),

@@ -12,6 +12,7 @@ import {
 import { UserAvatar } from '@/components/user-avatar';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAgeFromDate } from '@/lib/age';
+import { extractDateStr } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,6 +52,7 @@ interface Availability {
     date: string;
     time_slots: string[];
     specific_time: string | null;
+    booked_slots?: string[];
 }
 
 interface Caregiver {
@@ -89,11 +91,26 @@ interface Props {
 }
 
 function formatDateHeader(dateString: string): { day: string; date: string } {
-    const date = new Date(dateString);
-    const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum = date.getDate();
+    const dateOnly = extractDateStr(dateString);
+    const [y, m, d] = dateOnly.split('-').map(Number);
+    const refUtc = Date.UTC(y, m - 1, d, 12, 0, 0);
+    const ptHour = parseInt(
+        new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Los_Angeles',
+            hour: 'numeric',
+            hour12: false,
+        }).format(new Date(refUtc)),
+    );
+    const date = new Date(refUtc - ptHour * 3600000);
 
-    return { day: day, date: dayNum.toString() };
+    if (isNaN(date.getTime())) {
+        return { day: '', date: '' };
+    }
+
+    return {
+        day: date.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', weekday: 'short' }),
+        date: date.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', day: 'numeric' }),
+    };
 }
 
 function formatTimeSlots(
@@ -117,7 +134,7 @@ export default function AvailabilitiesIndex() {
     );
 
     const uniqueDates = Array.from(
-        new Set(allAvailabilities.map((av) => av.date)),
+        new Set(allAvailabilities.map((av) => extractDateStr(av.date))),
     ).sort();
 
     const dateHeaders = uniqueDates.map((d) => {
@@ -251,7 +268,7 @@ export default function AvailabilitiesIndex() {
                                         const availabilityMap =
                                             caregiver.availabilities.reduce(
                                                 (acc, av) => {
-                                                    acc[av.date] = av;
+                                                    acc[extractDateStr(av.date)] = av;
 
                                                     return acc;
                                                 },
@@ -430,6 +447,9 @@ export default function AvailabilitiesIndex() {
                                                             dh.isoDate
                                                         ];
 
+                                                    const bookedSlots =
+                                                        av?.booked_slots ?? [];
+
                                                     return (
                                                         <td
                                                             key={dh.isoDate}
@@ -451,18 +471,25 @@ export default function AvailabilitiesIndex() {
                                                                     {av.time_slots.map(
                                                                         (
                                                                             slot,
-                                                                        ) => (
-                                                                            <span
-                                                                                key={
-                                                                                    slot
-                                                                                }
-                                                                                className="flex items-center"
-                                                                            >
-                                                                                {getIcon(
+                                                                        ) => {
+                                                                            const isBooked =
+                                                                                bookedSlots.includes(
                                                                                     slot,
-                                                                                )}
-                                                                            </span>
-                                                                        ),
+                                                                                );
+
+                                                                            return (
+                                                                                <span
+                                                                                    key={
+                                                                                        slot
+                                                                                    }
+                                                                                    className={`flex items-center ${isBooked ? 'opacity-30 grayscale' : ''}`}
+                                                                                >
+                                                                                    {getIcon(
+                                                                                        slot,
+                                                                                    )}
+                                                                                </span>
+                                                                            );
+                                                                        },
                                                                     )}
                                                                 </div>
                                                             ) : (

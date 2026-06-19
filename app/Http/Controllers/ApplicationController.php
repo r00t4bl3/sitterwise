@@ -285,6 +285,40 @@ class ApplicationController extends Controller
         return back();
     }
 
+    public function toggleCertificationVerification(CaregiverApplication $application, CertificationType $certType, ApplicationActionRequest $request)
+    {
+        $caregiver = $application->caregiver;
+
+        $pivot = $caregiver->certifications()->where('certification_type_id', $certType->id)->first();
+
+        abort_unless($pivot, 422, 'The caregiver does not have this certification type.');
+
+        $wasVerified = $pivot->pivot->verified_at !== null;
+        $newValue = $wasVerified ? null : now();
+
+        $caregiver->certifications()->updateExistingPivot($certType->id, [
+            'verified_at' => $newValue,
+        ]);
+
+        $certificationMap = [
+            'CPR & First Aid' => 'cpr_uploaded',
+            'Trustline' => 'trustline_submitted',
+        ];
+
+        if (isset($certificationMap[$certType->name])) {
+            $itemKey = $certificationMap[$certType->name];
+            $item = $caregiver->onboardingChecklistItems()
+                ->where('item_key', $itemKey)
+                ->first();
+
+            if ($item) {
+                $item->update(['completed_at' => $newValue]);
+            }
+        }
+
+        return back();
+    }
+
     public function completeOnboarding(CaregiverApplication $application, ApplicationActionRequest $request)
     {
         $caregiver = $application->caregiver;

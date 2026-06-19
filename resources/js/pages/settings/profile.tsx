@@ -1,7 +1,6 @@
 import { Transition } from '@headlessui/react';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -23,9 +22,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Profile({
     mustVerifyEmail,
     status,
+    firstName,
+    lastName,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
+    firstName: string;
+    lastName: string;
 }) {
     const { auth } = usePage().props;
 
@@ -53,21 +56,42 @@ export default function Profile({
                         {({ processing, recentlySuccessful, errors }) => (
                             <>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Name</Label>
+                                    <Label htmlFor="first_name">
+                                        First Name
+                                    </Label>
 
                                     <Input
-                                        id="name"
+                                        id="first_name"
                                         className="mt-1 block w-full"
-                                        defaultValue={auth.user.name}
-                                        name="name"
+                                        defaultValue={firstName}
+                                        name="first_name"
                                         required
-                                        autoComplete="name"
-                                        placeholder="Full name"
+                                        autoComplete="given-name"
+                                        placeholder="First name"
                                     />
 
                                     <InputError
                                         className="mt-2"
-                                        message={errors.name}
+                                        message={errors.first_name}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="last_name">Last Name</Label>
+
+                                    <Input
+                                        id="last_name"
+                                        className="mt-1 block w-full"
+                                        defaultValue={lastName}
+                                        name="last_name"
+                                        required
+                                        autoComplete="family-name"
+                                        placeholder="Last name"
+                                    />
+
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.last_name}
                                     />
                                 </div>
 

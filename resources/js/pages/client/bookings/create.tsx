@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -20,7 +20,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
-import { autoSetEndDateTime, formatDateTimeLocal, validateMinimumDuration } from '@/lib/datetime';
+import {
+    autoSetEndDateTime,
+    formatDateTimeLocal,
+    validateMinimumDuration,
+} from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -72,14 +76,17 @@ function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
             const a = dates[i];
             const b = dates[j];
 
-            if (a.start_datetime < b.end_datetime && b.start_datetime < a.end_datetime) {
+            if (
+                a.start_datetime < b.end_datetime &&
+                b.start_datetime < a.end_datetime
+            ) {
                 if (!overlaps[a.id]) {
-overlaps[a.id] = [];
-}
+                    overlaps[a.id] = [];
+                }
 
                 if (!overlaps[b.id]) {
-overlaps[b.id] = [];
-}
+                    overlaps[b.id] = [];
+                }
 
                 overlaps[a.id].push(`Date ${j + 1}`);
                 overlaps[b.id].push(`Date ${i + 1}`);
@@ -195,7 +202,9 @@ export default function ClientBookingCreate() {
         new_pets: initialPets as Pet[],
         start_datetime: defaultStartStr,
         end_datetime: defaultEndStr,
-        dates: [{ start_datetime: defaultStartStr, end_datetime: defaultEndStr }] as Array<{ start_datetime: string; end_datetime: string }>,
+        dates: [
+            { start_datetime: defaultStartStr, end_datetime: defaultEndStr },
+        ] as Array<{ start_datetime: string; end_datetime: string }>,
         address_id: null as number | null,
         hotel_id: null as number | null,
         rental_platform: '',
@@ -229,19 +238,6 @@ export default function ClientBookingCreate() {
     const [showManualAddressInput, setShowManualAddressInput] = useState(false);
     const [addressValue, setAddressValue] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
-
-    useEffect(() => {
-        if (children.length > 0) {
-            form.setData(
-                'new_children',
-                children.map(convertChildToEditable) as Child[],
-            );
-        }
-
-        if (pets.length > 0) {
-            form.setData('new_pets', pets.map(convertPetToEditable) as Pet[]);
-        }
-    }, [children, pets, form]);
 
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
@@ -325,13 +321,18 @@ export default function ClientBookingCreate() {
             form.setData('end_datetime', allDates[0].end_datetime);
             form.setData(
                 'dates',
-                allDates.map((d) => ({ start_datetime: d.start_datetime, end_datetime: d.end_datetime })),
+                allDates.map((d) => ({
+                    start_datetime: d.start_datetime,
+                    end_datetime: d.end_datetime,
+                })),
             );
         }
     };
 
     const handleAddDate = () => {
-        const nextDate = new Date(tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000);
+        const nextDate = new Date(
+            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+        );
         const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
         const newEntry: DateEntry = {
             id: generateDateId(),
@@ -349,11 +350,15 @@ export default function ClientBookingCreate() {
         syncDatesToForm(updated);
     };
 
-    const handleUpdateDate = (id: string, field: 'start_datetime' | 'end_datetime', value: string) => {
+    const handleUpdateDate = (
+        id: string,
+        field: 'start_datetime' | 'end_datetime',
+        value: string,
+    ) => {
         const updated = dates.map((d) => {
             if (d.id !== id) {
-return d;
-}
+                return d;
+            }
 
             const next = { ...d, [field]: value };
 
@@ -1208,7 +1213,11 @@ return d;
                                             {index > 0 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleRemoveDate(dateEntry.id)}
+                                                    onClick={() =>
+                                                        handleRemoveDate(
+                                                            dateEntry.id,
+                                                        )
+                                                    }
                                                     className="cursor-pointer border-none bg-none p-0 text-xs text-primary"
                                                 >
                                                     × Remove
@@ -1217,32 +1226,61 @@ return d;
                                         </div>
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <div>
-                                                <Label>Start Date/Time <span className="text-primary">*</span></Label>
+                                                <Label>
+                                                    Start Date/Time{' '}
+                                                    <span className="text-primary">
+                                                        *
+                                                    </span>
+                                                </Label>
                                                 <DateTimePicker
-                                                    value={dateEntry.start_datetime}
+                                                    value={
+                                                        dateEntry.start_datetime
+                                                    }
                                                     onChange={(value) => {
                                                         if (value) {
-                                                            handleUpdateDate(dateEntry.id, 'start_datetime', value);
+                                                            handleUpdateDate(
+                                                                dateEntry.id,
+                                                                'start_datetime',
+                                                                value,
+                                                            );
                                                         }
                                                     }}
                                                 />
                                             </div>
                                             <div>
-                                                <Label>End Date/Time <span className="text-primary">*</span></Label>
+                                                <Label>
+                                                    End Date/Time{' '}
+                                                    <span className="text-primary">
+                                                        *
+                                                    </span>
+                                                </Label>
                                                 <DateTimePicker
-                                                    value={dateEntry.end_datetime}
-                                                    startTime={dateEntry.start_datetime}
+                                                    value={
+                                                        dateEntry.end_datetime
+                                                    }
+                                                    startTime={
+                                                        dateEntry.start_datetime
+                                                    }
                                                     onChange={(value) => {
                                                         if (value) {
-                                                            handleUpdateDate(dateEntry.id, 'end_datetime', value);
+                                                            handleUpdateDate(
+                                                                dateEntry.id,
+                                                                'end_datetime',
+                                                                value,
+                                                            );
                                                         }
                                                     }}
                                                 />
                                             </div>
                                         </div>
-                                        {dateOverlaps[dateEntry.id]?.length > 0 && (
+                                        {dateOverlaps[dateEntry.id]?.length >
+                                            0 && (
                                             <p className="mt-2 text-xs text-amber-700">
-                                                ⚠ This overlaps with {dateOverlaps[dateEntry.id].join(', ')}.
+                                                ⚠ This overlaps with{' '}
+                                                {dateOverlaps[
+                                                    dateEntry.id
+                                                ].join(', ')}
+                                                .
                                             </p>
                                         )}
                                     </div>

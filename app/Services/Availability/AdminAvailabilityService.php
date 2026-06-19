@@ -16,19 +16,18 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
     {
         $perPage = 20;
 
-        $caregiverIds = Availability::where('date', '>=', now()->toDateString())
+        $caregiverIds = Availability::where('date', '>=', now('America/Los_Angeles')->toDateString())
             ->distinct()
             ->pluck('caregiver_id');
 
         $caregivers = Caregiver::whereIn('id', $caregiverIds)
             ->with([
                 'user',
-                'status',
                 'locations',
                 'specialtyTypes',
                 'certifications',
                 'availabilities' => function ($q) {
-                    $q->inTheFuture()->orderBy('date');
+                    $q->with('usedSlots')->inTheFuture()->orderBy('date');
                 },
             ]);
 
@@ -76,6 +75,7 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
     {
         $caregiver = Caregiver::findOrFail($id);
         $availabilities = $caregiver->availabilities()
+            ->with('usedSlots')
             ->inTheFuture()
             ->orderBy('date')
             ->limit(32)
@@ -83,9 +83,10 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             ->map(function ($availability) {
                 return [
                     'id' => $availability->id,
-                    'date' => $availability->date->format('Y-m-d'),
+                    'date' => $availability->date,
                     'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
+                    'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
                 ];
             });
 

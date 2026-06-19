@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\CaregiverStatus;
 use App\Enums\ForeignLanguage;
 use App\Http\Requests\StoreCaregiverApplicationRequest;
-use App\Mail\AdminNewApplicationMail;
 use App\Mail\ApplicantConfirmationMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\AttributeDefinition;
@@ -18,11 +17,13 @@ use App\Models\Location;
 use App\Models\ReferenceRequest;
 use App\Models\SpecialtyType;
 use App\Models\User;
+use App\Notifications\AdminNewApplicationNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -125,6 +126,19 @@ class CaregiverApplicationController extends Controller
         if (! $email && app()->environment() !== 'production') {
             $email = 'test-applicant@example.com';
             Session::put('verified_email', $email);
+        }
+
+        // Time gate: reject submissions less than 30 seconds after OTP verification
+        if (app()->isProduction()) {
+            $verifiedAt = Session::get('verified_at');
+            if ($verifiedAt && now()->diffInSeconds($verifiedAt) < 30) {
+                Log::channel('submission')->warning('Application submission rejected: too fast', [
+                    'email' => $email,
+                    'elapsed' => now()->diffInSeconds($verifiedAt),
+                ]);
+
+                return back()->withErrors(['general' => 'Please take your time filling out the application.']);
+            }
         }
 
         Log::channel('submission')->info('Application submission started', [
@@ -350,10 +364,8 @@ class CaregiverApplicationController extends Controller
             Mail::to($email)->queue(new ApplicantConfirmationMail($applicantName, $caregiver->status_token));
 
             // Send admin notification
-            $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
-            foreach ($adminEmails as $adminEmail) {
-                Mail::to($adminEmail)->queue(new AdminNewApplicationMail($applicantName, $email, $application->id));
-            }
+            $admins = User::where('role', 'admin')->get();
+            Notification::send($admins, new AdminNewApplicationNotification($applicantName, $email, $application->id));
 
             // Send reference request emails and persist records
             foreach ($validated['references'] as $reference) {

@@ -17,26 +17,43 @@ class MigrateApplicantsData extends Command
     protected $description = 'Migrate caregiver applicant data between deployments';
 
     protected const TABLE_CONFIG = [
-        'users' => ['order' => 1, 'remap' => null, 'unique' => 'email'],
-        'caregivers' => ['order' => 2, 'remap' => ['fk' => 'user_id', 'parent' => 'users']],
-        'caregiver_applications' => ['order' => 3, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_educations' => ['order' => 4, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_certifications' => ['order' => 5, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_specialties' => ['order' => 6, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_locations' => ['order' => 7, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_agreements' => ['order' => 8, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'reference_requests' => ['order' => 9, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'entity_attribute_values' => ['order' => 10, 'remap' => ['fk' => 'entity_id', 'parent' => 'caregivers']],
-        'incomplete_applications' => ['order' => 11, 'remap' => null, 'unique' => 'email'],
+        'users' => ['order' => 1,  'remap' => null, 'unique' => 'email'],
+        'interview_talking_points' => ['order' => 2,  'remap' => null, 'unique' => 'label'],
+        'caregivers' => ['order' => 3,  'remap' => ['fk' => 'user_id', 'parent' => 'users']],
+        'caregiver_applications' => ['order' => 4,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_interviews' => ['order' => 5,  'remap' => [
+            ['fk' => 'caregiver_id', 'parent' => 'caregivers'],
+            ['fk' => 'evaluator_id', 'parent' => 'users'],
+            ['fk' => 'application_id', 'parent' => 'caregiver_applications'],
+        ]],
+        'caregiver_interview_talking_points' => ['order' => 6,  'remap' => [
+            ['fk' => 'caregiver_interview_id', 'parent' => 'caregiver_interviews'],
+            ['fk' => 'talking_point_id', 'parent' => 'interview_talking_points'],
+        ]],
+        'caregiver_educations' => ['order' => 7,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_certifications' => ['order' => 8,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_specialties' => ['order' => 9,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_locations' => ['order' => 10, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_agreements' => ['order' => 11, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_references' => ['order' => 12, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregiver_sponsors' => ['order' => 13, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'onboarding_checklist_items' => ['order' => 14, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'availabilities' => ['order' => 15, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'reference_requests' => ['order' => 16, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'entity_attribute_values' => ['order' => 17, 'remap' => ['fk' => 'entity_id', 'parent' => 'caregivers']],
+        'incomplete_applications' => ['order' => 18, 'remap' => null, 'unique' => 'email'],
+        'quick_links' => ['order' => 19, 'remap' => null],
     ];
 
     protected const JSON_COLUMNS = [
         'caregivers' => ['languages', 'metadata'],
         'caregiver_applications' => ['data'],
+        'availabilities' => ['time_slots'],
+        'caregiver_interviews' => ['scores'],
     ];
 
     protected const QUERY_TEMPLATES = [
-        'users' => 'SELECT * FROM users WHERE id IN (SELECT user_id FROM caregivers WHERE id IN (SELECT caregiver_id FROM caregiver_applications))',
+        'users' => 'SELECT * FROM users WHERE id IN (SELECT user_id FROM caregivers WHERE id IN (SELECT caregiver_id FROM caregiver_applications) UNION SELECT DISTINCT evaluator_id FROM caregiver_interviews WHERE caregiver_id IN (SELECT caregiver_id FROM caregiver_applications))',
         'caregivers' => 'SELECT * FROM caregivers WHERE id IN (SELECT caregiver_id FROM caregiver_applications)',
         'caregiver_applications' => 'SELECT * FROM caregiver_applications',
     ];
@@ -110,8 +127,12 @@ class MigrateApplicantsData extends Command
             return 'SELECT * FROM incomplete_applications WHERE email IN (SELECT u.email FROM users u JOIN caregivers c ON c.user_id = u.id JOIN caregiver_applications ca ON ca.caregiver_id = c.id)';
         }
 
-        if (in_array($table, ['entity_attribute_values'])) {
-            return "SELECT * FROM {$table} WHERE entity_id IN ({$ids}) AND entity_type='caregiver'";
+        if ($table === 'caregiver_interview_talking_points') {
+            return "SELECT citp.* FROM caregiver_interview_talking_points citp JOIN caregiver_interviews ci ON ci.id = citp.caregiver_interview_id WHERE ci.caregiver_id IN ({$ids})";
+        }
+
+        if (in_array($table, ['entity_attribute_values', 'interview_talking_points', 'quick_links'])) {
+            return "SELECT * FROM {$table}";
         }
 
         return "SELECT * FROM {$table} WHERE caregiver_id IN ({$ids})";
@@ -167,18 +188,30 @@ class MigrateApplicantsData extends Command
         $this->info('Importing data...');
         $this->newLine();
 
-        foreach (self::TABLE_CONFIG as $table => $config) {
-            if (! isset($data[$table])) {
-                continue;
-            }
+        try {
+            DB::transaction(function () use ($data) {
+                foreach (self::TABLE_CONFIG as $table => $config) {
+                    if (! isset($data[$table])) {
+                        continue;
+                    }
 
-            $rows = $data[$table];
+                    $rows = $data[$table];
 
-            if (empty($rows)) {
-                continue;
-            }
+                    if (empty($rows)) {
+                        continue;
+                    }
 
-            $this->importTable($table, $config, $rows);
+                    $this->importTable($table, $config, $rows);
+                }
+
+                $this->newLine();
+                $this->verifyImport();
+            });
+        } catch (\Throwable $e) {
+            $this->newLine();
+            $this->error("Import failed and was rolled back: {$e->getMessage()}");
+
+            return Command::FAILURE;
         }
 
         $this->printSummary();
@@ -245,7 +278,12 @@ class MigrateApplicantsData extends Command
             }
 
             $remap = $config['remap'] ?? null;
-            $remapLabel = $remap ? " ({$remap['fk']} ← new {$remap['parent']}.id)" : '';
+            $remapLabel = '';
+            if ($remap) {
+                $remaps = isset($remap['fk']) ? [$remap] : $remap;
+                $parts = array_map(fn ($r) => "{$r['fk']} ← new {$r['parent']}.id", $remaps);
+                $remapLabel = ' ('.implode(', ', $parts).')';
+            }
             $this->line(sprintf('  %s: %d rows%s', $table, count($rows), $remapLabel));
         }
 
@@ -267,6 +305,10 @@ class MigrateApplicantsData extends Command
         $inserted = 0;
         $skipped = 0;
         $errors = 0;
+
+        if ($table === 'quick_links') {
+            DB::table($table)->delete();
+        }
 
         foreach ($rows as $row) {
             try {
@@ -299,26 +341,27 @@ class MigrateApplicantsData extends Command
                 // Handle nullable timestamps — convert string to Carbon
                 $insertData = $this->castTimestamps($insertData);
 
-                // Remap FK
+                // Remap FK(s)
                 if ($remap) {
-                    $parentMap = $this->idMaps[$remap['parent']] ?? [];
-                    $oldFk = $insertData[$remap['fk']] ?? null;
+                    $remaps = isset($remap['fk']) ? [$remap] : $remap;
 
-                    if ($oldFk === null) {
-                        $this->warn("  {$table}: row '{$oldId}' has null '{$remap['fk']}', skipping");
-                        $errors++;
+                    foreach ($remaps as $r) {
+                        $parentMap = $this->idMaps[$r['parent']] ?? [];
+                        $oldFk = $insertData[$r['fk']] ?? null;
 
-                        continue;
+                        if ($oldFk === null) {
+                            continue;
+                        }
+
+                        if (! isset($parentMap[$oldFk])) {
+                            $this->warn("  {$table}: row '{$oldId}' references missing {$r['parent']}.id={$oldFk}, skipping");
+                            $errors++;
+
+                            continue 2;
+                        }
+
+                        $insertData[$r['fk']] = $parentMap[$oldFk];
                     }
-
-                    if (! isset($parentMap[$oldFk])) {
-                        $this->warn("  {$table}: row '{$oldId}' references missing {$remap['parent']}.id={$oldFk}, skipping");
-                        $errors++;
-
-                        continue;
-                    }
-
-                    $insertData[$remap['fk']] = $parentMap[$oldFk];
                 }
 
                 // Handle JSON columns — encode arrays/objects back to JSON strings
@@ -340,6 +383,51 @@ class MigrateApplicantsData extends Command
         }
 
         $this->stats[$table] = compact('inserted', 'skipped', 'errors');
+    }
+
+    protected function verifyImport(): void
+    {
+        $errors = [];
+
+        foreach (self::TABLE_CONFIG as $table => $config) {
+            $remap = $config['remap'] ?? null;
+
+            if (! $remap) {
+                continue;
+            }
+
+            $remaps = isset($remap['fk']) ? [$remap] : $remap;
+
+            foreach ($remaps as $r) {
+                $badRows = DB::table($table)
+                    ->whereNotNull($r['fk'])
+                    ->whereNotExists(function ($query) use ($table, $r) {
+                        $query->select(DB::raw(1))
+                            ->from($r['parent'])
+                            ->whereRaw("{$r['parent']}.id = {$table}.{$r['fk']}");
+                    })
+                    ->get(['id', $r['fk']]);
+
+                if ($badRows->isNotEmpty()) {
+                    $count = $badRows->count();
+                    $sample = $badRows->take(10);
+                    $details = $sample->map(fn ($row) => "id={$row->id} ({$r['fk']}={$row->{$r['fk']}})")->implode(', ');
+                    $more = $count > 10 ? ' (and '.($count - 10).' more)' : '';
+
+                    $errors[] = "{$table}: {$count} invalid {$r['fk']} → {$r['parent']}.id: {$details}{$more}";
+                }
+            }
+        }
+
+        if (! empty($errors)) {
+            throw new \RuntimeException(
+                "FK integrity check failed:\n".implode("\n", array_map(
+                    fn ($e) => "  - {$e}", $errors
+                ))
+            );
+        }
+
+        $this->line('  ✓ FK integrity verified');
     }
 
     protected function castTimestamps(array $data): array

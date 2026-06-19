@@ -9,9 +9,7 @@ interface BookingProgressProps {
     currentStep: 1 | 2;
 }
 
-export default function BookingProgress({
-    currentStep,
-}: BookingProgressProps) {
+export default function BookingProgress({ currentStep }: BookingProgressProps) {
     return (
         <div className="mx-auto mb-8 max-w-xl">
             <div className="flex items-center justify-between">
@@ -49,7 +47,7 @@ export default function BookingProgress({
                             </div>
                             <span
                                 className={cn(
-                                    'whitespace-nowrap text-xs',
+                                    'text-xs whitespace-nowrap',
                                     s.step <= currentStep
                                         ? 'font-medium text-foreground'
                                         : 'text-muted-foreground',

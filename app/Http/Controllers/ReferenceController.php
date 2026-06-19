@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SubmitReferenceRequest;
-use App\Mail\ReferenceCompletedMail;
 use App\Models\ReferenceRequest;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
+use App\Notifications\ReferenceCompletedNotification;
+use Illuminate\Support\Facades\Notification;
 
 class ReferenceController extends Controller
 {
@@ -65,14 +65,12 @@ class ReferenceController extends Controller
         ]);
 
         // Notify admins
-        $adminEmails = User::whereIn('role', ['admin', 'super_admin'])->pluck('email');
+        $admins = User::where('role', 'admin')->get();
         $applicantName = $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
-        foreach ($adminEmails as $adminEmail) {
-            Mail::to($adminEmail)->queue(new ReferenceCompletedMail(
-                $reference->reference_name,
-                $applicantName,
-            ));
-        }
+        Notification::send($admins, new ReferenceCompletedNotification(
+            $reference->reference_name,
+            $applicantName,
+        ));
 
         return redirect("/references/{$token}")->with('success', 'Your reference has been submitted. Thank you!');
     }

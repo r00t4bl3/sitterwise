@@ -177,7 +177,7 @@ test('generates slug with last initial', function () {
     $this->assertEquals('jason-s', $caregiver->refresh()->slug);
 });
 
-test('generates unique slug for duplicate base', function () {
+test('generates unique slug with full last name on collision', function () {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
@@ -200,10 +200,10 @@ test('generates unique slug for duplicate base', function () {
     $caregiver2->save();
 
     $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
-    $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
+    $this->assertEquals('jason-michael', $caregiver2->refresh()->slug);
 });
 
-test('generates sequential slugs for multiple duplicates', function () {
+test('falls back to numeric suffix when full last name also collides', function () {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
     $user3 = User::factory()->create();
@@ -236,8 +236,8 @@ test('generates sequential slugs for multiple duplicates', function () {
     $caregiver3->save();
 
     $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
-    $this->assertEquals('jason-m-2', $caregiver2->refresh()->slug);
-    $this->assertEquals('jason-m-3', $caregiver3->refresh()->slug);
+    $this->assertEquals('jason-michael', $caregiver2->refresh()->slug);
+    $this->assertEquals('jason-miller', $caregiver3->refresh()->slug);
 });
 
 test('generates slug for special last name', function () {
@@ -250,4 +250,162 @@ test('generates slug for special last name', function () {
     $caregiver->save();
 
     $this->assertEquals('jason-o', $caregiver->refresh()->slug);
+});
+
+test('uses numeric suffix when full last name also collides', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+    $user3 = User::factory()->create();
+
+    $caregiver1 = new Caregiver([
+        'user_id' => $user1->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => 'jason-m',
+    ]);
+    $caregiver1->save();
+
+    $caregiver2 = new Caregiver([
+        'user_id' => $user2->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => 'jason-momoa',
+    ]);
+    $caregiver2->save();
+
+    $caregiver3 = new Caregiver([
+        'user_id' => $user3->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => '',
+    ]);
+    $caregiver3->save();
+
+    $this->assertEquals('jason-momoa-2', $caregiver3->refresh()->slug);
+});
+
+test('regenerates slug when first name changes', function () {
+    $caregiver = new Caregiver([
+        'user_id' => User::factory()->create()->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Judith',
+        'last_name' => 'Miller',
+        'slug' => '',
+    ]);
+    $caregiver->save();
+
+    $this->assertEquals('judith-m', $caregiver->refresh()->slug);
+
+    $caregiver->update(['first_name' => 'Melanie']);
+
+    $this->assertEquals('melanie-m', $caregiver->refresh()->slug);
+});
+
+test('regenerates slug when last name changes', function () {
+    $caregiver = new Caregiver([
+        'user_id' => User::factory()->create()->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+        'slug' => '',
+    ]);
+    $caregiver->save();
+
+    $this->assertEquals('jane-d', $caregiver->refresh()->slug);
+
+    $caregiver->update(['last_name' => 'Smith']);
+
+    $this->assertEquals('jane-s', $caregiver->refresh()->slug);
+});
+
+test('does not regenerate slug when name is unchanged', function () {
+    $caregiver = new Caregiver([
+        'user_id' => User::factory()->create()->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+        'slug' => '',
+    ]);
+    $caregiver->save();
+
+    $originalSlug = $caregiver->refresh()->slug;
+
+    $caregiver->update(['phone' => '555-9999']);
+
+    $this->assertEquals($originalSlug, $caregiver->refresh()->slug);
+});
+
+test('does not regenerate slug when slug is explicitly provided in update', function () {
+    $caregiver = new Caregiver([
+        'user_id' => User::factory()->create()->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+        'slug' => '',
+    ]);
+    $caregiver->save();
+
+    $this->assertEquals('jane-d', $caregiver->refresh()->slug);
+
+    // Simulate import passing slug explicitly alongside a changed name
+    $caregiver->update([
+        'first_name' => 'Janet',
+        'slug' => 'custom-slug',
+    ]);
+
+    $this->assertEquals('custom-slug', $caregiver->refresh()->slug);
+});
+
+test('regenerates slug with collision resolution when name changes', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $caregiver1 = new Caregiver([
+        'user_id' => $user1->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jason',
+        'last_name' => 'Momoa',
+        'slug' => '',
+    ]);
+    $caregiver1->save();
+
+    $caregiver2 = new Caregiver([
+        'user_id' => $user2->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Other',
+        'last_name' => 'Person',
+        'slug' => '',
+    ]);
+    $caregiver2->save();
+
+    $this->assertEquals('jason-m', $caregiver1->refresh()->slug);
+
+    // Change caregiver2's name to collide with caregiver1's slug
+    $caregiver2->update(['first_name' => 'Jason', 'last_name' => 'Matt']);
+
+    $this->assertEquals('jason-matt', $caregiver2->refresh()->slug);
+});
+
+test('bulk update via query builder does not trigger slug regeneration', function () {
+    $caregiver = new Caregiver([
+        'user_id' => User::factory()->create()->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+        'slug' => '',
+    ]);
+    $caregiver->save();
+
+    $this->assertEquals('jane-d', $caregiver->refresh()->slug);
+
+    // Simulate the bulk import path — no Eloquent events
+    Caregiver::where('id', $caregiver->id)->update([
+        'first_name' => 'Janet',
+        'last_name' => 'Smith',
+    ]);
+
+    $this->assertEquals('jane-d', $caregiver->refresh()->slug);
 });

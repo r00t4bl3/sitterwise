@@ -23,6 +23,7 @@ interface Props {
         totalClients?: number;
         activeBookings?: number;
         totalBookings?: number;
+        completedBookings?: number;
         pastBookings?: number;
         favoriteCaregivers?: number;
         totalEarned?: number;
@@ -42,7 +43,7 @@ interface Props {
         firstName: string;
         lastName: string;
         rating: number | null;
-        status: { name: string };
+        status: string | null;
         availabilities: Availability[];
         bookingStatuses: Array<{
             value: string;
@@ -100,7 +101,7 @@ export default function Dashboard() {
                         firstName: caregiver?.firstName || user.name,
                         lastName: caregiver?.lastName || '',
                         rating: caregiver?.rating || null,
-                        status: caregiver?.status?.name || 'Unknown',
+                        status: caregiver?.status || 'Unknown',
                         availabilities: caregiver?.availabilities || [],
                         bookingStatuses: caregiver?.bookingStatuses || [],
                         nextJob: caregiver?.nextJob,
@@ -131,8 +132,10 @@ export default function Dashboard() {
                         ytdPercentChange: stats?.ytdPercentChange ?? null,
                         ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
                         troubledUnassigned: stats?.troubledUnassigned ?? 0,
-                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
-                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
+                        troubledMissingPayment:
+                            stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout:
+                            stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );
@@ -153,8 +156,10 @@ export default function Dashboard() {
                         ytdPercentChange: stats?.ytdPercentChange ?? null,
                         ytdLastYearLabel: stats?.ytdLastYearLabel ?? '',
                         troubledUnassigned: stats?.troubledUnassigned ?? 0,
-                        troubledMissingPayment: stats?.troubledMissingPayment ?? 0,
-                        troubledAwaitingCheckout: stats?.troubledAwaitingCheckout ?? 0,
+                        troubledMissingPayment:
+                            stats?.troubledMissingPayment ?? 0,
+                        troubledAwaitingCheckout:
+                            stats?.troubledAwaitingCheckout ?? 0,
                     }}
                 />
             );
@@ -163,10 +168,9 @@ export default function Dashboard() {
         default:
             return (
                 <ClientDashboard
-                    user={{ name: user.name }}
                     stats={{
-                        totalBookings: stats?.activeBookings || 0,
-                        completedBookings: stats?.pastBookings || 0,
+                        totalBookings: stats?.totalBookings ?? 0,
+                        completedBookings: stats?.completedBookings ?? 0,
                         upcomingBookings: client?.upcomingBookings || [],
                         recentBookings: client?.recentBookings || [],
                     }}

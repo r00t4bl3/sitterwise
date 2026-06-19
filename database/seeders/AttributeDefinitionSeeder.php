@@ -19,6 +19,7 @@ class AttributeDefinitionSeeder extends Seeder
             ['name' => 'Has Vehicle', 'slug' => 'has_vehicle', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 3],
             ['name' => 'Non-Smoker', 'slug' => 'non_smoker', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 4],
             ['name' => 'COVID-19 Vaccinated', 'slug' => 'covid19_vaccinated', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 5],
+            ['name' => 'Special Needs', 'slug' => 'special_needs', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 6],
         ];
 
         // Client attributes

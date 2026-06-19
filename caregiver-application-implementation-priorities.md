@@ -545,91 +545,69 @@ See completed section above. Self-service pause/resume + admin resume + 3-tier c
 ### Low #3 — Caregiver cancellation flow (§9, wireframe) — ✅ Completed
 See completed section above. Back-out/excuse/no-show/late-arrival actions + admin notification + 11 tests.
 
-### Low #4 — Internal rating system (§11.5–11.8)
+### Low #4 — Internal rating system (§11.5–11.8) — ✅ Completed
 
-**Status:** Planned — approved design, awaiting implementation.
+Implemented in prior session. See session progress notes for full details.
 
-#### Current state
-
-| What | Detail |
-|------|--------|
-| `caregivers.admin_rating` | `decimal(3,2)`, 112 imported caregivers at 5.00 |
-| `caregiver_interviews.composite` | `tinyint(0-36)` — sum of 9 interview dimensions (1-4 each) |
-| `caregiver_assignments.resolution` | 14,387 `completed`, 710 `cancelled_by_sitterwise` — no back_out/no_show data yet |
-
-#### Planned implementation
-
-**One new table** — no redundant events/audit table. `caregiver_assignments` already stores the source data for reliability calculation.
-
-**Migration: `create_caregiver_internal_ratings_table`**
-
-One row per caregiver (unique on `caregiver_id`):
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `bigint unsigned` PK | |
-| `caregiver_id` | `bigint unsigned` FK → caregivers | **unique** |
-| `communication_score` | `decimal(3,2)` nullable | Manual admin rating 1-5 |
-| `communication_notes` | `text` nullable | Admin notes on communication |
-| `communication_updated_at` | `timestamp` nullable | Tracks last edit |
-| `reliability_score` | `decimal(3,2)` nullable | **Cached** — auto-calculated from assignments |
-| `reliability_override` | `decimal(3,2)` nullable | Admin override — when set, used instead of auto |
-| `reliability_cached_at` | `timestamp` nullable | When reliability was last recalculated |
-| `composite_score` | `decimal(3,2)` nullable | Weighted formula result |
-| `created_at` / `updated_at` | timestamps | |
-
-**Reliability formula:**
-```php
-$backs = $assignments->whereIn('resolution', ['backed_out', 'no_show'])->count();
-$completed = $assignments->where('resolution', 'completed')->count();
-$score = 5.0 - ($backs * 0.5) + (floor($completed / 10) * 0.1);
-$reliability = round(max(0, min(5.0, $score)), 2);
-```
-
-- `cancelled_by_sitterwise` does NOT count as a penalty
-- `reliability_override IS NOT NULL` → use override instead of auto
-
-**Recalculation triggers:**
-- Artisan command `app:recalculate-reliability {--caregiver=}`
-- Hook in `AssignmentController` — after `backOut()`, `excuse()`, `logNoShow()`
-- Scheduled daily via `routes/console.php`
-
-**Composite formula (0–100):**
-
-| Component | Source | Weight | Calculation |
-|-----------|--------|--------|-------------|
-| Interview | `caregiver_interviews.composite` (0-36) | 20% | `(composite / 36) * 20` |
-| Communication | `communication_score` (1-5) | 30% | `(score / 5) * 30` |
-| Reliability | `reliability_score` or override (0-5) | 50% | `(score / 5) * 50` |
-
-If a component is null, its weight is excluded and remaining weights are re-proportioned.
-
-**Seed existing data:**
-```sql
-INSERT INTO caregiver_internal_ratings (caregiver_id, communication_score, communication_updated_at)
-SELECT id, admin_rating, updated_at FROM caregivers WHERE admin_rating IS NOT NULL;
-```
-
-The `admin_rating` column on `caregivers` stays for backward compatibility and will be removed once the frontend fully migrates.
+| Component | Files | Tests |
+|-----------|-------|-------|
+| Migration | `database/migrations/..._create_caregiver_internal_ratings_table.php` — caregiver_id (unique FK), communication_score/notes/updated_at, reliability_score/override/cached_at, composite_score; seeds from `admin_rating` | — |
+| Model | `app/Models/CaregiverInternalRating.php` — `decimal:2` casts, `effectiveReliability()` helper, `caregiver()` BelongsTo; `HasOne internalRating()` on Caregiver | — |
+| API | `CaregiverController@updateAdminRating` — writes to both legacy `admin_rating` + new `communication_score`/`notes`; `@updateReliabilityOverride` — saves/clears override | — |
+| Command | `app:recalculate-reliability {--caregiver=}` — reliability formula (backs × 0.5 penalty, floor(completed/10) × 0.1 bonus), composite formula (20/30/50 weighted, re-proportioned when components missing) | — |
+| Hooks | `Artisan::queue('app:recalculate-reliability')` in `AssignmentController@backOut`, `@excuse`, `@logNoShow` | — |
+| Schedule | Daily at 02:00 via `routes/console.php` | — |
+| Frontend | Internal Rating tab in `admin/caregivers/show.tsx` — 3 sections: Communication (rating + notes), Reliability (auto-score + override), Composite (read-only weighted with breakdown) | — |
+| Tests | `tests/Feature/CaregiverInternalRatingTest.php` — 12 tests | ✅ All pass |
 
 **Wireframe:** Not shown — backend system feeding profile display.
 
-### Low #5 — Client reviews & ratings (§8)
-Post-booking review trigger (2h email, 48h SMS), 14-day link, detailed rating form, admin trend dashboard.
+### Low #5 — Client reviews & ratings (§8) — ✅ Completed
+
+Implemented in this session. All items complete.
+
+| Feature | Status | Files |
+|---------|--------|-------|
+| Quick rating (`POST /jobs/{booking}/rate`) | ✅ Complete | `JobController::rate()` |
+| Full review + tip flow (logged-in) | ✅ Complete | `BookingReviewController`, `client/reviews/create.tsx` |
+| Guest review flow (signed URL) | ✅ Complete | `BookingReviewController`, `guest/bookings/review.tsx` |
+| Guest review success page | ✅ Complete | `guest/bookings/review-success.tsx` |
+| Admin booking show (reviews section) | ✅ Complete | `admin/bookings/show.tsx` |
+| Caregiver profile reviews tab (deferred) | ✅ Complete | `CaregiverController@show` |
+| Reusable `<Rating>` / `<RatingInput>` | ✅ Complete | `ui/rating.tsx`, `rating-input.tsx` |
+| Booking model rating relationships | ✅ Complete | `clientRating`, `caregiverRating` accessors |
+| `recalculateRating()` after full review flow | ✅ Fixed | `BookingReviewController::processReviewSubmission()` — added `$booking->caregiver->recalculateRating()` |
+| Review reminder email (2h) | ✅ Complete | `BookingReviewReminderMail`, `app:send-review-reminders` command |
+| SMS reminder (48h) | ✅ Complete | Via `BookingReviewReminderNotification` — `SmsChannel` added when 48h+ elapsed |
+| 14-day link expiration | ✅ Complete | `URL::temporarySignedRoute('review.create', now()->addDays(14), ...)` in Booking + BookingGroup |
+| Admin trend dashboard | ✅ Complete | 6 analytics fields in `DashboardController@index`, rating widget in `admin/dashboard.tsx` |
+| Review notification | ✅ Complete | `BookingReviewReminderNotification` — mail + conditional SMS + database channels |
+
+**Tests:** 21 tests across `BookingReviewTest.php` (15) and `BookingReviewReminderTest.php` (6) — all pass.
 
 **Wireframe:** Not shown.
 
-### Low #6 — Milestone view (§12, wireframe)
-Caregiver-facing stats: total jobs, client rating, reliability % + peer comparison, job streak, Trustline reimbursement progress.
+### Low #6 — Milestone view + engagement metrics (§12 + §10, wireframe) — ✅ Completed
 
-**What to do:**
-- Stats grid matching wireframe: big jobs-completed number, rating with stars, reliability %, streak, Trustline progress bar
-- Peer comparison (team average for reliability)
-- Do not display raw back-out counts
+Caregiver-facing stats page: portal greeting with 5 milestone stat cards plus an activity detail section showing engagement metrics. Designed to motivate without shaming — reliability % with peer comparison instead of raw back-out count.
 
-**Wireframe:** Full design in "Milestone View" screen — greeting banner + 5 stat cards.
+**Wireframe:** Full design in "Milestone View" screen — greeting banner + 5 stat cards. Engagement metrics from caregiver profile wireframe Activity Detail section.
 
-### Low #7 — Job engagement metrics (§10), S2Verify (§13)
-Admin metrics dashboard (acceptance rate, response time, etc.), background check integration with S2Verify webhook.
+**Implementation:**
 
-**Wireframe:** Not shown.
+| File | Purpose |
+|------|---------|
+| `config/trustline.php` | Jobs threshold (10) + reward ($140), env-configurable |
+| `app/Http/Controllers/MilestoneController.php` | Computes 5 milestone stats + 10 engagement metrics |
+| `resources/js/pages/caregiver/milestones.tsx` | Portal greeting, 5 stat cards, Trustline progress bar, Activity Detail grid |
+| `routes/web.php` | `GET /milestones` with auth+verified+caregiver middleware |
+| `resources/js/components/app-sidebar.tsx` | Added `Milestones` link to caregiver sidebar |
+| `tests/Feature/MilestoneViewTest.php` | 12 tests — all pass |
+
+No new schema needed — all data exists in `BookingCaregiverNotification` and `CaregiverAssignment`.
+
+### Low #7 — S2Verify background check (§13) — Planned
+
+Full plan in `docs/s2verify-background-check-plan.md`. 3 phases, ~4–5 days total. Phase 1 is deliverable independently with stubbed API calls.
+
+**Wireframe:** Compliance tab on caregiver profile — status badge, check date, expiration, report link, Initiate button.

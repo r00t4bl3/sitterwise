@@ -67,7 +67,7 @@ export default function ClientBookingsIndex() {
                             Bookings
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Your upcoming and past bookings asdf
+                            Your upcoming and past bookings
                         </p>
                     </div>
                     <Button asChild>
@@ -121,11 +121,22 @@ export default function ClientBookingsIndex() {
                                                         bookingStatuses
                                                     }
                                                 />
-                                                {booking.booking_group && booking.booking_group.bookings_count > 1 && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                        Multi-Day ({booking.booking_group.bookings_count})
-                                                    </Badge>
-                                                )}
+                                                {booking.booking_group &&
+                                                    booking.booking_group
+                                                        .bookings_count > 1 && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            Multi-Day (
+                                                            {
+                                                                booking
+                                                                    .booking_group
+                                                                    .bookings_count
+                                                            }
+                                                            )
+                                                        </Badge>
+                                                    )}
                                             </div>
                                         </div>
 

@@ -23,6 +23,15 @@ class Client extends Model
         return ClientFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (Client $client) {
+            if ($client->user) {
+                $client->user->update(['name' => $client->full_name]);
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'first_name',
@@ -38,6 +47,7 @@ class Client extends Model
         'other_adults_present',
         'emergency_instructions',
         'special_needs_notes',
+        'sms_opted_out',
         'notes',
     ];
 
@@ -49,6 +59,7 @@ class Client extends Model
     protected $casts = [
         'sitter_preferences' => 'array',
         'rating' => 'decimal:2',
+        'sms_opted_out' => 'boolean',
     ];
 
     public function ratings(): MorphMany

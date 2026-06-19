@@ -92,6 +92,9 @@ test('client can submit review with rating and comment', function () {
         'rating' => 5,
         'comment' => 'Great caregiver! Very professional.',
     ]);
+
+    $this->caregiver->refresh();
+    $this->assertEquals(5.0, $this->caregiver->rating);
 });
 
 test('review can be updated', function () {
@@ -221,6 +224,9 @@ test('guest can submit review via signed url', function () {
         'rating' => 5,
         'comment' => 'Guest review test',
     ]);
+
+    $this->caregiver->refresh();
+    $this->assertEquals(5.0, $this->caregiver->rating);
 });
 
 test('guest review uses booking client user id as rater', function () {

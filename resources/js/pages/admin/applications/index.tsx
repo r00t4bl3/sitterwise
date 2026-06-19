@@ -33,7 +33,12 @@ interface PaginatedData<T> {
 interface Props {
     applications: PaginatedData<Application>;
     filters: { status?: string; search?: string };
-    caregiverStatuses: Array<{ value: string; label: string; color: string; is_terminal: boolean }>;
+    caregiverStatuses: Array<{
+        value: string;
+        label: string;
+        color: string;
+        is_terminal: boolean;
+    }>;
     [key: string]: unknown;
 }
 
@@ -171,9 +176,7 @@ export default function ApplicationsIndex() {
                             size="sm"
                             onClick={() =>
                                 handleStatusChange(
-                                    statusFilter === s.value
-                                        ? null
-                                        : s.value,
+                                    statusFilter === s.value ? null : s.value,
                                 )
                             }
                         >
@@ -217,142 +220,147 @@ export default function ApplicationsIndex() {
                                     app.reference_count > 0;
 
                                 return (
-                                <tr
-                                    key={app.id}
-                                    className="border-b border-border transition hover:bg-blush"
-                                >
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {app.id}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm font-medium text-foreground">
-                                        {app.applicant_name}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {app.applicant_email}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Badge
-                                            style={{
-                                                backgroundColor:
-                                                    (caregiverStatuses.find(
-                                                        (s) =>
-                                                            s.value ===
-                                                            app.status,
-                                                    )?.color ?? '#6B7280') +
-                                                    '20',
-                                                color:
-                                                    caregiverStatuses.find(
-                                                        (s) =>
-                                                            s.value ===
-                                                            app.status,
-                                                    )?.color ?? '#6B7280',
-                                            }}
-                                        >
-                                            {app.status_label}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {app.submitted_at
-                                            ? format(new Date(app.submitted_at), 'MMMM d, yyyy')
-                                            : '-'}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-2 w-24 overflow-hidden rounded-full bg-gray-200">
-                                                <div
-                                                    className={`h-full rounded-full transition-all ${referenceProgressClass(app.completed_count, app.reference_count)}`}
-                                                    style={{
-                                                        width:
-                                                            app.reference_count >
-                                                            0
-                                                                ? `${(app.completed_count / app.reference_count) * 100}%`
-                                                                : '0%',
-                                                    }}
-                                                />
-                                            </div>
-                                            <span className="text-xs whitespace-nowrap text-muted-foreground">
-                                                {app.completed_count}/
-                                                {app.reference_count}
-                                            </span>
-                                            {allComplete && (
-                                                <Badge
-                                                    variant="default"
-                                                    className="bg-green-100 text-green-700 hover:bg-green-200"
-                                                >
-                                                    Complete
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Button asChild className="h-8">
-                                            <Link
-                                                href={`/applications/${app.id}`}
+                                    <tr
+                                        key={app.id}
+                                        className="border-b border-border transition hover:bg-blush"
+                                    >
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                            {app.id}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                            {app.applicant_name}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                            {app.applicant_email}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Badge
+                                                style={{
+                                                    backgroundColor:
+                                                        (caregiverStatuses.find(
+                                                            (s) =>
+                                                                s.value ===
+                                                                app.status,
+                                                        )?.color ?? '#6B7280') +
+                                                        '20',
+                                                    color:
+                                                        caregiverStatuses.find(
+                                                            (s) =>
+                                                                s.value ===
+                                                                app.status,
+                                                        )?.color ?? '#6B7280',
+                                                }}
                                             >
-                                                View
-                                            </Link>
-                                        </Button>
+                                                {app.status_label}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                            {app.submitted_at
+                                                ? format(
+                                                      new Date(
+                                                          app.submitted_at,
+                                                      ),
+                                                      'MMMM d, yyyy',
+                                                  )
+                                                : '-'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-2 w-24 overflow-hidden rounded-full bg-gray-200">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all ${referenceProgressClass(app.completed_count, app.reference_count)}`}
+                                                        style={{
+                                                            width:
+                                                                app.reference_count >
+                                                                0
+                                                                    ? `${(app.completed_count / app.reference_count) * 100}%`
+                                                                    : '0%',
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs whitespace-nowrap text-muted-foreground">
+                                                    {app.completed_count}/
+                                                    {app.reference_count}
+                                                </span>
+                                                {allComplete && (
+                                                    <Badge
+                                                        variant="default"
+                                                        className="bg-green-100 text-green-700 hover:bg-green-200"
+                                                    >
+                                                        Complete
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <Button asChild className="h-8">
+                                                <Link
+                                                    href={`/applications/${app.id}`}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {applications.data.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={7}
+                                        className="px-4 py-12 text-center text-sm text-muted-foreground"
+                                    >
+                                        No applications yet.
                                     </td>
                                 </tr>
-                            );
-                        })}
-                        {applications.data.length === 0 && (
-                            <tr>
-                                <td
-                                    colSpan={7}
-                                    className="px-4 py-12 text-center text-sm text-muted-foreground"
-                                >
-                                    No applications yet.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {applications.last_page > 1 && (
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                        Page {applications.current_page} of{' '}
-                        {applications.last_page}
-                    </p>
-                    <div className="flex gap-1">
-                        {applications.links.map((link, index) => {
-                            if (link.label === '...') {
-                                return null;
-                            }
-
-                            const isPrev =
-                                link.label.includes('Previous') ||
-                                link.label.includes('&laquo;');
-                            const isNext =
-                                link.label.includes('Next') ||
-                                link.label.includes('&raquo;');
-
-                            return (
-                                <Link
-                                    key={index}
-                                    href={link.url || '#'}
-                                    className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
-                                        link.active
-                                            ? 'bg-table-header text-white'
-                                            : 'border border-border text-muted-foreground hover:bg-accent'
-                                    } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
-                                >
-                                    {isPrev ? (
-                                        <ChevronLeft className="h-4 w-4" />
-                                    ) : isNext ? (
-                                        <ChevronRight className="h-4 w-4" />
-                                    ) : (
-                                        link.label
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-            )}
-        </div>
-    </AppLayout>
-);
+
+                {applications.last_page > 1 && (
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Page {applications.current_page} of{' '}
+                            {applications.last_page}
+                        </p>
+                        <div className="flex gap-1">
+                            {applications.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-table-header text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </AppLayout>
+    );
 }

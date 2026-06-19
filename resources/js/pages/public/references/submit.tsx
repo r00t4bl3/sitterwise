@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToasterMessage } from '@/components/toaster-message';
 
 const yearsKnownOptions = [
     { value: '<1', label: 'Less than 1 year' },
@@ -95,11 +96,13 @@ export default function Submit({
         relationship: defaults.relationship ?? '',
         years_known: defaults.years_known ?? '',
         rating_reliability: defaults.rating_reliability?.toString() ?? '',
-        rating_trustworthiness: defaults.rating_trustworthiness?.toString() ?? '',
+        rating_trustworthiness:
+            defaults.rating_trustworthiness?.toString() ?? '',
         rating_maturity: defaults.rating_maturity?.toString() ?? '',
         rating_communication: defaults.rating_communication?.toString() ?? '',
         rating_warmth: defaults.rating_warmth?.toString() ?? '',
-        rating_overall_recommendation: defaults.rating_overall_recommendation?.toString() ?? '',
+        rating_overall_recommendation:
+            defaults.rating_overall_recommendation?.toString() ?? '',
         strengths: defaults.strengths ?? '',
         concerns: defaults.concerns ?? '',
         additional_comments: defaults.additional_comments ?? '',
@@ -112,6 +115,7 @@ export default function Submit({
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+            <ToasterMessage />
             <div className="w-full max-w-lg">
                 <div className="mb-8 text-center">
                     <img
@@ -189,9 +193,7 @@ export default function Submit({
 
                         <div className="space-y-4">
                             <div>
-                                <Label className="text-base">
-                                    Ratings
-                                </Label>
+                                <Label className="text-base">Ratings</Label>
                                 <p className="text-xs text-gray-400">
                                     Rate {applicantName} in each area
                                 </p>

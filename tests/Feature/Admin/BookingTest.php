@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\AssignmentResolution;
 use App\Enums\CaregiverStatus;
 use App\Events\BookingGroupSplit;
 use App\Models\Availability;
 use App\Models\Booking;
+use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
@@ -166,7 +168,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -199,7 +203,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Unlisted Hotel Rd',
             'address_line2' => '',
             'address_city' => 'San Diego',
@@ -231,7 +237,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'rental_platform' => 'airbnb',
             'address_line1' => '123 Beach House Way',
             'address_line2' => '',
@@ -269,7 +277,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Home Way',
             'address_line2' => '',
             'address_city' => 'Home City',
@@ -301,7 +311,9 @@ describe('Booking - Admin', function () {
             'end_datetime' => now()->addDays(11)->toISOString(),
             'hotel_id' => $booking->hotel_id,
             'address_id' => $booking->address_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -309,6 +321,127 @@ describe('Booking - Admin', function () {
         $response->assertRedirect();
         $booking->refresh();
         expect($booking->status)->toBe('confirmed');
+    });
+
+    test('unassigning caregiver from confirmed booking reverts status to received', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiver->id,
+                'status' => 'confirmed',
+                'start_datetime' => now()->addDays(10),
+                'end_datetime' => now()->addDays(10)->addHours(4),
+            ]);
+
+        // The saved hook creates an unresolved assignment
+        $assignment = $booking->assignments()->unresolved()->first();
+        expect($assignment)->not->toBeNull();
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => '',
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $booking->refresh();
+
+        expect($booking->caregiver_id)->toBeNull();
+        expect($booking->status)->toBe('received');
+        $assignment->refresh();
+        expect($assignment->resolution)->toBe(AssignmentResolution::Reassigned->value);
+    });
+
+    test('unassigning caregiver from completed booking does not revert status', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiver->id,
+                'status' => 'completed',
+                'payment_status' => 'paid',
+                'start_datetime' => now()->subDays(2),
+                'end_datetime' => now()->subDays(2)->addHours(4),
+            ]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => '',
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $booking->refresh();
+        expect($booking->caregiver_id)->toBeNull();
+        expect($booking->status)->toBe('completed');
+    });
+
+    test('assigning caregiver to received booking auto-confirms', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => null,
+                'status' => 'received',
+                'start_datetime' => now()->addDays(10),
+                'end_datetime' => now()->addDays(10)->addHours(4),
+            ]);
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => $booking->location_type,
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'caregiver_id' => $caregiver->id,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $booking->refresh();
+
+        expect($booking->caregiver_id)->toBe($caregiver->id);
+        expect($booking->status)->toBe('confirmed');
+
+        $assignment = $booking->assignments()->where('caregiver_id', $caregiver->id)->unresolved()->first();
+        expect($assignment)->not->toBeNull();
     });
 
     test('admin can update booking vacation rental with platform and address', function () {
@@ -328,7 +461,9 @@ describe('Booking - Admin', function () {
             'total_amount' => '200',
             'status' => 'confirmed',
             'payment_status' => 'paid',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'rental_platform' => 'vrbo',
             'address_line1' => '456 Mountain Cabin',
             'address_line2' => '',
@@ -356,9 +491,7 @@ describe('Booking - Admin', function () {
 
         $response->assertRedirect();
 
-        $this->assertSoftDeleted('bookings', [
-            'id' => $booking->id,
-        ]);
+        $this->assertModelMissing($booking);
     });
 
     test('admin can search hotels', function () {
@@ -421,7 +554,8 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => $children->pluck('id')->toArray(),
+            'new_children' => $children->map(fn ($c) => ['name' => $c->name, 'gender' => $c->gender, 'birth_month' => $c->birth_month, 'birth_year' => $c->birth_year])->values()->toArray(),
+            'new_pets' => $pets->map(fn ($p) => ['name' => $p->name, 'type' => $p->type, 'breed' => $p->breed, 'notes' => $p->notes])->values()->toArray(),
             'address_line1' => '123 Hotel Way',
             'address_line2' => '',
             'address_city' => 'Los Angeles',
@@ -497,9 +631,13 @@ describe('Booking - Admin', function () {
         ]));
 
         $response->assertSuccessful();
-        $response->assertJsonCount(3);
+        $response->assertJsonCount(3, 'data');
         $response->assertJsonStructure([
-            '*' => ['id', 'name', 'age', 'tier', 'tierLabel', 'matchIcons', 'hasBeenNotified'],
+            'data' => [
+                '*' => ['id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified'],
+            ],
+            'all_ids',
+            'meta' => ['total', 'per_page', 'current_page', 'last_page'],
         ]);
     });
 
@@ -539,7 +677,7 @@ describe('Booking - Admin', function () {
         ]);
     });
 
-    test('notify endpoint prevents duplicate notifications', function () {
+    test('notify endpoint re-notifies existing caregivers', function () {
         // $this->markTestSkipped('CSRF protection prevents this test from running in isolation.');
 
         $this->actingAs($this->user);
@@ -552,13 +690,73 @@ describe('Booking - Admin', function () {
             'caregiver_ids' => [$caregiver->id],
         ]);
 
-        // Second notification to same caregiver
+        $firstNotifiedAt = BookingCaregiverNotification::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiver->id)
+            ->value('notified_at');
+
+        $this->travel(1)->minute();
+
+        // Second notification to same caregiver — updates notified_at and resets response
         $this->post(route('bookings.notify', $booking->id), [
             'caregiver_ids' => [$caregiver->id],
         ]);
 
-        // Should only have one record (updateOrCreate)
         $this->assertDatabaseCount('booking_caregiver_notifications', 1);
+
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'claimed' => false,
+            'responded_at' => null,
+        ]);
+
+        $this->assertNotEquals(
+            $firstNotifiedAt,
+            BookingCaregiverNotification::where('booking_id', $booking->id)
+                ->where('caregiver_id', $caregiver->id)
+                ->value('notified_at'),
+        );
+    });
+
+    test('notify transitions booking from received to pending', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'received']);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $booking->refresh();
+        expect($booking->status)->toBe('pending');
+    });
+
+    test('notify from pending keeps status as pending', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'pending']);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $booking->refresh();
+        expect($booking->status)->toBe('pending');
+    });
+
+    test('notify from confirmed booking returns error', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->create(['status' => 'confirmed']);
+        $caregiver = Caregiver::factory()->create();
+
+        $response = $this->post(route('bookings.notify', $booking->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        $response->assertSessionHas('error');
     });
 
     test('admin can create a booking with new children and save to profile', function () {
@@ -797,7 +995,6 @@ describe('Booking - Admin', function () {
 
     test('admin can update a booking without adding new children and retain existing children when save_children_pets_to_profile is false', function () {
         $this->actingAs($this->user);
-        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
         // Create a booking with existing children but not saving to profile
         $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
@@ -841,7 +1038,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => 'Original Child', 'gender' => 'male', 'birth_month' => 5, 'birth_year' => 2020],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -885,7 +1084,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Pet Owner Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -935,7 +1136,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '456 Pet Ave',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -998,7 +1201,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1060,7 +1265,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1128,7 +1335,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 150,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '789 Updated Way',
             'address_city' => 'San Diego',
             'address_state' => 'CA',
@@ -1160,7 +1369,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1184,7 +1395,9 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'address_line1' => '123 Hotel Way',
             'address_city' => 'Los Angeles',
             'address_state' => 'CA',
@@ -1215,7 +1428,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->start_datetime->toISOString(),
             'end_datetime' => $booking->end_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1244,7 +1459,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => $booking->end_datetime->toISOString(),
             'end_datetime' => $booking->start_datetime->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1273,7 +1490,9 @@ describe('Booking - Admin', function () {
             'start_datetime' => now()->subHours(3)->toISOString(),
             'end_datetime' => now()->subHour()->toISOString(),
             'hotel_id' => $booking->hotel_id,
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'status' => 'confirmed',
             'payment_status' => 'paid',
         ]);
@@ -1336,7 +1555,9 @@ describe('Booking - Admin', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92102',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'children_notes' => 'should be ignored',
         ]);
 
@@ -1372,7 +1593,9 @@ describe('Booking - Admin', function () {
             'address_city' => 'San Diego',
             'address_state' => 'CA',
             'address_zip' => '92103',
-            'child_ids' => [$child->id],
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
             'children_notes' => 'should be ignored',
         ]);
 
@@ -1642,7 +1865,9 @@ describe('Booking - Admin', function () {
                 'end_datetime' => $endStr,
                 'status' => 'received',
                 'payment_status' => 'pending',
-                'child_ids' => [$child->id],
+                'new_children' => [
+                    ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+                ],
                 'address_line1' => '100 Timezone St',
                 'address_line2' => '',
                 'address_city' => 'San Diego',
@@ -1693,6 +1918,46 @@ describe('Booking - Admin', function () {
             // Mutator converts "09:00" parsed as PT → 16:00 UTC → stored correctly
             // → toISOString() = "...T16:00:00..."
             // → formatDisplayTimeInPT() = "9:00 AM" ✅
+        });
+
+        test('Z-suffixed datetime from formatUtcStringFromPt is not double-converted', function () {
+            // formatUtcStringFromPt() now outputs "2026-07-15T20:00Z" (UTC with Z suffix).
+            // This test verifies convertToUtc detects the Z and skips PT→UTC re-conversion.
+
+            $this->actingAs($this->user);
+            $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+            // 1 PM PT = 20:00 UTC → formatUtcStringFromPt outputs "T20:00Z"
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => '2026-07-15T16:00Z',   // 9 AM PT
+                'end_datetime' => '2026-07-15T20:00Z',     // 1 PM PT (NOT double-converted)
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'new_children' => [
+                    ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+                ],
+                'address_line1' => '100 Timezone St',
+                'address_line2' => '',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $booking = Booking::latest('id')->first();
+
+            // If double-converted: end would be stored as 2026-07-16 03:00:00 (20:00 PT = 03:00 UTC next day)
+            // Correct: stored as 2026-07-15 20:00:00 (the Z-suffixed input is already UTC)
+            $rawEnd = $booking->getRawOriginal('end_datetime');
+            expect(Carbon::parse($rawEnd)->format('Y-m-d H:i'))->toBe('2026-07-15 20:00');
+
+            // Verify PT display still shows 1:00 PM
+            $ptEnd = $booking->end_datetime->copy()->setTimezone('America/Los_Angeles');
+            expect($ptEnd->format('H:i'))->toBe('13:00');
         });
 
     });

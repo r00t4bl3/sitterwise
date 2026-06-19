@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
+use App\Enums\SpecialConsideration;
 use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
+use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +35,12 @@ class Booking extends Model
         });
 
         static::updating(function (Booking $booking) {
+            $skip = [BookingStatus::Paid->value, BookingStatus::Cancelled->value];
+
+            if (in_array($booking->status, $skip, true)) {
+                return;
+            }
+
             if ($booking->isDirty(['start_datetime', 'end_datetime'])) {
                 $booking->calculateTotalWorkingHours();
             }
@@ -69,6 +78,10 @@ class Booking extends Model
 
         $pricingRule = $query->first();
 
+        if (! $pricingRule) {
+            $pricingRule = PricingRule::where('service_type', $group->service_type)->first();
+        }
+
         if ($pricingRule) {
             $this->charge_to_client_hourly = $pricingRule->charge_to_client;
             $this->paid_to_caregiver_hourly = $pricingRule->paid_to_caregiver;
@@ -82,13 +95,22 @@ class Booking extends Model
 
     public function calculateTotalAmount(): void
     {
+        if ($this->status === BookingStatus::Paid->value) {
+            return;
+        }
+
         if ($this->status === BookingStatus::Cancelled->value) {
             $this->charge_to_client = 0;
             $this->paid_to_caregiver = 0;
             $this->sitterwise_cut = 0;
             $this->total_service_amount = 0;
             $this->total_amount = 0;
+            $this->paid_to_caregiver_total = 0;
 
+            return;
+        }
+
+        if ($this->end_datetime?->isPast() && $this->status !== BookingStatus::Completed->value) {
             return;
         }
 
@@ -102,6 +124,7 @@ class Booking extends Model
 
         $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
+        $this->paid_to_caregiver_total = round($this->paid_to_caregiver + $reimbursement + $bonus + $tip, 2);
     }
 
     public function resolveRouteBinding($value, $field = null)
@@ -176,6 +199,12 @@ class Booking extends Model
             return $value->copy()->setTimezone('UTC')->format('Y-m-d H:i:s');
         }
 
+        if (is_string($value) && (str_ends_with($value, 'Z') || preg_match('/[+-]\d{2}:\d{2}$/', $value))) {
+            return Carbon::parse($value)
+                ->setTimezone('UTC')
+                ->format('Y-m-d H:i:s');
+        }
+
         return Carbon::parse($value, 'America/Los_Angeles')
             ->setTimezone('UTC')
             ->format('Y-m-d H:i:s');
@@ -209,7 +238,47 @@ class Booking extends Model
     protected static function booted(): void
     {
         static::saved(function (Booking $booking) {
-            if ($booking->wasChanged('caregiver_id') && $booking->caregiver_id) {
+            $reservationService = app(AvailabilityReservationService::class);
+
+            $caregiverChanged = $booking->wasRecentlyCreated || $booking->wasChanged('caregiver_id');
+
+            if ($caregiverChanged) {
+                if ($booking->getOriginal('caregiver_id')) {
+                    $reservationService->release($booking);
+                }
+
+                if ($booking->caregiver_id) {
+                    $reservationService->reserve($booking);
+                }
+            }
+
+            if ($booking->wasChanged('status') && $booking->status === 'cancelled' && $booking->caregiver_id) {
+                $reservationService->release($booking);
+            }
+
+            if (! $booking->wasRecentlyCreated && $booking->caregiver_id && (
+                $booking->wasChanged('start_datetime') || $booking->wasChanged('end_datetime')
+            )) {
+                $reservationService->release($booking);
+                $reservationService->reserve($booking);
+            }
+
+            if ($caregiverChanged && $booking->caregiver_id) {
+                if ($booking->wasChanged('caregiver_id')) {
+                    $oldCaregiverId = $booking->getOriginal('caregiver_id');
+
+                    if ($oldCaregiverId) {
+                        $oldAssignment = $booking->assignments()
+                            ->where('caregiver_id', $oldCaregiverId)
+                            ->unresolved()
+                            ->first();
+
+                        if ($oldAssignment) {
+                            $oldAssignment->resolve(AssignmentResolution::Reassigned, 'Caregiver changed via booking edit');
+                        }
+                    }
+                }
+
                 $booking->assignments()->firstOrCreate(
                     ['caregiver_id' => $booking->caregiver_id],
                     ['assigned_at' => now()],
@@ -410,7 +479,17 @@ class Booking extends Model
 
         $childrenCount = count($group->children ?? []);
         $childrenSummary = collect($group->children ?? [])
-            ->map(fn ($c) => ($c['name'] ?? 'Child').' ('.(isset($c['birth_year']) ? now()->year - $c['birth_year'] : '?').'yr)')
+            ->map(function ($c) {
+                $name = $c['name'] ?? 'Child';
+                $age = null;
+                if (isset($c['birth_year'])) {
+                    $age = now()->year - (int) $c['birth_year'];
+                } elseif (isset($c['birth_date'])) {
+                    $age = Carbon::parse($c['birth_date'])->diffInYears(now());
+                }
+
+                return $age ? "{$name} ({$age}yr)" : $name;
+            })
             ->join(', ');
 
         $clientName = ($group->client?->first_name ?? $group->client_first_name).' '.($group->client?->last_name ?? $group->client_last_name);
@@ -429,18 +508,31 @@ class Booking extends Model
             'date_times' => $start->format('l, F j, Y'),
             'service_date_pretty' => $start->format('D, M j, Y'),
             'start_time' => $start->format('g:i A'),
+            'time' => $start->format('g:i A'),
             'end_time' => $end->format('g:i A'),
             'service_time' => $start->format('g:i A'),
             'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),
+            'dates' => [
+                [
+                    'date' => $start->format('l, F j, Y'),
+                    'start_time' => $start->format('g:i A'),
+                    'end_time' => $end->format('g:i A'),
+                ],
+            ],
+            'is_multi_day' => false,
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
-            'location' => $group->hotel_name ?? $group->hotel?->name ?? $group->address_line1,
+            'location' => $group->location_type === 'hotel'
+                ? ($group->hotel_name ?: $group->hotel?->name ?? 'Hotel').' - '.trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip)
+                : $group->address_line1,
             'address' => trim($group->address_line1.' '.$group->address_line2.', '.$group->address_city.', '.$group->address_state.' '.$group->address_zip),
             'hotel_name' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
             'service_hotel' => $group->hotel_name ?? $group->hotel?->name ?? 'N/A',
             'is_hotel' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name) : false,
             'is_hotel_text' => $group->location_type === 'hotel' ? ($group->hotel_name ?? $group->hotel?->name).' Booking' : 'Private Residence',
-            'special_considerations' => collect($group->special_considerations ?? [])->join(', ') ?: 'None',
+            'special_considerations' => collect($group->special_considerations ?? [])
+                ->map(fn ($v) => SpecialConsideration::tryFrom($v)?->label() ?? $v)
+                ->join(', ') ?: 'None',
             'notes' => $group->caregiver_notes,
             'notes_to_sitter' => $group->caregiver_notes,
             'notes_for_sitter' => $group->caregiver_notes,
@@ -456,7 +548,7 @@ class Booking extends Model
             'cg_url' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'bio_link' => $this->caregiver ? route('caregivers.bio', $this->caregiver->slug) : '#',
             'service_date' => $start->format('m/d/Y'),
-            'review_url' => URL::signedRoute('review.create', ['booking' => $this->ulid]),
+            'review_url' => URL::temporarySignedRoute('review.create', now()->addDays(14), ['booking' => $this->ulid]),
             'hotel_fee' => $this->hotel_fee ?? 0.00,
             'reimbursement_amount' => $this->reimbursement ?? 0.00,
             'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',

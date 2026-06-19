@@ -1,16 +1,17 @@
 <?php
 
-use App\Mail\AdminNewApplicationMail;
 use App\Mail\ApplicantConfirmationMail;
 use App\Mail\ReferenceRequestMail;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
 use App\Models\ReferenceRequest;
 use App\Models\User;
+use App\Notifications\AdminNewApplicationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 
@@ -384,10 +385,10 @@ describe('Caregiver Application - Submission', function () {
 
     it('sends notification emails on submission', function () {
         Mail::fake();
+        Notification::fake();
 
         // Create admin users for notification assertions
-        User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
-        User::factory()->create(['role' => 'super_admin', 'email' => 'superadmin@example.test']);
+        $admin = User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
 
         Session::put('verified_email', 'emails@example.com');
         Session::put('verified_at', now());
@@ -409,11 +410,15 @@ describe('Caregiver Application - Submission', function () {
         expect(ReferenceRequest::pending()->count())->toBe(4);
 
         // Admin notification
-        Mail::assertQueued(AdminNewApplicationMail::class, function ($mail) {
-            return $mail->applicantName === 'John Doe'
-                && $mail->applicantEmail === 'emails@example.com'
-                && $mail->applicationId > 0;
-        });
+        Notification::assertSentTo(
+            $admin,
+            AdminNewApplicationNotification::class,
+            function ($notification) {
+                return $notification->applicantName === 'John Doe'
+                    && $notification->applicantEmail === 'emails@example.com'
+                    && $notification->applicationId > 0;
+            }
+        );
     });
 
     it('thank you page loads after submission', function () {

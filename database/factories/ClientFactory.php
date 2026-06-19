@@ -36,6 +36,7 @@ class ClientFactory extends Factory
             'client_type' => fake()->randomElement(ClientType::cases())->value,
             'corporate_id' => null,
             'stripe_customer_id' => null,
+            'sms_opted_out' => false,
             'how_did_you_hear' => fake()->randomElement(DiscoverySource::cases())->value,
             'sitter_preferences' => fake()->randomElements(array_column(SitterPreference::cases(), 'value'), fake()->numberBetween(1, 4)),
             'other_adults_present' => fake()->numberBetween(0, 5),

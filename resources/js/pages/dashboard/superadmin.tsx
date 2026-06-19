@@ -14,7 +14,10 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeInPT, formatDisplayTimeInPT } from '@/lib/datetime';
+import {
+    formatDisplayDateTimeInPT,
+    formatDisplayTimeInPT,
+} from '@/lib/datetime';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';

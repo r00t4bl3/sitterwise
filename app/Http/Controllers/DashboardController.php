@@ -15,6 +15,7 @@ use App\Enums\TimeSlot;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
+use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
 use App\Models\Client;
@@ -168,6 +169,7 @@ class DashboardController extends Controller
                     ->get(),
                 'todaysBookings' => Booking::with(['client.user', 'caregiver.user'])
                     ->inToday()
+                    ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('start_datetime', 'asc')
                     ->get(),
                 'recentBookings' => Booking::with(['client.user'])
@@ -184,7 +186,7 @@ class DashboardController extends Controller
                     ->get()
                     ->map(fn ($client) => [
                         'id' => $client->id,
-                        'name' => $client->user->name,
+                        'name' => $client->full_name,
                     ])
                     ->toArray(),
                 'clientTypes' => array_map(
@@ -210,7 +212,7 @@ class DashboardController extends Controller
                     ->get()
                     ->map(fn ($caregiver) => [
                         'id' => $caregiver->id,
-                        'name' => $caregiver->user->name,
+                        'name' => $caregiver->full_name,
                     ])
                     ->toArray(),
                 'serviceTypes' => $serviceTypes,
@@ -231,6 +233,26 @@ class DashboardController extends Controller
                 'stuckReferencesCount' => ReferenceRequest::pending()
                     ->where('created_at', '<', now()->subDays(7))
                     ->count(),
+                'reviewAnalytics' => [
+                    'avgRatingAll' => round(BookingRating::where('ratable_type', Caregiver::class)->avg('rating') ?? 0, 2),
+                    'avgRating30d' => round(BookingRating::where('ratable_type', Caregiver::class)
+                        ->where('created_at', '>=', now()->subDays(30))
+                        ->avg('rating') ?? 0, 2),
+                    'avgRating90d' => round(BookingRating::where('ratable_type', Caregiver::class)
+                        ->where('created_at', '>=', now()->subDays(90))
+                        ->avg('rating') ?? 0, 2),
+                    'totalReviews' => BookingRating::where('ratable_type', Caregiver::class)->count(),
+                    'pendingReviewsCount' => Booking::whereIn('status', $completedStatuses)
+                        ->whereDoesntHave('ratings', fn ($q) => $q->where('ratable_type', Caregiver::class))
+                        ->count(),
+                    'ratingDistribution' => [
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 1)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 2)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 3)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 4)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 5)->count(),
+                    ],
+                ],
                 'needsAttention' => [
                     // [
                     //     'key' => 'no_shows',
@@ -317,6 +339,7 @@ class DashboardController extends Controller
 
             if ($caregiver) {
                 $availabilities = $caregiver->availabilities()
+                    ->with('usedSlots')
                     ->inTheFuture()
                     ->orderBy('date')
                     ->limit(32)
@@ -327,14 +350,15 @@ class DashboardController extends Controller
                             'date' => $availability->date->format('Y-m-d'),
                             'time_slots' => $availability->time_slots,
                             'specific_time' => $availability->specific_time,
+                            'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
                         ];
                     });
 
                 $stats = [
-                    'total_earned' => $caregiver->bookings()
+                    'totalEarned' => (float) $caregiver->bookings()
                         ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
                         ->sum('paid_to_caregiver_total'),
-                    'completed_jobs' => $caregiver->bookings()
+                    'completedJobs' => $caregiver->bookings()
                         ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
                         ->count(),
                     'rating' => $caregiver->rating,
@@ -367,9 +391,7 @@ class DashboardController extends Controller
                     'firstName' => $caregiver->first_name,
                     'lastName' => $caregiver->last_name,
                     'rating' => $caregiver->rating,
-                    'status' => $caregiver->status ? [
-                        'value' => $caregiver->status->value,
-                    ] : null,
+                    'status' => $caregiver->status?->label() ?? null,
                     'availabilities' => $availabilities,
                     'bookingStatuses' => $bookingStatuses,
                     'nextJob' => $nextJob,
@@ -387,19 +409,26 @@ class DashboardController extends Controller
             $client = $user->client;
 
             if ($client) {
+                $completedAndPaid = [BookingStatus::Completed->value, BookingStatus::Paid->value];
+
                 $stats = [
-                    'active_bookings' => $client->bookings()
-                        ->where('end_datetime', '>', now())
-                        ->where('status', '!=', BookingStatus::Cancelled->value)
+                    'totalBookings' => $client->bookings()
+                        ->where(function ($q) use ($completedAndPaid) {
+                            $q->whereIn('status', $completedAndPaid)
+                                ->orWhere(function ($q2) {
+                                    $q2->where('end_datetime', '>', now())
+                                        ->where('status', '!=', BookingStatus::Cancelled->value);
+                                });
+                        })
                         ->count(),
-                    'past_bookings' => $client->bookings()
-                        ->whereIn('status', [BookingStatus::Completed->value, BookingStatus::Paid->value])
+                    'completedBookings' => $client->bookings()
+                        ->whereIn('status', $completedAndPaid)
                         ->count(),
                     'favorite_caregivers' => $client->favoriteCaregivers()->count(),
                 ];
 
                 $allUpcoming = $client->bookings()
-                    ->with(['caregiver.user'])
+                    ->with(['caregiver'])
                     ->where('end_datetime', '>', now())
                     ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('start_datetime', 'asc')
@@ -409,7 +438,7 @@ class DashboardController extends Controller
                 $upcomingBookings = $allUpcoming->slice(1, 2)->values();
 
                 $recentBookings = $client->bookings()
-                    ->with(['caregiver.user'])
+                    ->with(['caregiver'])
                     ->where('end_datetime', '<=', now())
                     ->where('status', '!=', BookingStatus::Cancelled->value)
                     ->orderBy('end_datetime', 'desc')
@@ -417,6 +446,7 @@ class DashboardController extends Controller
                     ->get();
 
                 $clientData = [
+                    'firstName' => $client->first_name,
                     'nextBooking' => $nextBooking,
                     'upcomingBookings' => $upcomingBookings,
                     'recentBookings' => $recentBookings,

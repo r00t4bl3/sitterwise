@@ -35,6 +35,16 @@ class Caregiver extends Model
             }
         });
 
+        static::updating(function (Caregiver $caregiver) {
+            if (($caregiver->isDirty('first_name') || $caregiver->isDirty('last_name'))
+                && ! $caregiver->isDirty('slug')) {
+                $caregiver->slug = static::generateSlug(
+                    "{$caregiver->first_name} {$caregiver->last_name}",
+                    $caregiver->id,
+                );
+            }
+        });
+
         static::saved(function (Caregiver $caregiver) {
             if ($caregiver->user) {
                 $caregiver->user->update(['name' => "{$caregiver->first_name} {$caregiver->last_name}"]);
@@ -42,11 +52,17 @@ class Caregiver extends Model
         });
     }
 
-    private static function generateSlug(string $name): string
+    public static function generateSlug(string $name, ?int $exceptId = null): string
     {
         $parts = explode(' ', $name, 2);
         $firstName = $parts[0] ?? '';
         $lastName = $parts[1] ?? '';
+
+        $collisionQuery = function (string $slug) use ($exceptId) {
+            return self::where('slug', $slug)
+                ->when($exceptId, fn ($q, $id) => $q->where('id', '!=', $id))
+                ->exists();
+        };
 
         $lastInitial = $lastName
             ? Str::slug(mb_substr($lastName, 0, 1))
@@ -58,10 +74,14 @@ class Caregiver extends Model
             $baseSlug = Str::slug($name);
         }
 
+        if ($collisionQuery($baseSlug) && $lastName) {
+            $baseSlug = Str::slug($firstName).'-'.Str::slug($lastName);
+        }
+
         $originalSlug = $baseSlug;
         $counter = 2;
 
-        while (self::where('slug', $baseSlug)->exists()) {
+        while ($collisionQuery($baseSlug)) {
             $baseSlug = $originalSlug.'-'.$counter;
             $counter++;
         }
@@ -263,6 +283,11 @@ class Caregiver extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(CaregiverAssignment::class);
+    }
+
+    public function internalRating(): HasOne
+    {
+        return $this->hasOne(CaregiverInternalRating::class);
     }
 
     public function assignedBookings(): BelongsToMany

@@ -33,5 +33,16 @@ createInertiaApp({
     },
 });
 
+// Register Service Worker for PWA push notifications
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker
+            .register('/build/sw.js', { scope: '/' })
+            .catch(() => {
+                // SW registration may fail in dev mode (e.g., Vite dev server cross-origin)
+            });
+    });
+}
+
 // This will set light / dark mode on load...
 initializeTheme();

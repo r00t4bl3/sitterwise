@@ -65,8 +65,9 @@ export default function Pause() {
                                     Need a break? Pause your account.
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Self-service hold/resume. When life happens, you can pause
-                                    instead of ignoring job offers.
+                                    Self-service hold/resume. When life happens,
+                                    you can pause instead of ignoring job
+                                    offers.
                                 </p>
                             </div>
 
@@ -75,9 +76,11 @@ export default function Pause() {
                                     Take the time you need.
                                 </h3>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    Pausing your account stops new job offers from coming through.
-                                    Your profile, ratings, history, and Trustline progress are all
-                                    preserved. Resume whenever you're ready — usually with one tap.
+                                    Pausing your account stops new job offers
+                                    from coming through. Your profile, ratings,
+                                    history, and Trustline progress are all
+                                    preserved. Resume whenever you're ready —
+                                    usually with one tap.
                                 </p>
 
                                 <div className="mt-6 space-y-4">
@@ -91,9 +94,16 @@ export default function Pause() {
                                         <div className="mt-1.5">
                                             <DatePicker
                                                 value={pauseForm.data.resume_by}
-                                                onChange={(date) => pauseForm.setData('resume_by', date)}
+                                                onChange={(date) =>
+                                                    pauseForm.setData(
+                                                        'resume_by',
+                                                        date,
+                                                    )
+                                                }
                                                 placeholder="Select a date"
-                                                disabled={{ before: new Date() }}
+                                                disabled={{
+                                                    before: new Date(),
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -108,19 +118,28 @@ export default function Pause() {
                                         <Textarea
                                             id="pause_reason"
                                             value={pauseForm.data.pause_reason}
-                                            onChange={(e) => pauseForm.setData('pause_reason', e.target.value)}
+                                            onChange={(e) =>
+                                                pauseForm.setData(
+                                                    'pause_reason',
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder="Vacation, family stuff, school, just need a breather — totally up to you whether to say."
                                             className="mt-1.5 min-h-[80px]"
                                         />
                                         {pauseForm.errors.pause_reason && (
-                                            <p className="mt-1 text-sm text-destructive">{pauseForm.errors.pause_reason}</p>
+                                            <p className="mt-1 text-sm text-destructive">
+                                                {pauseForm.errors.pause_reason}
+                                            </p>
                                         )}
                                     </div>
 
                                     <div className="flex gap-3 pt-2">
                                         <Button
                                             variant="outline"
-                                            onClick={() => window.history.back()}
+                                            onClick={() =>
+                                                window.history.back()
+                                            }
                                             className="flex-1"
                                         >
                                             Cancel
@@ -130,7 +149,9 @@ export default function Pause() {
                                             disabled={submitting}
                                             className="flex-1"
                                         >
-                                            {submitting ? 'Pausing...' : 'Pause my account'}
+                                            {submitting
+                                                ? 'Pausing...'
+                                                : 'Pause my account'}
                                         </Button>
                                     </div>
                                 </div>
@@ -138,10 +159,13 @@ export default function Pause() {
 
                             <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 dark:border-teal-800 dark:bg-teal-950/50">
                                 <p className="text-sm text-teal-800 dark:text-teal-200">
-                                    <strong>What happens when you resume:</strong> Just tap "Resume"
-                                    on this same screen. Your status changes back to Active and job
-                                    offers start coming through again. No admin intervention required
-                                    for the routine case.
+                                    <strong>
+                                        What happens when you resume:
+                                    </strong>{' '}
+                                    Just tap "Resume" on this same screen. Your
+                                    status changes back to Active and job offers
+                                    start coming through again. No admin
+                                    intervention required for the routine case.
                                 </p>
                             </div>
                         </>
@@ -152,7 +176,8 @@ export default function Pause() {
                                     You're on a break
                                 </h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Your account is paused. Come back whenever you're ready.
+                                    Your account is paused. Come back whenever
+                                    you're ready.
                                 </p>
                             </div>
 
@@ -166,7 +191,11 @@ export default function Pause() {
                                             Paused since
                                         </p>
                                         <p className="text-sm font-medium text-foreground">
-                                            {activePause ? formatDisplayDateInPT(activePause.paused_at) : '—'}
+                                            {activePause
+                                                ? formatDisplayDateInPT(
+                                                      activePause.paused_at,
+                                                  )
+                                                : '—'}
                                         </p>
                                     </div>
                                     {activePause?.resume_by && (
@@ -175,7 +204,9 @@ export default function Pause() {
                                                 Expected back by
                                             </p>
                                             <p className="text-sm font-medium text-foreground">
-                                                {formatDisplayDateInPT(activePause.resume_by)}
+                                                {formatDisplayDateInPT(
+                                                    activePause.resume_by,
+                                                )}
                                             </p>
                                         </div>
                                     )}
@@ -204,9 +235,10 @@ export default function Pause() {
 
                             <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 dark:border-teal-800 dark:bg-teal-950/50">
                                 <p className="text-sm text-teal-800 dark:text-teal-200">
-                                    <strong>Resuming is instant:</strong> Your status changes back to
-                                    Active immediately and job offers start coming through again. No
-                                    admin intervention needed.
+                                    <strong>Resuming is instant:</strong> Your
+                                    status changes back to Active immediately
+                                    and job offers start coming through again.
+                                    No admin intervention needed.
                                 </p>
                             </div>
                         </>

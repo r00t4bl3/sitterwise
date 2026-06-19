@@ -47,12 +47,7 @@ class GuestBookingService
                 'zip' => $h->zip,
             ]);
 
-        $serviceTypes = array_values(
-            array_map(
-                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
-                array_filter(ServiceType::cases(), fn ($type) => (! str_contains($type->value, 'invoiced')) && (! str_contains($type->value, 'comped')) && (! str_contains($type->value, 'companion')))
-            )
-        );
+        $serviceTypes = $this->getServiceTypes();
 
         $locationTypes = array_values(
             array_map(
@@ -124,6 +119,7 @@ class GuestBookingService
             'emergency_instructions' => 'nullable|string',
             'special_needs_notes' => 'nullable|string',
             'how_did_you_hear' => 'required|string|max:255',
+            'sms_consent' => 'required|boolean',
             'new_children' => 'required|array|min:1',
             'new_children.*.name' => 'required|string|max:255',
             'new_children.*.gender' => 'nullable|in:male,female',
@@ -217,6 +213,7 @@ class GuestBookingService
             'address_state' => $pendingData['address_state'],
             'address_zip' => $pendingData['address_zip'],
             'hotel_name' => $pendingData['hotel_name'] ?? null,
+            'sms_consent' => $pendingData['sms_consent'] ?? false,
             'dates' => $pendingData['dates'] ?? null,
         ];
     }
@@ -256,6 +253,8 @@ class GuestBookingService
                 'children' => array_map(fn ($child) => [
                     'name' => $child['name'] ?? null,
                     'gender' => $child['gender'] ?? null,
+                    'birth_month' => ! empty($child['birth_month']) ? (int) $child['birth_month'] : null,
+                    'birth_year' => ! empty($child['birth_year']) ? (int) $child['birth_year'] : null,
                     'birth_date' => ! empty($child['birth_month']) && ! empty($child['birth_year'])
                         ? Carbon::createFromDate((int) $child['birth_year'], (int) $child['birth_month'], 1)->format('Y-m-d')
                         : null,
@@ -419,6 +418,8 @@ class GuestBookingService
 
             $client = $user->client;
             if ($client) {
+                $client->update(['sms_opted_out' => ! ($data['sms_consent'] ?? true)]);
+
                 $this->attachPaymentMethod($client, $paymentMethodId);
 
                 return [
@@ -433,6 +434,7 @@ class GuestBookingService
                 'first_name' => $data['client_first_name'],
                 'last_name' => $data['client_last_name'],
                 'phone' => $data['client_phone'],
+                'sms_opted_out' => ! ($data['sms_consent'] ?? true),
             ]);
 
             $this->attachPaymentMethod($client, $paymentMethodId);
@@ -457,6 +459,7 @@ class GuestBookingService
             'first_name' => $data['client_first_name'],
             'last_name' => $data['client_last_name'],
             'phone' => $data['client_phone'],
+            'sms_opted_out' => ! ($data['sms_consent'] ?? true),
         ]);
 
         $this->attachPaymentMethod($client, $paymentMethodId);
@@ -495,5 +498,15 @@ class GuestBookingService
         } catch (\Exception $e) {
             Log::error('Failed to attach payment method: '.$e->getMessage());
         }
+    }
+
+    public function getServiceTypes(): array
+    {
+        return array_values(
+            array_map(
+                fn ($type) => ['value' => $type->value, 'label' => $type->label()],
+                array_filter(ServiceType::cases(), fn ($type) => ! str_contains($type->value, 'invoiced') && ! str_contains($type->value, 'comped') && ! str_contains($type->value, 'companion'))
+            )
+        );
     }
 }

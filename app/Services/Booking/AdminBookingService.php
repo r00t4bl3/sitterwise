@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\AssignmentResolution;
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
@@ -13,29 +14,34 @@ use App\Enums\ServiceType;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Events\BookingAccepted;
+use App\Events\BookingCancelled;
 use App\Events\BookingCreated;
 use App\Events\BookingGroupCreated;
 use App\Events\BookingGroupSplit;
-use App\Events\BookingInvitationSent;
+use App\Jobs\NotifyCaregiversJob;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
-use App\Models\BookingCaregiverNotification;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
+use App\Models\ClientPaymentMethod;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
@@ -46,6 +52,15 @@ class AdminBookingService implements BookingServiceInterface
         protected CaregiverRecommendationService $recommendationService,
         protected JobBillingService $billingService
     ) {}
+
+    private function requiresPaymentForServiceType(?string $serviceType): bool
+    {
+        return in_array($serviceType, [
+            ServiceType::Babysitter->value,
+            ServiceType::Petsitter->value,
+            ServiceType::CompanionCare->value,
+        ]);
+    }
 
     public function index(Request $request)
     {
@@ -60,7 +75,7 @@ class AdminBookingService implements BookingServiceInterface
             'id', 'ulid', 'booking_group_id', 'caregiver_id',
             'start_datetime', 'end_datetime', 'status', 'payment_status',
         ])->with([
-            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes',
+            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes,requires_payment',
             'caregiver:id,first_name,last_name',
         ]);
 
@@ -86,6 +101,25 @@ class AdminBookingService implements BookingServiceInterface
             $booking->bookingGroup?->setAttribute('bookings_count', (int) $counts->get($booking->booking_group_id, 1));
             $booking->bookingGroup?->setHidden(['created_at', 'updated_at', 'deleted_at']);
         });
+
+        $clientIds = $bookings->pluck('bookingGroup.client_id')->filter()->unique()->values()->toArray();
+
+        $clientsWithPaymentCapability = [];
+        if (! empty($clientIds)) {
+            $clientsWithStripeCustomer = Client::whereIn('id', $clientIds)
+                ->whereNotNull('stripe_customer_id')
+                ->pluck('id')
+                ->toArray();
+
+            $clientsWithActivePM = ClientPaymentMethod::whereIn('client_id', $clientIds)
+                ->where('status', 'active')
+                ->pluck('client_id')
+                ->toArray();
+
+            $clientsWithPaymentCapability = array_values(array_unique(
+                array_merge($clientsWithStripeCustomer, $clientsWithActivePM)
+            ));
+        }
 
         $serviceTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -165,8 +199,14 @@ class AdminBookingService implements BookingServiceInterface
                 'name' => trim($c->first_name.' '.$c->last_name),
             ])),
             'caregivers' => $caregivers,
+            'clients_with_payment_capability' => $clientsWithPaymentCapability,
 
         ]);
+    }
+
+    public function create(Request $request): RedirectResponse
+    {
+        return redirect()->route('bookings.index');
     }
 
     public function store(Request $request)
@@ -188,12 +228,22 @@ class AdminBookingService implements BookingServiceInterface
 
         // Create new client if new_client data provided
         if (! empty($validated['new_client']['first_name'])) {
-            $user = User::create([
-                'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
-                'email' => $validated['new_client']['email'],
-                'password' => \Hash::make(\Str::random(16)),
-                'role' => 'client',
-            ]);
+            try {
+                $user = User::create([
+                    'name' => $validated['new_client']['first_name'].' '.$validated['new_client']['last_name'],
+                    'email' => $validated['new_client']['email'],
+                    'password' => \Hash::make(\Str::random(16)),
+                    'role' => 'client',
+                ]);
+            } catch (QueryException $e) {
+                if ($e->getCode() === '23000') {
+                    throw ValidationException::withMessages([
+                        'new_client.email' => 'This email is already registered to another account.',
+                    ]);
+                }
+
+                throw $e;
+            }
 
             $client = Client::create([
                 'user_id' => $user->id,
@@ -232,51 +282,27 @@ class AdminBookingService implements BookingServiceInterface
         $isGroupBooking = $validated['service_type'] === 'group_childcare_invoiced';
         $hasChildrenNotes = ! empty($validated['children_notes']);
 
-        // Prepare children snapshot (filter profile by child_ids + add new_children)
+        // Prepare children snapshot from new_children
         if ($isGroupBooking && $hasChildrenNotes) {
             $childrenSnapshot = null;
-        } else {
-            $childrenQuery = $client?->children ?? collect();
-            if (array_key_exists('child_ids', $validated)) {
-                $selectedChildIds = $validated['child_ids'] ?? [];
-                $childrenQuery = $childrenQuery->filter(fn ($child) => in_array($child->id, $selectedChildIds));
-            }
-
-            $childrenSnapshot = $childrenQuery->map(fn ($child) => [
-                'name' => $child->name,
-                'gender' => $child->gender,
-                'birth_month' => $child->birth_month,
-                'birth_year' => $child->birth_year,
-            ])->values()->toArray();
-
-            if (! empty($validated['new_children'])) {
-                foreach ($validated['new_children'] as $childData) {
-                    if (! empty($childData['name'])) {
-                        $childrenSnapshot[] = [
-                            'name' => $childData['name'],
-                            'gender' => $childData['gender'] ?? null,
-                            'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                            'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
-                        ];
-                    }
+        } elseif (! empty($validated['new_children'])) {
+            $childrenSnapshot = [];
+            foreach ($validated['new_children'] as $childData) {
+                if (! empty($childData['name'])) {
+                    $childrenSnapshot[] = [
+                        'name' => $childData['name'],
+                        'gender' => $childData['gender'] ?? null,
+                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                    ];
                 }
             }
+        } else {
+            $childrenSnapshot = [];
         }
 
-        // Prepare pets snapshot (filter profile by pet_ids + add new_pets)
-        $petsQuery = $client?->pets ?? collect();
-        if (array_key_exists('pet_ids', $validated)) {
-            $selectedPetIds = $validated['pet_ids'] ?? [];
-            $petsQuery = $petsQuery->filter(fn ($pet) => in_array($pet->id, $selectedPetIds));
-        }
-
-        $petsSnapshot = $petsQuery->map(fn ($pet) => [
-            'name' => $pet->name,
-            'type' => $pet->type,
-            'breed' => $pet->breed,
-            'notes' => $pet->notes,
-        ])->values()->toArray();
-
+        // Prepare pets snapshot from new_pets
+        $petsSnapshot = [];
         if (! empty($validated['new_pets'])) {
             foreach ($validated['new_pets'] as $petData) {
                 if (! empty($petData['name'])) {
@@ -333,7 +359,7 @@ class AdminBookingService implements BookingServiceInterface
             'other_adults_present' => $validated['other_adults_present'] ?? null,
             'special_needs_notes' => $validated['special_needs_notes'] ?? null,
             'emergency_instructions' => $validated['emergency_instructions'] ?? null,
-            'requires_payment' => $validated['requires_payment'] ?? true,
+            'requires_payment' => $this->requiresPaymentForServiceType($validated['service_type'] ?? null),
         ]);
 
         // Create bookings for each date
@@ -412,6 +438,13 @@ class AdminBookingService implements BookingServiceInterface
             $data = $booking->toArray();
             $data['booking_group'] = $group ? [
                 'id' => $group->id,
+                'client_id' => $group->client_id,
+                'address_city' => $group->address_city,
+                'children' => $group->children,
+                'pets' => $group->pets,
+                'children_notes' => $group->children_notes,
+                'service_type' => $group->service_type,
+                'location_type' => $group->location_type,
                 'bookings_count' => $group->bookings->count(),
                 'sibling_bookings' => $siblingBookings,
             ] : null;
@@ -428,7 +461,23 @@ class AdminBookingService implements BookingServiceInterface
             BookingStatus::cases()
         );
 
-        $booking->load('caregiver.user', 'clientRating', 'caregiverRating', 'bookingGroup.bookings.caregiver');
+        $booking->load([
+            'caregiver.user',
+            'clientRating',
+            'caregiverRating',
+            'bookingGroup.bookings.caregiver',
+            'assignments',
+            'client.favoriteCaregivers',
+            'client.blockedCaregivers',
+        ]);
+
+        $assignmentResolution = null;
+        if ($booking->caregiver_id) {
+            $currentAssignment = $booking->assignments
+                ->where('caregiver_id', $booking->caregiver_id)
+                ->first();
+            $assignmentResolution = $currentAssignment?->resolution;
+        }
 
         $group = $booking->bookingGroup;
         $siblingBookings = $group?->bookings
@@ -445,8 +494,16 @@ class AdminBookingService implements BookingServiceInterface
                     : null,
             ]);
 
+        $recommended = $this->recommendationService->getRecommendedCaregivers($booking->client, $booking);
+        $caregiverSuggestions = $recommended->values()->toArray();
+        $caregiverAllIds = $recommended->pluck('id')->toArray();
+        $caregiverTotal = $recommended->count();
+
         return Inertia::render('admin/bookings/show', [
             'booking_statuses' => $bookingStatuses,
+            'caregiver_suggestions' => $caregiverSuggestions,
+            'caregiver_all_ids' => $caregiverAllIds,
+            'caregiver_total' => $caregiverTotal,
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
@@ -459,6 +516,7 @@ class AdminBookingService implements BookingServiceInterface
                 'caregiver_name' => $booking->caregiver
                     ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
                     : null,
+                'assignment_resolution' => $assignmentResolution,
                 'address_line1' => $booking->address_line1,
                 'address_line2' => $booking->address_line2,
                 'address_city' => $booking->address_city,
@@ -599,8 +657,6 @@ class AdminBookingService implements BookingServiceInterface
 
         $nonColumnFields = [
             'new_children', 'new_pets',
-            'deleted_child_ids', 'deleted_pet_ids',
-            'child_ids', 'pet_ids',
             'save_children_pets_to_profile',
         ];
 
@@ -625,6 +681,7 @@ class AdminBookingService implements BookingServiceInterface
         $groupUpdateData['children'] = $childrenSnapshot;
         $groupUpdateData['pets'] = $petsSnapshot;
         $groupUpdateData['children_notes'] = $isGroupBooking ? ($validated['children_notes'] ?? null) : null;
+        $groupUpdateData['requires_payment'] = $this->requiresPaymentForServiceType($validated['service_type'] ?? $booking->service_type);
 
         $oldCaregiverId = $booking->caregiver_id;
 
@@ -633,6 +690,30 @@ class AdminBookingService implements BookingServiceInterface
         }
 
         $booking->update($updateData);
+
+        if ($oldCaregiverId && ! $booking->caregiver_id) {
+            $nonRevertableStatuses = [
+                BookingStatus::Completed->value,
+                BookingStatus::Paid->value,
+                BookingStatus::Cancelled->value,
+            ];
+
+            if (! in_array($booking->status, $nonRevertableStatuses, true)) {
+                $booking->updateQuietly(['status' => BookingStatus::Received->value]);
+
+                $assignment = $booking->assignments()->unresolved()->first();
+                if ($assignment) {
+                    $assignment->resolve(
+                        AssignmentResolution::Reassigned,
+                        'Caregiver unassigned via booking edit',
+                    );
+                }
+            }
+        }
+
+        if ($booking->caregiver_id && ! $oldCaregiverId && $booking->getOriginal('status') === BookingStatus::Received->value) {
+            $booking->updateQuietly(['status' => BookingStatus::Confirmed->value]);
+        }
 
         $booking->load('bookingGroup');
 
@@ -819,11 +900,85 @@ class AdminBookingService implements BookingServiceInterface
         }
     }
 
+    public function cancel(Request $request, Booking $booking)
+    {
+        if ($booking->status === BookingStatus::Cancelled->value) {
+            return redirect()->back()->with('error', 'Booking is already cancelled.');
+        }
+
+        DB::transaction(function () use ($booking, $request) {
+            $booking->update([
+                'status' => BookingStatus::Cancelled->value,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $request->input('reason'),
+                'cancelled_by' => auth()->id(),
+                'charge_to_client' => 0,
+                'paid_to_caregiver' => 0,
+                'sitterwise_cut' => 0,
+                'total_service_amount' => 0,
+                'total_amount' => 0,
+            ]);
+
+            $assignment = $booking->assignments()->unresolved()->first();
+
+            if ($assignment) {
+                $assignment->resolve(AssignmentResolution::CancelledBySitterwise, $request->input('reason'));
+            }
+        });
+
+        event(new BookingCancelled($booking->fresh(), $request->input('reason'), $request->user()));
+
+        return redirect()->back()->with('success', 'Booking cancelled successfully.');
+    }
+
+    public function replaceCaregiver(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'caregiver_id' => 'required|exists:caregivers,id',
+        ]);
+
+        $finalized = [BookingStatus::Completed->value, BookingStatus::Paid->value, BookingStatus::Cancelled->value];
+
+        if (in_array($booking->status, $finalized, true)) {
+            return redirect()->back()->with('error', 'Cannot replace caregiver on a finalized booking.');
+        }
+
+        $newCaregiver = Caregiver::where('id', $validated['caregiver_id'])
+            ->where('status', CaregiverStatus::Active->value)
+            ->first();
+
+        if (! $newCaregiver) {
+            return redirect()->back()->with('error', 'Selected caregiver is not active.');
+        }
+
+        DB::transaction(function () use ($booking, $validated) {
+            $currentAssignment = $booking->assignments()
+                ->unresolved()
+                ->first();
+
+            if ($currentAssignment) {
+                $currentAssignment->resolve(
+                    AssignmentResolution::Reassigned,
+                    'Replaced via Replace Caregiver flow',
+                );
+            }
+
+            $booking->update(['caregiver_id' => $validated['caregiver_id']]);
+
+            $booking->assignments()->create([
+                'caregiver_id' => $validated['caregiver_id'],
+                'assigned_at' => now(),
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Caregiver replaced successfully.');
+    }
+
     public function destroy(Booking $booking)
     {
-        $booking->delete();
+        $booking->forceDelete();
 
-        return redirect()->back()->with('success', 'Booking deleted successfully.');
+        return redirect()->back()->with('success', 'Booking deleted permanently.');
     }
 
     public function notify(Request $request, Booking $booking)
@@ -833,21 +988,18 @@ class AdminBookingService implements BookingServiceInterface
             'caregiver_ids.*' => 'exists:caregivers,id',
         ]);
 
-        foreach ($validated['caregiver_ids'] as $caregiverId) {
-            $notification = BookingCaregiverNotification::firstOrCreate([
-                'booking_id' => $booking->id,
-                'caregiver_id' => $caregiverId,
-            ], [
-                'notified_at' => now(),
-            ]);
-
-            if ($notification->wasRecentlyCreated) {
-                // Send notification email/sms
-                event(new BookingInvitationSent($booking, Caregiver::find($caregiverId)));
-            }
+        $notifiableStatuses = [BookingStatus::Received->value, BookingStatus::Pending->value];
+        if (! in_array($booking->status, $notifiableStatuses, true)) {
+            return redirect()->back()->with('error', 'Cannot notify caregivers for a booking with status '.$booking->status.'.');
         }
 
-        return redirect()->back()->with('success', 'Caregivers notified successfully.');
+        NotifyCaregiversJob::dispatch($booking, $validated['caregiver_ids']);
+
+        if ($booking->status === BookingStatus::Received->value) {
+            $booking->updateQuietly(['status' => BookingStatus::Pending->value]);
+        }
+
+        return redirect()->back()->with('success', 'Notifications queued.');
     }
 
     public function recommendedCaregivers(Request $request)
@@ -859,12 +1011,25 @@ class AdminBookingService implements BookingServiceInterface
             'start_datetime' => 'nullable|date',
             'end_datetime' => 'nullable|date|after:start_datetime',
             'address_city' => 'nullable|string',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'age_filter' => 'nullable|in:all,younger,seasoned',
+            'search' => 'nullable|string|max:255',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
 
+        $dateRanges = [];
+
         if ($bookingId = $validated['booking_id'] ?? null) {
-            $booking = Booking::find($bookingId);
+            $booking = Booking::with('bookingGroup.bookings')->find($bookingId);
+
+            if ($booking && $booking->bookingGroup && $booking->bookingGroup->bookings->isNotEmpty()) {
+                $dateRanges = $booking->bookingGroup->bookings
+                    ->map(fn (Booking $b) => ['start' => $b->start_datetime, 'end' => $b->end_datetime])
+                    ->values()
+                    ->toArray();
+            }
         } else {
             // Create a mock booking if dates are provided
             $booking = null;
@@ -877,13 +1042,65 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
-        $recommended = $this->recommendationService->getRecommendedCaregivers(
-            $client,
-            $booking,
-            20
-        );
+        $cacheKey = 'recommended_cg:'.md5(json_encode([
+            'client_id' => $validated['client_id'],
+            'booking_id' => $validated['booking_id'] ?? null,
+            'service_type' => $validated['service_type'] ?? null,
+            'start_datetime' => $validated['start_datetime'] ?? null,
+            'end_datetime' => $validated['end_datetime'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+        ]));
 
-        return response()->json($recommended);
+        $page = (int) ($validated['page'] ?? 1);
+        $hasSearch = ! empty($validated['search']);
+        $isDefaultQuery = $page === 1 && ($validated['age_filter'] ?? 'all') === 'all' && ! $hasSearch;
+
+        if ($isDefaultQuery) {
+            $recommended = $this->recommendationService->getRecommendedCaregivers(
+                $client,
+                $booking,
+                dateRanges: $dateRanges,
+            );
+
+            Cache::put($cacheKey, $recommended->toArray(), 300);
+        } else {
+            $cached = Cache::get($cacheKey);
+
+            $recommended = $cached !== null
+                ? collect($cached)
+                : $this->recommendationService->getRecommendedCaregivers(
+                    $client,
+                    $booking,
+                    dateRanges: $dateRanges,
+                );
+        }
+
+        if (($validated['age_filter'] ?? 'all') === 'younger') {
+            $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] < 35);
+        } elseif (($validated['age_filter'] ?? 'all') === 'seasoned') {
+            $recommended = $recommended->filter(fn ($cg) => $cg['age'] === null || $cg['age'] >= 35);
+        }
+
+        if ($hasSearch) {
+            $recommended = $recommended->filter(
+                fn ($cg) => str_contains(strtolower($cg['name']), strtolower($validated['search']))
+            );
+        }
+
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $total = $recommended->count();
+        $paginated = $recommended->forPage($page, $perPage)->values();
+
+        return response()->json([
+            'data' => $paginated,
+            'all_ids' => $recommended->pluck('id'),
+            'meta' => [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => max(1, (int) ceil($total / $perPage)),
+            ],
+        ]);
     }
 
     public function reserve(Request $request, Booking $booking)
@@ -903,6 +1120,8 @@ class AdminBookingService implements BookingServiceInterface
 
     public function splitGroup(Request $request, BookingGroup $group): RedirectResponse
     {
+        $group->loadMissing('bookings');
+
         $validated = $request->validate([
             'booking_ids' => ['required', 'array', 'min:1'],
             'booking_ids.*' => ['required', 'integer', 'exists:bookings,id'],
@@ -910,24 +1129,36 @@ class AdminBookingService implements BookingServiceInterface
 
         $extractedIds = $validated['booking_ids'];
 
-        $group->loadMissing('bookings');
         $groupBookingIds = $group->bookings->pluck('id')->toArray();
         $invalidIds = array_diff($extractedIds, $groupBookingIds);
 
         if (! empty($invalidIds)) {
+            logger()->debug('splitGroup guard: invalid IDs');
+
             return back()->with('error', 'Some booking IDs do not belong to this group.');
         }
 
         if (count($extractedIds) >= $group->bookings->count()) {
+            logger()->debug('splitGroup guard: would empty group');
+
             return back()->with('error', 'Cannot move all bookings — group would be empty.');
         }
 
         $firstBooking = null;
 
         DB::transaction(function () use ($group, $extractedIds, &$firstBooking) {
-            Booking::whereIn('id', $extractedIds)
+            $extractedBookings = Booking::whereIn('id', $extractedIds)
                 ->lockForUpdate()
-                ->get();
+                ->get()
+                ->keyBy('id');
+
+            $reservationService = app(AvailabilityReservationService::class);
+
+            foreach ($extractedBookings as $extractedBooking) {
+                if ($extractedBooking->caregiver_id) {
+                    $reservationService->release($extractedBooking);
+                }
+            }
 
             $newGroup = $group->replicate();
             $newGroup->submitted_at = now();

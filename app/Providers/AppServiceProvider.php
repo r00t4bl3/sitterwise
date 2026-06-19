@@ -2,29 +2,18 @@
 
 namespace App\Providers;
 
-use App\Events\BookingAccepted;
-use App\Events\BookingCreated;
-use App\Events\BookingGroupCreated;
-use App\Events\BookingInvitationSent;
-use App\Events\BookingReceipt;
-use App\Events\BookingReminderTriggered;
-use App\Events\GuestAccountSetup;
-use App\Listeners\SendBookingAcceptedNotifications;
-use App\Listeners\SendBookingCreatedNotifications;
-use App\Listeners\SendBookingGroupCreatedNotifications;
-use App\Listeners\SendBookingInvitationNotifications;
-use App\Listeners\SendBookingReceiptNotification;
-use App\Listeners\SendBookingReminderNotifications;
-use App\Listeners\SendGuestAccountSetupNotification;
 use App\Listeners\UpdateLastLogin;
 use App\Models\BookingGroup;
 use App\Observers\BookingGroupObserver;
 use App\Services\TwilioService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -46,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->guardMailInNonProduction();
         $this->guardSmsInNonProduction();
+        $this->configureRateLimiting();
 
         BookingGroup::observe(BookingGroupObserver::class);
 
@@ -54,40 +44,7 @@ class AppServiceProvider extends ServiceProvider
             UpdateLastLogin::class,
         );
 
-        Event::listen(
-            BookingCreated::class,
-            SendBookingCreatedNotifications::class,
-        );
-
-        Event::listen(
-            BookingGroupCreated::class,
-            SendBookingGroupCreatedNotifications::class,
-        );
-
-        Event::listen(
-            BookingAccepted::class,
-            SendBookingAcceptedNotifications::class,
-        );
-
-        Event::listen(
-            BookingInvitationSent::class,
-            SendBookingInvitationNotifications::class,
-        );
-
-        Event::listen(
-            BookingReminderTriggered::class,
-            SendBookingReminderNotifications::class,
-        );
-
-        Event::listen(
-            BookingReceipt::class,
-            SendBookingReceiptNotification::class,
-        );
-
-        Event::listen(
-            GuestAccountSetup::class,
-            SendGuestAccountSetupNotification::class,
-        );
+        // All booking listeners are auto-discovered.
     }
 
     /**
@@ -142,5 +99,100 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('register', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(3)->by($request->ip())
+                ->response(fn () => back()->withErrors(['email' => 'Too many registration attempts. Please wait a minute.']));
+        });
+
+        RateLimiter::for('forgot-password', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return [
+                Limit::perMinute(3)->by($request->ip())
+                    ->response(fn () => back()->withErrors(['email' => 'Too many password reset requests. Please wait a minute.'])),
+                Limit::perMinutes(5, 1)->by($request->input('email', $request->ip()))
+                    ->response(fn () => back()->withErrors(['email' => 'Too many password reset requests. Please try again later.'])),
+            ];
+        });
+
+        RateLimiter::for('reset-password', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(3)->by($request->ip());
+        });
+
+        RateLimiter::for('caregiver-otp-send', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(3)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many verification code requests. Please wait a minute.'));
+        });
+
+        RateLimiter::for('caregiver-otp-verify', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many verification attempts. Please wait a minute.'));
+        });
+
+        RateLimiter::for('caregiver-submit', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many submission attempts. Please wait a minute.'));
+        });
+
+        RateLimiter::for('caregiver-save-progress', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(20)->by($request->session()->get('verified_email', $request->ip()));
+        });
+
+        RateLimiter::for('caregiver-replace-reference', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(3)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
+        });
+
+        RateLimiter::for('reference-submit', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
+        });
+
+        RateLimiter::for('guest-booking', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
+        });
     }
 }

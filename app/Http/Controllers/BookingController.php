@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Booking;
@@ -42,6 +43,16 @@ class BookingController extends Controller
     public function update(UpdateBookingRequest $request, Booking $booking)
     {
         return $this->service->update($request, $booking);
+    }
+
+    public function cancel(CancelBookingRequest $request, Booking $booking)
+    {
+        return $this->service->cancel($request, $booking);
+    }
+
+    public function replaceCaregiver(Request $request, Booking $booking)
+    {
+        return $this->service->replaceCaregiver($request, $booking);
     }
 
     public function destroy(Booking $booking)

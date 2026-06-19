@@ -19,9 +19,25 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
+        if ($user->isCaregiver() && $user->caregiver) {
+            $firstName = $user->caregiver->first_name;
+            $lastName = $user->caregiver->last_name;
+        } elseif ($user->isClient() && $user->client) {
+            $firstName = $user->client->first_name;
+            $lastName = $user->client->last_name;
+        } else {
+            $parts = explode(' ', $user->name, 2);
+            $firstName = $parts[0];
+            $lastName = $parts[1] ?? '';
+        }
+
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'firstName' => $firstName,
+            'lastName' => $lastName,
         ]);
     }
 
@@ -30,13 +46,30 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isCaregiver() && $user->caregiver) {
+            $user->caregiver->update([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+            ]);
+        } elseif ($user->isClient() && $user->client) {
+            $user->client->update([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+            ]);
+        } else {
+            $user->name = $validated['first_name'].' '.$validated['last_name'];
         }
 
-        $request->user()->save();
+        $user->fill($validated);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return to_route('profile.edit');
     }

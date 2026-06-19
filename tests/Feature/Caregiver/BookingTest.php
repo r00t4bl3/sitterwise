@@ -224,7 +224,7 @@ describe('Booking - Caregiver', function () {
         $booking->refresh();
         expect($booking->reserved_by)->toBeNull()
             ->and($booking->reservation_expires_at)->toBeNull()
-            ->and($booking->status)->toBe('received');
+            ->and($booking->status)->toBe('pending');
     });
 
     test('cannot release another caregiver reservation', function () {
@@ -481,6 +481,33 @@ describe('Booking - Caregiver', function () {
         expect($bookings[2]->caregiver_id)->toBe($caregiver->id);
     });
 
+    test('caregiver can reserve a pending booking', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->forClient($client)->create([
+            'status' => 'pending',
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->post(route('bookings.reserve', $booking));
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('expires_in');
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'reserved_by' => $caregiver->id,
+            'status' => 'reserved',
+        ]);
+    });
+
     test('caregiver can release a group — siblings released atomically', function () {
         $caregiver = Caregiver::factory()->create();
         $client = Client::factory()->create();
@@ -504,9 +531,9 @@ describe('Booking - Caregiver', function () {
         $bookings[0]->refresh();
         $bookings[1]->refresh();
         $bookings[2]->refresh();
-        expect($bookings[0]->status)->toBe('received');
-        expect($bookings[1]->status)->toBe('received');
-        expect($bookings[2]->status)->toBe('received');
+        expect($bookings[0]->status)->toBe('pending');
+        expect($bookings[1]->status)->toBe('pending');
+        expect($bookings[2]->status)->toBe('pending');
         expect($bookings[0]->reserved_by)->toBeNull();
         expect($bookings[1]->reserved_by)->toBeNull();
         expect($bookings[2]->reserved_by)->toBeNull();

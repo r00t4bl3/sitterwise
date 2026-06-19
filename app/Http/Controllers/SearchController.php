@@ -43,8 +43,13 @@ class SearchController extends Controller
                 $q->where('ulid', 'like', "%{$query}%")
                     ->searchGroupFields($query)
                     ->orWhereHas('bookingGroup.client', function ($cq) use ($query) {
-                        $cq->where('first_name', 'like', "%{$query}%")
-                            ->orWhere('last_name', 'like', "%{$query}%");
+                        $terms = array_filter(explode(' ', $query));
+                        foreach ($terms as $term) {
+                            $cq->where(function ($q) use ($term) {
+                                $q->where('first_name', 'like', "%{$term}%")
+                                    ->orWhere('last_name', 'like', "%{$term}%");
+                            });
+                        }
                     })
                     ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");
@@ -86,8 +91,13 @@ class SearchController extends Controller
                 $q->where('ulid', 'like', "%{$query}%")
                     ->searchGroupFields($query)
                     ->orWhereHas('caregiver', function ($cq) use ($query) {
-                        $cq->where('first_name', 'like', "%{$query}%")
-                            ->orWhere('last_name', 'like', "%{$query}%");
+                        $terms = array_filter(explode(' ', $query));
+                        foreach ($terms as $term) {
+                            $cq->where(function ($q) use ($term) {
+                                $q->where('first_name', 'like', "%{$term}%")
+                                    ->orWhere('last_name', 'like', "%{$term}%");
+                            });
+                        }
                     })
                     ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");
@@ -124,12 +134,22 @@ class SearchController extends Controller
                 $q->where('ulid', 'like', "%{$query}%")
                     ->searchGroupFields($query)
                     ->orWhereHas('bookingGroup.client', function ($cq) use ($query) {
-                        $cq->where('first_name', 'like', "%{$query}%")
-                            ->orWhere('last_name', 'like', "%{$query}%");
+                        $terms = array_filter(explode(' ', $query));
+                        foreach ($terms as $term) {
+                            $cq->where(function ($q) use ($term) {
+                                $q->where('first_name', 'like', "%{$term}%")
+                                    ->orWhere('last_name', 'like', "%{$term}%");
+                            });
+                        }
                     })
                     ->orWhereHas('caregiver', function ($cq) use ($query) {
-                        $cq->where('first_name', 'like', "%{$query}%")
-                            ->orWhere('last_name', 'like', "%{$query}%");
+                        $terms = array_filter(explode(' ', $query));
+                        foreach ($terms as $term) {
+                            $cq->where(function ($q) use ($term) {
+                                $q->where('first_name', 'like', "%{$term}%")
+                                    ->orWhere('last_name', 'like', "%{$term}%");
+                            });
+                        }
                     })
                     ->orWhereHas('bookingGroup.hotel', function ($hq) use ($query) {
                         $hq->where('name', 'like', "%{$query}%");

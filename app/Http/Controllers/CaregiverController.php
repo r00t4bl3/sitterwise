@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\RecalculateReliability;
 use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
@@ -24,11 +25,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CaregiverController extends Controller
 {
+    private const SORTABLE_COLUMNS = [
+        'id', 'first_name', 'last_name', 'rating', 'date_of_birth',
+    ];
+
     public function index(Request $request)
     {
         $query = Caregiver::with(['user', 'specialtyTypes', 'locations', 'certifications']);
@@ -45,7 +51,13 @@ class CaregiverController extends Controller
             $query->where('status', $request->status);
         }
 
-        $caregivers = $query->orderBy('id')->paginate(20)->appends($request->query());
+        $sort = in_array($request->sort, self::SORTABLE_COLUMNS, true) ? $request->sort : 'id';
+        $direction = $request->direction ?? 'asc';
+        if (! in_array(strtolower($direction), ['asc', 'desc'], true)) {
+            $direction = 'asc';
+        }
+
+        $caregivers = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
@@ -58,6 +70,8 @@ class CaregiverController extends Controller
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status ?? 'all',
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }
@@ -121,7 +135,7 @@ class CaregiverController extends Controller
 
     public function show(Caregiver $caregiver)
     {
-        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'application', 'agreements', 'referenceRequests']);
+        $caregiver->load(['specialtyTypes', 'user', 'locations', 'certifications', 'attributes', 'application', 'agreements', 'referenceRequests', 'internalRating']);
 
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,
@@ -138,7 +152,7 @@ class CaregiverController extends Controller
                 'pause_reason' => $caregiver->activePause->pause_reason,
             ] : null,
             'reviews' => Inertia::defer(fn () => $caregiver->receivedRatings()
-                ->with(['rater', 'booking.client.user'])
+                ->with(['rater', 'booking.client'])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(fn ($r) => [
@@ -147,11 +161,11 @@ class CaregiverController extends Controller
                     'comment' => $r->comment,
                     'rater_name' => $r->rater?->name,
                     'booking_service' => $r->booking?->service_type,
-                    'client_name' => $r->booking?->client?->user?->name,
+                    'client_name' => $r->booking?->client?->full_name,
                     'created_at' => $r->created_at?->format('Y-m-d'),
                 ]),
             ),
-            'jobHistory' => Inertia::defer(fn () => CaregiverAssignment::with(['booking.client.user', 'booking.hotel'])
+            'jobHistory' => Inertia::defer(fn () => CaregiverAssignment::with(['booking.client', 'booking.hotel'])
                 ->where('caregiver_id', $caregiver->id)
                 ->orderBy(
                     Booking::select('start_datetime')
@@ -165,7 +179,7 @@ class CaregiverController extends Controller
                     'job_number' => '#'.$assignment->booking->id,
                     'date' => $assignment->booking->start_datetime?->format('Y-m-d\TH:i:s\Z'),
                     'client_id' => $assignment->booking->client_id,
-                    'client_name' => $assignment->booking->client?->user?->name ?? '—',
+                    'client_name' => $assignment->booking->client?->full_name ?? '—',
                     'client_description' => $assignment->booking->hotel?->name
                         ?? $assignment->booking->address_city
                         ?? '—',
@@ -194,10 +208,18 @@ class CaregiverController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('client.user', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                    ->orWhere('location_type', 'like', "%{$search}%");
+            $terms = array_filter(explode(' ', $search));
+            $query->where(function ($q) use ($terms) {
+                $q->whereHas('client', function ($cq) use ($terms) {
+                    foreach ($terms as $term) {
+                        $cq->where(function ($q) use ($term) {
+                            $q->where('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%");
+                        });
+                    }
+                })
+                    ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
+                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
             });
         }
 
@@ -418,6 +440,14 @@ class CaregiverController extends Controller
         $file = $request->file('profile_photo');
         $filename = time().'_'.$file->getClientOriginalName();
         $path = $file->storeAs('profile-photos', $filename, 'public');
+
+        if ($path === false) {
+            Log::error('Failed to store profile photo for caregiver {id}', ['id' => $caregiver->id]);
+
+            return redirect()->route('caregivers.edit', $caregiver->id)
+                ->with('error', 'Failed to upload profile photo. Please try again.');
+        }
+
         $caregiver->user->update([
             'profile_photo_path' => $path,
             'profile_photo_url' => Storage::disk('public')->url($path),
@@ -447,14 +477,58 @@ class CaregiverController extends Controller
     public function updateAdminRating(Request $request, Caregiver $caregiver): RedirectResponse
     {
         $validated = $request->validate([
-            'admin_rating' => 'required|numeric|min:1|max:5',
+            'admin_rating' => 'nullable|numeric|min:1|max:5',
+            'communication_notes' => 'nullable|string|max:5000',
         ]);
 
-        $caregiver->update([
-            'admin_rating' => round($validated['admin_rating'], 2),
-        ]);
+        $updateData = [];
+        $internalData = [];
+
+        if (isset($validated['admin_rating'])) {
+            $updateData['admin_rating'] = round($validated['admin_rating'], 2);
+            $internalData['communication_score'] = round($validated['admin_rating'], 2);
+            $internalData['communication_updated_at'] = now();
+        }
+
+        if (isset($validated['communication_notes'])) {
+            $internalData['communication_notes'] = $validated['communication_notes'];
+        }
+
+        if (! empty($updateData)) {
+            $caregiver->update($updateData);
+        }
+
+        if (! empty($internalData)) {
+            $caregiver->internalRating()->updateOrCreate([], $internalData);
+        }
 
         return back()->with('success', 'Admin rating updated successfully');
+    }
+
+    public function updateReliabilityOverride(Request $request, Caregiver $caregiver): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reliability_override' => 'nullable|numeric|min:0|max:5',
+        ]);
+
+        $rating = $caregiver->internalRating()->firstOrNew([]);
+
+        if (isset($validated['reliability_override'])) {
+            $rating->reliability_override = round($validated['reliability_override'], 2);
+        } else {
+            $rating->reliability_override = null;
+        }
+
+        $rating->composite_score = (new RecalculateReliability)->handleSingle($caregiver, $rating);
+
+        $rating->save();
+
+        return back()->with(
+            'success',
+            isset($validated['reliability_override'])
+                ? 'Reliability override saved. Auto-score will be used when cleared.'
+                : 'Reliability override cleared. Using auto-calculated score.',
+        );
     }
 
     public function resumeCaregiver(Caregiver $caregiver): RedirectResponse

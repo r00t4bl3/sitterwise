@@ -2,14 +2,18 @@
 
 use App\Enums\CaregiverStatus;
 use App\Enums\ServiceType;
+use App\Enums\SitterPreference;
+use App\Models\AttributeDefinition;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
+use App\Models\BookingGroup;
 use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use Carbon\CarbonImmutable;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -28,20 +32,15 @@ beforeEach(function () {
     $this->service = app(CaregiverRecommendationService::class);
     $this->activeStatus = CaregiverStatus::Active;
 
-    // Ensure caregivers have at least one availability record (required by default filter)
     $this->defaultAvailDate = now()->addDays(5)->format('Y-m-d');
 });
 
-/**
- * Helper: create an active caregiver with a basic availability record.
- */
 function makeActiveCaregiver(array $overrides = []): Caregiver
 {
     $caregiver = Caregiver::factory()->create(array_merge([
         'status' => CaregiverStatus::Active->value,
     ], $overrides));
 
-    // Every caregiver needs at least one availability to pass the default filter
     Availability::factory()->create([
         'caregiver_id' => $caregiver->id,
         'date' => now()->addDays(5)->format('Y-m-d'),
@@ -71,7 +70,7 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         expect($recommended->first())->toHaveKeys([
-            'id', 'name', 'age', 'tier', 'tierLabel', 'matchIcons', 'hasBeenNotified',
+            'id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified',
         ]);
     });
 
@@ -86,8 +85,8 @@ describe('Recommendation Service - Caregiver', function () {
         expect($recommended->pluck('id')->contains($blocked->id))->toBeFalse();
     });
 
-    test('tier 1 when caregiver previously worked with client', function () {
-        $client = Client::factory()->create();
+    test('previous work includes previous_work icon and score contribution', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
         Booking::factory()->forClient($client)->create([
@@ -98,31 +97,28 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(1)
-            ->and($result['matchIcons'])->toContain('previous_work');
+        expect($result['matchIcons'])->toContain('previous_work')
+            ->and($result['score'])->toBeGreaterThanOrEqual(2);
     });
 
-    test('tier 2 when caregiver has availability, specialty, and preferred location', function () {
-        $client = Client::factory()->create();
+    test('excellent match when available, specialty, and preferred location', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $southCounty = Location::where('name', 'South County')->first();
         $caregiver = makeActiveCaregiver(['rating' => 4.5]);
 
-        // Give caregiver preferred location in South County
         $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => true]]);
 
-        // Give caregiver the Babies specialty (matching babysitter service type)
         $babies = SpecialtyType::where('name', 'Babies')->first();
         $caregiver->specialtyTypes()->sync([$babies->id]);
 
         $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
         $endDate = (clone $startDate)->addHours(4);
 
-        // Availability already created in makeActiveCaregiver at same date
         $booking = Booking::factory()->forClient($client)->create([
             'start_datetime' => $startDate,
             'end_datetime' => $endDate,
+            'caregiver_id' => null,
         ]);
-        // Set booking group service_type + address city
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
             'address_city' => 'La Jolla',
@@ -131,25 +127,30 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(2)
+        expect($result['score'])->toBe(11100)
             ->and($result['matchIcons'])->toContain('available')
             ->and($result['matchIcons'])->toContain('specialty')
             ->and($result['matchIcons'])->toContain('location_preferred');
     });
 
-    test('tier 3 when caregiver has specialty and willing location (adjacent fit)', function () {
-        $client = Client::factory()->create();
+    test('good match when specialty and willing location (adjacent fit)', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $southCounty = Location::where('name', 'South County')->first();
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
-        // Willing (non-preferred) location
         $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => false]]);
 
-        // Matching specialty
         $babies = SpecialtyType::where('name', 'Babies')->first();
         $caregiver->specialtyTypes()->sync([$babies->id]);
 
-        $booking = Booking::factory()->forClient($client)->create();
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
             'address_city' => 'La Jolla',
@@ -158,13 +159,14 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(3)
+        expect($result['score'])->toBe(11010)
+            ->and($result['matchIcons'])->toContain('available')
             ->and($result['matchIcons'])->toContain('specialty')
             ->and($result['matchIcons'])->toContain('location_willing');
     });
 
-    test('tier 4 when caregiver has recent work (3mo) plus specialty and location fit', function () {
-        $client = Client::factory()->create();
+    test('fair match when recent work (3mo) plus specialty and location fit', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $southCounty = Location::where('name', 'South County')->first();
         $otherClient = Client::factory()->create();
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
@@ -173,7 +175,6 @@ describe('Recommendation Service - Caregiver', function () {
         $babies = SpecialtyType::where('name', 'Babies')->first();
         $caregiver->specialtyTypes()->sync([$babies->id]);
 
-        // Recent work with a different client in last 3 months
         Booking::factory()->forClient($otherClient)->create([
             'caregiver_id' => $caregiver->id,
             'status' => 'completed',
@@ -181,7 +182,14 @@ describe('Recommendation Service - Caregiver', function () {
             'end_datetime' => now()->subMonth()->addHours(4),
         ]);
 
-        $booking = Booking::factory()->forClient($client)->create();
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
             'address_city' => 'La Jolla',
@@ -190,20 +198,19 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(4)
+        expect($result['score'])->toBe(11104)
+            ->and($result['matchIcons'])->toContain('available')
             ->and($result['matchIcons'])->toContain('recent_work');
     });
 
-    test('tier 5 when caregiver has recent work (6mo) with partial fit', function () {
-        $client = Client::factory()->create();
+    test('potential match when recent work (6mo) with partial fit', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $otherClient = Client::factory()->create();
         $caregiver = makeActiveCaregiver(['rating' => 3.5]);
 
-        // Give caregiver a matching specialty (needed for "partial fit")
         $babies = SpecialtyType::where('name', 'Babies')->first();
         $caregiver->specialtyTypes()->sync([$babies->id]);
 
-        // Recent work in last 6 months (4 months ago, not 3mo, so recentWork6mo only)
         Booking::factory()->forClient($otherClient)->create([
             'caregiver_id' => $caregiver->id,
             'status' => 'completed',
@@ -211,8 +218,14 @@ describe('Recommendation Service - Caregiver', function () {
             'end_datetime' => now()->subMonths(4)->addHours(4),
         ]);
 
-        // Pass a booking with service_type to trigger specialty check
-        $booking = Booking::factory()->forClient($client)->create();
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
         ]);
@@ -220,23 +233,25 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(5)
+        expect($result['score'])->toBe(11001)
+            ->and($result['matchIcons'])->toContain('available')
+            ->and($result['matchIcons'])->toContain('specialty')
             ->and($result['matchIcons'])->toContain('recent_work');
     });
 
-    test('tier 6 for caregivers with no special matching', function () {
-        $client = Client::factory()->create();
+    test('no match when caregiver has no matching criteria', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeActiveCaregiver(['rating' => 3.0]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['tier'])->toBe(6)
+        expect($result['score'])->toBe(0)
             ->and($result['matchIcons'])->toBeEmpty();
     });
 
     test('respects limit parameter', function () {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         makeActiveCaregiver();
         makeActiveCaregiver();
         makeActiveCaregiver();
@@ -249,10 +264,15 @@ describe('Recommendation Service - Caregiver', function () {
     });
 
     test('hasBeenNotified returns true when caregiver was notified for booking', function () {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
         $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
             'caregiver_id' => null,
         ]);
 
@@ -269,10 +289,15 @@ describe('Recommendation Service - Caregiver', function () {
     });
 
     test('hasBeenNotified returns false when no notification exists', function () {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
         $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
             'caregiver_id' => null,
         ]);
 
@@ -283,7 +308,7 @@ describe('Recommendation Service - Caregiver', function () {
     });
 
     test('hasBeenNotified returns false when no booking provided', function () {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['sitter_preferences' => []]);
         $caregiver = makeActiveCaregiver(['rating' => 4.0]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
@@ -293,29 +318,33 @@ describe('Recommendation Service - Caregiver', function () {
     });
 
     test('returns empty collection when no active caregivers', function () {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['sitter_preferences' => []]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         expect($recommended)->toHaveCount(0);
     });
 
-    test('caregiver without availability is excluded', function () {
-        $client = Client::factory()->create();
-        Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+    test('caregiver without availability appears with zero score', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        expect($recommended)->toHaveCount(0);
+        expect($recommended)->toHaveCount(1);
+        expect($recommended[0])->toMatchArray([
+            'id' => $caregiver->id,
+            'score' => 0,
+            'matchIcons' => [],
+        ]);
     });
 
-    test('caregivers are sorted by tier then name', function () {
-        $client = Client::factory()->create();
+    test('caregivers are sorted by score descending then name ascending', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
 
         $cg2 = makeActiveCaregiver(['rating' => 4.0, 'first_name' => 'Alpha']);
         $cg1 = makeActiveCaregiver(['rating' => 4.5, 'first_name' => 'Beta']);
 
-        // Give cg1 previous work to put it in tier 1
         Booking::factory()->forClient($client)->create([
             'caregiver_id' => $cg1->id,
             'status' => 'completed',
@@ -323,8 +352,237 @@ describe('Recommendation Service - Caregiver', function () {
 
         $recommended = $this->service->getRecommendedCaregivers($client);
 
-        // cg1 (tier 1) should come before cg2 (tier 6)
-        $tiers = $recommended->pluck('tier')->toArray();
-        expect($tiers[0])->toBeLessThan($tiers[1]);
+        $scores = $recommended->pluck('score')->toArray();
+        expect($scores[0])->toBeGreaterThan($scores[1]);
+    });
+
+    test('baby_specialist preference matches Babies specialty without service type', function () {
+        $client = Client::factory()->create([
+            'sitter_preferences' => [SitterPreference::BabySpecialist->value],
+        ]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('specialty');
+    });
+
+    test('special_needs_care preference matches EAV special_needs attribute', function () {
+        $client = Client::factory()->create([
+            'sitter_preferences' => [SitterPreference::SpecialNeedsCare->value],
+        ]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $specialNeedsAttr = AttributeDefinition::where('slug', 'special_needs')->first();
+        $caregiver->attributes()->sync([$specialNeedsAttr->id => ['value' => 'true']]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('specialty');
+    });
+
+    test('special_needs_care preference does not match without special_needs attribute', function () {
+        $client = Client::factory()->create([
+            'sitter_preferences' => [SitterPreference::SpecialNeedsCare->value],
+        ]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+        $caregiver->attributes()->sync([]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->not->toContain('specialty');
+    });
+
+    test('favorited caregiver gets favorited icon', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $client->favoriteCaregivers()->attach($caregiver->id);
+
+        $recommended = $this->service->getRecommendedCaregivers($client);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('favorited');
+    });
+
+    test('available when caregiver has availability for all sibling booking dates', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => now()->addDays(6)->format('Y-m-d'),
+            'time_slots' => ['morning', 'afternoon'],
+        ]);
+
+        $startDate1 = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate1 = (clone $startDate1)->addHours(4);
+        $startDate2 = now()->addDays(6)->setHour(9)->setMinute(0);
+        $endDate2 = (clone $startDate2)->addHours(4);
+
+        $bookingGroup = BookingGroup::factory()->create([
+            'client_id' => $client->id,
+        ]);
+
+        Booking::factory()->create([
+            'booking_group_id' => $bookingGroup->id,
+            'start_datetime' => $startDate1,
+            'end_datetime' => $endDate1,
+            'caregiver_id' => null,
+        ]);
+        Booking::factory()->create([
+            'booking_group_id' => $bookingGroup->id,
+            'start_datetime' => $startDate2,
+            'end_datetime' => $endDate2,
+            'caregiver_id' => null,
+        ]);
+
+        $dateRanges = $bookingGroup->bookings->map(fn (Booking $b) => [
+            'start' => $b->start_datetime,
+            'end' => $b->end_datetime,
+        ])->values()->toArray();
+
+        $recommended = $this->service->getRecommendedCaregivers(
+            $client,
+            $bookingGroup->bookings->first(),
+            dateRanges: $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('available');
+    });
+
+    test('not available when caregiver has availability for only some sibling dates', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $startDate1 = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate1 = (clone $startDate1)->addHours(4);
+        $startDate2 = now()->addDays(6)->setHour(9)->setMinute(0);
+        $endDate2 = (clone $startDate2)->addHours(4);
+
+        $bookingGroup = BookingGroup::factory()->create([
+            'client_id' => $client->id,
+        ]);
+
+        Booking::factory()->create([
+            'booking_group_id' => $bookingGroup->id,
+            'start_datetime' => $startDate1,
+            'end_datetime' => $endDate1,
+            'caregiver_id' => null,
+        ]);
+        Booking::factory()->create([
+            'booking_group_id' => $bookingGroup->id,
+            'start_datetime' => $startDate2,
+            'end_datetime' => $endDate2,
+            'caregiver_id' => null,
+        ]);
+
+        $dateRanges = $bookingGroup->bookings->map(fn (Booking $b) => [
+            'start' => $b->start_datetime,
+            'end' => $b->end_datetime,
+        ])->values()->toArray();
+
+        $recommended = $this->service->getRecommendedCaregivers(
+            $client,
+            $bookingGroup->bookings->first(),
+            dateRanges: $dateRanges,
+        );
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->not->toContain('available');
+    });
+
+    test('available and favorited caregiver scores highest', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $southCounty = Location::where('name', 'South County')->first();
+        $caregiver = makeActiveCaregiver(['rating' => 4.5]);
+
+        $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => true]]);
+        $babies = SpecialtyType::where('name', 'Babies')->first();
+        $caregiver->specialtyTypes()->sync([$babies->id]);
+        $client->favoriteCaregivers()->attach($caregiver->id);
+
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+            'address_city' => 'La Jolla',
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['score'])->toBe(111100)
+            ->and($result['matchIcons'])->toContain('favorited')
+            ->and($result['matchIcons'])->toContain('available')
+            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('location_preferred');
+    });
+
+    test('matches caregiver for evening PT booking that crosses UTC midnight', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => '2026-06-20',
+            'time_slots' => ['evening'],
+        ]);
+
+        // 7–10 PM PT on June 20 = 2–5 AM UTC June 21
+        $startDate = CarbonImmutable::parse('2026-06-20 19:00:00', 'America/Los_Angeles');
+        $endDate = CarbonImmutable::parse('2026-06-20 22:00:00', 'America/Los_Angeles');
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result)->not->toBeNull()
+            ->and($result['matchIcons'])->toContain('available');
+    });
+
+    test('daytime PT booking still matches (no regression)', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        Availability::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'date' => '2026-06-20',
+            'time_slots' => ['morning'],
+        ]);
+
+        // 9 AM–12 PM PT on June 20 = 4–7 PM UTC June 20 (same UTC date)
+        $startDate = CarbonImmutable::parse('2026-06-20 09:00:00', 'America/Los_Angeles');
+        $endDate = CarbonImmutable::parse('2026-06-20 12:00:00', 'America/Los_Angeles');
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result)->not->toBeNull()
+            ->and($result['matchIcons'])->toContain('available');
     });
 });

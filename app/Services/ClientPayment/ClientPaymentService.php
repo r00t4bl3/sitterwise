@@ -2,9 +2,14 @@
 
 namespace App\Services\ClientPayment;
 
+use App\Enums\BookingPaymentStatus;
+use App\Models\Booking;
+use App\Models\BookingGroup;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Notifications\BookingCreatedNotification;
+use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Services\ClientPayment\Contracts\ClientPaymentServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Response as InertiaResponse;
@@ -75,25 +80,18 @@ class ClientPaymentService implements ClientPaymentServiceInterface
         ])->toArray();
     }
 
-    public function createSetupIntent(): array
+    public function createSetupIntent(?string $returnUrl = null): array
     {
         $client = $this->getClient();
 
-        if (! $client->stripe_customer_id) {
-            $stripeCustomer = $this->stripe->customers->create([
-                'email' => $client->user->email,
-                'name' => $client->full_name,
-            ]);
-
-            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
-        }
+        $this->ensureStripeCustomer($client);
 
         $checkoutSession = $this->stripe->checkout->sessions->create([
             'customer' => $client->stripe_customer_id,
             'ui_mode' => 'embedded_page',
             'mode' => 'setup',
             'payment_method_types' => ['card'],
-            'return_url' => config('app.url').'/payments?session_id={CHECKOUT_SESSION_ID}',
+            'return_url' => $returnUrl ?? config('app.url').'/payments?session_id={CHECKOUT_SESSION_ID}',
         ]);
 
         return [
@@ -151,14 +149,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
     {
         $client = $this->getClient();
 
-        if (! $client->stripe_customer_id) {
-            $stripeCustomer = $this->stripe->customers->create([
-                'email' => $client->user->email,
-                'name' => $client->full_name,
-            ]);
-
-            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
-        }
+        $this->ensureStripeCustomer($client);
 
         $existingCount = ClientPaymentMethod::where('client_id', $client->id)->count();
 
@@ -187,6 +178,8 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             ]);
         }
 
+        $this->sendDeferredBookingNotifications($client);
+
         return [
             'id' => $paymentMethod->id,
             'brand' => $paymentMethod->brand,
@@ -198,6 +191,8 @@ class ClientPaymentService implements ClientPaymentServiceInterface
     public function setDefaultPaymentMethod(int $paymentMethodId): array
     {
         $client = $this->getClient();
+
+        $this->ensureStripeCustomer($client);
 
         $paymentMethod = ClientPaymentMethod::where('client_id', $client->id)
             ->findOrFail($paymentMethodId);
@@ -244,5 +239,49 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'success' => true,
             'message' => 'Payment method removed',
         ];
+    }
+
+    protected function sendDeferredBookingNotifications(Client $client): void
+    {
+        $user = $client->user;
+
+        if (! $user) {
+            return;
+        }
+
+        $pendingBookings = Booking::whereHas('bookingGroup', fn ($q) => $q
+            ->where('client_id', $client->id)
+            ->where('requires_payment', true))
+            ->where('payment_status', BookingPaymentStatus::Pending->value)
+            ->get();
+
+        foreach ($pendingBookings as $booking) {
+            $user->notify(new BookingCreatedNotification($booking));
+        }
+
+        $pendingGroups = BookingGroup::where('client_id', $client->id)
+            ->where('requires_payment', true)
+            ->has('bookings', '>', 1)
+            ->get();
+
+        foreach ($pendingGroups as $group) {
+            $user->notify(new ClientGroupBookingCreatedNotification($group));
+        }
+    }
+
+    protected function ensureStripeCustomer(Client $client): void
+    {
+        if ($client->stripe_customer_id && str_starts_with($client->stripe_customer_id, 'pm_')) {
+            $client->update(['stripe_customer_id' => null]);
+        }
+
+        if (! $client->stripe_customer_id) {
+            $stripeCustomer = $this->stripe->customers->create([
+                'email' => $client->user->email,
+                'name' => $client->full_name,
+            ]);
+
+            $client->update(['stripe_customer_id' => $stripeCustomer->id]);
+        }
     }
 }

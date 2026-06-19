@@ -5,33 +5,35 @@ namespace App\Mail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Password;
 use Sichikawa\LaravelSendgridDriver\SendGrid;
 
 class ClientBookingCreatedMail extends Mailable
 {
     use Queueable, SendGrid, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(public Booking $booking) {}
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
+        $data = $this->booking->toEmailData();
+
+        $user = $this->booking->client?->user;
+        if ($user && $this->booking->bookingGroup?->submission_type === 'guest') {
+            $token = Password::broker()->createToken($user);
+            $data['password_setup_url'] = url('/reset-password/'.$token.'?email='.urlencode($user->email));
+        }
+
         $this->sendgrid([
             'personalizations' => [
                 [
-                    'dynamic_template_data' => $this->booking->toEmailData(),
+                    'dynamic_template_data' => $data,
                 ],
             ],
-            'template_id' => 'd-c691618c009e4289a937774e33975817',
+            'template_id' => 'd-53f1d52866924c3096bd0d7deae965e6',
         ]);
 
         return new Envelope(
@@ -40,21 +42,13 @@ class ClientBookingCreatedMail extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
-            htmlString: ' ', // Setting a space as the content for SendGrid dynamic templates
+            htmlString: ' ',
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, Attachment>
-     */
     public function attachments(): array
     {
         return [];
