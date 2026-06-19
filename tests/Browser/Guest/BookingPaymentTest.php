@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Hotel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

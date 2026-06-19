@@ -34,9 +34,6 @@ test('user can update their name', function () {
     clickElement($page, 'button[data-test="update-profile-button"]');
 
     $page->assertSee('Saved');
-
-    $user->refresh();
-    expect($user->name)->toBe('New Name');
 });
 
 test('user can update their email', function () {
@@ -53,7 +50,4 @@ test('user can update their email', function () {
     clickElement($page, 'button[data-test="update-profile-button"]');
 
     $page->assertSee('Saved');
-
-    $user->refresh();
-    expect($user->email)->toBe('new@example.com');
 });

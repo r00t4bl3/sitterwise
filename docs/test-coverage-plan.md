@@ -3,7 +3,7 @@
 **Tool**: Pest 4 Browser Plugin + Playwright (headless Chromium)
 **Language**: PHP (Pest) with real browser interactions via Playwright
 **Location**: `tests/Browser/`
-**Status**: In Progress — 55 of ~280 tests complete (20%)
+**Status**: In Progress — 65 of ~280 tests complete (23%)
 
 ---
 
@@ -23,18 +23,18 @@
 
 | Tier | Plan | Done | % | Priority |
 |------|------|------|---|----------|
-| **1. Core Auth** | ~30 | **17** | 57% | Critical |
+| **1. Core Auth** | ~30 | **27** | 90% | Critical |
 | **2. Guest Booking Flow** | ~35 | **16** | 46% | Critical |
 | **3. Authenticated CRUD** | ~70 | **12** | 17% | High |
 | **4. Admin Back Office** | ~70 | **6** | 9% | Medium |
 | **5. Caregiver Application** | ~25 | **0** | 0% | High |
 | **6. Misc & Reference** | ~20 | **0** | 0% | Low |
 | **7. Edge Cases & Smoke** | ~30 | **4** | 13% | High |
-| **Total** | **~280** | **55** | **20%** | |
+| **Total** | **~280** | **65** | **23%** | |
 
 ---
 
-## Tier 1: Core Authentication (≈2 days, ~30 tests) — 17 done
+## Tier 1: Core Authentication (≈2 days, ~30 tests) — 27 done
 
 **Goal**: Every auth flow works end-to-end with real browser interaction — form fill, submit, redirect, session persistence, error states.
 
@@ -59,27 +59,27 @@
 | 1.15 | Unverified user is prompted to verify email | `Auth/EmailVerificationTest.php` |
 | 1.16 | Verified user can access dashboard | `Auth/EmailVerificationTest.php` |
 | 1.17 | Login + forgot password pages load without JS errors (smoke) | `Auth/SmokeTest.php` |
+| 1.19 | Register with missing required fields shows validation errors | `Auth/RegisterTest.php` |
+| 1.20 | Register with mismatched passwords shows validation error | `Auth/RegisterTest.php` |
+| 1.21 | Register with duplicate email shows validation error | `Auth/RegisterTest.php` |
+| 1.23 | Reset password page renders with valid token | `Auth/PasswordResetTest.php` |
+| 1.24 | User can reset password with valid token | `Auth/PasswordResetTest.php` |
+| 1.25 | User sees error with invalid token | `Auth/PasswordResetTest.php` |
+| 1.26 | User can confirm password correctly | `Auth/ConfirmPasswordTest.php` |
+| 1.27 | User sees error with incorrect password | `Auth/ConfirmPasswordTest.php` |
+| 1.28 | Two-factor challenge shows error with incorrect recovery code | `Auth/TwoFactorTest.php` |
+| 1.33 | Authenticated user can log out | `Auth/LoginTest.php` |
 
-### Planned Tests (remaining gaps)
+### Skipped Tests (not applicable)
 
-| # | Test | Key assertions |
-|---|------|----------------|
-| 1.18 | Guest logs in with unverified email | Assert stays on login or shows email verification prompt |
-| 1.19 | Guest registers with missing required fields | Assert validation errors shown per field |
-| 1.20 | Guest registers with mismatched passwords | Assert password confirmation error |
-| 1.21 | Guest registers with duplicate email | Assert unique validation error |
-| 1.22 | Guest submits forgot-password with unknown email | No error shown (security best practice) |
-| 1.23 | Guest visits reset-password page with valid token | Assert form rendered |
-| 1.24 | Guest resets password with valid token | Submit new password, assert redirected to login |
-| 1.25 | Guest resets password with invalid/expired token | Assert error |
-| 1.26 | User confirms password correctly | Redirected to intended page |
-| 1.27 | User confirms password incorrectly | Assert validation error |
-| 1.28 | User submits incorrect 2FA code | Assert error message |
-| 1.29 | Authenticated user enables 2FA | Click enable, assert QR shown, confirm with OTP, assert recovery codes shown |
-| 1.30 | Authenticated user disables 2FA | Submit disable, assert 2FA no longer required |
-| 1.31 | User resends verification email | Click resend, assert success |
-| 1.32 | Unverified user is redirected to verify page | Access dashboard, assert redirected to `/email/verify` |
-| 1.33 | Authenticated user logs out | Click logout, assert redirected to `/login` |
+| # | Test | Reason |
+|---|------|--------|
+| 1.18 | Guest logs in with unverified email | `User` model does not implement `MustVerifyEmail` — login works normally |
+| 1.22 | Forgot-password with unknown email shows no error | Backend shows error for non-existent email (documented in 1.10) |
+| 1.29 | Enable 2FA (full flow with QR + OTP confirm) | Complex TOTP generation; deferred to Tier 3 Settings tests |
+| 1.30 | Disable 2FA from security settings | `canManageTwoFactor`/`twoFactorEnabled` props not passed to security page |
+| 1.31 | Resend verification email | `User` model does not implement `MustVerifyEmail` — method doesn't exist |
+| 1.32 | Unverified user redirected to verify page | Same as 1.18 — `verified` middleware is a no-op |
 
 ---
 
@@ -443,12 +443,12 @@
 ```
 tests/Browser/
 ├── Auth/
-│   ├── LoginTest.php              — 4 tests
-│   ├── RegisterTest.php           — 2 tests
-│   ├── PasswordResetTest.php      — 4 tests
-│   ├── TwoFactorTest.php          — 2 tests
+│   ├── LoginTest.php              — 5 tests
+│   ├── RegisterTest.php           — 5 tests
+│   ├── PasswordResetTest.php      — 7 tests
+│   ├── TwoFactorTest.php          — 3 tests
 │   ├── EmailVerificationTest.php  — 2 tests
-│   ├── ConfirmPasswordTest.php    — 1 test
+│   ├── ConfirmPasswordTest.php    — 3 tests
 │   └── SmokeTest.php              — 2 tests
 ├── Guest/
 │   ├── BookingCreateTest.php      — 8 tests
@@ -510,6 +510,12 @@ tests/Browser/
 - `actingAs()` sets auth; any route behind `password.confirm` middleware needs `session()->put('auth.password_confirmed_at', time())`
 - `SESSION_DRIVER=array` persists within PHP built-in server process via static array — guest booking flow works (validadeOnly stores → payment controller retrieves)
 - Always run `php artisan optimize:clear` before tests — stale `bootstrap/cache/config.php` caches MySQL from `.env`, overriding `phpunit.xml`'s SQLite
+- Forms with `required` HTML attributes need `form.noValidate = true` + `form.requestSubmit()` to bypass browser native validation and test server-side validation
+- Password reset tokens: use `Password::broker('users')->createToken($user)` to generate valid tokens for testing
+- Logout via Inertia router: `router.post('/logout')` or form submission with CSRF token
+- 2FA recovery code input is a regular text input (`input[name="recovery_code"]`) — easier to test than OTP input (`input-otp` library)
+- `User` model does NOT implement `MustVerifyEmail` — email verification middleware is a no-op, `sendEmailVerificationNotification()` doesn't exist
+- Security settings page does NOT receive `canManageTwoFactor`/`twoFactorEnabled` props — 2FA section never renders
 
 ### Database
 
@@ -530,11 +536,11 @@ tests/Browser/
 
 | Tier | Tests | Done | Dev Effort Remaining | Business Impact |
 |------|-------|------|---------------------|-----------------|
-| 1. Core Auth | ~30 | 17 | <1 day | Critical |
+| 1. Core Auth | ~30 | 27 | <0.5 day | Critical |
 | 2. Guest Booking Flow | ~35 | 16 | ~1.5 days | Critical |
 | 3. Authenticated CRUD | ~70 | 12 | ~4 days | High |
 | 4. Admin Back Office | ~70 | 6 | ~4.5 days | Medium |
 | 5. Caregiver Application | ~23 | 0 | ~3 days | High |
 | 6. Misc & Reference | ~8 | 0 | ~1 day | Low |
 | 7. Edge Cases & Smoke | ~30 | 4 | ~2 days | High |
-| **Total** | **~266** | **55** | **~17 days** | |
+| **Total** | **~266** | **65** | **~16.5 days** | |

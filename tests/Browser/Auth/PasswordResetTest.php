@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 
 uses(RefreshDatabase::class);
 
@@ -61,4 +62,50 @@ test('user can navigate back to login from forgot password', function () {
     JS);
 
     $page->assertPathIs('/login');
+});
+
+test('reset password page renders with valid token', function () {
+    $user = User::factory()->create([
+        'email' => 'john@example.com',
+    ]);
+
+    $token = Password::broker('users')->createToken($user);
+
+    $page = visit("/reset-password/{$token}?email=john@example.com");
+
+    $page->assertSee('Reset password')
+        ->assertNoJavaScriptErrors();
+});
+
+test('user can reset password with valid token', function () {
+    $user = User::factory()->create([
+        'email' => 'john@example.com',
+    ]);
+
+    $token = Password::broker('users')->createToken($user);
+
+    $page = visit("/reset-password/{$token}?email=john@example.com");
+
+    fillField($page, '#password', 'new-password-123');
+    fillField($page, '#password_confirmation', 'new-password-123');
+
+    clickElement($page, 'button[data-test="reset-password-button"]');
+
+    $page->assertPathIs('/login');
+    $page->assertSee('password has been reset');
+});
+
+test('user sees error with invalid token', function () {
+    User::factory()->create([
+        'email' => 'john@example.com',
+    ]);
+
+    $page = visit('/reset-password/invalid-token?email=john@example.com');
+
+    fillField($page, '#password', 'new-password-123');
+    fillField($page, '#password_confirmation', 'new-password-123');
+
+    clickElement($page, 'button[data-test="reset-password-button"]');
+
+    $page->assertSee('password reset token is invalid');
 });

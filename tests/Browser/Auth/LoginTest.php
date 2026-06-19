@@ -56,3 +56,43 @@ test('user can navigate to register', function () {
 
     $page->assertPathIs('/register');
 });
+
+test('authenticated user can log out', function () {
+    $user = User::factory()->create([
+        'email' => 'john@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    Client::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user);
+
+    $page = visit('/dashboard');
+
+    $page->assertSee('Welcome back');
+
+    $page->script(<<<'JS'
+        const { router } = window.Inertia || {};
+        if (router) {
+            router.post('/logout');
+        } else {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/logout';
+            const csrf = document.querySelector('meta[name="csrf-token"]');
+            if (csrf) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '_token';
+                input.value = csrf.content;
+                form.appendChild(input);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        }
+    JS);
+
+    $page->assertPathIs('/login');
+
+    $this->assertGuest();
+});

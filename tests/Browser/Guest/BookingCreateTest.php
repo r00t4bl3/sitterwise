@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Hotel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -89,6 +90,8 @@ test('server-side validation passes and redirects to payment', function () {
     $tomorrow = now()->addDay()->startOfDay()->addHours(9);
     $end = $tomorrow->copy()->addHours(4);
 
+    $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class);
+
     $response = $this->post('/book', [
         'client_first_name' => 'John',
         'client_last_name' => 'Doe',
@@ -108,6 +111,7 @@ test('server-side validation passes and redirects to payment', function () {
         ],
         'new_pets' => [],
         'sitter_preferences' => [],
+        'sms_consent' => true,
     ]);
 
     $response->assertRedirect();
@@ -115,4 +119,85 @@ test('server-side validation passes and redirects to payment', function () {
     $this->assertNotNull(session()->get('guest_booking_payment_token'));
     $redirectUrl = $response->headers->get('Location');
     expect($redirectUrl)->toMatch('/^http:\/\/[^\/]+\/book\/payment\//');
+});
+
+test('booking progress indicator shows step 1', function () {
+    visit('/book')
+        ->assertSee('Booking Details');
+});
+
+test('can fill optional textareas', function () {
+    $page = visit('/book');
+
+    fillTextarea($page, 'Plans for the day', 'Bring comfortable shoes');
+    fillTextarea($page, 'our Care Team', 'Please assign our preferred caregiver');
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can toggle sitter preferences', function () {
+    $page = visit('/book');
+
+    selectOptionByLabel($page, 'Service Type', 'Babysitter');
+    selectOptionByLabel($page, 'Location Type', 'Private Home');
+
+    $page->script(<<<'JS'
+        const checkbox = document.querySelector('input[type="checkbox"]');
+        if (checkbox && !checkbox.closest('[role="dialog"]')) {
+            const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked').set;
+            setter.call(checkbox, true);
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    JS);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('shows validation error with invalid email', function () {
+    $page = visit('/book');
+
+    fillField($page, 'input[placeholder="First name"]', 'John');
+    fillField($page, 'input[placeholder="Last name"]', 'Doe');
+    fillField($page, 'input[placeholder="your@email.com"]', 'not-an-email');
+    fillField($page, 'input[type="tel"]', '5551234567');
+
+    selectOptionByLabel($page, 'Service Type', 'Babysitter');
+    selectOptionByLabel($page, 'Location Type', 'Private Home');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const submitBtn = buttons.find(b => b.textContent.includes('Continue to Payment'));
+        if (submitBtn) submitBtn.click();
+    JS);
+
+    usleep(1000000);
+
+    $page->assertSee('valid email');
+});
+
+test('can search and select a hotel from autocomplete', function () {
+    Hotel::factory()->create([
+        'name' => 'Grand San Diego Hotel',
+        'is_active' => true,
+    ]);
+
+    $page = visit('/book');
+
+    selectOptionByLabel($page, 'Location Type', 'Hotel');
+
+    usleep(300000);
+
+    fillField($page, 'input[role="combobox"][placeholder*="Search hotel"]', 'Grand');
+
+    usleep(500000);
+
+    $page->script(<<<'JS'
+        const options = document.querySelectorAll('[role="option"]');
+        const match = Array.from(options).find(el => el.textContent.includes('Grand San Diego Hotel'));
+        if (match) match.click();
+    JS);
+
+    usleep(200000);
+
+    $page->assertNoJavaScriptErrors();
 });
