@@ -117,16 +117,6 @@ Not implementing now. If needed later:
 3. Add Turnstile widget to the React forms (login, register, forgot-password, caregiver apply)
 4. Validate token server-side
 
-## Test Impact
-
-The only change that affects existing tests is the submission time gate. It naturally skips in tests because:
-
-- The `VerifyEmail` middleware (in `local`) auto-sets `verified_email` but **not** `verified_at`
-- The `submit()` method's fallback (line 126) also doesn't set `verified_at`
-- So the gate's condition `if ($verifiedAt && ...)` evaluates to `false` in tests
-
-No test modifications needed.
-
 ## Files Summary
 
 | File | Change |
@@ -134,5 +124,5 @@ No test modifications needed.
 | `app/Providers/AppServiceProvider.php` | Add 10 rate limiter definitions with custom responses |
 | `routes/web.php` | Add `throttle:` middleware to relevant routes |
 | `bootstrap/app.php` | Add throttle for Fortify routes |
-| `app/Http/Controllers/CaregiverApplicationController.php` | Add submission time gate |
+| ~~`app/Http/Controllers/CaregiverApplicationController.php`~~ | ~~Add submission time gate~~ (removed — caused false positives for legitimate users with expired sessions) |
 | `app/Http/Controllers/BroadcastSmsController.php` | Add Twilio signature validation (lower priority) |
