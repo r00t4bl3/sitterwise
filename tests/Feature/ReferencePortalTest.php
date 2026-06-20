@@ -49,6 +49,13 @@ function referencePortalValidPayload(array $overrides = []): array
         'strengths' => 'Very responsible and caring.',
         'concerns' => '',
         'additional_comments' => '',
+        'rating_appearance' => 5,
+        'rating_punctuality' => 4,
+        'background_drug_alcohol' => 'No',
+        'background_tobacco' => 'No',
+        'trust_own_child' => 'Yes',
+        'reason_not_care' => 'No',
+        'reason_not_care_explanation' => '',
     ], $overrides);
 }
 
@@ -201,6 +208,16 @@ describe('Reference Portal - Submit', function () {
         ]));
 
         Notification::assertNothingSent();
+    });
+
+    it('validates background_drug_alcohol is required', function () {
+        $reference = referencePortalCreateReferenceRequest();
+
+        $response = $this->post("/references/{$reference->token}", referencePortalValidPayload([
+            'background_drug_alcohol' => '',
+        ]));
+
+        $response->assertSessionHasErrors('background_drug_alcohol');
     });
 
     it('returns 404 for invalid token on store', function () {

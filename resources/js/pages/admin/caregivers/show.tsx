@@ -152,9 +152,16 @@ interface ReferenceRequest {
     rating_communication: number | null;
     rating_warmth: number | null;
     rating_overall_recommendation: number | null;
+    rating_appearance: number | null;
+    rating_punctuality: number | null;
     strengths: string | null;
     concerns: string | null;
     additional_comments: string | null;
+    background_drug_alcohol: string | null;
+    background_tobacco: string | null;
+    trust_own_child: string | null;
+    reason_not_care: string | null;
+    reason_not_care_explanation: string | null;
     submitted_at: string | null;
     created_at: string;
 }
@@ -1091,6 +1098,8 @@ export default function CaregiverShow() {
                                                     'rating_communication',
                                                     'rating_warmth',
                                                     'rating_overall_recommendation',
+                                                    'rating_appearance',
+                                                    'rating_punctuality',
                                                 ] as const;
                                                 const ratings = ratingKeys
                                                     .map(
@@ -1213,6 +1222,10 @@ export default function CaregiverShow() {
                                                                                             'Warmth',
                                                                                         rating_overall_recommendation:
                                                                                             'Overall',
+                                                                                        rating_appearance:
+                                                                                            'Appearance',
+                                                                                        rating_punctuality:
+                                                                                            'Punctuality',
                                                                                     };
                                                                                 const val =
                                                                                     ref[
@@ -1263,18 +1276,72 @@ export default function CaregiverShow() {
                                                                             }
                                                                         </p>
                                                                     )}
-                                                                    {ref.additional_comments && (
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            <span className="font-medium text-foreground">
-                                                                                Additional
-                                                                                Comments:
-                                                                            </span>{' '}
-                                                                            {
-                                                                                ref.additional_comments
-                                                                            }
-                                                                        </p>
-                                                                    )}
-                                                                </div>
+                                                                     {ref.additional_comments && (
+                                                                         <p className="text-xs text-muted-foreground">
+                                                                             <span className="font-medium text-foreground">
+                                                                                 Additional
+                                                                                 Comments:
+                                                                             </span>{' '}
+                                                                             {
+                                                                                 ref.additional_comments
+                                                                             }
+                                                                         </p>
+                                                                     )}
+                                                                     {(ref.background_drug_alcohol ||
+                                                                         ref.background_tobacco ||
+                                                                         ref.trust_own_child ||
+                                                                         ref.reason_not_care) && (
+                                                                         <div className="border-t border-border pt-2">
+                                                                             <p className="text-xs font-medium text-foreground">
+                                                                                 Background
+                                                                             </p>
+                                                                             <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                                                                 {ref.background_drug_alcohol && (
+                                                                                     <p>
+                                                                                         <span className="font-medium text-foreground">
+                                                                                             Drug/Alcohol:
+                                                                                         </span>{' '}
+                                                                                         {
+                                                                                             ref.background_drug_alcohol
+                                                                                         }
+                                                                                     </p>
+                                                                                 )}
+                                                                                 {ref.background_tobacco && (
+                                                                                     <p>
+                                                                                         <span className="font-medium text-foreground">
+                                                                                             Tobacco:
+                                                                                         </span>{' '}
+                                                                                         {
+                                                                                             ref.background_tobacco
+                                                                                         }
+                                                                                     </p>
+                                                                                 )}
+                                                                                 {ref.trust_own_child && (
+                                                                                     <p>
+                                                                                         <span className="font-medium text-foreground">
+                                                                                             Trust 6+ hrs:
+                                                                                         </span>{' '}
+                                                                                         {
+                                                                                             ref.trust_own_child
+                                                                                         }
+                                                                                     </p>
+                                                                                 )}
+                                                                                 {ref.reason_not_care && (
+                                                                                     <p>
+                                                                                         <span className="font-medium text-foreground">
+                                                                                             Reason not care:
+                                                                                         </span>{' '}
+                                                                                         {
+                                                                                             ref.reason_not_care
+                                                                                         }
+                                                                                         {ref.reason_not_care_explanation &&
+                                                                                             ` — ${ref.reason_not_care_explanation}`}
+                                                                                     </p>
+                                                                                 )}
+                                                                             </div>
+                                                                         </div>
+                                                                     )}
+                                                                 </div>
                                                             )}
                                                     </div>
                                                 );
@@ -1430,7 +1497,7 @@ export default function CaregiverShow() {
                                                     onChange={(val) =>
                                                         adminRatingForm.setData(
                                                             'admin_rating',
-                                                            val,
+                                                            val ?? 0,
                                                         )
                                                     }
                                                     error={
@@ -1518,7 +1585,7 @@ export default function CaregiverShow() {
                                                     onChange={(val) =>
                                                         reliabilityOverrideForm.setData(
                                                             'reliability_override',
-                                                            val,
+                                                            val ?? 0,
                                                         )
                                                     }
                                                 />

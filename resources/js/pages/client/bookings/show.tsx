@@ -164,6 +164,8 @@ export default function BookingDetail({
 
     const mapsUrl = buildGoogleMapsUrl();
 
+    const pricingNotSet = booking.charge_to_client_hourly === null && booking.charge_to_client === 0;
+
     const hasHourlyRate = booking.charge_to_client_hourly != null;
     const hasHours = booking.total_working_hour != null;
     const hasReimbursement = booking.reimbursement != null;
@@ -543,11 +545,17 @@ export default function BookingDetail({
                                                     <span className="text-sm font-medium text-foreground">
                                                         Total
                                                     </span>
-                                                    <span className="text-sm font-bold text-foreground">
-                                                        {formatCurrency(
-                                                            booking.charge_to_client,
-                                                        )}
-                                                    </span>
+                                                    {pricingNotSet ? (
+                                                        <span className="text-sm italic text-muted-foreground">
+                                                            To be calculated
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm font-bold text-foreground">
+                                                            {formatCurrency(
+                                                                booking.charge_to_client,
+                                                            )}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </>
                                         )}

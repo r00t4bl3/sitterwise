@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CaregiverApplication extends Model
 {
@@ -21,5 +22,10 @@ class CaregiverApplication extends Model
     public function caregiver(): BelongsTo
     {
         return $this->belongsTo(Caregiver::class);
+    }
+
+    public function interview(): HasOne
+    {
+        return $this->hasOne(CaregiverInterview::class, 'application_id');
     }
 }

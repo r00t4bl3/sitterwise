@@ -246,11 +246,11 @@ class DashboardController extends Controller
                         ->whereDoesntHave('ratings', fn ($q) => $q->where('ratable_type', Caregiver::class))
                         ->count(),
                     'ratingDistribution' => [
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 1)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 2)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 3)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 4)->count(),
                         BookingRating::where('ratable_type', Caregiver::class)->where('rating', 5)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 4)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 3)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 2)->count(),
+                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 1)->count(),
                     ],
                 ],
                 'needsAttention' => [

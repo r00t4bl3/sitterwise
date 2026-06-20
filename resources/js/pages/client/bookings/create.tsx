@@ -196,8 +196,8 @@ export default function ClientBookingCreate() {
     const defaultEndStr = formatDateTimeLocal(defaultEnd);
 
     const form = useForm({
-        service_type: 'babysitter',
-        location_type: 'private_home',
+        service_type: '',
+        location_type: '',
         new_children: initialChildren as Child[],
         new_pets: initialPets as Pet[],
         start_datetime: defaultStartStr,

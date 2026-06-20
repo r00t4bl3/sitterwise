@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,12 @@ function highlightText(text: string, query: string): React.ReactNode {
 }
 
 export function GlobalSearch() {
+    const { auth } = usePage<{ auth: { user: { role: string } } }>().props;
+    const placeholder =
+        auth.user.role === 'client' || auth.user.role === 'caregiver'
+            ? 'Search bookings...'
+            : 'Search bookings, caregivers, clients...';
+
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -205,7 +211,7 @@ export function GlobalSearch() {
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => results.length > 0 && setShowResults(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search bookings, caregivers, clients..."
+                    placeholder={placeholder}
                     className="h-9 w-full rounded-md border border-input bg-background pr-8 pl-9 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring md:w-[200px] lg:w-[300px]"
                 />
                 {query && (
