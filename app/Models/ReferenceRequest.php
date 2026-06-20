@@ -25,6 +25,13 @@ class ReferenceRequest extends Model
         'concerns',
         'additional_comments',
         'submitted_at',
+        'rating_appearance',
+        'rating_punctuality',
+        'background_drug_alcohol',
+        'background_tobacco',
+        'trust_own_child',
+        'reason_not_care',
+        'reason_not_care_explanation',
     ];
 
     protected $casts = [
@@ -36,6 +43,8 @@ class ReferenceRequest extends Model
         'rating_communication' => 'integer',
         'rating_warmth' => 'integer',
         'rating_overall_recommendation' => 'integer',
+        'rating_appearance' => 'integer',
+        'rating_punctuality' => 'integer',
     ];
 
     public function caregiver(): BelongsTo

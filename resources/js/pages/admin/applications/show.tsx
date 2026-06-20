@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RatingInput } from '@/components/rating-input';
 import {
     Select,
     SelectContent,
@@ -151,9 +153,16 @@ interface ReferenceInfo {
     rating_communication: number | null;
     rating_warmth: number | null;
     rating_overall_recommendation: number | null;
+    rating_appearance: number | null;
+    rating_punctuality: number | null;
     strengths: string | null;
     concerns: string | null;
     additional_comments: string | null;
+    background_drug_alcohol: string | null;
+    background_tobacco: string | null;
+    trust_own_child: string | null;
+    reason_not_care: string | null;
+    reason_not_care_explanation: string | null;
     submitted_at: string | null;
     created_at: string;
 }
@@ -177,6 +186,14 @@ interface ChecklistItemInfo {
     completed_at: string | null;
 }
 
+interface InterviewInfo {
+    id: number;
+    status: string;
+    composite: number | null;
+    evaluated_at: string | null;
+    evaluator_name: string | null;
+}
+
 interface Props {
     application: ApplicationInfo;
     references: ReferenceInfo[];
@@ -188,6 +205,7 @@ interface Props {
         color: string;
         is_terminal: boolean;
     }>;
+    interview: InterviewInfo | null;
     [key: string]: unknown;
 }
 
@@ -271,43 +289,6 @@ function getActions(
     return actions;
 }
 
-function StarRating({
-    value,
-    onChange,
-}: {
-    value: number | null;
-    onChange: (val: number | null) => void;
-}) {
-    const [hovered, setHovered] = useState(0);
-
-    return (
-        <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                    key={star}
-                    type="button"
-                    onClick={() => onChange(star === value ? null : star)}
-                    onMouseEnter={() => setHovered(star)}
-                    onMouseLeave={() => setHovered(0)}
-                    className="cursor-pointer"
-                >
-                    <svg
-                        className={`h-7 w-7 transition-colors ${
-                            (hovered || (value ?? 0)) >= star
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-gray-300 hover:text-amber-300'
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                </button>
-            ))}
-        </div>
-    );
-}
-
 function CollapsibleSection({
     title,
     defaultOpen = true,
@@ -357,6 +338,7 @@ export default function ApplicationShow() {
         certifications,
         checklistItems,
         caregiverStatuses,
+        interview,
     } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -434,9 +416,16 @@ export default function ApplicationShow() {
         rating_communication: null as number | null,
         rating_warmth: null as number | null,
         rating_overall_recommendation: null as number | null,
+        rating_appearance: null as number | null,
+        rating_punctuality: null as number | null,
         strengths: '',
         concerns: '',
         additional_comments: '',
+        background_drug_alcohol: '',
+        background_tobacco: '',
+        trust_own_child: '',
+        reason_not_care: '',
+        reason_not_care_explanation: '',
     });
 
     const [editingRefId, setEditingRefId] = useState<number | null>(null);
@@ -456,9 +445,16 @@ export default function ApplicationShow() {
             'rating_overall_recommendation',
             ref.rating_overall_recommendation,
         );
+        editForm.setData('rating_appearance', ref.rating_appearance);
+        editForm.setData('rating_punctuality', ref.rating_punctuality);
         editForm.setData('strengths', ref.strengths ?? '');
         editForm.setData('concerns', ref.concerns ?? '');
         editForm.setData('additional_comments', ref.additional_comments ?? '');
+        editForm.setData('background_drug_alcohol', ref.background_drug_alcohol ?? '');
+        editForm.setData('background_tobacco', ref.background_tobacco ?? '');
+        editForm.setData('trust_own_child', ref.trust_own_child ?? '');
+        editForm.setData('reason_not_care', ref.reason_not_care ?? '');
+        editForm.setData('reason_not_care_explanation', ref.reason_not_care_explanation ?? '');
         setEditingRefId(ref.id);
     }
 
@@ -1341,8 +1337,10 @@ export default function ApplicationShow() {
                                         'rating_maturity',
                                         'rating_communication',
                                         'rating_warmth',
-                                        'rating_overall_recommendation',
-                                    ] as const;
+                                                'rating_overall_recommendation',
+                                                'rating_appearance',
+                                                'rating_punctuality',
+                                            ] as const;
                                     const ratings = ratingKeys
                                         .map(
                                             (k) =>
@@ -1460,8 +1458,12 @@ export default function ApplicationShow() {
                                                                                         'Communication',
                                                                                     rating_warmth:
                                                                                         'Warmth',
-                                                                                    rating_overall_recommendation:
-                                                                                        'Overall',
+                                                                                rating_overall_recommendation:
+                                                                                    'Overall',
+                                                                                rating_appearance:
+                                                                                    'Appearance',
+                                                                                rating_punctuality:
+                                                                                    'Punctuality',
                                                                                 };
                                                                             const val =
                                                                                 ref[
@@ -1512,19 +1514,73 @@ export default function ApplicationShow() {
                                                                         }
                                                                     </p>
                                                                 )}
-                                                                {ref.additional_comments && (
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        <span className="font-medium text-foreground">
-                                                                            Additional
-                                                                            Comments:
-                                                                        </span>{' '}
-                                                                        {
-                                                                            ref.additional_comments
-                                                                        }
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                                        {ref.additional_comments && (
+                                                                             <p className="text-xs text-muted-foreground">
+                                                                                 <span className="font-medium text-foreground">
+                                                                                     Additional
+                                                                                     Comments:
+                                                                                 </span>{' '}
+                                                                                 {
+                                                                                     ref.additional_comments
+                                                                                 }
+                                                                             </p>
+                                                                         )}
+                                                                         {(ref.background_drug_alcohol ||
+                                                                             ref.background_tobacco ||
+                                                                             ref.trust_own_child ||
+                                                                             ref.reason_not_care) && (
+                                                                             <div className="border-t border-border pt-2">
+                                                                                 <p className="text-xs font-medium text-foreground">
+                                                                                     Background
+                                                                                 </p>
+                                                                                 <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                                                                     {ref.background_drug_alcohol && (
+                                                                                         <p>
+                                                                                             <span className="font-medium text-foreground">
+                                                                                                 Drug/Alcohol:
+                                                                                             </span>{' '}
+                                                                                             {
+                                                                                                 ref.background_drug_alcohol
+                                                                                             }
+                                                                                         </p>
+                                                                                     )}
+                                                                                     {ref.background_tobacco && (
+                                                                                         <p>
+                                                                                             <span className="font-medium text-foreground">
+                                                                                                 Tobacco:
+                                                                                             </span>{' '}
+                                                                                             {
+                                                                                                 ref.background_tobacco
+                                                                                             }
+                                                                                         </p>
+                                                                                     )}
+                                                                                     {ref.trust_own_child && (
+                                                                                         <p>
+                                                                                             <span className="font-medium text-foreground">
+                                                                                                 Trust 6+ hrs:
+                                                                                             </span>{' '}
+                                                                                             {
+                                                                                                 ref.trust_own_child
+                                                                                             }
+                                                                                         </p>
+                                                                                     )}
+                                                                                     {ref.reason_not_care && (
+                                                                                         <p>
+                                                                                             <span className="font-medium text-foreground">
+                                                                                                 Reason not care:
+                                                                                             </span>{' '}
+                                                                                             {
+                                                                                                 ref.reason_not_care
+                                                                                             }
+                                                                                             {ref.reason_not_care_explanation &&
+                                                                                                 ` — ${ref.reason_not_care_explanation}`}
+                                                                                         </p>
+                                                                                     )}
+                                                                                 </div>
+                                                                             </div>
+                                                                         )}
+                                                                     </div>
+                                                                 )}
                                                 </div>
                                                 <div className="ml-4 flex shrink-0 gap-1">
                                                     <Button
@@ -1656,6 +1712,38 @@ export default function ApplicationShow() {
                                 </div>
                             )}
                         </div>
+
+                        {interview && (
+                            <div className="border border-border bg-card p-6">
+                                <h2 className="mb-4 font-serif text-lg font-semibold text-foreground">
+                                    Interview
+                                </h2>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Status</span>
+                                        <span className="font-medium capitalize">{interview.status}</span>
+                                    </div>
+                                    {interview.composite !== null && (
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">Score</span>
+                                            <span className="font-medium">{interview.composite}/36</span>
+                                        </div>
+                                    )}
+                                    {interview.evaluator_name && (
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">Evaluator</span>
+                                            <span className="font-medium">{interview.evaluator_name}</span>
+                                        </div>
+                                    )}
+                                    <Link
+                                        href={`/applications/${application.id}/interview`}
+                                        className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                                    >
+                                        View Interview
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
 
                         {status === 'hired_onboarding' &&
                             checklistItems.length > 0 && (
@@ -2056,13 +2144,21 @@ export default function ApplicationShow() {
                                             'rating_overall_recommendation',
                                             'Overall Recommendation',
                                         ],
+                                        [
+                                            'rating_appearance',
+                                            'Appearance & Presentation',
+                                        ],
+                                        [
+                                            'rating_punctuality',
+                                            'Punctuality',
+                                        ],
                                     ] as const
                                 ).map(([key, label]) => (
                                     <div key={key}>
                                         <Label className="text-xs font-normal">
                                             {label}
                                         </Label>
-                                        <StarRating
+                                        <RatingInput
                                             value={
                                                 editForm.data[
                                                     key as keyof typeof editForm.data
@@ -2074,6 +2170,10 @@ export default function ApplicationShow() {
                                                     val,
                                                 )
                                             }
+                                            wholeStarsOnly
+                                            allowClear
+                                            size="sm"
+                                            showScore={false}
                                         />
                                     </div>
                                 ))}
@@ -2122,6 +2222,174 @@ export default function ApplicationShow() {
                                     )
                                 }
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h4 className="text-sm font-medium">Background</h4>
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <Label className="text-xs">
+                                        Drug/Alcohol problem?
+                                    </Label>
+                                    <RadioGroup
+                                        value={
+                                            editForm.data
+                                                .background_drug_alcohol ||
+                                            undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            editForm.setData(
+                                                'background_drug_alcohol',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="Yes" />
+                                                <span className="text-sm">
+                                                    Yes
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="No" />
+                                                <span className="text-sm">
+                                                    No
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">
+                                        Tobacco use?
+                                    </Label>
+                                    <RadioGroup
+                                        value={
+                                            editForm.data
+                                                .background_tobacco ||
+                                            undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            editForm.setData(
+                                                'background_tobacco',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="Yes" />
+                                                <span className="text-sm">
+                                                    Yes
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="No" />
+                                                <span className="text-sm">
+                                                    No
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">
+                                        Trust 6+ hrs
+                                    </Label>
+                                    <RadioGroup
+                                        value={
+                                            editForm.data
+                                                .trust_own_child ||
+                                            undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            editForm.setData(
+                                                'trust_own_child',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="Yes" />
+                                                <span className="text-sm">
+                                                    Yes
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="No" />
+                                                <span className="text-sm">
+                                                    No
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="Unsure" />
+                                                <span className="text-sm">
+                                                    Unsure
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">
+                                        Reason not to care for children?
+                                    </Label>
+                                    <RadioGroup
+                                        value={
+                                            editForm.data
+                                                .reason_not_care ||
+                                            undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            editForm.setData(
+                                                'reason_not_care',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="Yes" />
+                                                <span className="text-sm">
+                                                    Yes
+                                                </span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <RadioGroupItem value="No" />
+                                                <span className="text-sm">
+                                                    No
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                {editForm.data.reason_not_care === 'Yes' && (
+                                    <div className="space-y-1">
+                                        <Label
+                                            htmlFor="ref-reason_explanation"
+                                            className="text-xs"
+                                        >
+                                            Explanation
+                                        </Label>
+                                        <Textarea
+                                            id="ref-reason_explanation"
+                                            rows={2}
+                                            value={
+                                                editForm.data
+                                                    .reason_not_care_explanation
+                                            }
+                                            onChange={(e) =>
+                                                editForm.setData(
+                                                    'reason_not_care_explanation',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

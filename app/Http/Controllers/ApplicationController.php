@@ -62,7 +62,7 @@ class ApplicationController extends Controller
 
     public function show(CaregiverApplication $application)
     {
-        $application->load('caregiver.user');
+        $application->load('caregiver.user', 'interview.evaluator');
 
         $caregiver = $application->caregiver;
 
@@ -115,6 +115,8 @@ class ApplicationController extends Controller
                 'created_at' => $ref->created_at?->format('Y-m-d H:i:s'),
             ]);
 
+        $interview = $application->interview;
+
         return Inertia::render('admin/applications/show', [
             'application' => [
                 'id' => $application->id,
@@ -135,6 +137,13 @@ class ApplicationController extends Controller
             'references' => $references,
             'certifications' => $certifications,
             'checklistItems' => $checklistItems,
+            'interview' => $interview ? [
+                'id' => $interview->id,
+                'status' => $interview->status,
+                'composite' => $interview->composite,
+                'evaluated_at' => $interview->evaluated_at?->format('Y-m-d H:i:s'),
+                'evaluator_name' => $interview->evaluator?->name,
+            ] : null,
         ]);
     }
 
@@ -177,9 +186,16 @@ class ApplicationController extends Controller
             'rating_communication',
             'rating_warmth',
             'rating_overall_recommendation',
+            'rating_appearance',
+            'rating_punctuality',
             'strengths',
             'concerns',
             'additional_comments',
+            'background_drug_alcohol',
+            'background_tobacco',
+            'trust_own_child',
+            'reason_not_care',
+            'reason_not_care_explanation',
         ];
 
         $hasResponseData = collect($ratingFields)->contains(fn ($field) => ! empty($validated[$field]));

@@ -1,7 +1,4 @@
 import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -11,7 +8,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RatingInput } from '@/components/rating-input';
 import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 
 const yearsKnownOptions = [
     { value: '<1', label: 'Less than 1 year' },
@@ -28,6 +28,8 @@ const ratingCategories = [
     { key: 'rating_communication', label: 'Communication' },
     { key: 'rating_warmth', label: 'Warmth & Compassion' },
     { key: 'rating_overall_recommendation', label: 'Overall Recommendation' },
+    { key: 'rating_appearance', label: 'Appearance & Presentation' },
+    { key: 'rating_punctuality', label: 'Punctuality' },
 ] as const;
 
 interface SubmitProps {
@@ -43,47 +45,17 @@ interface SubmitProps {
         rating_communication: number | null;
         rating_warmth: number | null;
         rating_overall_recommendation: number | null;
+        rating_appearance: number | null;
+        rating_punctuality: number | null;
         strengths: string | null;
         concerns: string | null;
         additional_comments: string | null;
+        background_drug_alcohol: string | null;
+        background_tobacco: string | null;
+        trust_own_child: string | null;
+        reason_not_care: string | null;
+        reason_not_care_explanation: string | null;
     };
-}
-
-function StarRating({
-    value,
-    onChange,
-}: {
-    value: string;
-    onChange: (val: string) => void;
-}) {
-    const [hovered, setHovered] = useState(0);
-
-    return (
-        <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                    key={star}
-                    type="button"
-                    onClick={() => onChange(String(star))}
-                    onMouseEnter={() => setHovered(star)}
-                    onMouseLeave={() => setHovered(0)}
-                    className="cursor-pointer"
-                >
-                    <svg
-                        className={`h-7 w-7 transition-colors ${
-                            (hovered || parseInt(value)) >= star
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-gray-300 hover:text-amber-300'
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                </button>
-            ))}
-        </div>
-    );
 }
 
 export default function Submit({
@@ -96,19 +68,25 @@ export default function Submit({
         relationship: defaults.relationship ?? '',
         years_known: defaults.years_known ?? '',
         rating_reliability: defaults.rating_reliability?.toString() ?? '',
-        rating_trustworthiness:
-            defaults.rating_trustworthiness?.toString() ?? '',
+        rating_trustworthiness: defaults.rating_trustworthiness?.toString() ?? '',
         rating_maturity: defaults.rating_maturity?.toString() ?? '',
         rating_communication: defaults.rating_communication?.toString() ?? '',
         rating_warmth: defaults.rating_warmth?.toString() ?? '',
         rating_overall_recommendation:
             defaults.rating_overall_recommendation?.toString() ?? '',
+        rating_appearance: defaults.rating_appearance?.toString() ?? '',
+        rating_punctuality: defaults.rating_punctuality?.toString() ?? '',
         strengths: defaults.strengths ?? '',
         concerns: defaults.concerns ?? '',
         additional_comments: defaults.additional_comments ?? '',
+        background_drug_alcohol: defaults.background_drug_alcohol ?? '',
+        background_tobacco: defaults.background_tobacco ?? '',
+        trust_own_child: defaults.trust_own_child ?? '',
+        reason_not_care: defaults.reason_not_care ?? '',
+        reason_not_care_explanation: defaults.reason_not_care_explanation ?? '',
     });
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         form.post(`/references/${token}`);
     };
@@ -206,11 +184,19 @@ export default function Submit({
                                     >
                                         {label}
                                     </Label>
-                                    <StarRating
-                                        value={form.data[key]}
-                                        onChange={(val) =>
-                                            form.setData(key, val)
+                                    <RatingInput
+                                        value={
+                                            parseInt(form.data[key]) || null
                                         }
+                                        onChange={(val) =>
+                                            form.setData(
+                                                key,
+                                                val?.toString() ?? '',
+                                            )
+                                        }
+                                        wholeStarsOnly
+                                        size="sm"
+                                        showScore={false}
                                     />
                                     {form.errors[key] && (
                                         <p className="text-sm text-red-500">
@@ -219,6 +205,160 @@ export default function Submit({
                                     )}
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label className="text-base">Background</Label>
+
+                            <div className="space-y-2">
+                                <Label>
+                                    To your knowledge, has this candidate ever
+                                    dealt with a drinking or drug problem?
+                                    <span className="text-red-500"> *</span>
+                                </Label>
+                                <RadioGroup
+                                    value={
+                                        form.data.background_drug_alcohol ||
+                                        undefined
+                                    }
+                                    onValueChange={(value) =>
+                                        form.setData(
+                                            'background_drug_alcohol',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="Yes" />
+                                            <span className="text-sm">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="No" />
+                                            <span className="text-sm">No</span>
+                                        </label>
+                                    </div>
+                                </RadioGroup>
+                                {form.errors.background_drug_alcohol && (
+                                    <p className="text-sm text-red-500">
+                                        {form.errors.background_drug_alcohol}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>
+                                    To your knowledge, does this candidate use
+                                    tobacco of any kind?
+                                    <span className="ml-1 text-xs text-gray-400">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <RadioGroup
+                                    value={
+                                        form.data.background_tobacco ||
+                                        undefined
+                                    }
+                                    onValueChange={(value) =>
+                                        form.setData(
+                                            'background_tobacco',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="Yes" />
+                                            <span className="text-sm">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="No" />
+                                            <span className="text-sm">No</span>
+                                        </label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>
+                                    Would you trust this person to care for your
+                                    own child for 6+ hours?
+                                </Label>
+                                <RadioGroup
+                                    value={
+                                        form.data.trust_own_child || undefined
+                                    }
+                                    onValueChange={(value) =>
+                                        form.setData('trust_own_child', value)
+                                    }
+                                >
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="Yes" />
+                                            <span className="text-sm">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="No" />
+                                            <span className="text-sm">No</span>
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="Unsure" />
+                                            <span className="text-sm">
+                                                Unsure
+                                            </span>
+                                        </label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>
+                                    Are you aware of any reason this person
+                                    should NOT care for children?
+                                </Label>
+                                <RadioGroup
+                                    value={
+                                        form.data.reason_not_care || undefined
+                                    }
+                                    onValueChange={(value) =>
+                                        form.setData('reason_not_care', value)
+                                    }
+                                >
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="Yes" />
+                                            <span className="text-sm">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <RadioGroupItem value="No" />
+                                            <span className="text-sm">No</span>
+                                        </label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
+                            {form.data.reason_not_care === 'Yes' && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="reason_not_care_explanation">
+                                        Please explain
+                                    </Label>
+                                    <Textarea
+                                        id="reason_not_care_explanation"
+                                        rows={3}
+                                        value={
+                                            form.data
+                                                .reason_not_care_explanation
+                                        }
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'reason_not_care_explanation',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Provide details..."
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">

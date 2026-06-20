@@ -15,6 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { RatingInput } from '@/components/rating-input';
 import {
     Select,
     SelectContent,
@@ -258,7 +259,7 @@ export default function CaregiverEdit() {
         address_state: caregiver.address_state || '',
         address_zip: caregiver.address_zip || '',
         date_of_birth: caregiver.date_of_birth || '',
-        rating: caregiver.rating?.toString() || '',
+        rating: caregiver.rating ?? null,
         biography: caregiver.biography || '',
         notes: caregiver.notes || '',
         status: caregiver.status?.value || '',
@@ -547,19 +548,15 @@ export default function CaregiverEdit() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="rating">Rating (0-5)</Label>
-                                <Input
-                                    id="rating"
-                                    type="number"
-                                    name="rating"
+                                <Label>Rating</Label>
+                                <RatingInput
                                     value={form.data.rating}
-                                    onChange={(e) =>
-                                        form.setData('rating', e.target.value)
+                                    onChange={(val) =>
+                                        form.setData('rating', val)
                                     }
-                                    min="0"
-                                    max="5"
-                                    step="0.01"
-                                    aria-invalid={!!form.errors.rating}
+                                    wholeStarsOnly
+                                    size="sm"
+                                    showScore={false}
                                 />
                                 {form.errors.rating && (
                                     <p className="text-sm text-destructive">

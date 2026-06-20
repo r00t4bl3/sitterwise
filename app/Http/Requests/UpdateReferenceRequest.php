@@ -25,9 +25,16 @@ class UpdateReferenceRequest extends FormRequest
             'rating_communication' => 'nullable|integer|min:1|max:5',
             'rating_warmth' => 'nullable|integer|min:1|max:5',
             'rating_overall_recommendation' => 'nullable|integer|min:1|max:5',
+            'rating_appearance' => 'nullable|integer|min:1|max:5',
+            'rating_punctuality' => 'nullable|integer|min:1|max:5',
             'strengths' => 'nullable|string',
             'concerns' => 'nullable|string',
             'additional_comments' => 'nullable|string',
+            'background_drug_alcohol' => 'nullable|string|in:yes,no',
+            'background_tobacco' => 'nullable|string|in:yes,no',
+            'trust_own_child' => 'nullable|string|in:yes,no,unsure',
+            'reason_not_care' => 'nullable|string|in:yes,no',
+            'reason_not_care_explanation' => 'nullable|string',
         ];
     }
 }

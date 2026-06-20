@@ -470,14 +470,14 @@ test('calculate total amount includes paid_to_caregiver_total for completed book
         'status' => 'completed',
         'start_datetime' => now()->subHours(10),
         'end_datetime' => now()->subHours(5),
-        'paid_to_caregiver_hourly' => 20.00,
-        'charge_to_client_hourly' => 30.00,
-        'sitterwise_cut_hourly' => 10.00,
         'reimbursement' => 10.00,
         'bonus' => 5.00,
         'tip' => 3.00,
     ]);
 
+    $booking->paid_to_caregiver_hourly = 20.00;
+    $booking->charge_to_client_hourly = 30.00;
+    $booking->sitterwise_cut_hourly = 10.00;
     $booking->calculateTotalAmount();
 
     $expectedCaregiver = 20.00 * 5; // 100

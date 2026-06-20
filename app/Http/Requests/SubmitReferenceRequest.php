@@ -22,9 +22,16 @@ class SubmitReferenceRequest extends FormRequest
             'rating_communication' => 'required|integer|min:1|max:5',
             'rating_warmth' => 'required|integer|min:1|max:5',
             'rating_overall_recommendation' => 'required|integer|min:1|max:5',
+            'rating_appearance' => 'nullable|integer|min:1|max:5',
+            'rating_punctuality' => 'nullable|integer|min:1|max:5',
             'strengths' => 'required|string|max:5000',
             'concerns' => 'nullable|string|max:5000',
             'additional_comments' => 'nullable|string|max:5000',
+            'background_drug_alcohol' => 'required|in:Yes,No',
+            'background_tobacco' => 'nullable|in:Yes,No',
+            'trust_own_child' => 'nullable|in:Yes,No,Unsure',
+            'reason_not_care' => 'nullable|in:Yes,No',
+            'reason_not_care_explanation' => 'nullable|string|max:5000',
         ];
     }
 
@@ -34,6 +41,7 @@ class SubmitReferenceRequest extends FormRequest
             'relationship.required' => 'Please describe your relationship with the applicant.',
             'years_known.required' => 'Please indicate how long you have known the applicant.',
             'strengths.required' => 'Please describe the applicant\'s greatest strengths.',
+            'background_drug_alcohol.required' => 'This field is required.',
         ];
     }
 }

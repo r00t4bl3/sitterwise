@@ -6,6 +6,7 @@ import SecurityController from '@/actions/App/Http/Controllers/Settings/Security
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import TwoFactorRecoveryCodes from '@/components/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/components/two-factor-setup-modal';
 import { Button } from '@/components/ui/button';
@@ -57,14 +58,16 @@ export default function Security({
             <h1 className="sr-only">Security settings</h1>
 
             <SettingsLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Update password"
-                        description="Ensure your account is using a long, random password to stay secure"
-                    />
+                    <div className="space-y-6">
+                        <Heading
+                            variant="small"
+                            title="Update password"
+                            description="Ensure your account is using a long, random password to stay secure"
+                        />
 
-                    <Form
+                        <PasswordRequirements />
+
+                        <Form
                         {...SecurityController.update.form()}
                         options={{
                             preserveScroll: true,

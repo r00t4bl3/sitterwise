@@ -1,6 +1,7 @@
 import { Head, usePage, useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,9 +124,10 @@ export default function Register() {
                         <InputError message={form.errors.email} />
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <PasswordInput
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <PasswordRequirements />
+                            <PasswordInput
                             id="password"
                             required
                             tabIndex={5}

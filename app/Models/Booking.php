@@ -31,6 +31,7 @@ class Booking extends Model
                 $booking->ulid = Str::ulid();
             }
             $booking->calculateTotalWorkingHours();
+            $booking->calculateHourlyRate();
             $booking->calculateTotalAmount();
         });
 
@@ -87,9 +88,9 @@ class Booking extends Model
             $this->paid_to_caregiver_hourly = $pricingRule->paid_to_caregiver;
             $this->sitterwise_cut_hourly = $pricingRule->sitterwise_cut;
         } else {
-            $this->charge_to_client_hourly = 0.00;
-            $this->paid_to_caregiver_hourly = 0.00;
-            $this->sitterwise_cut_hourly = 0.00;
+            $this->charge_to_client_hourly = null;
+            $this->paid_to_caregiver_hourly = null;
+            $this->sitterwise_cut_hourly = null;
         }
     }
 

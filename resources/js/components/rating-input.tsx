@@ -3,34 +3,58 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 interface RatingInputProps {
-    value: number;
-    onChange: (value: number) => void;
+    value: number | null;
+    onChange: (value: number | null) => void;
     max?: number;
+    allowClear?: boolean;
+    wholeStarsOnly?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+    showScore?: boolean;
     label?: string;
     error?: string;
     className?: string;
 }
 
+const sizeClasses = {
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-8 w-8',
+};
+
+const textSizeClasses = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-lg',
+};
+
 export function RatingInput({
     value,
     onChange,
     max = 5,
+    allowClear = false,
+    wholeStarsOnly = false,
+    size = 'lg',
+    showScore = true,
     label,
     error,
     className,
 }: RatingInputProps) {
     const [hoverValue, setHoverValue] = React.useState<number | null>(null);
 
-    const displayValue = hoverValue !== null ? hoverValue : value;
+    const displayValue = hoverValue !== null ? hoverValue : value ?? 0;
 
     const handleMouseMove = (
         e: React.MouseEvent<HTMLDivElement>,
         index: number,
     ) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const isHalf = x < rect.width / 2;
-        setHoverValue(index + (isHalf ? 0.5 : 1));
+        if (wholeStarsOnly) {
+            setHoverValue(index + 1);
+        } else {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const isHalf = x < rect.width / 2;
+            setHoverValue(index + (isHalf ? 0.5 : 1));
+        }
     };
 
     const handleMouseLeave = () => {
@@ -41,10 +65,22 @@ export function RatingInput({
         e: React.MouseEvent<HTMLDivElement>,
         index: number,
     ) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const isHalf = x < rect.width / 2;
-        onChange(index + (isHalf ? 0.5 : 1));
+        let newValue: number;
+
+        if (wholeStarsOnly) {
+            newValue = index + 1;
+        } else {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const isHalf = x < rect.width / 2;
+            newValue = index + (isHalf ? 0.5 : 1);
+        }
+
+        if (allowClear && newValue === value) {
+            onChange(null);
+        } else {
+            onChange(newValue);
+        }
     };
 
     return (
@@ -60,7 +96,9 @@ export function RatingInput({
             >
                 {Array.from({ length: max }).map((_, index) => {
                     const isFull = displayValue >= index + 1;
-                    const isHalf = displayValue >= index + 0.5 && !isFull;
+                    const isHalf = !wholeStarsOnly
+                        && displayValue >= index + 0.5
+                        && !isFull;
 
                     return (
                         <div
@@ -70,11 +108,16 @@ export function RatingInput({
                             onClick={(e) => handleClick(e, index)}
                         >
                             {isHalf ? (
-                                <StarHalf className="h-8 w-8 fill-amber-400 text-amber-400" />
+                                <StarHalf
+                                    className={cn(
+                                        'fill-amber-400 text-amber-400',
+                                        sizeClasses[size],
+                                    )}
+                                />
                             ) : (
                                 <Star
                                     className={cn(
-                                        'h-8 w-8',
+                                        sizeClasses[size],
                                         isFull
                                             ? 'fill-amber-400 text-amber-400'
                                             : 'fill-muted text-muted',
@@ -84,11 +127,16 @@ export function RatingInput({
                         </div>
                     );
                 })}
-                <span className="ml-2 text-lg font-semibold text-foreground">
-                    {typeof displayValue === 'number' && displayValue > 0
-                        ? displayValue.toFixed(1)
-                        : ''}
-                </span>
+                {showScore && (
+                    <span
+                        className={cn(
+                            'ml-2 font-semibold text-foreground',
+                            textSizeClasses[size],
+                        )}
+                    >
+                        {displayValue > 0 ? displayValue.toFixed(1) : ''}
+                    </span>
+                )}
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
         </div>

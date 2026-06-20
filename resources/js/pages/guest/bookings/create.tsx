@@ -76,6 +76,14 @@ function validateForm(
         errors.client_email = 'Please enter a valid email address.';
     }
 
+    if (!formData.service_type) {
+        errors.service_type = 'Please select a service type.';
+    }
+
+    if (!formData.location_type) {
+        errors.location_type = 'Please select a location type.';
+    }
+
     if (!formData.client_phone?.trim()) {
         errors.client_phone = 'Phone is required.';
     } else {
@@ -236,8 +244,8 @@ export default function GuestBookingCreate() {
         client_last_name: '',
         client_email: '',
         client_phone: '',
-        service_type: 'babysitter',
-        location_type: 'private_home',
+        service_type: '',
+        location_type: '',
         start_datetime: defaultStartStr,
         end_datetime: defaultEndStr,
         dates: [
@@ -481,6 +489,9 @@ export default function GuestBookingCreate() {
                     <h1 className="mb-4 font-serif text-[32px] font-medium text-foreground">
                         It's you! We're so happy you're here.
                     </h1>
+                    <p className="mb-4 text-[18px] text-muted-foreground">
+                        Book a caregiver
+                    </p>
                     <span className="mb-4 block text-[26px] leading-none text-primary">
                         ♥
                     </span>
@@ -827,7 +838,7 @@ export default function GuestBookingCreate() {
                                 </h3>
 
                                 <div className="mb-[14px] grid gap-4 sm:grid-cols-2">
-                                    <div>
+                                    <div data-field="service_type">
                                         <Label>
                                             Service Type{' '}
                                             <span className="text-primary">
@@ -857,8 +868,17 @@ export default function GuestBookingCreate() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {(validationErrors.service_type ||
+                                            form.errors.service_type) && (
+                                            <InputError
+                                                message={
+                                                    validationErrors.service_type ||
+                                                    form.errors.service_type
+                                                }
+                                            />
+                                        )}
                                     </div>
-                                    <div>
+                                    <div data-field="location_type">
                                         <Label>
                                             Location Type{' '}
                                             <span className="text-primary">
@@ -904,6 +924,15 @@ export default function GuestBookingCreate() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {(validationErrors.location_type ||
+                                            form.errors.location_type) && (
+                                            <InputError
+                                                message={
+                                                    validationErrors.location_type ||
+                                                    form.errors.location_type
+                                                }
+                                            />
+                                        )}
                                     </div>
                                 </div>
 
@@ -1708,8 +1737,8 @@ export default function GuestBookingCreate() {
                 </div>
 
                 {/* SUBMIT */}
-                <div className="mt-6 flex flex-col items-end gap-3">
-                    <p className="max-w-[480px] text-right text-xs text-muted-foreground italic">
+                <div className="mt-6 flex flex-col items-center gap-3">
+                    <p className="text-center text-xs text-muted-foreground italic">
                         Next, you'll add a payment method to confirm your
                         reservation. We'll begin matching as soon as it's on
                         file.
