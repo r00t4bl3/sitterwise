@@ -489,6 +489,9 @@ export default function GuestBookingCreate() {
                     <h1 className="mb-4 font-serif text-[32px] font-medium text-foreground">
                         It's you! We're so happy you're here.
                     </h1>
+                    <p className="mb-4 text-[18px] text-muted-foreground">
+                        Book a caregiver
+                    </p>
                     <span className="mb-4 block text-[26px] leading-none text-primary">
                         ♥
                     </span>
@@ -1734,8 +1737,8 @@ export default function GuestBookingCreate() {
                 </div>
 
                 {/* SUBMIT */}
-                <div className="mt-6 flex flex-col items-end gap-3">
-                    <p className="max-w-[480px] text-right text-xs text-muted-foreground italic">
+                <div className="mt-6 flex flex-col items-center gap-3">
+                    <p className="text-center text-xs text-muted-foreground italic">
                         Next, you'll add a payment method to confirm your
                         reservation. We'll begin matching as soon as it's on
                         file.
