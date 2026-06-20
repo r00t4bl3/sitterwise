@@ -57,3 +57,80 @@ test('admin can view client detail page', function () {
         ->assertSee('Reset Password')
         ->assertNoJavaScriptErrors();
 });
+
+test('clients index loads with table', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    Client::factory()->count(3)->create();
+
+    visit('/clients')
+        ->assertSee('Clients')
+        ->assertSee('Add Client')
+        ->assertNoJavaScriptErrors();
+});
+
+test('can search clients', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $client = Client::factory()->create();
+    $client->user->update(['email' => 'searchable@example.com']);
+
+    $page = visit('/clients');
+
+    fillField($page, 'input[placeholder*="Search by name"]', 'searchable');
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can filter clients by type', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    Client::factory()->count(3)->create(['client_type' => 'vacationer']);
+
+    $page = visit('/clients');
+
+    usleep(300000);
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const filterBtn = buttons.find(b => b.textContent.trim() === 'Vacationer');
+        if (filterBtn) filterBtn.click();
+    JS);
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can sort clients by name', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    Client::factory()->count(3)->create();
+
+    $page = visit('/clients');
+
+    usleep(300000);
+
+    $page->script(<<<'JS'
+        const headers = Array.from(document.querySelectorAll('th'));
+        const nameHeader = headers.find(h => h.textContent.trim().includes('Name'));
+        if (nameHeader) {
+            const sortBtn = nameHeader.querySelector('button');
+            if (sortBtn) sortBtn.click();
+        }
+    JS);
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});

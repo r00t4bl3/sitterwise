@@ -3,8 +3,6 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-require_once __DIR__.'/Browser/helpers.php';
-
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -28,7 +26,12 @@ pest()->browser()
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Browser');
+    ->in('Browser')
+    ->beforeEach(function () {
+        if (! function_exists('createCaregiver')) {
+            require_once __DIR__.'/Browser/helpers.php';
+        }
+    });
 
 /*
 |--------------------------------------------------------------------------

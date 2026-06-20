@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-function createCaregiver(): Caregiver
+function createTestCaregiver(): Caregiver
 {
     $user = User::factory()->create(['role' => 'caregiver']);
 
@@ -79,7 +79,7 @@ test('defines caregiver relationship', function () {
 });
 
 test('in the future scope includes PT-today during UTC night', function () {
-    $caregiver = createCaregiver();
+    $caregiver = createTestCaregiver();
 
     // Freeze time at 2026-06-17 03:00 UTC = 2026-06-16 20:00 PT (PDT, UTC-7)
     $this->travelTo(CarbonImmutable::parse('2026-06-17 03:00:00', 'UTC'));
@@ -97,7 +97,7 @@ test('in the future scope includes PT-today during UTC night', function () {
 });
 
 test('in the future scope excludes past dates', function () {
-    $caregiver = createCaregiver();
+    $caregiver = createTestCaregiver();
 
     // Freeze time at 2026-06-17 12:00 UTC = 2026-06-17 05:00 PT (midday UTC = morning PT)
     $this->travelTo(CarbonImmutable::parse('2026-06-17 12:00:00', 'UTC'));

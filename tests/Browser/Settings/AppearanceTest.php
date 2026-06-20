@@ -37,3 +37,43 @@ test('user can switch to dark mode', function () {
 
     $page->assertNoJavaScriptErrors();
 });
+
+test('user can switch to light mode', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/settings/appearance');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const lightBtn = buttons.find(b => b.textContent.includes('Light'));
+        if (lightBtn) lightBtn.click();
+    JS);
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('user can switch to system mode', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/settings/appearance');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const systemBtn = buttons.find(b => b.textContent.includes('System'));
+        if (systemBtn) systemBtn.click();
+    JS);
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});

@@ -535,6 +535,76 @@ describe('Guest Booking Workflow', function () {
         expect($client->sms_opted_out)->toBeFalse();
     });
 
+    test('guest completes payment via controller with mocked stripe', function () {
+        $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
+        $end = (clone $start)->addHours(4);
+
+        $pendingData = [
+            'client_first_name' => 'Payment',
+            'client_last_name' => 'Flow',
+            'client_email' => 'payment.flow@example.com',
+            'client_phone' => '+15551234567',
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => LocationType::PrivateHome->value,
+            'start_datetime' => $start->toDateTimeString(),
+            'end_datetime' => $end->toDateTimeString(),
+            'address_line1' => '789 Flow St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'new_children' => [
+                ['name' => 'Flow Kid', 'gender' => 'male', 'birth_month' => '3', 'birth_year' => '2020'],
+            ],
+            'new_pets' => [],
+            'sms_consent' => true,
+        ];
+
+        PricingRule::create([
+            'service_type' => ServiceType::Babysitter->value,
+            'number_of_children' => 0,
+            'is_for_pets' => false,
+            'charge_to_client' => 30.00,
+            'paid_to_caregiver' => 20.00,
+            'sitterwise_cut' => 10.00,
+            'payment_form' => 'stripe',
+        ]);
+
+        $token = (string) Str::ulid();
+
+        session()->put('guest_booking_pending', $pendingData);
+        session()->put('guest_booking_payment_token', $token);
+
+        $mockService = mock(GuestBookingService::class)->makePartial();
+        $mockService->shouldAllowMockingProtectedMethods();
+        $mockService->shouldReceive('processSetupSession')
+            ->andReturn(['payment_method_id' => 'pm_test_123']);
+        $mockService->shouldReceive('attachPaymentMethod')->andReturnNull();
+
+        app()->instance(GuestBookingService::class, $mockService);
+
+        $response = $this->get('/book/payment/'.$token.'?session_id=cs_test_completed');
+
+        $response->assertRedirect();
+        $redirectUrl = $response->headers->get('Location');
+        expect($redirectUrl)->toMatch('/\/book\/confirmation\//');
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_email' => 'payment.flow@example.com',
+        ]);
+
+        $this->assertDatabaseHas('bookings', [
+            'status' => 'received',
+        ]);
+
+        $user = User::where('email', 'payment.flow@example.com')->first();
+        expect($user)->not->toBeNull();
+        expect($user->role)->toBe('client');
+
+        $client = Client::where('user_id', $user->id)->first();
+        expect($client)->not->toBeNull();
+        expect($client->first_name)->toBe('Payment');
+    });
+
     test('sms consent No stores sms_opted_out as true', function () {
         $start = now()->addDays(1)->setHour(18)->setMinute(0)->setSecond(0);
         $end = (clone $start)->addHours(4);

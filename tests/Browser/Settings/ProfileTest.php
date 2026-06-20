@@ -51,3 +51,20 @@ test('user can update their email', function () {
 
     $page->assertSee('Saved');
 });
+
+test('user sees error with invalid email format', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/settings/profile');
+
+    fillField($page, '#email', 'not-an-email');
+    clickElement($page, 'button[data-test="update-profile-button"]');
+
+    usleep(500000);
+
+    $page->assertDontSee('Saved');
+});

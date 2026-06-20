@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Hotel;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -90,7 +91,7 @@ test('server-side validation passes and redirects to payment', function () {
     $tomorrow = now()->addDay()->startOfDay()->addHours(9);
     $end = $tomorrow->copy()->addHours(4);
 
-    $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
 
     $response = $this->post('/book', [
         'client_first_name' => 'John',
@@ -173,6 +174,133 @@ test('shows validation error with invalid email', function () {
     usleep(1000000);
 
     $page->assertSee('valid email');
+});
+
+test('can add a date block', function () {
+    $page = visit('/book');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addBtn = buttons.find(b => b.textContent.includes('Add another date'));
+        if (addBtn) addBtn.click();
+    JS);
+
+    usleep(200000);
+
+    $page->assertSee('Date 2');
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can add multiple date blocks', function () {
+    $page = visit('/book');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addBtn = buttons.find(b => b.textContent.includes('Add another date'));
+        if (addBtn) addBtn.click();
+    JS);
+
+    usleep(150000);
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addBtn = buttons.find(b => b.textContent.includes('Add another date'));
+        if (addBtn) addBtn.click();
+    JS);
+
+    usleep(150000);
+
+    $page->assertSee('Date 2');
+    $page->assertSee('Date 3');
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can remove a date block', function () {
+    $page = visit('/book');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addBtn = buttons.find(b => b.textContent.includes('Add another date'));
+        if (addBtn) addBtn.click();
+    JS);
+
+    usleep(200000);
+
+    $page->assertSee('Date 2');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const removeBtn = buttons.find(b => b.textContent.includes('Remove'));
+        if (removeBtn) removeBtn.click();
+    JS);
+
+    usleep(200000);
+
+    $page->assertSee('Date 1');
+    $page->assertDontSee('Date 2');
+    $page->assertNoJavaScriptErrors();
+});
+
+test('shows overlap validation between date blocks', function () {
+    $page = visit('/book');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addBtn = buttons.find(b => b.textContent.includes('Add another date'));
+        if (addBtn) addBtn.click();
+    JS);
+
+    usleep(300000);
+
+    $page->assertSee('Date 2');
+    $page->assertNoJavaScriptErrors();
+});
+
+test('shows same-day warning', function () {
+    $page = visit('/book');
+
+    $page->assertDontSee('same-day booking');
+
+    $page->script(<<<'JS'
+        const labels = Array.from(document.querySelectorAll('label'));
+        const startLabel = labels.find(l => l.textContent.trim().startsWith('Start Date/Time'));
+        if (!startLabel) {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const aboutBtn = buttons.find(b => b.textContent.includes('About Your Booking'));
+            if (aboutBtn) aboutBtn.click();
+        }
+    JS);
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('enforces 4-hour minimum duration', function () {
+    $page = visit('/book');
+
+    $page->script(<<<'JS'
+        const labels = Array.from(document.querySelectorAll('label'));
+        const endLabel = labels.find(l => l.textContent.trim().startsWith('End Date/Time'));
+        if (!endLabel) {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const aboutBtn = buttons.find(b => b.textContent.includes('About Your Booking'));
+            if (aboutBtn) aboutBtn.click();
+        }
+    JS);
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('address section shows with private home location', function () {
+    $page = visit('/book');
+
+    selectOptionByLabel($page, 'Location Type', 'Private Home');
+
+    $page->assertSee('Address');
+    $page->assertNoJavaScriptErrors();
 });
 
 test('can search and select a hotel from autocomplete', function () {

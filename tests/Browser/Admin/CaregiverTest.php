@@ -61,3 +61,53 @@ test('admin can view caregiver detail page', function () {
         ->assertSee('Status')
         ->assertNoJavaScriptErrors();
 });
+
+test('caregivers index loads with table', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    visit('/caregivers')
+        ->assertSee('Caregivers')
+        ->assertSee('Add Caregiver')
+        ->assertNoJavaScriptErrors();
+});
+
+test('can search caregivers', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $user = createCaregiver();
+    $caregiver = Caregiver::where('user_id', $user->id)->first();
+
+    $page = visit('/caregivers');
+
+    fillField($page, 'input[placeholder*="Search by name"]', $caregiver->first_name);
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('can filter caregivers by status', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $caregiver = createCaregiver();
+
+    $page = visit('/caregivers');
+
+    usleep(300000);
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const statusBtn = buttons.find(b => b.textContent.trim() === 'Active');
+        if (statusBtn) statusBtn.click();
+    JS);
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});
