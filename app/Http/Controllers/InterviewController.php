@@ -16,8 +16,13 @@ class InterviewController extends Controller
     {
         $caregiver = $application->caregiver;
 
-        if ($caregiver->status !== CaregiverStatus::InterviewScheduled) {
-            abort(422, 'Interview can only be evaluated when status is Interview Scheduled.');
+        $preInterviewStatuses = [
+            CaregiverStatus::Applicant,
+            CaregiverStatus::UnderReview,
+        ];
+
+        if (in_array($caregiver->status, $preInterviewStatuses)) {
+            abort(422, 'Interview can only be evaluated after the interview has been scheduled.');
         }
 
         $interview = CaregiverInterview::firstOrCreate(
