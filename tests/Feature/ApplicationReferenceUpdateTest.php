@@ -66,10 +66,10 @@ function referenceUpdateValidPayload(array $overrides = []): array
         'strengths' => 'Very responsible and caring.',
         'concerns' => '',
         'additional_comments' => '',
-        'background_drug_alcohol' => 'no',
-        'background_tobacco' => 'no',
-        'trust_own_child' => 'yes',
-        'reason_not_care' => 'no',
+        'background_drug_alcohol' => 'No',
+        'background_tobacco' => 'No',
+        'trust_own_child' => 'Yes',
+        'reason_not_care' => 'No',
         'reason_not_care_explanation' => '',
     ], $overrides);
 }
@@ -93,10 +93,10 @@ describe('Admin reference update', function () {
 
         expect($this->reference->rating_appearance)->toBe(5);
         expect($this->reference->rating_punctuality)->toBe(4);
-        expect($this->reference->background_drug_alcohol)->toBe('no');
-        expect($this->reference->background_tobacco)->toBe('no');
-        expect($this->reference->trust_own_child)->toBe('yes');
-        expect($this->reference->reason_not_care)->toBe('no');
+        expect($this->reference->background_drug_alcohol)->toBe('No');
+        expect($this->reference->background_tobacco)->toBe('No');
+        expect($this->reference->trust_own_child)->toBe('Yes');
+        expect($this->reference->reason_not_care)->toBe('No');
         expect($this->reference->reason_not_care_explanation)->toBeNull();
     });
 
@@ -169,10 +169,10 @@ describe('Admin reference update', function () {
         $this->reference->update([
             'rating_appearance' => 5,
             'rating_punctuality' => 4,
-            'background_drug_alcohol' => 'no',
-            'background_tobacco' => 'no',
-            'trust_own_child' => 'yes',
-            'reason_not_care' => 'no',
+            'background_drug_alcohol' => 'No',
+            'background_tobacco' => 'No',
+            'trust_own_child' => 'Yes',
+            'reason_not_care' => 'No',
             'reason_not_care_explanation' => 'Some explanation',
             'submitted_at' => now(),
         ]);
@@ -209,4 +209,62 @@ describe('Admin reference update', function () {
             referenceUpdateValidPayload(),
         )->assertRedirect('/login');
     });
+
+    it('validates reference_name is required', function () {
+        actingAs($this->admin)
+            ->patch(
+                "/applications/{$this->application->id}/references/{$this->reference->id}",
+                referenceUpdateValidPayload(['reference_name' => '']),
+            )
+            ->assertSessionHasErrors('reference_name');
+    });
+
+    it('validates reference_email is required', function () {
+        actingAs($this->admin)
+            ->patch(
+                "/applications/{$this->application->id}/references/{$this->reference->id}",
+                referenceUpdateValidPayload(['reference_email' => '']),
+            )
+            ->assertSessionHasErrors('reference_email');
+    });
+
+    it('validates reference_email format', function () {
+        actingAs($this->admin)
+            ->patch(
+                "/applications/{$this->application->id}/references/{$this->reference->id}",
+                referenceUpdateValidPayload(['reference_email' => 'not-an-email']),
+            )
+            ->assertSessionHasErrors('reference_email');
+    });
+
+    it('validates is_sponsor must be boolean', function () {
+        actingAs($this->admin)
+            ->patch(
+                "/applications/{$this->application->id}/references/{$this->reference->id}",
+                referenceUpdateValidPayload(['is_sponsor' => 'not-boolean']),
+            )
+            ->assertSessionHasErrors('is_sponsor');
+    });
+
+    it('validates rating fields must be between 1 and 5', function ($field, $value) {
+        actingAs($this->admin)
+            ->patch(
+                "/applications/{$this->application->id}/references/{$this->reference->id}",
+                referenceUpdateValidPayload([$field => $value]),
+            )
+            ->assertSessionHasErrors($field);
+    })->with([
+        'rating_reliability too low' => ['rating_reliability', 0],
+        'rating_reliability too high' => ['rating_reliability', 6],
+        'rating_trustworthiness too low' => ['rating_trustworthiness', 0],
+        'rating_trustworthiness too high' => ['rating_trustworthiness', 6],
+        'rating_maturity too low' => ['rating_maturity', 0],
+        'rating_maturity too high' => ['rating_maturity', 6],
+        'rating_communication too low' => ['rating_communication', 0],
+        'rating_communication too high' => ['rating_communication', 6],
+        'rating_warmth too low' => ['rating_warmth', 0],
+        'rating_warmth too high' => ['rating_warmth', 6],
+        'rating_overall_recommendation too low' => ['rating_overall_recommendation', 0],
+        'rating_overall_recommendation too high' => ['rating_overall_recommendation', 6],
+    ]);
 });

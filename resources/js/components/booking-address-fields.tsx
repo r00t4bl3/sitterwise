@@ -28,22 +28,6 @@ interface Suggestion {
     };
 }
 
-const SERVICE_AREA_CITIES = [
-    'San Diego',
-    'Coronado',
-    'La Jolla',
-    'Chula Vista',
-    'El Cajon',
-    'La Mesa',
-    'Rancho Santa Fe',
-    'Del Mar',
-    'Carlsbad',
-    'Encinitas',
-    'Escondido',
-    'San Marcos',
-    'Vista',
-];
-
 export function BookingAddressFields({
     form,
     isAddressLocked = false,
@@ -202,7 +186,7 @@ export function BookingAddressFields({
             });
 
             const outsideArea =
-                state !== 'CA' || !SERVICE_AREA_CITIES.includes(city);
+                state !== 'CA';
 
             form.setData('address_line1', line1);
             form.setData('address_line2', line2);

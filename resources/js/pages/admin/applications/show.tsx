@@ -1346,7 +1346,7 @@ export default function ApplicationShow() {
                                             (k) =>
                                                 ref[k as keyof ReferenceInfo],
                                         )
-                                        .filter((r): r is number => r !== null);
+                                        .filter((r): r is number => r != null);
                                     const avg =
                                         ratings.length > 0
                                             ? (
@@ -1525,60 +1525,38 @@ export default function ApplicationShow() {
                                                                                  }
                                                                              </p>
                                                                          )}
-                                                                         {(ref.background_drug_alcohol ||
-                                                                             ref.background_tobacco ||
-                                                                             ref.trust_own_child ||
-                                                                             ref.reason_not_care) && (
-                                                                             <div className="border-t border-border pt-2">
-                                                                                 <p className="text-xs font-medium text-foreground">
-                                                                                     Background
-                                                                                 </p>
-                                                                                 <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                                                                                     {ref.background_drug_alcohol && (
-                                                                                         <p>
-                                                                                             <span className="font-medium text-foreground">
-                                                                                                 Drug/Alcohol:
-                                                                                             </span>{' '}
-                                                                                             {
-                                                                                                 ref.background_drug_alcohol
-                                                                                             }
-                                                                                         </p>
-                                                                                     )}
-                                                                                     {ref.background_tobacco && (
-                                                                                         <p>
-                                                                                             <span className="font-medium text-foreground">
-                                                                                                 Tobacco:
-                                                                                             </span>{' '}
-                                                                                             {
-                                                                                                 ref.background_tobacco
-                                                                                             }
-                                                                                         </p>
-                                                                                     )}
-                                                                                     {ref.trust_own_child && (
-                                                                                         <p>
-                                                                                             <span className="font-medium text-foreground">
-                                                                                                 Trust 6+ hrs:
-                                                                                             </span>{' '}
-                                                                                             {
-                                                                                                 ref.trust_own_child
-                                                                                             }
-                                                                                         </p>
-                                                                                     )}
-                                                                                     {ref.reason_not_care && (
-                                                                                         <p>
-                                                                                             <span className="font-medium text-foreground">
-                                                                                                 Reason not care:
-                                                                                             </span>{' '}
-                                                                                             {
-                                                                                                 ref.reason_not_care
-                                                                                             }
-                                                                                             {ref.reason_not_care_explanation &&
-                                                                                                 ` — ${ref.reason_not_care_explanation}`}
-                                                                                         </p>
-                                                                                     )}
-                                                                                 </div>
-                                                                             </div>
-                                                                         )}
+                                                                              <div className="border-t border-border pt-2">
+                                                                                   <p className="text-xs font-semibold text-foreground">
+                                                                                       Background
+                                                                                   </p>
+                                                                                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                                                                      <p>
+                                                                                          <span className="font-medium text-foreground">
+                                                                                              Drug/Alcohol:
+                                                                                          </span>{' '}
+                                                                                          {ref.background_drug_alcohol ?? '—'}
+                                                                                      </p>
+                                                                                      <p>
+                                                                                          <span className="font-medium text-foreground">
+                                                                                              Tobacco:
+                                                                                          </span>{' '}
+                                                                                          {ref.background_tobacco ?? '—'}
+                                                                                      </p>
+                                                                                      <p>
+                                                                                          <span className="font-medium text-foreground">
+                                                                                              Trust 6+ hrs:
+                                                                                          </span>{' '}
+                                                                                          {ref.trust_own_child ?? '—'}
+                                                                                      </p>
+                                                                                      <p>
+                                                                                          <span className="font-medium text-foreground">
+                                                                                              Reason not care:
+                                                                                          </span>{' '}
+                                                                                          {ref.reason_not_care ?? '—'}
+                                                                                          {ref.reason_not_care === 'Yes' && ref.reason_not_care_explanation && ` — ${ref.reason_not_care_explanation}`}
+                                                                                      </p>
+                                                                                  </div>
+                                                                              </div>
                                                                      </div>
                                                                  )}
                                                 </div>
@@ -2175,6 +2153,11 @@ export default function ApplicationShow() {
                                             size="sm"
                                             showScore={false}
                                         />
+                                        {editForm.errors[key] && (
+                                            <p className="text-sm text-destructive">
+                                                {editForm.errors[key]}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -2259,6 +2242,11 @@ export default function ApplicationShow() {
                                             </label>
                                         </div>
                                     </RadioGroup>
+                                    {editForm.errors.background_drug_alcohol && (
+                                        <p className="text-sm text-destructive">
+                                            {editForm.errors.background_drug_alcohol}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">
@@ -2292,6 +2280,11 @@ export default function ApplicationShow() {
                                             </label>
                                         </div>
                                     </RadioGroup>
+                                    {editForm.errors.background_tobacco && (
+                                        <p className="text-sm text-destructive">
+                                            {editForm.errors.background_tobacco}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">
@@ -2331,6 +2324,11 @@ export default function ApplicationShow() {
                                             </label>
                                         </div>
                                     </RadioGroup>
+                                    {editForm.errors.trust_own_child && (
+                                        <p className="text-sm text-destructive">
+                                            {editForm.errors.trust_own_child}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">
@@ -2364,6 +2362,11 @@ export default function ApplicationShow() {
                                             </label>
                                         </div>
                                     </RadioGroup>
+                                    {editForm.errors.reason_not_care && (
+                                        <p className="text-sm text-destructive">
+                                            {editForm.errors.reason_not_care}
+                                        </p>
+                                    )}
                                 </div>
                                 {editForm.data.reason_not_care === 'Yes' && (
                                     <div className="space-y-1">
@@ -2387,6 +2390,11 @@ export default function ApplicationShow() {
                                                 )
                                             }
                                         />
+                                        {editForm.errors.reason_not_care_explanation && (
+                                            <p className="text-sm text-destructive">
+                                                {editForm.errors.reason_not_care_explanation}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>
