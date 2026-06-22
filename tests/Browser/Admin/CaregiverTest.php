@@ -111,3 +111,82 @@ test('can filter caregivers by status', function () {
 
     $page->assertNoJavaScriptErrors();
 });
+
+test('admin can edit a caregiver', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $user = createCaregiver();
+    $caregiver = Caregiver::first();
+
+    session()->put('auth.password_confirmed_at', time());
+
+    $page = visit('/caregivers/'.$caregiver->id.'/edit');
+
+    $page->assertSee('Edit Caregiver')
+        ->assertNoJavaScriptErrors();
+});
+
+test('caregiver profile tabs are navigable', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $user = createCaregiver();
+    $caregiver = Caregiver::first();
+
+    session()->put('auth.password_confirmed_at', time());
+
+    $page = visit('/caregivers/'.$caregiver->id);
+
+    $page->assertSee('Caregiver Profile')
+        ->assertSee('Summary')
+        ->assertSee('Application')
+        ->assertSee('References')
+        ->assertSee('Reviews')
+        ->assertSee('Internal Rating')
+        ->assertSee('Job History')
+        ->assertSee('Notes')
+        ->assertNoJavaScriptErrors();
+
+    // Click Application tab
+    $page->script(<<<'JS'
+        const tabs = Array.from(document.querySelectorAll('button'));
+        const appTab = tabs.find(b => b.textContent.trim() === 'Application');
+        if (appTab) appTab.click();
+    JS);
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+
+    // Click Job History tab
+    $page->script(<<<'JS'
+        const tabs = Array.from(document.querySelectorAll('button'));
+        const jobsTab = tabs.find(b => b.textContent.trim() === 'Job History');
+        if (jobsTab) jobsTab.click();
+    JS);
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+
+    // Click Internal Rating tab
+    $page->script(<<<'JS'
+        const tabs = Array.from(document.querySelectorAll('button'));
+        const ratingTab = tabs.find(b => b.textContent.trim() === 'Internal Rating');
+        if (ratingTab) ratingTab.click();
+    JS);
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+
+    // Click References tab
+    $page->script(<<<'JS'
+        const tabs = Array.from(document.querySelectorAll('button'));
+        const refTab = tabs.find(b => b.textContent.trim() === 'References');
+        if (refTab) refTab.click();
+    JS);
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});

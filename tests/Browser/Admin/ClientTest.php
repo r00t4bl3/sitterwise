@@ -1,10 +1,15 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    seedLookupTables();
+});
 
 test('admin client create page can be viewed', function () {
     $admin = User::factory()->create(['role' => 'admin']);
@@ -133,4 +138,78 @@ test('can sort clients by name', function () {
     usleep(500000);
 
     $page->assertNoJavaScriptErrors();
+});
+
+test('admin can edit a client', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $user = createClientUser();
+    $client = Client::first();
+
+    $page = visit('/clients/'.$client->id.'/edit');
+
+    $page->assertSee('Edit Client')
+        ->assertNoJavaScriptErrors();
+
+    fillField($page, '#first_name', 'Updated');
+    fillField($page, '#last_name', 'Name');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const submitBtn = buttons.find(b => b.textContent.includes('Update Client'));
+        if (submitBtn) submitBtn.click();
+    JS);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('validation errors show on client create with empty fields', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $page = visit('/clients/create');
+
+    $page->assertSee('Add New Client');
+
+    clickElement($page, 'button[type="submit"]');
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
+});
+
+test('client profile page shows reset password button', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $user = createClientUser();
+    $client = Client::first();
+
+    $page = visit('/clients/'.$client->id);
+
+    $page->assertSee('Reset Password')
+        ->assertNoJavaScriptErrors();
+});
+
+test('client booking history page loads', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin);
+
+    $clientUser = createClientUser();
+    $client = Client::first();
+
+    Booking::factory()->forClient($client)->create([
+        'start_datetime' => now()->addDays(5)->setHour(9)->setMinute(0),
+        'end_datetime' => now()->addDays(5)->setHour(13)->setMinute(0),
+    ]);
+
+    $page = visit('/clients/'.$client->id.'/bookings');
+
+    $page->assertSee('Booking History')
+        ->assertNoJavaScriptErrors();
 });

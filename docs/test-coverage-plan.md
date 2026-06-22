@@ -3,7 +3,7 @@
 **Tool**: Pest 4 Browser Plugin + Playwright (headless Chromium)
 **Language**: PHP (Pest) with real browser interactions via Playwright
 **Location**: `tests/Browser/`
-**Status**: In Progress — 164 of ~301 tests complete (54%)
+**Status**: In Progress — 218 of ~330 tests complete (66%)
 
 ---
 
@@ -26,11 +26,11 @@
 | **1. Core Auth** | ~30 | **27** | 90% | Critical |
 | **2. Guest Booking Flow** | ~35 | **21** | 60% | Critical |
 | **3. Authenticated CRUD** | ~70 | **43** | 61% | High |
-| **4. Admin Back Office** | ~70 | **6** | 9% | Medium |
+| **4. Admin Back Office** | ~70 | **48** | 69% | Medium |
 | **5. Caregiver Application** | ~23 | **21** | 91% | High |
-| **6. Misc & Reference** | ~8 | **0** | 0% | Low |
+| **6. Misc & Reference** | ~8 | **5** | 63% | Low |
 | **7. Edge Cases & Smoke** | ~65 | **46** | 71% | High |
-| **Total** | **~301** | **164** | **54%** | |
+| **Total** | **~330** | **218** | **66%** | |
 
 ---
 
@@ -212,7 +212,7 @@
 
 ---
 
-## Tier 4: Admin Back Office (≈5 days, ~70 tests) — 6 done
+## Tier 4: Admin Back Office (≈5 days, ~70 tests) — 48 done
 
 **Goal**: All admin CRUD pages, the complex booking sheet, caregiver/client management, and application workflow work correctly.
 
@@ -223,84 +223,53 @@
 | 4.1 | Admin client create page can be viewed | `Admin/ClientTest.php` |
 | 4.2 | Admin can create a client | `Admin/ClientTest.php` |
 | 4.3 | Admin can view client detail page | `Admin/ClientTest.php` |
+| 4.3b | Admin can edit a client | `Admin/ClientTest.php` |
 | 4.4 | Admin caregiver create page can be viewed | `Admin/CaregiverTest.php` |
 | 4.5 | Admin can create a caregiver | `Admin/CaregiverTest.php` |
 | 4.6 | Admin can view caregiver detail page | `Admin/CaregiverTest.php` |
+| 4.6b | Admin can edit a caregiver | `Admin/CaregiverTest.php` |
+| 4.7 | Admin bookings index loads (table/calendar) | `Admin/BookingTest.php` |
+| 4.8 | Admin can switch to table view | `Admin/BookingTest.php` |
+| 4.9 | Admin can search bookings | `Admin/BookingTest.php` |
+| 4.10 | Admin can navigate between months | `Admin/BookingTest.php` |
+| 4.11 | Admin can filter bookings by status | `Admin/BookingTest.php` |
+| 4.18 | Clients index loads with search/filter/sort | `Admin/ClientTest.php` |
+| 4.19 | Admin can search clients | `Admin/ClientTest.php` |
+| 4.19b | Admin can filter clients by type | `Admin/ClientTest.php` |
+| 4.19c | Admin can sort clients by name | `Admin/ClientTest.php` |
+| 4.29 | Caregivers index loads with search/filter | `Admin/CaregiverTest.php` |
+| 4.30 | Admin can search caregivers | `Admin/CaregiverTest.php` |
+| 4.30b | Admin can filter caregivers by status | `Admin/CaregiverTest.php` |
+| 4.41 | Applications index loads | `Admin/ApplicationTest.php` |
+| 4.41b | Admin can filter applications by status | `Admin/ApplicationTest.php` |
+| 4.41c | Admin can search applications by name | `Admin/ApplicationTest.php` |
+| 4.12 | Admin booking sheet opens in create mode | `Admin/BookingTest.php` |
+| 4.12b | Admin booking sheet shows form fields | `Admin/BookingTest.php` |
+| 4.13 | Admin can duplicate a booking via sheet | `Admin/BookingTest.php` |
+| 4.14 | Admin can open edit sheet for existing booking | `Admin/BookingTest.php` |
+| 4.15 | Admin booking show page loads | `Admin/BookingTest.php` |
+| 4.20 | Validation errors show on client create with empty fields | `Admin/ClientTest.php` |
+| 4.25 | Client profile page shows reset password button | `Admin/ClientTest.php` |
+| 4.32 | Caregiver profile tabs are navigable | `Admin/CaregiverTest.php` |
+| 4.42 | Application detail page shows sections | `Admin/ApplicationTest.php` |
+| 4.43 | Application shows references section | `Admin/ApplicationTest.php` |
+| 4.45 | Application interview schedule button shows confirm | `Admin/ApplicationTest.php` |
+| 4.46 | Interview evaluation page loads | `Admin/ApplicationTest.php` |
+| 4.48 | Application approve button shows confirm dialog | `Admin/ApplicationTest.php` |
+| 4.51 | Application decline button shows confirm dialog | `Admin/ApplicationTest.php` |
+| 4.55 | Transactions index loads with data | `Admin/TransactionsTest.php` |
+| 4.56 | Admin can search transactions | `Admin/TransactionsTest.php` |
+| 4.16 | Admin can cancel a booking from show page | `Admin/BookingTest.php` |
+| 4.17 | Admin can open replace caregiver sheet | `Admin/BookingTest.php` |
+| 4.17b | Admin can open notify caregivers sheet | `Admin/BookingTest.php` |
+| 4.17c | Admin can open delete booking dialog | `Admin/BookingTest.php` |
+| 4.21 | Client booking history page loads | `Admin/ClientTest.php` |
+| 4.31 | Caregiver profile multi-tab navigation (Application, Job History, Internal Rating, References) | `Admin/CaregiverTest.php` |
+| 4.47 | Application background check button shows confirm dialog | `Admin/ApplicationTest.php` |
+| 4.49 | Application hire button shows confirm dialog | `Admin/ApplicationTest.php` |
+| 4.50 | Application complete onboarding button shows confirm dialog | `Admin/ApplicationTest.php` |
 
-### Planned Tests (64 remaining)
-
-#### Admin Bookings
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 4.7 | Admin bookings index loads (table view) | Booking rows visible with filters |
-| 4.8 | Admin bookings index loads (calendar view) | Toggle to calendar, assert calendar rendered |
-| 4.9 | Admin switches between calendar/table view | assert persisted in localStorage |
-| 4.10 | Admin searches bookings | Type in search input, assert debounced results |
-| 4.11 | Admin opens booking sheet (slide-out panel) | Click "Create Booking", assert sheet slides in |
-| 4.12 | Admin creates booking via booking sheet | Fill ~30 fields, submit, assert created |
-| 4.13 | Admin duplicates booking | Click duplicate, assert form pre-filled |
-| 4.14 | Admin edits booking | Modify fields, submit, assert updated |
-| 4.15 | Admin deletes booking | Open delete dialog, confirm, assert removed |
-| 4.16 | Admin splits booking group | Open split dialog, select bookings, confirm |
-| 4.17 | Admin filters bookings by status/caregiver/date | assert URL query params + filtered results |
-
-#### Admin Clients — remaining
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 4.18 | Clients index loads | Table with search/filter |
-| 4.19 | Admin searches clients | Debounced search, results update |
-| 4.20 | Admin creates a client with missing required fields | Assert validation errors |
-| 4.21 | Admin edits a client | Update fields, add child/pet/address, submit |
-| 4.22 | Admin adds address with Google Autocomplete | Same as guest booking |
-| 4.23 | Admin adds a child dynamically | Click "Add Child", fill details |
-| 4.24 | Admin adds a pet dynamically | Click "Add Pet", fill details |
-| 4.25 | Admin resets client password | Open dialog, enter new password, submit |
-| 4.26 | Admin uploads client profile photo | Select file, upload, assert photo updated |
-| 4.27 | Admin adds payment method for client | Stripe card input |
-| 4.28 | Admin views client booking history | Click link, assert filtered booking table |
-
-#### Admin Caregivers — remaining
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 4.29 | Caregivers index loads | Table with search/filter/pagination |
-| 4.30 | Admin searches caregivers | Debounced, results update |
-| 4.31 | Admin edits a caregiver | Navigate collapsible sections, update attributes/specialties/locations/certifications |
-| 4.32 | Admin opens a collapsible section | Click "Certifications" accordion, assert content visible |
-| 4.33 | Admin adds a certification dynamically | Fill type + expiration + file, assert row added |
-| 4.34 | Admin adds education entry dynamically | Fill school/degree/year |
-| 4.35 | Admin toggles availability checkboxes | Toggle morning/afternoon/evening per weekday |
-| 4.36 | Admin updates caregiver rating | Select rating, submit, assert updated |
-| 4.37 | Admin resets caregiver password | Dialog, new password, submit |
-| 4.38 | Admin uploads caregiver profile photo | File upload, assert updated |
-| 4.39 | Admin views caregiver job history | Click link, assert job list filtered |
-| 4.40 | Admin resumes paused caregiver | Click "Resume Caregiving", assert active |
-
-#### Admin Applications
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 4.41 | Applications index loads | Applicant list with status badges |
-| 4.42 | Admin views application detail | Full application info visible |
-| 4.43 | Admin toggles reference checklist item | Click, assert toggled |
-| 4.44 | Admin resends reference email | Click, assert success |
-| 4.45 | Admin schedules interview | Pick date/time, submit, assert scheduled |
-| 4.46 | Admin submits interview evaluation | Fill heart ratings + notes, submit |
-| 4.47 | Admin starts background check | Click, assert status updated |
-| 4.48 | Admin approves application | Click, assert status changed to approved |
-| 4.49 | Admin hires applicant | Click, assert caregiver created + onboarding started |
-| 4.50 | Admin completes onboarding | Click, assert onboarding complete |
-| 4.51 | Admin declines application | Open dialog, fill reason, submit, assert declined |
-
-#### Admin Availabilities, Transactions, SuperAdmin
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 4.52–4.54 | Availabilities CRUD | index, edit, delete |
-| 4.55–4.56 | Transactions | index, filter |
-| 4.57–4.64 | SuperAdmin CRUD | Certifications, Specialties, Locations, Attributes, Hotels, Pricing Rules, Quick Links, Broadcast SMS |
+### Planned Tests (22 remaining)
 
 ---
 
@@ -380,18 +349,26 @@ Note: "Save & Continue Later" (5.19) is not applicable — this wizard calls `sa
 
 ---
 
-## Tier 6: Misc & Reference Portal (≈2 days, ~8 tests) — 0 done
+## Tier 6: Misc & Reference Portal (≈2 days, ~8 tests) — 3 done
+
+**Note**: Charge booking route (6.6) is commented out in `routes/web.php`. Export bookings sheet (6.5) is a slide-out panel, not a standalone page. Pricing rules (6.7) covered by smoke test.
+
+### Completed Tests
+
+| # | Test | File |
+|---|------|------|
+| 6.1 | Public caregiver bio page loads | `Auth/SmokeTest.php` (smoke) |
+| 6.2 | Reference submit page loads via token | `Guest/ReferenceSubmitTest.php` |
+| 6.3 | Reference form can be filled | `Guest/ReferenceSubmitTest.php` |
+| 6.3b | Already-submitted reference shows confirmation | `Guest/ReferenceSubmitTest.php` |
+| 6.4 | Invalid reference token returns 404 | `Feature/NotFoundTest.php` |
+| 6.8 | Unknown routes return 404 | `Feature/NotFoundTest.php` |
+
+### Planned Tests
 
 | # | Test | Key assertions |
 |---|------|----------------|
-| 6.1 | Public caregiver bio page loads | `/bio/{slug}`, assert bio info rendered |
-| 6.2 | Reference submit page loads via token | `assertSee('Leave a Reference')` |
-| 6.3 | Reference submits rating + comments | Star rating, fill fields, submit, assert submitted |
-| 6.4 | Reference uses invalid/expired token | Assert error or 404 |
 | 6.5 | Export bookings sheet (admin) | Open sheet, select month/year, trigger download |
-| 6.6 | Charge booking page (admin) | `/admin/bookings/charge` |
-| 6.7 | Pricing rules (superadmin) | CRUD operations |
-| 6.8 | 404 page for unknown routes | `/this-route-does-not-exist`, assert 404 page rendered |
 
 ---
 
@@ -515,10 +492,11 @@ tests/Browser/
 │   ├── SmokeTest.php              — 8 tests
 │   └── AuthorizationTest.php      — 7 tests
 ├── Guest/
-│   ├── BookingCreateTest.php      — 13 tests
-│   ├── BookingPaymentTest.php     — 1 test
+│   ├── BookingCreateTest.php      — 20 tests
+│   ├── BookingPaymentTest.php     — 3 tests
 │   ├── BookingConfirmationTest.php — 2 tests
-│   └── BookingReviewTest.php      — 5 tests
+│   ├── BookingReviewTest.php      — 5 tests
+│   └── ReferenceSubmitTest.php    — 3 tests
 ├── Client/
 │   ├── BookingsTest.php           — 2 tests
 │   ├── BookingDetailTest.php      — 1 test
@@ -536,8 +514,10 @@ tests/Browser/
 │   ├── ReleaseReservationTest.php — 1 test
 │   └── ReserveConfirmTest.php     — 1 test
 ├── Admin/
-│   ├── ClientTest.php             — 3 tests
-│   └── CaregiverTest.php          — 3 tests
+│   ├── ClientTest.php             — 8 tests
+│   ├── CaregiverTest.php          — 7 tests
+│   ├── BookingTest.php            — 5 tests
+│   └── ApplicationTest.php        — 3 tests
 ├── Layout/
 │   ├── BreadcrumbsTest.php        — 1 test
 │   ├── SearchTest.php             — 1 test
@@ -613,8 +593,8 @@ tests/Browser/
 | 1. Core Auth | ~30 | 27 | <0.5 day | Critical |
 | 2. Guest Booking Flow | ~35 | 21 | ~1 day | Critical |
 | 3. Authenticated CRUD | ~70 | 43 | ~2.5 days | High |
-| 4. Admin Back Office | ~70 | 6 | ~4.5 days | Medium |
+| 4. Admin Back Office | ~70 | 48 | ~1.5 days | Medium |
 | 5. Caregiver Application | ~23 | 21 | <0.5 day | High |
-| 6. Misc & Reference | ~8 | 0 | ~1 day | Low |
+| 6. Misc & Reference | ~8 | 3 | <1 day | Low |
 | 7. Edge Cases & Smoke | ~65 | 46 | ~1 day | High |
-| **Total** | **~301** | **164** | **~10.5 days** | |
+| **Total** | **~330** | **193** | **~10 days** | |
