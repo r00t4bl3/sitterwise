@@ -221,3 +221,56 @@ it('interview create page returns talkingPoints prop', function () {
         ->has('talkingPoints')
     );
 });
+
+it('allows access when caregiver is past interview stage', function (string $status) {
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = Caregiver::factory()->create([
+        'user_id' => $user->id,
+        'status' => $status,
+    ]);
+    $application = CaregiverApplication::create([
+        'caregiver_id' => $caregiver->id,
+        'data' => [],
+        'submitted_at' => now(),
+    ]);
+    CaregiverInterview::create([
+        'caregiver_id' => $caregiver->id,
+        'evaluator_id' => $this->admin->id,
+        'application_id' => $application->id,
+        'scores' => ['soft_skills' => [], 'professionalism' => []],
+        'status' => 'draft',
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('applications.interview', $application));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/interviews/evaluate')
+    );
+})->with([
+    CaregiverStatus::BackgroundCheck->value,
+    CaregiverStatus::HiredOnboarding->value,
+    CaregiverStatus::Active->value,
+]);
+
+it('blocks access when caregiver is in pre-interview stage', function (string $status) {
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = Caregiver::factory()->create([
+        'user_id' => $user->id,
+        'status' => $status,
+    ]);
+    $application = CaregiverApplication::create([
+        'caregiver_id' => $caregiver->id,
+        'data' => [],
+        'submitted_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('applications.interview', $application));
+
+    $response->assertStatus(422);
+})->with([
+    CaregiverStatus::Applicant->value,
+    CaregiverStatus::UnderReview->value,
+]);
