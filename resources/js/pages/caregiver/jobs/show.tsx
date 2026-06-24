@@ -62,6 +62,14 @@ interface Booking {
         rating: number;
         comment: string | null;
     } | null;
+    total_working_hour: number;
+    paid_to_caregiver_hourly: number;
+    paid_to_caregiver: number;
+    reimbursement: number;
+    reimbursement_description: string | null;
+    bonus: number;
+    tip: number;
+    paid_to_caregiver_total: number;
 }
 
 interface PageProps {
@@ -100,6 +108,21 @@ export default function JobDetail({ booking }: PageProps) {
                 return MapPin;
         }
     };
+
+    const computedBase =
+        Number(booking.paid_to_caregiver_hourly) *
+        Number(booking.total_working_hour);
+    const computedTotal = Number(
+        (
+            computedBase +
+            Number(booking.reimbursement) +
+            Number(booking.bonus) +
+            Number(booking.tip)
+        ).toFixed(2),
+    );
+    const storedTotal = Number(booking.paid_to_caregiver_total);
+    const isConsistent =
+        Number(computedTotal.toFixed(1)) === Number(storedTotal.toFixed(1));
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -353,6 +376,74 @@ export default function JobDetail({ booking }: PageProps) {
                                 </div>
                             </div>
                         </div>
+
+                        {storedTotal > 0 && (
+                            <div>
+                                <h2 className="text-md mb-2 font-semibold text-foreground">
+                                    Earnings
+                                </h2>
+                                {isConsistent ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">
+                                                Base Pay ({Number(booking.total_working_hour)}h @ ${Number(booking.paid_to_caregiver_hourly).toFixed(2)}/hr)
+                                            </span>
+                                            <span className="font-medium text-foreground">
+                                                ${computedBase.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        {Number(booking.bonus) > 0 && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">
+                                                    Bonus
+                                                </span>
+                                                <span className="font-medium text-green-600">
+                                                    +${Number(booking.bonus).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {Number(booking.reimbursement) > 0 && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">
+                                                    Reimbursement{booking.reimbursement_description ? ` (${booking.reimbursement_description})` : ''}
+                                                </span>
+                                                <span className="font-medium text-green-600">
+                                                    +${Number(booking.reimbursement).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {Number(booking.tip) > 0 && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">
+                                                    Tip
+                                                </span>
+                                                <span className="font-medium text-green-600">
+                                                    +${Number(booking.tip).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <hr className="border-border" />
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-semibold text-foreground">
+                                                Total Earnings
+                                            </span>
+                                            <span className="font-bold text-foreground">
+                                                ${computedTotal.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
+                                        <span className="text-sm font-medium text-foreground">
+                                            Total Earnings
+                                        </span>
+                                        <span className="text-lg font-bold text-foreground">
+                                            ${storedTotal.toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="mt-6">
                             <h2 className="mb-4 text-lg font-semibold text-foreground">

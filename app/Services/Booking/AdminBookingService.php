@@ -539,6 +539,7 @@ class AdminBookingService implements BookingServiceInterface
                 'sitterwise_cut' => $booking->sitterwise_cut,
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
+                'bonus' => $booking->bonus,
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
