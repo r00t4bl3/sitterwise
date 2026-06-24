@@ -36,6 +36,10 @@ class DashboardController extends Controller
         $adminData = null;
         $caregiverData = null;
         $clientData = null;
+        $quickLinks = QuickLink::where('is_active', true)
+            ->whereJsonContains('visible_for_roles', $user->role)
+            ->orderBy('sort_order')
+            ->get();
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -224,9 +228,6 @@ class DashboardController extends Controller
                 ),
                 'bookingAttributes' => $bookingAttributes,
                 'sitterPreferences' => $sitterPreferences,
-                'quickLinks' => QuickLink::where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->get(),
                 'pendingApplicationsCount' => CaregiverApplication::whereHas('caregiver.referenceRequests', function ($q) {
                     $q->pending();
                 })->count(),
@@ -435,7 +436,7 @@ class DashboardController extends Controller
                     ->get();
 
                 $nextBooking = $allUpcoming->first();
-                $upcomingBookings = $allUpcoming->slice(1, 2)->values();
+                $upcomingBookings = $allUpcoming;
 
                 $recentBookings = $client->bookings()
                     ->with(['caregiver'])
@@ -464,6 +465,7 @@ class DashboardController extends Controller
             'caregiver' => $caregiverData,
             'client' => $clientData,
             'admin' => $adminData,
+            'quickLinks' => $quickLinks,
         ]);
     }
 }

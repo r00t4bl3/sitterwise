@@ -25,6 +25,7 @@ class QuickLinkFactory extends Factory
             'sort_order' => 0,
             'is_active' => true,
             'is_external' => true,
+            'visible_for_roles' => ['admin', 'super_admin'],
         ];
     }
 }

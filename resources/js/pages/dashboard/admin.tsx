@@ -8,8 +8,6 @@ import {
     ChevronRight,
     Briefcase,
     Plus,
-    ExternalLink,
-    Link as LinkIcon,
     Star,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -22,6 +20,7 @@ import {
     formatDisplayDateTimeInPT,
     formatDisplayTimeInPT,
 } from '@/lib/datetime';
+import QuickLinks from '@/components/quick-links';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';
@@ -65,15 +64,6 @@ interface Caregiver {
     created_at: string;
 }
 
-interface QuickLink {
-    id: number;
-    title: string;
-    url: string;
-    description: string | null;
-    icon: string | null;
-    is_external: boolean;
-}
-
 interface NeedsAttentionItem {
     key: string;
     label: string;
@@ -98,6 +88,14 @@ interface AdminDashboardProps {
         troubledMissingPayment: number;
         troubledAwaitingCheckout: number;
     };
+    quickLinks?: Array<{
+        id: number;
+        title: string;
+        url: string;
+        description: string | null;
+        icon: string | null;
+        is_external: boolean;
+    }>;
     admin: {
         reviewAnalytics?: {
             avgRatingAll: number;
@@ -111,7 +109,6 @@ interface AdminDashboardProps {
         todaysBookings: Booking[];
         recentBookings: Booking[];
         recentCaregivers: Caregiver[];
-        quickLinks?: QuickLink[];
         bookingStatuses: Array<{
             value: string;
             label: string;
@@ -150,7 +147,11 @@ interface AdminDashboardProps {
     };
 }
 
-export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
+export default function AdminDashboard({
+    stats,
+    admin,
+    quickLinks,
+}: AdminDashboardProps) {
     const bookingStatuses = admin.bookingStatuses || [];
     const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
 
@@ -758,60 +759,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             </div>
                         )}
 
-                        {/* Quick Links */}
-                        {admin.quickLinks && admin.quickLinks.length > 0 && (
-                            <div className="flex flex-col gap-4">
-                                <h3 className="text-lg leading-none font-semibold tracking-tight">
-                                    Quick Links
-                                </h3>
-                                <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                                    <div className="p-6">
-                                        <div className="space-y-2">
-                                            {admin.quickLinks.map((link) => (
-                                                <a
-                                                    key={link.id}
-                                                    href={link.url}
-                                                    target={
-                                                        link.is_external
-                                                            ? '_blank'
-                                                            : '_self'
-                                                    }
-                                                    rel={
-                                                        link.is_external
-                                                            ? 'noopener noreferrer'
-                                                            : ''
-                                                    }
-                                                    className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">
-                                                            {link.icon ===
-                                                            'ExternalLink' ? (
-                                                                <ExternalLink className="h-4 w-4 text-blue-600" />
-                                                            ) : (
-                                                                <LinkIcon className="h-4 w-4 text-blue-600" />
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-medium">
-                                                                {link.title}
-                                                            </p>
-                                                            {link.description && (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {
-                                                                        link.description
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        {quickLinks && (
+                            <QuickLinks links={quickLinks} />
                         )}
                     </div>
                 </div>

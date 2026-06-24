@@ -18,6 +18,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'CPR',
@@ -27,6 +28,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'Caregiver Guidelines',
@@ -36,6 +38,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'Add Concierge to MailChimp',
@@ -45,6 +48,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Add New Caregiver to MailChimp',
@@ -54,6 +58,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Reference Form',
@@ -63,6 +68,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Reference Tracker',
@@ -72,6 +78,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Toy Bag',
@@ -81,6 +88,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'Hotel Parking',
@@ -90,6 +98,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'Care.com Caregiver Update',
@@ -99,6 +108,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'Caregiver Update Form',
@@ -108,6 +118,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
             ],
             [
                 'title' => 'CC Authorization',
@@ -117,6 +128,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'San Diego Hotels Map',
@@ -126,6 +138,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 0,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Dashboard',
@@ -135,6 +148,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
                 'is_external' => false,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Book a Sitter',
@@ -144,6 +158,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 2,
                 'is_active' => true,
                 'is_external' => false,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Caregivers',
@@ -153,6 +168,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 3,
                 'is_active' => true,
                 'is_external' => false,
+                'visible_for_roles' => ['admin', 'super_admin'],
             ],
             [
                 'title' => 'Help Center',
@@ -162,6 +178,7 @@ class QuickLinkSeeder extends Seeder
                 'sort_order' => 4,
                 'is_active' => true,
                 'is_external' => true,
+                'visible_for_roles' => ['admin', 'super_admin', 'caregiver', 'client'],
             ],
         ];
 

@@ -38,6 +38,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import QuickLinks from '@/components/quick-links';
 import AppLayout from '@/layouts/app-layout';
 import {
     formatDisplayDateInPT,
@@ -103,11 +104,20 @@ interface CaregiverDashboardProps {
         totalEarned: number;
         completedJobs: number;
     };
+    quickLinks?: Array<{
+        id: number;
+        title: string;
+        url: string;
+        description: string | null;
+        icon: string | null;
+        is_external: boolean;
+    }>;
 }
 
 export default function CaregiverDashboard({
     caregiver,
     stats,
+    quickLinks,
 }: CaregiverDashboardProps) {
     const initialAvailabilities = caregiver.availabilities;
     const timeSlots = caregiver.timeSlots;
@@ -415,6 +425,10 @@ export default function CaregiverDashboard({
                                 )}
                             </div>
                         </div>
+
+                        
+                       {quickLinks && <QuickLinks links={quickLinks} />}
+ 
                     </div>
 
                     {/* Secondary Side: Schedule & Availability */}
@@ -464,26 +478,26 @@ export default function CaregiverDashboard({
                                 </div>
                             )}
 
-                        {/* Availability Calendar */}
-                        <div className="flex flex-col gap-3">
-                            <h2 className="text-lg font-semibold text-foreground">
-                                My Availability
-                            </h2>
-                            <div className="overflow-hidden rounded-xl border border-border bg-card p-4">
-                                <AvailabilityCalendar
-                                    availabilities={availabilities}
-                                    onDateClick={openSheet}
-                                    timeSlots={timeSlots}
-                                />
-                                <p className="mt-4 text-center text-xs text-muted-foreground">
-                                    Click on a date to set or update your
-                                    availability.
-                                </p>
+                            {/* Availability Calendar */}
+                            <div className="flex flex-col gap-3">
+                                <h2 className="text-lg font-semibold text-foreground">
+                                    My Availability
+                                </h2>
+                                <div className="overflow-hidden rounded-xl border border-border bg-card p-4">
+                                    <AvailabilityCalendar
+                                        availabilities={availabilities}
+                                        onDateClick={openSheet}
+                                        timeSlots={timeSlots}
+                                    />
+                                    <p className="mt-4 text-center text-xs text-muted-foreground">
+                                        Click on a date to set or update your
+                                        availability.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="right" className="w-full sm:max-w-md">
