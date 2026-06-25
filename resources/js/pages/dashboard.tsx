@@ -63,6 +63,28 @@ interface Props {
         upcomingJobs?: any[];
         newInvites?: any[];
         timeSlots: any[];
+        badges?: Array<{
+            slug: string;
+            name: string;
+            group: string;
+            tier: string;
+            variant: string;
+            earned: boolean;
+            earned_date: string | null;
+            criteria: string;
+            progress: string | null;
+        }>;
+        trustline?: {
+            certified: boolean;
+            cleared_at?: string;
+        };
+        attention?: Array<{
+            icon: 'AlertTriangle' | 'Calendar';
+            title: string;
+            description: string;
+            actionLabel?: string;
+            actionHref?: string;
+        }>;
     };
     client?: {
         nextBooking: any;
@@ -101,6 +123,9 @@ interface Props {
 export default function Dashboard() {
     const { user, stats, caregiver, client, admin, quickLinks } =
         usePage<Props>().props;
+    const badges = caregiver?.badges;
+    const trustline = caregiver?.trustline;
+    const attention = caregiver?.attention;
 
     switch (user.role) {
         case 'caregiver':
@@ -124,6 +149,9 @@ export default function Dashboard() {
                         completedJobs: stats?.completedJobs || 0,
                     }}
                     quickLinks={quickLinks}
+                    badges={badges}
+                    trustline={trustline}
+                    attention={attention}
                 />
             );
 

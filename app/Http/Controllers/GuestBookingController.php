@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\LocationType;
 use App\Models\Booking;
+use App\Models\User;
 use App\Services\Booking\GuestBookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,15 @@ class GuestBookingController extends Controller
     public function create()
     {
         return $this->guestBookingService->create();
+    }
+
+    public function checkEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        return response()->json([
+            'exists' => User::where('email', $request->email)->exists(),
+        ]);
     }
 
     public function store(Request $request)

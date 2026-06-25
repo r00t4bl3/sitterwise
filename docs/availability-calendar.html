@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitterwise — Availability (Week List concept)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --coral:#F48A91;
+    --coral-dark:#e8767e;
+    --navy:#1B3A5C;
+    --gray:#5A6B73;
+    --teal-bg:#E8F5F5;
+    --blush:#FDF5F2;
+    --border-teal:#C6E7E7;
+    --logo-teal:#84D0D2;
+    --booked:#9aa6ad;
+    --white:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Poppins',sans-serif;
+    background:#f6fafa;
+    color:var(--navy);
+    line-height:1.5;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+
+  h1{
+    font-family:'Playfair Display',serif;
+    font-weight:700;
+    font-size:30px;
+    margin-bottom:4px;
+  }
+  .sub{color:var(--gray);font-size:14px;margin-bottom:24px;}
+
+  /* ---- Calendar shell ---- */
+  .cal{
+    background:var(--white);
+    border:1px solid var(--border-teal);
+    border-radius:14px;
+    padding:22px 22px 26px;
+    box-shadow:0 1px 3px rgba(27,58,92,.06);
+  }
+  .cal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .cal-head .month{
+    font-family:'Playfair Display',serif;
+    font-weight:700;font-size:20px;
+  }
+  .nav-btn{
+    width:34px;height:34px;border:1px solid var(--border-teal);
+    background:var(--white);border-radius:8px;cursor:pointer;
+    font-size:16px;color:var(--navy);display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+  }
+  .nav-btn:hover{background:var(--teal-bg);}
+
+  .dow{
+    display:grid;grid-template-columns:38px repeat(7,1fr);
+    gap:6px;margin-bottom:6px;
+  }
+  .dow span{
+    text-align:center;font-size:11px;font-weight:600;letter-spacing:.04em;
+    color:var(--gray);text-transform:uppercase;padding:2px 0;
+  }
+  .dow .corner{}
+
+  /* ---- Week rows ---- */
+  .week{
+    display:grid;grid-template-columns:38px repeat(7,1fr);
+    gap:6px;align-items:stretch;margin-bottom:6px;
+    position:relative;
+  }
+  .week-grab{
+    border:1px solid transparent;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--logo-teal);cursor:pointer;font-size:15px;
+    transition:background .15s,color .15s;
+  }
+  .day{
+    border:1px solid #eef3f3;border-radius:8px;
+    min-height:62px;padding:8px 9px;font-size:14px;font-weight:500;
+    cursor:pointer;position:relative;transition:background .15s,border-color .15s;
+  }
+  .day.out{color:#c4ccd0;background:#fbfdfd;cursor:default;border-color:transparent;}
+  .day.today{background:var(--blush);border-color:var(--coral);}
+  .day .dots{position:absolute;bottom:8px;left:9px;display:flex;gap:3px;}
+  .day .dot{width:6px;height:6px;border-radius:50%;}
+  .dot.m{background:#F2C14E;}
+  .dot.a{background:#5fb8ba;}
+  .dot.e{background:var(--navy);}
+  .dot.booked{background:var(--booked);}
+  .day .booked-tag{
+    position:absolute;bottom:7px;left:9px;font-size:10px;font-weight:600;
+    color:var(--booked);letter-spacing:.03em;
+  }
+
+  /* hover state: the whole week lights up so the click target reads as "the week" */
+  .week:not(.disabled):hover .week-grab{background:var(--logo-teal);color:var(--white);}
+  .week:not(.disabled):hover .day:not(.out){
+    background:var(--teal-bg);border-color:var(--border-teal);
+  }
+  .week.disabled .week-grab,.week.disabled .day{cursor:default;}
+
+  .hint{
+    margin-top:14px;text-align:center;font-size:12.5px;color:var(--gray);
+  }
+
+  /* ---- Modal ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(27,58,92,.45);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:40px 16px;z-index:50;overflow-y:auto;
+  }
+  .overlay.open{display:flex;}
+  .panel{
+    background:var(--white);border-radius:16px;width:100%;max-width:560px;
+    box-shadow:0 20px 50px rgba(27,58,92,.3);overflow:hidden;
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:translateY(8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .panel-head{
+    background:var(--navy);color:var(--white);padding:18px 22px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-head h2{font-family:'Playfair Display',serif;font-weight:600;font-size:19px;}
+  .panel-head .range{font-size:12.5px;opacity:.8;margin-top:2px;font-weight:400;}
+  .x{background:none;border:none;color:var(--white);font-size:22px;cursor:pointer;line-height:1;opacity:.85;}
+  .x:hover{opacity:1;}
+
+  .panel-body{padding:8px 22px 4px;max-height:55vh;overflow-y:auto;}
+  .drow{padding:15px 0;border-bottom:1px solid #eef3f3;}
+  .drow:last-child{border-bottom:none;}
+  .drow .dname{font-weight:600;font-size:14.5px;margin-bottom:9px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .chip{
+    display:inline-flex !important;
+    align-items:center;justify-content:center;
+    width:auto !important;flex:0 0 auto !important;
+    border:1px solid var(--border-teal) !important;
+    background:var(--white) !important;
+    border-radius:20px !important;
+    padding:7px 16px !important;
+    font-size:13px !important;font-weight:500 !important;
+    letter-spacing:normal !important;text-transform:none !important;
+    color:var(--gray) !important;
+    cursor:pointer;user-select:none;font-family:inherit;line-height:1.2;
+    box-shadow:none !important;transition:all .12s;
+  }
+  .chip:hover{border-color:var(--logo-teal) !important;}
+  .chip.on{
+    background:var(--coral) !important;
+    border-color:var(--coral) !important;
+    color:var(--white) !important;
+  }
+  .chip.booked-chip.on{
+    background:var(--booked) !important;
+    border-color:var(--booked) !important;
+  }
+  .chiprow{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap;}
+  .chiprow .chips{flex:1 1 auto;}
+  .chip.booked-chip{margin-left:auto;}
+
+  .panel-foot{
+    padding:16px 22px 20px;border-top:1px solid #eef3f3;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .foot-note{font-size:12px;color:var(--gray);}
+  .foot-note b{color:var(--navy);}
+  .btn-row{display:flex;gap:10px;}
+  .btn{
+    font-family:inherit;font-weight:600;font-size:14px;border-radius:0;
+    padding:11px 22px;cursor:pointer;border:1px solid;transition:all .15s;
+  }
+  .btn-secondary{background:var(--white);color:var(--logo-teal);border-color:var(--logo-teal);}
+  .btn-secondary:hover{background:var(--teal-bg);}
+  .btn-primary{background:var(--coral);color:var(--white);border-color:var(--coral);}
+  .btn-primary:hover{background:var(--coral-dark);border-color:var(--coral-dark);}
+
+  /* tiny legend */
+  .legend{display:flex;gap:16px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--gray);}
+  .legend .dot{width:8px;height:8px;border-radius:50%;}
+
+  .toast{
+    position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--navy);color:var(--white);padding:13px 22px;border-radius:8px;
+    font-size:13.5px;font-weight:500;box-shadow:0 8px 24px rgba(27,58,92,.35);
+    opacity:0;transition:all .3s;z-index:60;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>My Availability</h1>
+  <p class="sub">Tap a week to set every day at once — morning, afternoon, evening, or mark a day booked.</p>
+
+  <div class="cal">
+    <div class="cal-head">
+      <button class="nav-btn" aria-label="Previous month">‹</button>
+      <div class="month">June 2026</div>
+      <button class="nav-btn" aria-label="Next month">›</button>
+    </div>
+
+    <div class="dow">
+      <span class="corner"></span>
+      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+    </div>
+
+    <div id="weeks"></div>
+
+    <div class="legend">
+      <span><span class="dot m"></span>Morning</span>
+      <span><span class="dot a"></span>Afternoon</span>
+      <span><span class="dot e"></span>Evening</span>
+      <span><span class="dot booked"></span>Booked</span>
+    </div>
+    <p class="hint">Hover a row and the whole week highlights — that's your click target.</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+    <div class="panel-head">
+      <div>
+        <h2 id="panelTitle">This Week</h2>
+        <div class="range" id="panelRange"></div>
+      </div>
+      <button class="x" id="closeX" aria-label="Close">×</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+    <div class="panel-foot">
+      <div class="foot-note" id="footNote">Set <b>0</b> days</div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">Save week</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Availability saved ✓</div>
+
+<script>
+/* ---------- build June 2026 ---------- */
+const MONTH = 5, YEAR = 2026, TODAY = 23;
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// state: { 'YYYY-M-D': {m,a,e,booked} }
+const state = {};
+function key(d){return YEAR+'-'+MONTH+'-'+d;}
+
+// seed a couple of days so the dots show (matches your screenshot vibe)
+state[key(25)] = {m:1,a:1,e:1,booked:0};
+state[key(26)] = {m:1,a:1,e:1,booked:0};
+state[key(27)] = {m:0,a:0,e:0,booked:1};
+state[key(28)] = {m:1,a:1,e:0,booked:0};
+
+const first = new Date(YEAR,MONTH,1).getDay();
+const daysInMonth = new Date(YEAR,MONTH+1,0).getDate();
+
+// build week arrays (each = 7 cells, null for out-of-month)
+const weeks = [];
+let cur = [];
+for(let i=0;i<first;i++) cur.push(null);
+for(let d=1;d<=daysInMonth;d++){
+  cur.push(d);
+  if(cur.length===7){weeks.push(cur);cur=[];}
+}
+if(cur.length){while(cur.length<7)cur.push(null);weeks.push(cur);}
+
+const weeksEl = document.getElementById('weeks');
+
+function dotsFor(d){
+  const s = state[key(d)];
+  if(!s) return '';
+  if(s.booked) return '<span class="booked-tag">Booked</span>';
+  let h='';
+  if(s.m) h+='<span class="dot m"></span>';
+  if(s.a) h+='<span class="dot a"></span>';
+  if(s.e) h+='<span class="dot e"></span>';
+  return h ? '<span class="dots">'+h+'</span>' : '';
+}
+
+function render(){
+  weeksEl.innerHTML='';
+  weeks.forEach((wk,wi)=>{
+    const hasReal = wk.some(d=>d!==null);
+    const row = document.createElement('div');
+    row.className='week'+(hasReal?'':' disabled');
+    let cells = '<div class="week-grab">⤢</div>';
+    wk.forEach(d=>{
+      if(d===null){cells+='<div class="day out"></div>';return;}
+      const cls = d===TODAY ? 'day today':'day';
+      cells+='<div class="'+cls+'">'+d+dotsFor(d)+'</div>';
+    });
+    row.innerHTML=cells;
+    if(hasReal) row.addEventListener('click',()=>openWeek(wi));
+    weeksEl.appendChild(row);
+  });
+}
+
+/* ---------- modal ---------- */
+const overlay=document.getElementById('overlay');
+const panelBody=document.getElementById('panelBody');
+const panelTitle=document.getElementById('panelTitle');
+const panelRange=document.getElementById('panelRange');
+const footNote=document.getElementById('footNote');
+let activeWeek=null;
+let draft={};
+
+function openWeek(wi){
+  activeWeek=wi;
+  draft={};
+  const wk=weeks[wi].filter(d=>d!==null);
+  // copy current state into draft
+  wk.forEach(d=>{
+    const s=state[key(d)];
+    draft[d]= s ? {...s} : {m:0,a:0,e:0,booked:0};
+  });
+
+  // label
+  const ordinal = ['First','Second','Third','Fourth','Fifth','Sixth'][wi];
+  panelTitle.textContent = ordinal+' week of '+MONTHS[MONTH];
+  panelRange.textContent = MONTHS[MONTH]+' '+wk[0]+' – '+wk[wk.length-1]+', '+YEAR;
+
+  panelBody.innerHTML='';
+  weeks[wi].forEach(d=>{
+    if(d===null) return;
+    const dt=new Date(YEAR,MONTH,d);
+    const row=document.createElement('div');
+    row.className='drow';
+    row.innerHTML =
+      '<div class="dname">'+DOW[dt.getDay()]+' '+MONTHS[MONTH]+' '+d+'</div>'+
+      '<div class="chiprow"><div class="chips">'+
+        chip(d,'m','Morning')+chip(d,'a','Afternoon')+chip(d,'e','Evening')+
+      '</div>'+chip(d,'booked','Booked',true)+'</div>';
+    panelBody.appendChild(row);
+  });
+  bindChips();
+  updateNote();
+  overlay.classList.add('open');
+}
+
+function chip(d,slot,label,booked){
+  const on = draft[d] && draft[d][slot] ? ' on':'';
+  const cls = 'chip'+(booked?' booked-chip':'')+on;
+  return '<button class="'+cls+'" data-d="'+d+'" data-slot="'+slot+'">'+label+'</button>';
+}
+
+function bindChips(){
+  panelBody.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const d=c.dataset.d, slot=c.dataset.slot;
+      if(slot==='booked'){
+        const now=!draft[d].booked;
+        draft[d]={m:0,a:0,e:0,booked:now?1:0};
+        // refresh this row's chips
+        const row=c.closest('.drow');
+        row.querySelectorAll('.chip').forEach(x=>{
+          const sl=x.dataset.slot;
+          x.classList.toggle('on', !!draft[d][sl]);
+        });
+      } else {
+        draft[d].booked=0;
+        draft[d][slot]=draft[d][slot]?0:1;
+        const row=c.closest('.drow');
+        row.querySelectorAll('.chip').forEach(x=>{
+          x.classList.toggle('on', !!draft[d][x.dataset.slot]);
+        });
+      }
+      updateNote();
+    });
+  });
+}
+
+function updateNote(){
+  let n=0;
+  Object.values(draft).forEach(s=>{if(s.m||s.a||s.e||s.booked)n++;});
+  footNote.innerHTML='Set <b>'+n+'</b> day'+(n===1?'':'s')+' this week';
+}
+
+function closeModal(){overlay.classList.remove('open');}
+
+document.getElementById('closeX').addEventListener('click',closeModal);
+document.getElementById('cancelBtn').addEventListener('click',closeModal);
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  Object.keys(draft).forEach(d=>{
+    const s=draft[d];
+    if(s.m||s.a||s.e||s.booked) state[key(d)]={...s};
+    else delete state[key(d)];
+  });
+  render();
+  closeModal();
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+});
+
+render();
+</script>
+</body>
+</html>

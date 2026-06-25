@@ -99,4 +99,14 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             ),
         ]);
     }
+
+    public function storeWeek(Request $request)
+    {
+        abort(403, 'Admins cannot use the week editor.');
+    }
+
+    public function getMonth(int $year, int $month)
+    {
+        abort(403, 'Admins cannot use the month view.');
+    }
 }

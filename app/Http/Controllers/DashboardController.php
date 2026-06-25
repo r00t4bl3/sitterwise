@@ -23,6 +23,8 @@ use App\Models\Hotel;
 use App\Models\QuickLink;
 use App\Models\ReferenceRequest;
 use App\Models\User;
+use App\Services\CaregiverBadgeService;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -387,6 +389,50 @@ class DashboardController extends Controller
                     ->get()
                     ->pluck('booking');
 
+                $badges = app(CaregiverBadgeService::class)->badgesFor($caregiver);
+
+                $trustlineCert = $caregiver->certifications()
+                    ->where('certification_type_id', 3)
+                    ->wherePivot('verified_at', '!=', null)
+                    ->first();
+                $trustlineClearedAt = $trustlineCert?->pivot?->verified_at;
+
+                $expiringCpr = $caregiver->certifications()
+                    ->where('certification_type_id', 1)
+                    ->wherePivot('verified_at', '!=', null)
+                    ->wherePivot('expiration_date', '!=', null)
+                    ->wherePivot('expiration_date', '<=', CarbonImmutable::now()->addWeeks(3))
+                    ->first();
+
+                $hasFutureAvailability = $caregiver->availabilities()
+                    ->inTheFuture()
+                    ->exists();
+
+                $attentionItems = [];
+
+                if ($expiringCpr) {
+                    $expirationDate = CarbonImmutable::parse($expiringCpr->pivot->expiration_date);
+                    $title = $expirationDate->isPast()
+                        ? 'Your CPR expired '.$expirationDate->diffForHumans().'.'
+                        : 'Your CPR expires '.$expirationDate->diffForHumans().'.';
+
+                    $attentionItems[] = [
+                        'icon' => 'AlertTriangle',
+                        'title' => $title,
+                        'description' => 'Upload your renewal to stay eligible for jobs.',
+                    ];
+                }
+
+                if (! $hasFutureAvailability) {
+                    $attentionItems[] = [
+                        'icon' => 'Calendar',
+                        'title' => 'Set your availability for next week.',
+                        'description' => "You're only matched to jobs on days you mark open.",
+                        'actionLabel' => 'Add availability',
+                        'actionHref' => '/availabilities',
+                    ];
+                }
+
                 $caregiverData = [
                     'id' => $caregiver->id,
                     'firstName' => $caregiver->first_name,
@@ -402,6 +448,14 @@ class DashboardController extends Controller
                         fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                         TimeSlot::cases()
                     ),
+                    'badges' => $badges,
+                    'trustline' => [
+                        'certified' => $trustlineCert !== null,
+                        'cleared_at' => $trustlineClearedAt
+                            ? CarbonImmutable::parse($trustlineClearedAt)->format('F Y')
+                            : null,
+                    ],
+                    'attention' => $attentionItems,
                 ];
             }
         }

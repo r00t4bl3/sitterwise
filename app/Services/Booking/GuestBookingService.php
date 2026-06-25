@@ -148,6 +148,12 @@ class GuestBookingService
             }
         }
 
+        if (User::where('email', $validated['client_email'])->exists()) {
+            return back()->withErrors([
+                'client_email' => 'This email is already registered. Please log in to continue.',
+            ])->withInput();
+        }
+
         $paymentToken = Str::ulid();
         $request->session()->put(self::PENDING_KEY, $validated);
         $request->session()->put(self::PAYMENT_TOKEN_KEY, $paymentToken);

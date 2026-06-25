@@ -225,13 +225,6 @@ class JobController extends Controller
             ]
         );
 
-        // Trigger recalculation on the receiver's model
-        if ($type === BookingRating::TYPE_CLIENT_TO_CAREGIVER) {
-            $booking->caregiver->recalculateRating();
-        } else {
-            $booking->client->recalculateRating();
-        }
-
         return back()->with('success', 'Rating submitted successfully');
     }
 }

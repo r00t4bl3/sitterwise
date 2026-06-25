@@ -120,8 +120,6 @@ class BookingReviewController extends Controller
             }
         }
 
-        $booking->caregiver->recalculateRating();
-
         if (! $isLoggedInClient) {
             return Inertia::render('guest/bookings/review-success', [
                 'caregiver_name' => $booking->caregiver

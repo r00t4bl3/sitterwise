@@ -71,6 +71,12 @@ php artisan caregivers:import-trustline
 php artisan app:parse-children --from-cache
 ```
 
+- [ ] **Sync caregiver ratings** — backfill the cached `caregivers.rating` column from `booking_ratings` (idempotent, safe to re-run)
+
+```bash
+php artisan app:sync-caregiver-ratings
+```
+
 ## Environment Configuration
 
 - [ ] **Generate `APP_KEY`**
@@ -262,3 +268,36 @@ stdout_logfile=/path/to/storage/logs/worker.log
 - [ ] Test Twilio SMS delivery
 - [ ] Set up backups — database + `storage/app/`
 - [ ] Monitor logs for errors
+
+## Time Estimation
+
+### DNS Propagation
+
+`sitterwise.io` is proxied through Cloudflare, so DNS updates propagate in **~0–2 minutes** — no need to wait on TTL. The registrar is Namecheap (SOA TTL: 3600s), but since Cloudflare handles DNS, origin IP changes in the Cloudflare dashboard take effect nearly instantly.
+
+### Deployment Commands (sequential, single run)
+
+| Step | Est. Time | Notes |
+|------|-----------|-------|
+| `composer install && npm ci && npm run build` | **5–10 min** | Dependency install + Vite build |
+| `php artisan migrate --force` | **< 1 min** | Schema-only, no seeders |
+| `php artisan config:cache && route:cache && view:cache` | **< 30 sec** | |
+| `import:bubble-database` | **40–90 min** | Headless Chrome scraping 32K records from Bubble UI (worst bottleneck) |
+| `import:staged-data` | **8–20 min** | 10 DB passes inserting 32K records into app tables |
+| `import:bubble-photos` | **15–45 min** | ~1,451 sequential HTTP downloads + image processing |
+| `app:migrate-applicants-data` | **< 1 min** | Tiny dataset (~2 applicants) |
+| `app:backfill-assignments` | **< 1 min** | Lightweight `firstOrCreate` loop |
+| `app:clear-dummy-phones` | **< 10 sec** | String matching on ~6K rows |
+| `clients:set-resident-type` | **~1 min** | 943 client updates from CSV |
+| `caregivers:import-trustline` | **< 30 sec** | 178 name matches |
+| `app:parse-children --from-cache` | **3–10 min** | 16K+ cached AI records (no API calls) |
+| `app:sync-caregiver-ratings` | **< 1 min** | Aggregate query + batch update |
+
+### Totals
+
+| Scenario | Time |
+|----------|------|
+| **Best case** (incremental Bubble scrape + fast servers) | **~45–75 min** |
+| **Worst case** (fresh scrape + slow photo servers) | **~2–3 hours** |
+
+The Bubble web scraper (`import:bubble-database`) is the dominant variable — it paginates through 373+ pages with `sleep()` delays. Photos are the next largest chunk. Everything else is fast.

@@ -46,6 +46,13 @@ class BookingRating extends Model
 
     protected static function booted(): void
     {
+        static::saved(function (BookingRating $rating) {
+            $ratable = $rating->ratable;
+            if ($ratable && method_exists($ratable, 'recalculateRating')) {
+                $ratable->recalculateRating();
+            }
+        });
+
         static::deleted(function (BookingRating $rating) {
             $ratable = $rating->ratable;
             if ($ratable && method_exists($ratable, 'recalculateRating')) {

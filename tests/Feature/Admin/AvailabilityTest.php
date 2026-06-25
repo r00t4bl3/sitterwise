@@ -56,6 +56,7 @@ describe('Availability - Admin', function () {
 
     test('caregivers CAN view availabilities index (they manage their own availability)', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
+        Caregiver::factory()->create(['user_id' => $caregiverUser->id]);
         $this->actingAs($caregiverUser);
 
         $response = $this->get(route('availabilities.index'));
@@ -64,6 +65,7 @@ describe('Availability - Admin', function () {
 
     test('caregivers CAN view availability show page for their own caregiver', function () {
         $caregiverUser = User::factory()->create(['role' => 'caregiver']);
+        Caregiver::factory()->create(['user_id' => $caregiverUser->id]);
         $this->actingAs($caregiverUser);
 
         $availability = Availability::factory()->create();

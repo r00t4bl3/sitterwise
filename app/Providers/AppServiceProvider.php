@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -193,6 +194,21 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($request->ip())
                 ->response(fn () => back()->with('error', 'Too many requests. Please wait a minute.'));
+        });
+
+        RateLimiter::for('email-check', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            $ip = $request->ip();
+            $strikes = (int) Cache::get("email-check-strikes:{$ip}", 0);
+
+            return match (true) {
+                $strikes >= 5 => Limit::perHour(5)->by($ip),
+                $strikes >= 2 => Limit::perMinutes(5, 3)->by($ip),
+                default => Limit::perMinute(5)->by($ip),
+            };
         });
     }
 }

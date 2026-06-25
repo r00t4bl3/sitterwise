@@ -32,6 +32,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Middleware\TrackEmailCheckStrikes;
 use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +53,8 @@ Route::post('webhooks/twilio/inbound', [BroadcastSmsController::class, 'inboundS
 // Guest booking routes (public, no auth required)
 Route::get('/book', [GuestBookingController::class, 'create'])->name('guest.bookings.create');
 Route::post('/book', [GuestBookingController::class, 'store'])->name('guest.bookings.store')->middleware('throttle:guest-booking');
+Route::post('/book/check-email', [GuestBookingController::class, 'checkEmail'])
+    ->middleware([TrackEmailCheckStrikes::class, 'throttle:email-check']);
 Route::get('/book/payment/{token}', [GuestBookingController::class, 'payment'])->name('guest.bookings.payment');
 Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class, 'getSetupIntent'])->name('guest.bookings.setupIntent');
 Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status')->middleware('throttle:guest-booking');
@@ -106,6 +109,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payouts/stripe/return', [CaregiverPayoutController::class, 'return'])->name('payouts.stripe.return');
     Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
 
+    Route::post('/availabilities/week', [AvailabilityController::class, 'storeWeek'])->name('availabilities.storeWeek');
+    Route::get('/availabilities/month/{year}/{month}', [AvailabilityController::class, 'getMonth'])->name('availabilities.month');
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
     // Route::get('/bookings/available', [CaregiverController::class, 'showBookings'])->name('caregiver.bookings.index');
     // Route::get('/bookings/available/{booking}', [CaregiverController::class, 'showBooking'])->name('caregiver.bookings.show');
@@ -127,6 +132,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('client')->group(function () {
         Route::get('reviews/{booking}', [BookingReviewController::class, 'create'])->name('reviews.create');
         Route::post('reviews/{booking}', [BookingReviewController::class, 'store'])->name('reviews.store');
+
+        Route::get('bookings/{booking}/review', [BookingReviewController::class, 'create'])->name('bookings.review.create');
+        Route::post('bookings/{booking}/review', [BookingReviewController::class, 'store'])->name('bookings.review.store');
     });
 
     Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones')->middleware('caregiver');

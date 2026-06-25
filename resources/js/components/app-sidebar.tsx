@@ -2,19 +2,26 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Award,
     Calendar,
+    CalendarRange,
+    ChevronsUpDown,
     ClipboardList,
+    CircleDollarSign,
+    FileSymlink,
     Home,
+    LayoutDashboard,
     LayoutGrid,
     ListChecks,
     MapPin,
     MessageCircle,
+    Hotel,
     Shield,
     Star,
-    TrendingUp,
-    Users,
     User,
-    CircleDollarSign,
-    FileSymlink,
+    UserCheck,
+    Users,
+    TrendingUp,
+    LogOut,
+    type LucideIcon,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -50,6 +57,11 @@ const caregiverNavItems: NavItem[] = [
         title: 'Available Jobs',
         href: '/bookings',
         icon: ClipboardList,
+    },
+    {
+        title: 'My Availability',
+        href: '/availabilities',
+        icon: CalendarRange,
     },
     {
         title: 'Milestones',
