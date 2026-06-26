@@ -9,6 +9,7 @@ import {
     Briefcase,
     Plus,
 } from 'lucide-react';
+import QuickLinks from '@/components/quick-links';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +19,6 @@ import {
     formatDisplayDateTimeInPT,
     formatDisplayTimeInPT,
 } from '@/lib/datetime';
-import QuickLinks from '@/components/quick-links';
 import { BookingSheet } from '@/pages/admin/bookings/booking-sheet';
 import type { Booking as FullBooking } from '@/pages/admin/bookings/types';
 import { useBookingSheet } from '@/pages/admin/bookings/use-booking-sheet';

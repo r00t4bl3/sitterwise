@@ -6,6 +6,7 @@ const TIMEZONE_PT = 'America/Los_Angeles';
  */
 export const extractDateStr = (dateStr: string): string => {
     const tIndex = dateStr.indexOf('T');
+
     return tIndex !== -1 ? dateStr.slice(0, tIndex) : dateStr;
 };
 

@@ -1,8 +1,7 @@
-import { ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { todayInPT, formatDisplayDateInPT } from '@/lib/datetime';
-import { storeWeek } from '@/routes/availabilities';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -11,7 +10,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { todayInPT, formatDisplayDateInPT } from '@/lib/datetime';
+import { storeWeek } from '@/routes/availabilities';
 
 interface AvailabilityData {
     id: number;
@@ -57,6 +57,7 @@ function getWeeks(year: number, month: number): Array<Array<{ day: number; month
     }
 
     const weeks: Array<Array<{ day: number; monthOffset: number; date: string }>> = [];
+
     for (let i = 0; i < cells.length; i += 7) {
         weeks.push(cells.slice(i, i + 7));
     }
@@ -110,19 +111,30 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
 
     useEffect(() => {
         if (toast) {
-            if (toastTimeout) clearTimeout(toastTimeout);
+            if (toastTimeout) {
+clearTimeout(toastTimeout);
+}
+
             toastTimeout = setTimeout(() => setToast(null), 2200);
+
             return () => {
-                if (toastTimeout) clearTimeout(toastTimeout);
+                if (toastTimeout) {
+clearTimeout(toastTimeout);
+}
             };
         }
     }, [toast]);
 
     const fetchMonth = useCallback(async (y: number, m: number) => {
         setLoadingMonth(true);
+
         try {
             const res = await fetch(`/availabilities/month/${y}/${m + 1}`);
-            if (!res.ok) return;
+
+            if (!res.ok) {
+return;
+}
+
             const data = await res.json();
             const map: Record<string, AvailabilityData> = {};
             data.availabilities.forEach((av: AvailabilityData) => {
@@ -165,17 +177,22 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
         setDraft((prev) => {
             const cur = prev[date] ? [...prev[date]] : [];
             const idx = cur.indexOf(slot);
+
             if (idx >= 0) {
                 cur.splice(idx, 1);
             } else {
                 cur.push(slot);
             }
+
             return { ...prev, [date]: cur };
         });
     };
 
     const saveWeek = () => {
-        if (saving) return;
+        if (saving) {
+return;
+}
+
         setSaving(true);
 
         const days = Object.entries(draft).map(([date, time_slots]) => ({
@@ -195,6 +212,7 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                         const next = { ...prev };
                         Object.entries(draft).forEach(([date, time_slots]) => {
                             const existing = next[date];
+
                             if (time_slots.length > 0) {
                                 next[date] = {
                                     ...(existing || { id: 0, date, specific_time: null, booked_slots: [] }),
@@ -204,6 +222,7 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                                 delete next[date];
                             }
                         });
+
                         return next;
                     });
                     closeModal();
@@ -226,20 +245,30 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
 
     const allChecked = openWeek
         ? openWeek.every(({ date }) => {
-              if (isLocked(date)) return true;
+              if (isLocked(date)) {
+return true;
+}
+
               const bookedSlots = savedByDate[date]?.booked_slots ?? [];
               const selected = draft[date] ?? [];
               const editable = (['morning', 'afternoon', 'evening'] as const).filter((s) => !bookedSlots.includes(s));
+
               return editable.length > 0 && editable.every((s) => selected.includes(s));
           })
         : false;
 
     const toggleAll = () => {
-        if (!openWeek) return;
+        if (!openWeek) {
+return;
+}
+
         setDraft((prev) => {
             const next = { ...prev };
             openWeek.forEach(({ date }) => {
-                if (isLocked(date)) return;
+                if (isLocked(date)) {
+return;
+}
+
                 const bookedSlots = savedByDate[date]?.booked_slots ?? [];
                 const allSlots = (['morning', 'afternoon', 'evening'] as const);
                 const editableSlots = allSlots.filter((s) => !bookedSlots.includes(s));
@@ -250,24 +279,19 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                     next[date] = editableSlots;
                 }
             });
+
             return next;
         });
     };
 
     return (
         <>
-            <div className="rounded-none border border-border bg-card px-6 py-4 shadow-sm">
-                <p className="mb-4 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    <CalendarRange className="h-4 w-4 text-primary" />
-                    My Availability
-                </p>
-
-                <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
                     <button
                         type="button"
                         onClick={prevMonth}
                         disabled={loadingMonth}
-                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background hover:bg-accent disabled:opacity-40"
+                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background cursor-pointer hover:bg-accent disabled:opacity-40"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -278,7 +302,7 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                         type="button"
                         onClick={nextMonth}
                         disabled={loadingMonth}
-                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background hover:bg-accent disabled:opacity-40"
+                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background cursor-pointer hover:bg-accent disabled:opacity-40"
                     >
                         <ChevronRight className="h-4 w-4" />
                     </button>
@@ -316,9 +340,9 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                                 return (
                                     <div
                                         key={date}
-                                        className={`flex min-h-16 flex-col border p-2 ${
+                                        className={`flex min-h-16 flex-col border p-2 transition-colors ${
                                             currentMonth
-                                                ? 'border-border bg-background'
+                                                ? 'border-border bg-background group-hover:bg-primary/20'
                                                 : 'border-dashed border-border bg-card opacity-60'
                                         } ${today ? 'bg-blush' : ''}`}
                                     >
@@ -374,7 +398,6 @@ export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridPr
                         Booked
                     </span>
                 </div>
-            </div>
 
             <Dialog open={openWeekIdx !== null} onOpenChange={(open) => { if (!open) closeModal(); }}>
                 <DialogContent className="sm:max-w-lg">

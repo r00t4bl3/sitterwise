@@ -2,6 +2,7 @@ import { Head, Link, usePage, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { RatingInput } from '@/components/rating-input';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { RatingInput } from '@/components/rating-input';
 import {
     Select,
     SelectContent,

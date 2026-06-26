@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +18,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ToasterMessage } from '@/components/toaster-message';
 
 interface Experience {
     start_date: string;

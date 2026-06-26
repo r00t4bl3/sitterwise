@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChargeBookingRequest;
 use App\Models\Booking;
 use App\Services\Billing\JobBillingService;
-use App\Services\CaregiverPayout\CaregiverPayoutService;
+// use App\Services\CaregiverPayout\CaregiverPayoutService;
 use Illuminate\Http\JsonResponse;
 
 class ChargingController extends Controller
@@ -14,7 +14,7 @@ class ChargingController extends Controller
 
     public function __construct(
         protected JobBillingService $billingService,
-        protected CaregiverPayoutService $payoutService
+        // protected CaregiverPayoutService $payoutService
     ) {}
 
     public function charge(ChargeBookingRequest $request, Booking $booking): JsonResponse
@@ -64,34 +64,31 @@ class ChargingController extends Controller
             ], 422);
         }
 
-        $caregiver = $booking->caregiver;
-        $baseAmount = (int) ($booking->total_amount * 100);
-        $grossPayout = $baseAmount + $reimbursement;
-        $netPayout = $grossPayout - self::PLATFORM_FEE;
+        // $caregiver = $booking->caregiver;
+        // $baseAmount = (int) ($booking->total_amount * 100);
+        // $grossPayout = $baseAmount + $reimbursement;
+        // $netPayout = $grossPayout - self::PLATFORM_FEE;
 
-        $payoutResult = $this->payoutService->transferFunds(
-            $caregiver,
-            $netPayout
-        );
+        // $payoutResult = $this->payoutService->transferFunds(
+        //     $caregiver,
+        //     $netPayout
+        // );
 
-        if (! $payoutResult['success']) {
-            return response()->json([
-                'success' => false,
-                'step' => 'transfer',
-                'message' => 'Client charged but caregiver payout failed: '.$payoutResult['message'],
-                'client_charged' => true,
-                'payment_intent_id' => $chargeResult['payment_intent_id'] ?? null,
-            ], 422);
-        }
+        // if (! $payoutResult['success']) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'step' => 'transfer',
+        //         'message' => 'Client charged but caregiver payout failed: '.$payoutResult['message'],
+        //         'client_charged' => true,
+        //         'payment_intent_id' => $chargeResult['payment_intent_id'] ?? null,
+        //     ], 422);
+        // }
 
         return response()->json([
             'success' => true,
             'step' => 'complete',
-            'message' => 'Payment processed and caregiver paid',
+            'message' => 'Payment processed',
             'client_amount' => $chargeResult['amount'],
-            'caregiver_payout' => $netPayout / 100,
-            'transfer_id' => $payoutResult['transfer_id'] ?? null,
-            'payout_id' => $payoutResult['payout_id'] ?? null,
         ]);
     }
 

@@ -667,6 +667,7 @@ export default function GuestBookingCreate() {
                                             handleBlurValidate('client_email');
                                             const email =
                                                 form.data.client_email;
+
                                             if (
                                                 email &&
                                                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(

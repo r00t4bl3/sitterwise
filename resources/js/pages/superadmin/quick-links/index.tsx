@@ -221,6 +221,7 @@ export default function QuickLinksIndex() {
                                         <div className="flex items-center gap-2">
                                             {(() => {
                                                 const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+
                                                 return <IconComp className="h-4 w-4" />;
                                             })()}
                                             {link.title}
@@ -229,6 +230,7 @@ export default function QuickLinksIndex() {
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {(() => {
                                             const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+
                                             return (
                                                 <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">
                                                     <IconComp className="h-4 w-4 text-blue-600" />
@@ -470,6 +472,7 @@ export default function QuickLinksIndex() {
                                                             ...form.data
                                                                 .visible_for_roles,
                                                         ];
+
                                                         if (checked) {
                                                             if (
                                                                 !roles.includes(
@@ -485,6 +488,7 @@ export default function QuickLinksIndex() {
                                                                 roles.indexOf(
                                                                     role,
                                                                 );
+
                                                             if (idx !== -1) {
                                                                 roles.splice(
                                                                     idx,
@@ -492,6 +496,7 @@ export default function QuickLinksIndex() {
                                                                 );
                                                             }
                                                         }
+
                                                         form.setData(
                                                             'visible_for_roles',
                                                             roles,

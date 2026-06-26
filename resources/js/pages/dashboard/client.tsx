@@ -8,9 +8,9 @@ import {
     CheckCircle2,
     Activity,
 } from 'lucide-react';
+import QuickLinks from '@/components/quick-links';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import QuickLinks from '@/components/quick-links';
 import AppLayout from '@/layouts/app-layout';
 import {
     formatDisplayDateTimeInPT,

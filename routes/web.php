@@ -102,12 +102,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])
         ->name('push-subscriptions.store');
 
-    Route::get('/payouts', [CaregiverPayoutController::class, 'index'])->name('payouts.index');
-    Route::post('/payouts/stripe/connect', [CaregiverPayoutController::class, 'connect'])->name('payouts.stripe.connect');
-    Route::get('/payouts/stripe/onboarding', [CaregiverPayoutController::class, 'onboarding'])->name('payouts.stripe.onboarding');
-    Route::get('/payouts/stripe/status', [CaregiverPayoutController::class, 'status'])->name('payouts.stripe.status');
-    Route::get('/payouts/stripe/return', [CaregiverPayoutController::class, 'return'])->name('payouts.stripe.return');
-    Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
+    // Route::get('/payouts', [CaregiverPayoutController::class, 'index'])->name('payouts.index');
+    // Route::post('/payouts/stripe/connect', [CaregiverPayoutController::class, 'connect'])->name('payouts.stripe.connect');
+    // Route::get('/payouts/stripe/onboarding', [CaregiverPayoutController::class, 'onboarding'])->name('payouts.stripe.onboarding');
+    // Route::get('/payouts/stripe/status', [CaregiverPayoutController::class, 'status'])->name('payouts.stripe.status');
+    // Route::get('/payouts/stripe/return', [CaregiverPayoutController::class, 'return'])->name('payouts.stripe.return');
+    // Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
 
     Route::post('/availabilities/week', [AvailabilityController::class, 'storeWeek'])->name('availabilities.storeWeek');
     Route::get('/availabilities/month/{year}/{month}', [AvailabilityController::class, 'getMonth'])->name('availabilities.month');

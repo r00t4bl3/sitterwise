@@ -95,6 +95,7 @@ function Icon({ variant, fill }: { variant: string; fill: string }) {
             );
         case 'sun': {
             const line = { ...commonProps, strokeWidth: 5 };
+
             return (
                 <>
                     <circle cx="70" cy="66" r="18" fill={fill} />
@@ -181,11 +182,11 @@ export default function Medallion({ tier, variant, earned, size = 'sm' }: Medall
                 <>
                     <polygon
                         points="52,108 40,142 54,134 60,146 66,112"
-                        fill={colors.ribbonBg}
+                        fill={TIER_COLORS[tier].ribbonBg}
                     />
                     <polygon
                         points="88,108 100,142 86,134 80,146 74,112"
-                        fill={colors.ribbonBg}
+                        fill={TIER_COLORS[tier].ribbonBg}
                     />
                 </>
             )}

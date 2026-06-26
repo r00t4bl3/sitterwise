@@ -1,8 +1,8 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ToasterMessage } from '@/components/toaster-message';
 
 export default function VerifyEmail() {
     const [step, setStep] = useState<'email' | 'otp'>('email');

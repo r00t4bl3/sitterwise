@@ -9,6 +9,7 @@ import {
     MapPin,
     Users,
     ChevronRight,
+    ChevronDown,
     Bell,
     ExternalLink,
     Globe,
@@ -20,15 +21,16 @@ import {
     Home,
     Link as LucideLink,
 } from 'lucide-react';
+import AttentionStrip from '@/components/attention-strip';
+import AvailabilityWeekGrid from '@/components/availability-week-grid';
+import Medallion from '@/components/medallion';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
+import TrustlineCard from '@/components/trustline-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import AvailabilityWeekGrid from '@/components/availability-week-grid';
-import Medallion from '@/components/medallion';
-import TrustlineCard from '@/components/trustline-card';
-import AttentionStrip from '@/components/attention-strip';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import AppLayout from '@/layouts/app-layout';
 import {
     formatDisplayDateTimeInPT,
@@ -391,60 +393,76 @@ export default function CaregiverDashboard({
                             firstName={caregiver.firstName}
                         />
 
-                        <AvailabilityWeekGrid
-                            initial={caregiver.availabilities}
-                        />
+                        <Collapsible defaultOpen className="rounded-none border border-border bg-card shadow-sm">
+                            <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-6 py-4">
+                                <p className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                    <CalendarRange className="h-4 w-4 text-primary" />
+                                    My Availability
+                                </p>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="px-6 pb-4">
+                                <AvailabilityWeekGrid
+                                    initial={caregiver.availabilities}
+                                />
+                            </CollapsibleContent>
+                        </Collapsible>
 
                         {badges && badges.length > 0 && (
-                            <div className="rounded-none border border-border bg-card px-6 py-4 shadow-sm">
-                                <p className="mb-4 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                    <Award className="h-4 w-4 text-primary" />
-                                    Your Trophy Case
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Milestones you&apos;ve earned. They never expire.
-                                </p>
-                                <div className="mt-3 flex flex-wrap gap-3">
-                                    {badges
-                                        .filter((b) => b.earned)
-                                        .slice(0, 4)
-                                        .map((badge) => (
-                                            <div key={badge.slug} className="flex flex-col items-center gap-0.5">
-                                                <Medallion
-                                                    tier={badge.tier}
-                                                    variant={badge.variant}
-                                                    earned={true}
-                                                />
-                                                <span className="text-[10px] font-medium text-foreground">
-                                                    {badge.name}
-                                                </span>
-                                                {badge.earned_date && (
-                                                    <span className="text-[9px] text-muted-foreground">
-                                                        {badge.earned_date}
+                            <Collapsible defaultOpen className="rounded-none border border-border bg-card shadow-sm">
+                                <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-6 py-4">
+                                    <p className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                        <Award className="h-4 w-4 text-primary" />
+                                        Your Trophy Case
+                                    </p>
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="px-6 pb-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Milestones you&apos;ve earned. They never expire.
+                                    </p>
+                                    <div className="mt-3 flex flex-wrap gap-3">
+                                        {badges
+                                            .filter((b) => b.earned)
+                                            .slice(0, 4)
+                                            .map((badge) => (
+                                                <div key={badge.slug} className="flex flex-col items-center gap-0.5">
+                                                    <Medallion
+                                                        tier={badge.tier}
+                                                        variant={badge.variant}
+                                                        earned={true}
+                                                    />
+                                                    <span className="text-[10px] font-medium text-foreground">
+                                                        {badge.name}
                                                     </span>
-                                                )}
+                                                    {badge.earned_date && (
+                                                        <span className="text-[9px] text-muted-foreground">
+                                                            {badge.earned_date}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        {badges.filter((b) => !b.earned).length > 0 && (
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <Medallion
+                                                    tier="navy"
+                                                    variant="star"
+                                                    earned={false}
+                                                />
+                                                <span className="text-[10px] font-medium text-muted-foreground">
+                                                    {badges.filter((b) => !b.earned).length} locked
+                                                </span>
                                             </div>
-                                        ))}
-                                    {badges.filter((b) => !b.earned).length > 0 && (
-                                        <div className="flex flex-col items-center gap-0.5">
-                                            <Medallion
-                                                tier="navy"
-                                                variant="star"
-                                                earned={false}
-                                            />
-                                            <span className="text-[10px] font-medium text-muted-foreground">
-                                                {badges.filter((b) => !b.earned).length} locked
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <Link
-                                    href="/milestones"
-                                    className="mt-3 inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
-                                >
-                                    View all milestones →
-                                </Link>
-                            </div>
+                                        )}
+                                    </div>
+                                    <Link
+                                        href="/milestones"
+                                        className="mt-3 inline-flex text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                                    >
+                                        View all milestones →
+                                    </Link>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )}
 
                         {attention && <AttentionStrip items={attention} />}
