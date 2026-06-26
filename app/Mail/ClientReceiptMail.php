@@ -32,12 +32,12 @@ class ClientReceiptMail extends Mailable
 
                 ],
             ],
-            'template_id' => 'd-ade9c101da2d40d78a2742577e6d3efe',
+            'template_id' => 'd-f6418928838c49d0b7541f911eee4763',
         ]);
 
         return new Envelope(
             from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Booking Request Received',
+            subject: 'Booking Receipt',
         );
     }
 
