@@ -8,15 +8,20 @@ import {
     ChevronRight,
     Briefcase,
     Plus,
-    ExternalLink,
-    Link as LinkIcon,
     Star,
+    Heart,
 } from 'lucide-react';
 import { useState } from 'react';
+import QuickLinks from '@/components/quick-links';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import {
     formatDisplayDateTimeInPT,
@@ -65,13 +70,16 @@ interface Caregiver {
     created_at: string;
 }
 
-interface QuickLink {
+interface RecentReview {
     id: number;
-    title: string;
-    url: string;
-    description: string | null;
-    icon: string | null;
-    is_external: boolean;
+    rating: number;
+    comment: string | null;
+    type: 'caregiver' | 'client';
+    rater_name: string;
+    subject_first_name: string;
+    subject_last_name: string;
+    created_at: string;
+    booking_ulid: string | null;
 }
 
 interface NeedsAttentionItem {
@@ -98,6 +106,14 @@ interface AdminDashboardProps {
         troubledMissingPayment: number;
         troubledAwaitingCheckout: number;
     };
+    quickLinks?: Array<{
+        id: number;
+        title: string;
+        url: string;
+        description: string | null;
+        icon: string | null;
+        is_external: boolean;
+    }>;
     admin: {
         reviewAnalytics?: {
             avgRatingAll: number;
@@ -111,7 +127,7 @@ interface AdminDashboardProps {
         todaysBookings: Booking[];
         recentBookings: Booking[];
         recentCaregivers: Caregiver[];
-        quickLinks?: QuickLink[];
+        recentReviews: RecentReview[];
         bookingStatuses: Array<{
             value: string;
             label: string;
@@ -150,7 +166,11 @@ interface AdminDashboardProps {
     };
 }
 
-export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
+export default function AdminDashboard({
+    stats,
+    admin,
+    quickLinks,
+}: AdminDashboardProps) {
     const bookingStatuses = admin.bookingStatuses || [];
     const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
 
@@ -543,9 +563,74 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                             </div>
                                         )}
 
+                                        {/* Recent Reviews */}
+                                        {admin.recentReviews.length > 0 && (
+                                            <div>
+                                                <h4 className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                    Recent Reviews
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {admin.recentReviews.map((review) => (
+                                                        <Link
+                                                            key={review.id}
+                                                            href={`/bookings/${review.booking_ulid}`}
+                                                            className="flex items-start justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                        >
+                                                            <div className="flex items-start gap-3">
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div className={`flex h-8 w-8 flex-shrink-0 cursor-default items-center justify-center rounded ${review.type === 'caregiver' ? 'bg-amber-100' : 'bg-rose-100'}`}>
+                                                                            {review.type === 'caregiver' ? (
+                                                                                <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                                                            ) : (
+                                                                                <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
+                                                                            )}
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent side="top">
+                                                                        {review.type === 'caregiver'
+                                                                            ? `${review.rater_name} (client) reviewed ${review.subject_first_name} ${review.subject_last_name} (caregiver)`
+                                                                            : `${review.rater_name} (caregiver) reviewed ${review.subject_first_name} ${review.subject_last_name} (client)`}
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                                <div>
+                                                                    <p className="text-sm font-medium">
+                                                                        {review.rater_name}{' '}
+                                                                        <span className="text-muted-foreground font-normal">reviewed</span>{' '}
+                                                                        {review.subject_first_name} {review.subject_last_name}
+                                                                    </p>
+                                                                    <div className="mt-0.5 flex items-center gap-1">
+                                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                                            <Star
+                                                                                key={star}
+                                                                                className={`h-3 w-3 ${star <= review.rating ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground/30'}`}
+                                                                            />
+                                                                        ))}
+                                                                        <span className="ml-1 text-xs text-muted-foreground">
+                                                                            {new Date(review.created_at).toLocaleDateString('en-US', {
+                                                                                month: 'short',
+                                                                                day: 'numeric',
+                                                                            })}
+                                                                        </span>
+                                                                    </div>
+                                                                    {review.comment && (
+                                                                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                                                            "{review.comment}"
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <ChevronRight className="mt-2 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {admin.recentBookings.length === 0 &&
                                             admin.recentCaregivers.length ===
-                                                0 && (
+                                                0 &&
+                                            admin.recentReviews.length === 0 && (
                                                 <p className="py-4 text-center text-sm text-muted-foreground">
                                                     No recent activity
                                                 </p>
@@ -758,60 +843,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                             </div>
                         )}
 
-                        {/* Quick Links */}
-                        {admin.quickLinks && admin.quickLinks.length > 0 && (
-                            <div className="flex flex-col gap-4">
-                                <h3 className="text-lg leading-none font-semibold tracking-tight">
-                                    Quick Links
-                                </h3>
-                                <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                                    <div className="p-6">
-                                        <div className="space-y-2">
-                                            {admin.quickLinks.map((link) => (
-                                                <a
-                                                    key={link.id}
-                                                    href={link.url}
-                                                    target={
-                                                        link.is_external
-                                                            ? '_blank'
-                                                            : '_self'
-                                                    }
-                                                    rel={
-                                                        link.is_external
-                                                            ? 'noopener noreferrer'
-                                                            : ''
-                                                    }
-                                                    className="flex items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">
-                                                            {link.icon ===
-                                                            'ExternalLink' ? (
-                                                                <ExternalLink className="h-4 w-4 text-blue-600" />
-                                                            ) : (
-                                                                <LinkIcon className="h-4 w-4 text-blue-600" />
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-medium">
-                                                                {link.title}
-                                                            </p>
-                                                            {link.description && (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {
-                                                                        link.description
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        {quickLinks && (
+                            <QuickLinks links={quickLinks} />
                         )}
                     </div>
                 </div>

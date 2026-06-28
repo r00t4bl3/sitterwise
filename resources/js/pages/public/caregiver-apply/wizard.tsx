@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +18,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ToasterMessage } from '@/components/toaster-message';
 
 interface Experience {
     start_date: string;
@@ -321,6 +321,7 @@ export default function Wizard({
         if (Object.keys(form.errors).length > 0) {
             form.clearErrors();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data]);
 
     // Sync employment status with first experience's "present" checkbox
@@ -334,6 +335,7 @@ export default function Wizard({
                 },
             }));
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [verifiedEmail]);
 
     useEffect(() => {

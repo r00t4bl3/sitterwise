@@ -23,6 +23,8 @@ use App\Models\Hotel;
 use App\Models\QuickLink;
 use App\Models\ReferenceRequest;
 use App\Models\User;
+use App\Services\CaregiverBadgeService;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -36,6 +38,10 @@ class DashboardController extends Controller
         $adminData = null;
         $caregiverData = null;
         $clientData = null;
+        $quickLinks = QuickLink::where('is_active', true)
+            ->whereJsonContains('visible_for_roles', $user->role)
+            ->orderBy('sort_order')
+            ->get();
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -180,6 +186,26 @@ class DashboardController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get(),
+                'recentReviews' => BookingRating::with([
+                    'rater',
+                    'ratable',
+                    'booking.client.user',
+                    'booking.caregiver',
+                ])
+                    ->latest()
+                    ->limit(5)
+                    ->get()
+                    ->map(fn (BookingRating $rating) => [
+                        'id' => $rating->id,
+                        'rating' => (float) $rating->rating,
+                        'comment' => $rating->comment,
+                        'type' => $rating->ratable_type === Caregiver::class ? 'caregiver' : 'client',
+                        'rater_name' => $rating->rater?->name,
+                        'subject_first_name' => $rating->ratable?->first_name,
+                        'subject_last_name' => $rating->ratable?->last_name,
+                        'created_at' => $rating->created_at,
+                        'booking_ulid' => $rating->booking?->ulid,
+                    ]),
                 'bookingStatuses' => $bookingStatuses,
                 // Data for BookingSheet
                 'clients' => Client::with('user')
@@ -224,9 +250,6 @@ class DashboardController extends Controller
                 ),
                 'bookingAttributes' => $bookingAttributes,
                 'sitterPreferences' => $sitterPreferences,
-                'quickLinks' => QuickLink::where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->get(),
                 'pendingApplicationsCount' => CaregiverApplication::whereHas('caregiver.referenceRequests', function ($q) {
                     $q->pending();
                 })->count(),
@@ -386,6 +409,50 @@ class DashboardController extends Controller
                     ->get()
                     ->pluck('booking');
 
+                $badges = app(CaregiverBadgeService::class)->badgesFor($caregiver);
+
+                $trustlineCert = $caregiver->certifications()
+                    ->where('certification_type_id', 3)
+                    ->wherePivot('verified_at', '!=', null)
+                    ->first();
+                $trustlineClearedAt = $trustlineCert?->pivot?->verified_at;
+
+                $expiringCpr = $caregiver->certifications()
+                    ->where('certification_type_id', 1)
+                    ->wherePivot('verified_at', '!=', null)
+                    ->wherePivot('expiration_date', '!=', null)
+                    ->wherePivot('expiration_date', '<=', CarbonImmutable::now()->addWeeks(3))
+                    ->first();
+
+                $hasFutureAvailability = $caregiver->availabilities()
+                    ->inTheFuture()
+                    ->exists();
+
+                $attentionItems = [];
+
+                if ($expiringCpr) {
+                    $expirationDate = CarbonImmutable::parse($expiringCpr->pivot->expiration_date);
+                    $title = $expirationDate->isPast()
+                        ? 'Your CPR expired '.$expirationDate->diffForHumans().'.'
+                        : 'Your CPR expires '.$expirationDate->diffForHumans().'.';
+
+                    $attentionItems[] = [
+                        'icon' => 'AlertTriangle',
+                        'title' => $title,
+                        'description' => 'Upload your renewal to stay eligible for jobs.',
+                    ];
+                }
+
+                if (! $hasFutureAvailability) {
+                    $attentionItems[] = [
+                        'icon' => 'Calendar',
+                        'title' => 'Set your availability for next week.',
+                        'description' => "You're only matched to jobs on days you mark open.",
+                        'actionLabel' => 'Add availability',
+                        'actionHref' => '/availabilities',
+                    ];
+                }
+
                 $caregiverData = [
                     'id' => $caregiver->id,
                     'firstName' => $caregiver->first_name,
@@ -401,6 +468,14 @@ class DashboardController extends Controller
                         fn ($case) => ['value' => $case->value, 'label' => $case->label()],
                         TimeSlot::cases()
                     ),
+                    'badges' => $badges,
+                    'trustline' => [
+                        'certified' => $trustlineCert !== null,
+                        'cleared_at' => $trustlineClearedAt
+                            ? CarbonImmutable::parse($trustlineClearedAt)->format('F Y')
+                            : null,
+                    ],
+                    'attention' => $attentionItems,
                 ];
             }
         }
@@ -435,7 +510,7 @@ class DashboardController extends Controller
                     ->get();
 
                 $nextBooking = $allUpcoming->first();
-                $upcomingBookings = $allUpcoming->slice(1, 2)->values();
+                $upcomingBookings = $allUpcoming;
 
                 $recentBookings = $client->bookings()
                     ->with(['caregiver'])
@@ -464,6 +539,7 @@ class DashboardController extends Controller
             'caregiver' => $caregiverData,
             'client' => $clientData,
             'admin' => $adminData,
+            'quickLinks' => $quickLinks,
         ]);
     }
 }

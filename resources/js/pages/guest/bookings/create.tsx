@@ -231,6 +231,7 @@ export default function GuestBookingCreate() {
     };
 
     const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+    const [emailExists, setEmailExists] = useState(false);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(9, 0, 0, 0);
@@ -662,9 +663,47 @@ export default function GuestBookingCreate() {
                                                 e.target.value,
                                             )
                                         }
-                                        onBlur={() =>
-                                            handleBlurValidate('client_email')
-                                        }
+                                        onBlur={() => {
+                                            handleBlurValidate('client_email');
+                                            const email =
+                                                form.data.client_email;
+
+                                            if (
+                                                email &&
+                                                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                                                    email,
+                                                )
+                                            ) {
+                                                const match =
+                                                    document.cookie.match(
+                                                        /(?:^|;\s*)XSRF-TOKEN\s*=\s*([^;]+)/,
+                                                    );
+                                                fetch('/book/check-email', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type':
+                                                            'application/json',
+                                                        'X-Requested-With':
+                                                            'XMLHttpRequest',
+                                                        'X-XSRF-TOKEN':
+                                                            match
+                                                                ? decodeURIComponent(
+                                                                      match[1],
+                                                                  )
+                                                                : '',
+                                                    },
+                                                    body: JSON.stringify({
+                                                        email,
+                                                    }),
+                                                })
+                                                    .then((r) => r.json())
+                                                    .then((d) =>
+                                                        setEmailExists(
+                                                            d.exists,
+                                                        ),
+                                                    );
+                                            }
+                                        }}
                                         placeholder="your@email.com"
                                     />
                                     {(validationErrors.client_email ||
@@ -675,6 +714,19 @@ export default function GuestBookingCreate() {
                                                 form.errors.client_email
                                             }
                                         />
+                                    )}
+                                    {emailExists && (
+                                        <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                            You already have an account.{' '}
+                                            <a
+                                                href="/login"
+                                                className="font-medium underline underline-offset-2 hover:text-amber-900"
+                                            >
+                                                Log in
+                                            </a>{' '}
+                                            to book without re-entering your
+                                            details.
+                                        </p>
                                     )}
                                 </div>
                                 <div>
@@ -774,12 +826,12 @@ export default function GuestBookingCreate() {
                                     <Label htmlFor="sms-no">No</Label>
                                 </div>
                             </RadioGroup>
-                            {(validationErrors.sms_consent || form.errors.sms_consent) && (
-                                <InputError
-                                    message={validationErrors.sms_consent || form.errors.sms_consent}
-                                />
-                            )}
-                        </div>
+                             {(validationErrors.sms_consent || form.errors.sms_consent) && (
+                                 <InputError
+                                     message={validationErrors.sms_consent || form.errors.sms_consent}
+                                 />
+                             )}
+                                 </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                             By selecting "Yes," I agree to receive SMS text messages from Sitterwise
                             about my booking, including confirmations, reminders, schedule changes,

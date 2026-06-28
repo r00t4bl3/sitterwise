@@ -11,6 +11,10 @@ class QuickLink extends Model
     /** @use HasFactory<QuickLinkFactory> */
     use HasFactory;
 
+    protected $attributes = [
+        'visible_for_roles' => '["admin", "super_admin"]',
+    ];
+
     protected $fillable = [
         'title',
         'url',
@@ -19,11 +23,16 @@ class QuickLink extends Model
         'sort_order',
         'is_active',
         'is_external',
+        'visible_for_roles',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-        'is_external' => 'boolean',
-        'sort_order' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'is_external' => 'boolean',
+            'sort_order' => 'integer',
+            'visible_for_roles' => 'array',
+        ];
+    }
 }

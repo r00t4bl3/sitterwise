@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BookingStatus;
 use App\Http\Requests\StoreReviewRequest;
 use App\Models\Booking;
 use App\Models\BookingRating;
@@ -29,8 +30,8 @@ class BookingReviewController extends Controller
     {
         $client = request()->user()->client;
 
-        if ($booking->client_id !== $client->id || $booking->status !== 'completed') {
-            return Redirect::back()->with('error', 'Unauthorized or booking not completed');
+        if ($booking->client_id !== $client->id || ! in_array($booking->status, [BookingStatus::Completed->value, BookingStatus::Paid->value])) {
+            return Redirect::back()->with('error', 'Unauthorized or booking not completed or paid');
         }
 
         $paymentMethodId = $request->input('payment_method_id');
@@ -47,8 +48,8 @@ class BookingReviewController extends Controller
 
     public function storeFromLink(StoreReviewRequest $request, Booking $booking)
     {
-        if ($booking->status !== 'completed') {
-            return Redirect::back()->with('error', 'Booking not completed');
+        if (! in_array($booking->status, [BookingStatus::Completed->value, BookingStatus::Paid->value])) {
+            return Redirect::back()->with('error', 'Booking not completed or paid');
         }
 
         $raterId = $booking->client?->user_id;
@@ -61,8 +62,8 @@ class BookingReviewController extends Controller
 
     private function getReviewData(Booking $booking, $isLoggedInClient = true, $client = null)
     {
-        if ($booking->status !== 'completed') {
-            abort(403, 'Reviews are only available for completed bookings');
+        if (! in_array($booking->status, [BookingStatus::Completed->value, BookingStatus::Paid->value])) {
+            abort(403, 'Reviews are only available for completed or paid bookings');
         }
 
         $booking->load('caregiver', 'caregiverRating');
@@ -118,8 +119,6 @@ class BookingReviewController extends Controller
                 return Redirect::back()->with('error', 'Review saved, but tip failed: '.$tipResult['message']);
             }
         }
-
-        $booking->caregiver->recalculateRating();
 
         if (! $isLoggedInClient) {
             return Inertia::render('guest/bookings/review-success', [

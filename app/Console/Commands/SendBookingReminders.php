@@ -17,7 +17,7 @@ class SendBookingReminders extends Command
         $sent = 0;
 
         $bookings = Booking::where('status', 'confirmed')
-            ->whereBetween('start_datetime', [now()->addHours(23), now()->addHours(24)])
+            ->whereBetween('start_datetime', [now('America/Los_Angeles')->addHours(23), now('America/Los_Angeles')->addHours(24)])
             ->get();
 
         foreach ($bookings as $booking) {

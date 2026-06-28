@@ -39,7 +39,7 @@ class CaregiverResource extends JsonResource
                 'profile_photo_path' => $this->user->profile_photo_path ?? null,
                 'profile_photo_url' => $this->user->profile_photo_url ?? null,
             ],
-            'rating' => $this->rating ? (float) $this->rating : null,
+            'rating' => $this->rating !== null ? (float) $this->rating : null,
             'admin_rating' => $this->admin_rating ? (float) $this->admin_rating : null,
             'internal_rating' => $this->relationLoaded('internalRating') && $this->internalRating ? [
                 'communication_score' => $this->internalRating->communication_score ? (float) $this->internalRating->communication_score : null,

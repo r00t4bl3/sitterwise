@@ -9,6 +9,7 @@ import {
     Briefcase,
     Plus,
 } from 'lucide-react';
+import QuickLinks from '@/components/quick-links';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +62,17 @@ interface Caregiver {
     created_at: string;
 }
 
+interface QuickLink {
+    id: number;
+    title: string;
+    url: string;
+    description: string | null;
+    icon: string | null;
+    is_external: boolean;
+}
+
 interface AdminDashboardProps {
+    quickLinks?: QuickLink[];
     stats: {
         totalCaregivers?: number;
         activeCaregivers?: number;
@@ -119,7 +130,11 @@ interface AdminDashboardProps {
     };
 }
 
-export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
+export default function AdminDashboard({
+    stats,
+    admin,
+    quickLinks,
+}: AdminDashboardProps) {
     const safeStats = {
         totalCaregivers: 0,
         activeCaregivers: 0,
@@ -545,6 +560,8 @@ export default function AdminDashboard({ stats, admin }: AdminDashboardProps) {
                                 </div>
                             </div>
                         </div>
+
+                        {quickLinks && <QuickLinks links={quickLinks} />}
                     </div>
                 </div>
 

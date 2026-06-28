@@ -14,4 +14,8 @@ interface AvailabilityServiceInterface
     public function update(Request $request, $id);
 
     public function destroy(Availability $availability);
+
+    public function store(Request $request, string $caregiverId);
+
+    public function getMonth(int $year, int $month, string $caregiverId);
 }

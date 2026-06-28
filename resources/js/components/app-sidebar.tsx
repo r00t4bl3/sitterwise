@@ -3,6 +3,8 @@ import {
     Award,
     Calendar,
     ClipboardList,
+    CircleDollarSign,
+    FileSymlink,
     Home,
     LayoutGrid,
     ListChecks,
@@ -10,11 +12,9 @@ import {
     MessageCircle,
     Shield,
     Star,
-    TrendingUp,
-    Users,
     User,
-    CircleDollarSign,
-    FileSymlink,
+    Users,
+    TrendingUp,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -51,6 +51,11 @@ const caregiverNavItems: NavItem[] = [
         href: '/bookings',
         icon: ClipboardList,
     },
+    // {
+    //     title: 'My Availability',
+    //     href: '/availabilities',
+    //     icon: CalendarRange,
+    // },
     {
         title: 'Milestones',
         href: '/milestones',

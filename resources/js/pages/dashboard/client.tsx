@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     Activity,
 } from 'lucide-react';
+import QuickLinks from '@/components/quick-links';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -58,6 +59,14 @@ interface ClientDashboardProps {
         recentBookings: Booking[];
     };
     bookingStatuses: BookingStatus[];
+    quickLinks?: Array<{
+        id: number;
+        title: string;
+        url: string;
+        description: string | null;
+        icon: string | null;
+        is_external: boolean;
+    }>;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -71,6 +80,7 @@ export default function ClientDashboard({
     stats,
     client,
     bookingStatuses,
+    quickLinks,
 }: ClientDashboardProps) {
     const upcomingBookings = stats?.upcomingBookings || [];
     const recentBookings = stats?.recentBookings || [];
@@ -129,8 +139,8 @@ export default function ClientDashboard({
                         <p className="text-2xl font-bold text-foreground">
                             {upcomingBookings.length}
                         </p>
+                        </div>
                     </div>
-                </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <div className="flex flex-col gap-4">
@@ -212,6 +222,52 @@ export default function ClientDashboard({
                                 </div>
                             )}
                         </div>
+                        <h3 className="text-lg leading-none font-semibold tracking-tight">
+                            Upcoming Bookings
+                        </h3>
+                        <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
+                            {upcomingBookings.length > 0 ? (
+                                <div className="p-6">
+                                    <div className="space-y-2">
+                                        {upcomingBookings.map((booking) => (
+                                            <Link
+                                                key={booking.id}
+                                                href={`/bookings/${booking.ulid}`}
+                                                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                                                        <Activity className="h-4 w-4 text-muted-foreground" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium">
+                                                            {formatDisplayDateTimeInPT(
+                                                                booking.start_datetime,
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {booking.caregiver
+                                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
+                                                                : 'No caregiver assigned'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex h-[200px] flex-col items-center justify-center text-center">
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                        <Activity className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="mb-4 text-lg font-medium">
+                                        No upcoming bookings.
+                                    </h3>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -281,55 +337,7 @@ export default function ClientDashboard({
                                 )}
                             </div>
                         </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                        <h3 className="text-lg leading-none font-semibold tracking-tight">
-                            Upcoming Bookings
-                        </h3>
-                        <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                            {upcomingBookings.length > 0 ? (
-                                <div className="p-6">
-                                    <div className="space-y-2">
-                                        {upcomingBookings.map((booking) => (
-                                            <Link
-                                                key={booking.id}
-                                                href={`/bookings/${booking.ulid}`}
-                                                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                                                        <Activity className="h-4 w-4 text-muted-foreground" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium">
-                                                            {formatDisplayDateTimeInPT(
-                                                                booking.start_datetime,
-                                                            )}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {booking.caregiver
-                                                                ? `${booking.caregiver.first_name} ${booking.caregiver.last_name}`
-                                                                : 'No caregiver assigned'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex h-[200px] flex-col items-center justify-center text-center">
-                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                        <Activity className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                    <h3 className="mb-4 text-lg font-medium">
-                                        No upcoming bookings.
-                                    </h3>
-                                </div>
-                            )}
-                        </div>
+                        {quickLinks && <QuickLinks links={quickLinks} />}
                     </div>
                 </div>
             </div>

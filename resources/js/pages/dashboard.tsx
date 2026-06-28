@@ -11,6 +11,15 @@ interface Availability {
     specific_time: string | null;
 }
 
+interface QuickLink {
+    id: number;
+    title: string;
+    url: string;
+    description: string | null;
+    icon: string | null;
+    is_external: boolean;
+}
+
 interface Props {
     [key: string]: unknown;
     user: {
@@ -54,6 +63,28 @@ interface Props {
         upcomingJobs?: any[];
         newInvites?: any[];
         timeSlots: any[];
+        badges?: Array<{
+            slug: string;
+            name: string;
+            group: string;
+            tier: string;
+            variant: string;
+            earned: boolean;
+            earned_date: string | null;
+            criteria: string;
+            progress: string | null;
+        }>;
+        trustline?: {
+            certified: boolean;
+            cleared_at?: string;
+        };
+        attention?: Array<{
+            icon: 'AlertTriangle' | 'Calendar';
+            title: string;
+            description: string;
+            actionLabel?: string;
+            actionHref?: string;
+        }>;
     };
     client?: {
         nextBooking: any;
@@ -85,12 +116,16 @@ interface Props {
         petTypes: any[];
         bookingAttributes: any[];
         sitterPreferences: any[];
-        quickLinks: any[];
     };
+    quickLinks?: QuickLink[];
 }
 
 export default function Dashboard() {
-    const { user, stats, caregiver, client, admin } = usePage<Props>().props;
+    const { user, stats, caregiver, client, admin, quickLinks } =
+        usePage<Props>().props;
+    const badges = caregiver?.badges;
+    const trustline = caregiver?.trustline;
+    const attention = caregiver?.attention;
 
     switch (user.role) {
         case 'caregiver':
@@ -113,6 +148,10 @@ export default function Dashboard() {
                         totalEarned: stats?.totalEarned || 0,
                         completedJobs: stats?.completedJobs || 0,
                     }}
+                    quickLinks={quickLinks}
+                    badges={badges}
+                    trustline={trustline}
+                    attention={attention}
                 />
             );
 
@@ -120,6 +159,7 @@ export default function Dashboard() {
             return (
                 <AdminDashboard
                     admin={admin as any}
+                    quickLinks={quickLinks}
                     stats={{
                         totalCaregivers: stats?.totalCaregivers ?? 0,
                         activeCaregivers: stats?.activeCaregivers ?? 0,
@@ -144,6 +184,7 @@ export default function Dashboard() {
             return (
                 <SuperAdminDashboard
                     admin={admin as any}
+                    quickLinks={quickLinks}
                     stats={{
                         totalCaregivers: stats?.totalCaregivers ?? 0,
                         activeCaregivers: stats?.activeCaregivers ?? 0,
@@ -176,6 +217,7 @@ export default function Dashboard() {
                     }}
                     client={client as any}
                     bookingStatuses={client?.bookingStatuses || []}
+                    quickLinks={quickLinks}
                 />
             );
     }

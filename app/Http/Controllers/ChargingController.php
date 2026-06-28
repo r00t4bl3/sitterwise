@@ -10,8 +10,6 @@ use Illuminate\Http\JsonResponse;
 
 class ChargingController extends Controller
 {
-    protected const PLATFORM_FEE = 1200;
-
     public function __construct(
         protected JobBillingService $billingService,
         protected CaregiverPayoutService $payoutService
@@ -42,13 +40,13 @@ class ChargingController extends Controller
             ], 400);
         }
 
-        $reimbursement = (int) ($validated['reimbursement'] ?? 0) * 100;
-        $tip = (int) ($validated['tip'] ?? 0) * 100;
+        $reimbursement = (float) ($validated['reimbursement'] ?? 0);
+        $tip = (float) ($validated['tip'] ?? 0);
         $notes = $validated['notes'] ?? null;
 
         $booking->update([
-            'reimbursement' => $reimbursement / 100,
-            'tip' => $tip / 100,
+            'reimbursement' => $reimbursement,
+            'tip' => $tip,
             'admin_notes' => $notes
                 ? $booking->admin_notes."\n".now()->toDateTimeString().': '.$notes
                 : $booking->admin_notes,
@@ -64,53 +62,48 @@ class ChargingController extends Controller
             ], 422);
         }
 
-        $caregiver = $booking->caregiver;
-        $baseAmount = (int) ($booking->total_amount * 100);
-        $grossPayout = $baseAmount + $reimbursement;
-        $netPayout = $grossPayout - self::PLATFORM_FEE;
+        if (config('services.stripe.enable_caregiver_transfers')) {
+            $caregiver = $booking->caregiver;
+            $transferAmount = (int) round(
+                ($booking->paid_to_caregiver_total - ($booking->tip ?? 0)) * 100
+            );
 
-        $payoutResult = $this->payoutService->transferFunds(
-            $caregiver,
-            $netPayout
-        );
+            $payoutResult = $this->payoutService->transferFunds(
+                $caregiver,
+                $transferAmount
+            );
 
-        if (! $payoutResult['success']) {
-            return response()->json([
-                'success' => false,
-                'step' => 'transfer',
-                'message' => 'Client charged but caregiver payout failed: '.$payoutResult['message'],
-                'client_charged' => true,
-                'payment_intent_id' => $chargeResult['payment_intent_id'] ?? null,
-            ], 422);
+            if (! $payoutResult['success']) {
+                return response()->json([
+                    'success' => false,
+                    'step' => 'transfer',
+                    'message' => 'Client charged but caregiver payout failed: '.$payoutResult['message'],
+                    'client_charged' => true,
+                    'payment_intent_id' => $chargeResult['payment_intent_id'] ?? null,
+                ], 422);
+            }
         }
 
         return response()->json([
             'success' => true,
             'step' => 'complete',
-            'message' => 'Payment processed and caregiver paid',
+            'message' => 'Payment processed',
             'client_amount' => $chargeResult['amount'],
-            'caregiver_payout' => $netPayout / 100,
-            'transfer_id' => $payoutResult['transfer_id'] ?? null,
-            'payout_id' => $payoutResult['payout_id'] ?? null,
         ]);
     }
 
     public function calculateTotal(Booking $booking): JsonResponse
     {
-        $total = $this->billingService->calculateTotal($booking);
-        $baseAmount = (int) ($booking->total_amount * 100);
-        $reimbursement = (int) (($booking->reimbursement ?? 0) * 100);
-        $grossPayout = $baseAmount + $reimbursement;
-        $netPayout = $grossPayout - self::PLATFORM_FEE;
-
         return response()->json([
-            'base_amount' => $booking->total_amount,
+            'charge_to_client' => $booking->charge_to_client,
             'reimbursement' => $booking->reimbursement ?? 0,
+            'bonus' => $booking->bonus ?? 0,
             'tip' => $booking->tip ?? 0,
-            'total' => $total,
-            'caregiver_gross' => $grossPayout / 100,
-            'platform_fee' => self::PLATFORM_FEE / 100,
-            'caregiver_net' => max(0, $netPayout / 100),
+            'total_service_amount' => $booking->total_service_amount,
+            'total_amount' => $booking->total_amount,
+            'paid_to_caregiver' => $booking->paid_to_caregiver,
+            'sitterwise_cut' => $booking->sitterwise_cut,
+            'paid_to_caregiver_total' => $booking->paid_to_caregiver_total,
         ]);
     }
 }

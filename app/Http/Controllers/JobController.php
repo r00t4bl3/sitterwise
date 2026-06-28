@@ -140,6 +140,14 @@ class JobController extends Controller
                 'pets' => $booking->pets,
                 'client_rating' => $booking->client_rating,
                 'caregiver_rating' => $booking->caregiver_rating,
+                'total_working_hour' => (float) ($booking->total_working_hour ?? 0),
+                'paid_to_caregiver_hourly' => (float) ($booking->paid_to_caregiver_hourly ?? 0),
+                'paid_to_caregiver' => (float) ($booking->paid_to_caregiver ?? 0),
+                'reimbursement' => (float) ($booking->reimbursement ?? 0),
+                'reimbursement_description' => $booking->reimbursement_description,
+                'bonus' => (float) ($booking->bonus ?? 0),
+                'tip' => (float) ($booking->tip ?? 0),
+                'paid_to_caregiver_total' => (float) ($booking->paid_to_caregiver_total ?? 0),
             ],
         ]);
     }
@@ -216,13 +224,6 @@ class JobController extends Controller
                 'comment' => $request->validated('comment'),
             ]
         );
-
-        // Trigger recalculation on the receiver's model
-        if ($type === BookingRating::TYPE_CLIENT_TO_CAREGIVER) {
-            $booking->caregiver->recalculateRating();
-        } else {
-            $booking->client->recalculateRating();
-        }
 
         return back()->with('success', 'Rating submitted successfully');
     }

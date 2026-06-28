@@ -41,7 +41,13 @@ class ChargeBookingController extends Controller
                     'total_amount' => $booking->total_amount,
                     'reimbursement' => $booking->reimbursement,
                     'tip' => $booking->tip,
+                    'bonus' => $booking->bonus,
                     'payment_status' => $booking->payment_status,
+                    'charge_to_client' => $booking->charge_to_client,
+                    'paid_to_caregiver' => $booking->paid_to_caregiver,
+                    'sitterwise_cut' => $booking->sitterwise_cut,
+                    'paid_to_caregiver_total' => $booking->paid_to_caregiver_total,
+                    'total_service_amount' => $booking->total_service_amount,
                     'client' => [
                         'full_name' => $booking->client->full_name,
                     ],

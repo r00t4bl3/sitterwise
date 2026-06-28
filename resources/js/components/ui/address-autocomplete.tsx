@@ -29,22 +29,6 @@ interface Suggestion {
     };
 }
 
-const SERVICE_AREA_CITIES = [
-    'San Diego',
-    'Coronado',
-    'La Jolla',
-    'Chula Vista',
-    'El Cajon',
-    'La Mesa',
-    'Rancho Santa Fe',
-    'Del Mar',
-    'Carlsbad',
-    'Encinitas',
-    'Escondido',
-    'San Marcos',
-    'Vista',
-];
-
 export function AddressAutocomplete({ form, label = 'Address', prefix = 'address_', isRequired = true }: Props) {
     const getIndex = (): number | null => {
         const match = prefix.match(/^addresses\.(\d+)\.$/);
@@ -344,7 +328,7 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
                 place.formattedAddress ||
                 `${line1}${line2 ? `, ${line2}` : ''}, ${city}, ${state} ${zip}`;
 
-            const outsideArea = state !== 'CA' || !SERVICE_AREA_CITIES.includes(city);
+            const outsideArea = state !== 'CA';
 
             setAddressValue(fullAddress);
             setIsLocked(true);

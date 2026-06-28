@@ -5,8 +5,12 @@ use App\Models\Caregiver;
 use App\Models\CaregiverPayoutMethod;
 use App\Models\Client;
 use App\Models\User;
+use App\Services\Billing\JobBillingService;
+use App\Services\CaregiverPayout\CaregiverPayoutService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
+use function Pest\Laravel\mock;
 
 uses(RefreshDatabase::class);
 
@@ -21,42 +25,37 @@ beforeEach(function () {
     ]);
 });
 
+function makeBooking(Client $client, ?Caregiver $caregiver = null, array $overrides = []): Booking
+{
+    return Booking::factory()->forClient($client)->create(array_merge([
+        'caregiver_id' => $caregiver?->id,
+        'payment_status' => 'pending',
+    ], $overrides));
+}
+
 describe('ChargingController', function () {
     test('admin can access charge page', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'payment_status' => 'pending',
-            'total_amount' => 100,
-        ]);
+        $booking = makeBooking($this->client, $this->caregiver);
 
         $response = $this->actingAs($this->admin)
             ->get(route('admin.bookings.charge.create').'?booking_id='.$booking->id);
 
         $response->assertSuccessful();
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
 
     test('charge page shows caregiver payout summary', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'payment_status' => 'pending',
-            'total_amount' => 100,
-        ]);
+        $booking = makeBooking($this->client, $this->caregiver);
 
         $response = $this->actingAs($this->admin)
             ->get(route('admin.bookings.charge.create').'?booking_id='.$booking->id);
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page->has('booking'));
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
 
     test('returns error when booking already charged', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
+        $booking = makeBooking($this->client, $this->caregiver, [
             'payment_status' => 'captured',
-            'total_amount' => 100,
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -70,14 +69,12 @@ describe('ChargingController', function () {
             'success' => false,
             'message' => 'This booking has already been charged.',
         ]);
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
 
     test('returns error when booking does not require payment', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
+        $booking = Booking::factory()->forClient($this->client)->comped()->create([
             'caregiver_id' => $this->caregiver->id,
             'payment_status' => 'pending',
-            'requires_payment' => false,
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -91,14 +88,10 @@ describe('ChargingController', function () {
             'success' => false,
             'message' => 'This booking does not require payment.',
         ]);
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
 
     test('returns error when booking has no caregiver', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => null,
-            'payment_status' => 'pending',
-        ]);
+        $booking = makeBooking($this->client);
 
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.bookings.charge', $booking), [
@@ -111,25 +104,92 @@ describe('ChargingController', function () {
             'success' => false,
             'message' => 'This booking has no assigned caregiver.',
         ]);
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
 
-    test('calculates caregiver payout correctly', function () {
-        $booking = Booking::factory()->create([
-            'client_id' => $this->client->id,
-            'caregiver_id' => $this->caregiver->id,
-            'payment_status' => 'pending',
-            'total_amount' => 100,
-        ]);
+    test('calculate total returns booking model fields', function () {
+        $booking = makeBooking($this->client, $this->caregiver);
 
         $response = $this->actingAs($this->admin)
             ->get(route('admin.bookings.calculateTotal', $booking));
 
         $response->assertOk();
-        $response->assertJson([
-            'base_amount' => 100,
-            'caregiver_gross' => 100,
-            'platform_fee' => 12,
-            'caregiver_net' => 88,
+        $response->assertJsonStructure([
+            'charge_to_client',
+            'reimbursement',
+            'bonus',
+            'tip',
+            'total_service_amount',
+            'total_amount',
+            'paid_to_caregiver',
+            'sitterwise_cut',
+            'paid_to_caregiver_total',
         ]);
-    })->skip('Disable this test due to Payroll implementation changes');
+    });
+
+    test('charge succeeds without transfer when flag is disabled', function () {
+        $booking = makeBooking($this->client, $this->caregiver);
+
+        mock(JobBillingService::class)
+            ->shouldReceive('charge')
+            ->once()
+            ->andReturn([
+                'success' => true,
+                'message' => 'Payment successful',
+                'payment_intent_id' => 'pi_test',
+                'amount' => 200.00,
+            ]);
+
+        mock(CaregiverPayoutService::class)
+            ->shouldNotReceive('transferFunds');
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.bookings.charge', $booking), [
+                'reimbursement' => 0,
+                'tip' => 0,
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'step' => 'complete',
+        ]);
+    });
+
+    test('charge triggers transfer when flag is enabled', function () {
+        config(['services.stripe.enable_caregiver_transfers' => true]);
+
+        $booking = makeBooking($this->client, $this->caregiver);
+
+        mock(JobBillingService::class)
+            ->shouldReceive('charge')
+            ->once()
+            ->andReturn([
+                'success' => true,
+                'message' => 'Payment successful',
+                'payment_intent_id' => 'pi_test',
+                'amount' => 200.00,
+            ]);
+
+        mock(CaregiverPayoutService::class)
+            ->shouldReceive('transferFunds')
+            ->once()
+            ->andReturn([
+                'success' => true,
+                'message' => 'Payout successful',
+                'transfer_id' => 'tr_test',
+                'payout_id' => 1,
+            ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.bookings.charge', $booking), [
+                'reimbursement' => 0,
+                'tip' => 0,
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'step' => 'complete',
+        ]);
+    });
 });

@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { CreditCard, DollarSign, Receipt, Loader2, User } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,13 @@ interface Booking {
     total_amount: number;
     reimbursement: number | null;
     tip: number | null;
+    bonus: number | null;
     payment_status: string;
+    charge_to_client: number | null;
+    paid_to_caregiver: number | null;
+    sitterwise_cut: number | null;
+    paid_to_caregiver_total: number | null;
+    total_service_amount: number | null;
     client: {
         full_name: string;
     };
@@ -68,13 +74,16 @@ export default function ChargeBooking() {
         message?: string;
     } | null>(null);
 
-    const baseAmount = booking?.total_amount || 0;
+    const chargeToClient = booking?.charge_to_client ?? 0;
+    const sitterwiseCut = booking?.sitterwise_cut ?? 0;
+    const paidToCaregiver = booking?.paid_to_caregiver ?? 0;
+    const paidToCaregiverTotal = booking?.paid_to_caregiver_total ?? 0;
+    const totalServiceAmount = booking?.total_service_amount ?? booking?.total_amount ?? 0;
+
     const reimbursementValue = parseFloat(reimbursement) || 0;
     const tipValue = parseFloat(tip) || 0;
 
-    const PLATFORM_FEE = 12;
-    const caregiverGross = baseAmount + reimbursementValue;
-    const caregiverNet = Math.max(0, caregiverGross - PLATFORM_FEE);
+    const totalCharged = totalServiceAmount + reimbursementValue + tipValue;
 
     const handleCharge = async () => {
         if (!booking) {
@@ -111,7 +120,7 @@ export default function ChargeBooking() {
 
             if (data.success) {
                 setTimeout(() => {
-                    window.location.href = '/bookings';
+                    router.visit('/bookings');
                 }, 2000);
             }
         } catch {
@@ -131,38 +140,21 @@ export default function ChargeBooking() {
         }).format(amount);
     };
 
-    const dummyBooking: Booking = {
-        id: 1,
-        total_amount: 150.0,
-        reimbursement: 25.0,
-        tip: 20.0,
-        payment_status: 'pending',
-        client: {
-            full_name: 'John Smith',
-        },
-        caregiver: {
-            id: 1,
-            name: 'Jane Doe',
-        },
-        service_type: 'babysitter',
-        start_datetime: '2026-04-15T10:00:00',
-    };
-
-    const dummyPayoutMethods = [
-        { id: 1, bank_name: 'Chase Bank', last4: '4242', is_default: true },
-    ];
-
-    const displayBooking = booking || dummyBooking;
-    const displayReimbursement = booking
-        ? reimbursementValue
-        : reimbursementValue;
-    const displayTip = booking ? tipValue : tipValue;
-    const displayTotal =
-        (displayBooking.total_amount || 0) + displayReimbursement + displayTip;
-    const displayCaregiver = displayBooking.caregiver;
-    const displayPayoutMethods = payout_methods || dummyPayoutMethods;
-    const displayDefaultMethod =
-        default_payout_method || displayPayoutMethods[0];
+    if (!booking) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="Charge Booking" />
+                <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 p-4">
+                    <p className="text-muted-foreground">
+                        No booking selected. Please select a booking to charge.
+                    </p>
+                    <Button variant="outline" onClick={() => router.visit('/bookings')}>
+                        Go to Bookings
+                    </Button>
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -171,10 +163,10 @@ export default function ChargeBooking() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="font-serif text-2xl font-bold text-foreground">
-                            Charge Booking #{displayBooking.id}
+                            Charge Booking #{booking.id}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            Client: {displayBooking.client.full_name}
+                            Client: {booking.client.full_name}
                         </p>
                     </div>
                 </div>
@@ -187,38 +179,42 @@ export default function ChargeBooking() {
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
-                                Base Amount
+                                Service Amount (charge to client)
                             </span>
                             <span className="font-medium text-foreground">
-                                {formatCurrency(
-                                    displayBooking.total_amount || 0,
-                                )}
+                                {formatCurrency(totalServiceAmount)}
                             </span>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">
-                                Reimbursement
-                            </span>
-                            <span className="font-medium text-foreground">
-                                + {formatCurrency(displayReimbursement)}
-                            </span>
-                        </div>
+                        {reimbursementValue > 0 && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                    Reimbursement
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    + {formatCurrency(reimbursementValue)}
+                                </span>
+                            </div>
+                        )}
 
-                        <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Tip</span>
-                            <span className="font-medium text-foreground">
-                                + {formatCurrency(displayTip)}
-                            </span>
-                        </div>
+                        {tipValue > 0 && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                    Tip
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    + {formatCurrency(tipValue)}
+                                </span>
+                            </div>
+                        )}
 
                         <div className="border-t pt-3">
                             <div className="flex items-center justify-between">
                                 <span className="text-lg font-semibold text-foreground">
-                                    Total
+                                    Total Charged
                                 </span>
                                 <span className="text-lg font-bold text-ring">
-                                    {formatCurrency(displayTotal)}
+                                    {formatCurrency(totalCharged)}
                                 </span>
                             </div>
                         </div>
@@ -230,7 +226,7 @@ export default function ChargeBooking() {
                         Caregiver Payout Summary
                     </h2>
 
-                    {displayCaregiver ? (
+                    {booking.caregiver ? (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-2 text-muted-foreground">
@@ -238,44 +234,42 @@ export default function ChargeBooking() {
                                     Caregiver
                                 </span>
                                 <span className="font-medium text-foreground">
-                                    {displayCaregiver.name}
+                                    {booking.caregiver.name}
                                 </span>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <span className="text-muted-foreground">
-                                    Gross Payout
+                                    Caregiver Pay (hourly)
                                 </span>
                                 <span className="font-medium text-foreground">
-                                    {formatCurrency(caregiverGross)}
+                                    {formatCurrency(paidToCaregiverTotal)}
                                 </span>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <span className="text-muted-foreground">
-                                    Platform Fee
+                                    Platform Fee (sitterwise cut)
                                 </span>
                                 <span className="font-medium text-foreground">
-                                    - {formatCurrency(PLATFORM_FEE)}
+                                    {formatCurrency(sitterwiseCut)}
                                 </span>
                             </div>
 
-                            <div className="border-t pt-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-lg font-semibold text-foreground">
-                                        Net Payout
-                                    </span>
-                                    <span className="text-lg font-bold text-green-600">
-                                        {formatCurrency(caregiverNet)}
-                                    </span>
-                                </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                    Net Charge to Client
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    {formatCurrency(chargeToClient)}
+                                </span>
                             </div>
 
-                            {displayDefaultMethod && (
+                            {default_payout_method && (
                                 <div className="mt-3 rounded bg-gray-50 p-2 text-xs text-muted-foreground">
                                     Will be transferred to{' '}
-                                    {displayDefaultMethod.bank_name} ***
-                                    {displayDefaultMethod.last4}
+                                    {default_payout_method.bank_name} ***
+                                    {default_payout_method.last4}
                                 </div>
                             )}
                         </div>

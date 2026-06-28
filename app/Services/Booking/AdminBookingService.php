@@ -32,6 +32,7 @@ use App\Models\Hotel;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use App\Services\CaregiverPayout\CaregiverPayoutService;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\Carbon;
@@ -50,7 +51,8 @@ class AdminBookingService implements BookingServiceInterface
 {
     public function __construct(
         protected CaregiverRecommendationService $recommendationService,
-        protected JobBillingService $billingService
+        protected JobBillingService $billingService,
+        protected CaregiverPayoutService $payoutService
     ) {}
 
     private function requiresPaymentForServiceType(?string $serviceType): bool
@@ -539,6 +541,7 @@ class AdminBookingService implements BookingServiceInterface
                 'sitterwise_cut' => $booking->sitterwise_cut,
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
+                'bonus' => $booking->bonus,
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
@@ -1333,7 +1336,28 @@ class AdminBookingService implements BookingServiceInterface
         $result = $this->billingService->charge($booking);
 
         if ($result['success']) {
-            // Success: status moved to Paid in BillingService
+            if (config('services.stripe.enable_caregiver_transfers')) {
+                $transferAmount = (int) round(
+                    ($booking->paid_to_caregiver_total - ($booking->tip ?? 0)) * 100
+                );
+
+                $payoutResult = $this->payoutService->transferFunds(
+                    $booking->caregiver,
+                    $transferAmount
+                );
+
+                if (! $payoutResult['success']) {
+                    Log::warning('Caregiver transfer failed after successful charge', [
+                        'booking_id' => $booking->id,
+                        'caregiver_id' => $booking->caregiver_id,
+                        'transfer_amount' => $transferAmount,
+                        'error' => $payoutResult['message'],
+                    ]);
+
+                    return redirect()->back()->with('warning', 'Payment charged, but caregiver payout failed: '.$payoutResult['message']);
+                }
+            }
+
             return redirect()->back()->with('success', 'Payment processed and charged successfully.');
         }
 

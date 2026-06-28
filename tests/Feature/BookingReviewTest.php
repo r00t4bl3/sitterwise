@@ -49,7 +49,7 @@ test('review form accessible for logged in client', function () {
     );
 });
 
-test('review form only works for completed bookings', function () {
+test('review form only works for completed or paid bookings', function () {
     $pendingBooking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Pending->value,
@@ -58,6 +58,21 @@ test('review form only works for completed bookings', function () {
     $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $pendingBooking));
 
     $response->assertStatus(403);
+});
+
+test('review form works for paid bookings', function () {
+    $paidBooking = Booking::factory()->forClient($this->client)->create([
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Paid->value,
+    ]);
+
+    $response = $this->actingAs($this->clientUser)->get(route('reviews.create', $paidBooking));
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->has('booking')
+        ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
+    );
 });
 
 test('review form only works for own bookings', function () {
@@ -252,7 +267,7 @@ test('invalid signed url rejected', function () {
     $response->assertStatus(403);
 });
 
-test('guest cannot review non completed booking', function () {
+test('guest cannot review non completed or paid booking', function () {
     $pendingBooking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Pending->value,
@@ -265,4 +280,23 @@ test('guest cannot review non completed booking', function () {
     $response = $this->get($signedUrl);
 
     $response->assertStatus(403);
+});
+
+test('guest can review paid booking via signed url', function () {
+    $paidBooking = Booking::factory()->forClient($this->client)->create([
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Paid->value,
+    ]);
+
+    $signedUrl = URL::signedRoute('review.create', [
+        'booking' => $paidBooking->ulid,
+    ]);
+
+    $response = $this->get($signedUrl);
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->has('booking')
+        ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
+    );
 });

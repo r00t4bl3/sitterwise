@@ -20,8 +20,21 @@ class AvailabilityController extends Controller
         return $this->service->index();
     }
 
-    public function show($id)
+    public function store(Request $request, string $caregiverId)
     {
+        return $this->service->store($request, $caregiverId);
+    }
+
+    public function show(Request $request, string $id)
+    {
+        if ($request->has(['year', 'month'])) {
+            return $this->service->getMonth(
+                (int) $request->query('year'),
+                (int) $request->query('month'),
+                $id,
+            );
+        }
+
         return $this->service->show($id);
     }
 

@@ -1,5 +1,9 @@
 import { useForm } from '@inertiajs/react';
+import { RatingInput } from '@/components/rating-input';
+import { ToasterMessage } from '@/components/toaster-message';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     Select,
     SelectContent,
@@ -8,10 +12,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { RatingInput } from '@/components/rating-input';
-import { ToasterMessage } from '@/components/toaster-message';
-import { Button } from '@/components/ui/button';
 
 const yearsKnownOptions = [
     { value: '<1', label: 'Less than 1 year' },

@@ -2,6 +2,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, ChevronDown, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
+import { RatingInput } from '@/components/rating-input';
 import { ToasterMessage } from '@/components/toaster-message';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { RatingInput } from '@/components/rating-input';
 import {
     Select,
     SelectContent,

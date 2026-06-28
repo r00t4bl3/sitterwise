@@ -1,5 +1,17 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { ExternalLink, Link as LinkIcon } from 'lucide-react';
+import {
+    ExternalLink,
+    Link as LinkIcon,
+    Globe,
+    FileText,
+    BookOpen,
+    Phone,
+    Mail,
+    HelpCircle,
+    Home,
+    Calendar,
+    Users,
+} from 'lucide-react';
 import { useState } from 'react';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
@@ -14,6 +26,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Sheet,
     SheetContent,
@@ -45,7 +64,29 @@ interface QuickLink {
     sort_order: number;
     is_active: boolean;
     is_external: boolean;
+    visible_for_roles: string[];
 }
+
+const iconOptions: Record<string, typeof LinkIcon> = {
+    ExternalLink,
+    Link: LinkIcon,
+    Globe,
+    FileText,
+    BookOpen,
+    Phone,
+    Mail,
+    HelpCircle,
+    Home,
+    Calendar,
+    Users,
+};
+
+const roleLabels: Record<string, string> = {
+    admin: 'Admin',
+    super_admin: 'Super Admin',
+    caregiver: 'Caregiver',
+    client: 'Client',
+};
 
 interface Props {
     [key: string]: unknown;
@@ -67,6 +108,7 @@ export default function QuickLinksIndex() {
         sort_order: 0,
         is_active: true,
         is_external: true,
+        visible_for_roles: ['admin', 'super_admin'],
     });
 
     const openCreateSheet = () => {
@@ -85,6 +127,7 @@ export default function QuickLinksIndex() {
             sort_order: link.sort_order,
             is_active: link.is_active,
             is_external: link.is_external,
+            visible_for_roles: link.visible_for_roles ?? ['admin', 'super_admin'],
         });
         setIsSheetOpen(true);
     };
@@ -149,6 +192,9 @@ export default function QuickLinksIndex() {
                                     Title
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Icon
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     URL
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -156,6 +202,9 @@ export default function QuickLinksIndex() {
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     External
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Visible For
                                 </th>
                                 <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Actions
@@ -170,13 +219,24 @@ export default function QuickLinksIndex() {
                                 >
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                                         <div className="flex items-center gap-2">
-                                            {link.icon === 'ExternalLink' ? (
-                                                <ExternalLink className="h-4 w-4" />
-                                            ) : (
-                                                <LinkIcon className="h-4 w-4" />
-                                            )}
+                                            {(() => {
+                                                const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+
+                                                return <IconComp className="h-4 w-4" />;
+                                            })()}
                                             {link.title}
                                         </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {(() => {
+                                            const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+
+                                            return (
+                                                <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">
+                                                    <IconComp className="h-4 w-4 text-blue-600" />
+                                                </div>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         <a
@@ -212,6 +272,21 @@ export default function QuickLinksIndex() {
                                             {link.is_external ? 'Yes' : 'No'}
                                         </span>
                                     </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-wrap gap-1">
+                                            {(link.visible_for_roles ?? []).map(
+                                                (role) => (
+                                                    <span
+                                                        key={role}
+                                                        className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
+                                                    >
+                                                        {roleLabels[role] ??
+                                                            role}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
                                         <Button
                                             onClick={() => openEditSheet(link)}
@@ -236,7 +311,7 @@ export default function QuickLinksIndex() {
                 </div>
 
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                    <SheetContent side="right">
+                    <SheetContent side="right" className="overflow-y-auto">
                         <SheetHeader>
                             <SheetTitle>
                                 {editingId
@@ -249,7 +324,7 @@ export default function QuickLinksIndex() {
                         </SheetHeader>
                         <form
                             onSubmit={handleSubmit}
-                            className="space-y-4 px-4"
+                            className="space-y-4 overflow-y-auto px-4"
                         >
                             <div className="grid gap-2">
                                 <Label htmlFor="title">Title</Label>
@@ -342,6 +417,107 @@ export default function QuickLinksIndex() {
                                 <Label htmlFor="is_external">
                                     Open in new tab
                                 </Label>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Icon</Label>
+                                <Select
+                                    value={form.data.icon}
+                                    onValueChange={(value) =>
+                                        form.setData('icon', value)
+                                    }
+                                >
+                                    <SelectTrigger className="h-10 w-full">
+                                        <SelectValue placeholder="Select an icon" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(iconOptions).map(
+                                            ([name, IconComp]) => (
+                                                <SelectItem
+                                                    key={name}
+                                                    value={name}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <IconComp className="h-4 w-4" />
+                                                        {name}
+                                                    </div>
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {form.errors.icon && (
+                                    <p className="text-xs text-red-500">
+                                        {form.errors.icon}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Visible For Roles</Label>
+                                <div className="space-y-2">
+                                    {Object.entries(roleLabels).map(
+                                        ([role, label]) => (
+                                            <div
+                                                key={role}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Checkbox
+                                                    id={`role-${role}`}
+                                                    checked={form.data.visible_for_roles.includes(
+                                                        role,
+                                                    )}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        const roles = [
+                                                            ...form.data
+                                                                .visible_for_roles,
+                                                        ];
+
+                                                        if (checked) {
+                                                            if (
+                                                                !roles.includes(
+                                                                    role,
+                                                                )
+                                                            ) {
+                                                                roles.push(
+                                                                    role,
+                                                                );
+                                                            }
+                                                        } else {
+                                                            const idx =
+                                                                roles.indexOf(
+                                                                    role,
+                                                                );
+
+                                                            if (idx !== -1) {
+                                                                roles.splice(
+                                                                    idx,
+                                                                    1,
+                                                                );
+                                                            }
+                                                        }
+
+                                                        form.setData(
+                                                            'visible_for_roles',
+                                                            roles,
+                                                        );
+                                                    }}
+                                                />
+                                                <Label
+                                                    htmlFor={`role-${role}`}
+                                                    className="text-sm font-normal"
+                                                >
+                                                    {label}
+                                                </Label>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                                {form.errors.visible_for_roles && (
+                                    <p className="text-xs text-red-500">
+                                        {form.errors.visible_for_roles}
+                                    </p>
+                                )}
                             </div>
                             <div className="mt-10 w-full space-y-2">
                                 <Button

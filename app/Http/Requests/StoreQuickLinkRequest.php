@@ -30,6 +30,8 @@ class StoreQuickLinkRequest extends FormRequest
             'sort_order' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
             'is_external' => ['nullable', 'boolean'],
+            'visible_for_roles' => ['nullable', 'array'],
+            'visible_for_roles.*' => ['string', 'in:admin,super_admin,caregiver,client'],
         ];
     }
 }

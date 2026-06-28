@@ -554,7 +554,8 @@ class Booking extends Model
             'reimbursement_amount' => $this->reimbursement ?? 0.00,
             'reimbursement_notes' => $this->reimbursement_description ?? 'N/A',
             'platform_fee' => $this->sitterwise_cut ?? 0.00,
-            'total_amount' => $this->total_service_amount ?? 0.00,
+            'total_service_amount' => $this->total_service_amount ?? 0.00,
+            'total_amount' => $this->total_amount ?? 0.00,
             'total_hours' => $this->total_working_hour ?? 0,
         ];
     }

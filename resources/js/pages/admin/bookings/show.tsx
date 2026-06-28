@@ -67,6 +67,7 @@ interface Booking {
     sitterwise_cut: number | null;
     tip: number | null;
     reimbursement: number | null;
+    bonus: number | null;
     special_considerations: string[] | null;
     caregiver_notes: string | null;
     children: Array<{
@@ -269,6 +270,7 @@ export default function BookingDetail({
         { label: 'Sitterwise Cut', value: booking.sitterwise_cut },
         { label: 'Tip', value: booking.tip },
         { label: 'Reimbursement', value: booking.reimbursement },
+        { label: 'Bonus', value: booking.bonus },
     ].filter((f) => f.value !== null && f.value !== undefined);
 
     const fetchCaregivers = async (page = 1, filter = 'all', search = '') => {

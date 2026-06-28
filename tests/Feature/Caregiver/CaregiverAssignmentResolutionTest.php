@@ -110,10 +110,11 @@ describe('checkout calculates paid_to_caregiver_total', function () {
         $this->booking = Booking::factory()->forClient($this->client)->create([
             'caregiver_id' => $this->caregiver->id,
             'status' => BookingStatus::Confirmed,
-            'paid_to_caregiver_hourly' => 20.00,
-            'charge_to_client_hourly' => 30.00,
-            'sitterwise_cut_hourly' => 10.00,
         ]);
+
+        $this->hourlyRate = (float) $this->booking->paid_to_caregiver_hourly;
+        $this->chargeRate = (float) $this->booking->charge_to_client_hourly;
+
         $this->booking->assignments()->firstOrCreate([
             'caregiver_id' => $this->caregiver->id,
             'assigned_at' => now(),
@@ -131,12 +132,13 @@ describe('checkout calculates paid_to_caregiver_total', function () {
 
         $this->booking->refresh();
 
-        $expectedCaregiver = 20.00 * 8; // 160 (8 hours from 09:00 to 17:00)
-        $expectedTotal = $expectedCaregiver + 15.00 + 10.00; // 185
+        $expectedCaregiver = $this->hourlyRate * 8;
+        $expectedTotal = $expectedCaregiver + 15.00 + 10.00;
+        $expectedService = ($this->chargeRate * 8) + 15.00 + 10.00;
 
-        expect((float) $this->booking->paid_to_caregiver)->toBe(160.00);
-        expect((float) $this->booking->paid_to_caregiver_total)->toBe(185.00);
-        expect((float) $this->booking->total_service_amount)->toBe(240.00 + 15.00 + 10.00); // charge_to_client + reimbursement + bonus
+        expect((float) $this->booking->paid_to_caregiver)->toBe($expectedCaregiver);
+        expect((float) $this->booking->paid_to_caregiver_total)->toBe($expectedTotal);
+        expect((float) $this->booking->total_service_amount)->toBe($expectedService);
     });
 });
 

@@ -30,10 +30,10 @@ class UpdateReferenceRequest extends FormRequest
             'strengths' => 'nullable|string',
             'concerns' => 'nullable|string',
             'additional_comments' => 'nullable|string',
-            'background_drug_alcohol' => 'nullable|string|in:yes,no',
-            'background_tobacco' => 'nullable|string|in:yes,no',
-            'trust_own_child' => 'nullable|string|in:yes,no,unsure',
-            'reason_not_care' => 'nullable|string|in:yes,no',
+            'background_drug_alcohol' => 'nullable|string|in:Yes,No',
+            'background_tobacco' => 'nullable|string|in:Yes,No',
+            'trust_own_child' => 'nullable|string|in:Yes,No,Unsure',
+            'reason_not_care' => 'nullable|string|in:Yes,No',
             'reason_not_care_explanation' => 'nullable|string',
         ];
     }
