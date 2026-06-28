@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Services\CaregiverPayout\CaregiverPayoutService;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
@@ -128,6 +129,22 @@ class TipChargeService
                 'provider_payment_id' => $paymentIntent->id,
                 'paid_at' => now(),
             ]);
+
+            if (config('services.stripe.enable_caregiver_transfers')) {
+                try {
+                    app(CaregiverPayoutService::class)->transferFunds(
+                        $booking->caregiver,
+                        $amountInCents
+                    );
+                } catch (\Exception $e) {
+                    Log::warning('Tip charged but caregiver transfer failed', [
+                        'booking_id' => $booking->id,
+                        'caregiver_id' => $booking->caregiver_id,
+                        'amount' => $tipAmount,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             return [
                 'success' => true,

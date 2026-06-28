@@ -4,6 +4,7 @@ namespace App\Services\Availability;
 
 use App\Enums\TimeSlot;
 use App\Models\Availability;
+use App\Models\Caregiver;
 use App\Services\Availability\Contracts\AvailabilityServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -34,7 +35,9 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
             ->map(function ($availability) {
                 return [
                     'id' => $availability->id,
-                    'date' => $availability->date,
+                    'date' => $availability->date instanceof Carbon
+                        ? $availability->date->format('Y-m-d')
+                        : (is_string($availability->date) ? $availability->date : $availability->date->format('Y-m-d')),
                     'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
                     'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
@@ -95,14 +98,9 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
         return back()->with('success', 'Availability deleted successfully.');
     }
 
-    public function storeWeek(Request $request)
+    public function store(Request $request, string $caregiverId)
     {
-        $user = auth()->user();
-        $caregiver = $user->caregiver;
-
-        if (! $caregiver) {
-            return back()->with('error', 'You are not a caregiver.');
-        }
+        $caregiver = Caregiver::findOrFail($caregiverId);
 
         $validated = $request->validate([
             'days' => ['required', 'array', 'max:7'],
@@ -137,14 +135,9 @@ class CaregiverAvailabilityService implements AvailabilityServiceInterface
         return back()->with('success', 'Availability saved successfully.');
     }
 
-    public function getMonth(int $year, int $month)
+    public function getMonth(int $year, int $month, string $caregiverId)
     {
-        $user = auth()->user();
-        $caregiver = $user->caregiver;
-
-        if (! $caregiver) {
-            return response()->json(['availabilities' => [], 'timeSlots' => []], 403);
-        }
+        $caregiver = Caregiver::findOrFail($caregiverId);
 
         $startDate = Carbon::create($year, $month, 1)->startOfMonth()->startOfWeek(Carbon::SUNDAY);
         $endDate = Carbon::create($year, $month, 1)->endOfMonth()->endOfWeek(Carbon::SATURDAY);

@@ -83,7 +83,9 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             ->map(function ($availability) {
                 return [
                     'id' => $availability->id,
-                    'date' => $availability->date,
+                    'date' => $availability->date instanceof Carbon
+                        ? $availability->date->format('Y-m-d')
+                        : (is_string($availability->date) ? $availability->date : $availability->date->format('Y-m-d')),
                     'time_slots' => $availability->time_slots,
                     'specific_time' => $availability->specific_time,
                     'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
@@ -100,13 +102,73 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
         ]);
     }
 
-    public function storeWeek(Request $request)
+    public function store(Request $request, string $caregiverId)
     {
-        abort(403, 'Admins cannot use the week editor.');
+        $caregiver = Caregiver::findOrFail($caregiverId);
+
+        $validated = $request->validate([
+            'days' => ['required', 'array', 'max:7'],
+            'days.*.date' => ['required', 'date_format:Y-m-d'],
+            'days.*.time_slots' => ['present', 'array'],
+            'days.*.time_slots.*' => ['in:morning,afternoon,evening'],
+        ]);
+
+        foreach ($validated['days'] as $day) {
+            $timeSlots = $day['time_slots'];
+
+            if (empty($timeSlots)) {
+                $caregiver->availabilities()
+                    ->whereDate('date', $day['date'])
+                    ->delete();
+
+                continue;
+            }
+
+            Availability::updateOrCreate(
+                [
+                    'caregiver_id' => $caregiver->id,
+                    'date' => $day['date'],
+                ],
+                [
+                    'time_slots' => $timeSlots,
+                    'specific_time' => null,
+                ]
+            );
+        }
+
+        return back()->with('success', 'Availability saved successfully.');
     }
 
-    public function getMonth(int $year, int $month)
+    public function getMonth(int $year, int $month, string $caregiverId)
     {
-        abort(403, 'Admins cannot use the month view.');
+        $caregiver = Caregiver::findOrFail($caregiverId);
+
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth()->startOfWeek(Carbon::SUNDAY);
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth()->endOfWeek(Carbon::SATURDAY);
+
+        $availabilities = $caregiver->availabilities()
+            ->with('usedSlots')
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('date')
+            ->get()
+            ->map(function ($availability) {
+                return [
+                    'id' => $availability->id,
+                    'date' => $availability->date instanceof Carbon
+                        ? $availability->date->format('Y-m-d')
+                        : (is_string($availability->date) ? $availability->date : $availability->date->format('Y-m-d')),
+                    'time_slots' => $availability->time_slots,
+                    'specific_time' => $availability->specific_time,
+                    'booked_slots' => $availability->usedSlots->pluck('time_slot')->toArray(),
+                ];
+            });
+
+        return response()->json([
+            'availabilities' => $availabilities,
+            'timeSlots' => array_map(
+                fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+                TimeSlot::cases()
+            ),
+        ]);
     }
 }

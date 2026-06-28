@@ -321,6 +321,7 @@ export default function Wizard({
         if (Object.keys(form.errors).length > 0) {
             form.clearErrors();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.data]);
 
     // Sync employment status with first experience's "present" checkbox
@@ -334,6 +335,7 @@ export default function Wizard({
                 },
             }));
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [verifiedEmail]);
 
     useEffect(() => {

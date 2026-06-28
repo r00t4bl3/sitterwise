@@ -678,7 +678,7 @@ export default function CaregiverShow() {
                         {/* Summary tab */}
                         {activeTab === 'summary' && (
                             <div className="border border-border bg-card p-6">
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                                <div className="flex flex-col gap-x-6 gap-y-2 sm:grid sm:grid-cols-2 ">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                             Email

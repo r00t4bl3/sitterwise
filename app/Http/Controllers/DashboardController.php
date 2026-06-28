@@ -186,6 +186,26 @@ class DashboardController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->limit(5)
                     ->get(),
+                'recentReviews' => BookingRating::with([
+                    'rater',
+                    'ratable',
+                    'booking.client.user',
+                    'booking.caregiver',
+                ])
+                    ->latest()
+                    ->limit(5)
+                    ->get()
+                    ->map(fn (BookingRating $rating) => [
+                        'id' => $rating->id,
+                        'rating' => (float) $rating->rating,
+                        'comment' => $rating->comment,
+                        'type' => $rating->ratable_type === Caregiver::class ? 'caregiver' : 'client',
+                        'rater_name' => $rating->rater?->name,
+                        'subject_first_name' => $rating->ratable?->first_name,
+                        'subject_last_name' => $rating->ratable?->last_name,
+                        'created_at' => $rating->created_at,
+                        'booking_ulid' => $rating->booking?->ulid,
+                    ]),
                 'bookingStatuses' => $bookingStatuses,
                 // Data for BookingSheet
                 'clients' => Client::with('user')

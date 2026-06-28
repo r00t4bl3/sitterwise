@@ -404,6 +404,8 @@ export default function CaregiverDashboard({
                             <CollapsibleContent className="px-6 pb-4">
                                 <AvailabilityWeekGrid
                                     initial={caregiver.availabilities}
+                                    saveUrl={`/availabilities/${caregiver.id}`}
+                                    fetchMonthUrl={(y, m) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`}
                                 />
                             </CollapsibleContent>
                         </Collapsible>

@@ -11,7 +11,6 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { todayInPT, formatDisplayDateInPT } from '@/lib/datetime';
-import { storeWeek } from '@/routes/availabilities';
 
 interface AvailabilityData {
     id: number;
@@ -23,6 +22,8 @@ interface AvailabilityData {
 
 interface AvailabilityWeekGridProps {
     initial: AvailabilityData[];
+    saveUrl: string;
+    fetchMonthUrl: (year: number, month: number) => string;
 }
 
 function formatDate(year: number, month: number, day: number): string {
@@ -87,7 +88,7 @@ const SLOT_LABELS: Record<string, string> = {
 
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
-export default function AvailabilityWeekGrid({ initial }: AvailabilityWeekGridProps) {
+export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }: AvailabilityWeekGridProps) {
     const todayStr = todayInPT();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [savedByDate, setSavedByDate] = useState<Record<string, AvailabilityData>>({});
@@ -129,7 +130,7 @@ clearTimeout(toastTimeout);
         setLoadingMonth(true);
 
         try {
-            const res = await fetch(`/availabilities/month/${y}/${m + 1}`);
+            const res = await fetch(fetchMonthUrl(y, m + 1));
 
             if (!res.ok) {
 return;
@@ -201,7 +202,7 @@ return;
         }));
 
         router.post(
-            storeWeek().url,
+            saveUrl,
             { days },
             {
                 preserveScroll: true,
@@ -399,7 +400,11 @@ return;
                     </span>
                 </div>
 
-            <Dialog open={openWeekIdx !== null} onOpenChange={(open) => { if (!open) closeModal(); }}>
+            <Dialog open={openWeekIdx !== null} onOpenChange={(open) => {
+ if (!open) {
+closeModal();
+} 
+}}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>

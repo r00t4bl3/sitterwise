@@ -109,9 +109,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('/payouts/stripe/return', [CaregiverPayoutController::class, 'return'])->name('payouts.stripe.return');
     // Route::get('/payouts/stripe/refresh', [CaregiverPayoutController::class, 'refresh'])->name('payouts.stripe.refresh');
 
-    Route::post('/availabilities/week', [AvailabilityController::class, 'storeWeek'])->name('availabilities.storeWeek');
-    Route::get('/availabilities/month/{year}/{month}', [AvailabilityController::class, 'getMonth'])->name('availabilities.month');
     Route::resource('availabilities', AvailabilityController::class)->only(['index', 'show', 'update', 'destroy']);
+    Route::post('/availabilities/{caregiver}', [AvailabilityController::class, 'store'])->name('availabilities.store');
     // Route::get('/bookings/available', [CaregiverController::class, 'showBookings'])->name('caregiver.bookings.index');
     // Route::get('/bookings/available/{booking}', [CaregiverController::class, 'showBooking'])->name('caregiver.bookings.show');
 
@@ -141,9 +140,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {
-        // Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
-        // Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');
-        // Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
+        Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
+        Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');
+        Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');
         Route::post('bookings/{booking}/process-payment', [BookingController::class, 'processPayment'])->name('bookings.processPayment');
         Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
         Route::post('bookings/{booking}/replace-caregiver', [BookingController::class, 'replaceCaregiver'])->name('bookings.replace-caregiver');

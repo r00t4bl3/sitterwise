@@ -39,6 +39,7 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'enable_caregiver_transfers' => env('STRIPE_ENABLE_CAREGIVER_TRANSFERS', false),
     ],
 
     'sendgrid' => [
