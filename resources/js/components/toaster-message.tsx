@@ -39,7 +39,7 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
             content: string,
             fingerprint?: string,
         ) => {
-            const finalFingerprint = fingerprint || content;
+            const finalFingerprint = fingerprint || `${content}-${Date.now()}`;
 
             if (fingerprintRef.current === finalFingerprint) {
                 return;

@@ -21,6 +21,7 @@ import {
     Home,
     Link as LucideLink,
 } from 'lucide-react';
+import { useCallback } from 'react';
 import AttentionStrip from '@/components/attention-strip';
 import AvailabilityWeekGrid from '@/components/availability-week-grid';
 import Medallion from '@/components/medallion';
@@ -135,6 +136,11 @@ export default function CaregiverDashboard({
     attention,
     badges,
 }: CaregiverDashboardProps) {
+    const fetchMonthUrl = useCallback(
+        (y: number, m: number) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
+        [caregiver.id],
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Caregiver Dashboard" />
@@ -405,7 +411,7 @@ export default function CaregiverDashboard({
                                 <AvailabilityWeekGrid
                                     initial={caregiver.availabilities}
                                     saveUrl={`/availabilities/${caregiver.id}`}
-                                    fetchMonthUrl={(y, m) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`}
+                                    fetchMonthUrl={fetchMonthUrl}
                                 />
                             </CollapsibleContent>
                         </Collapsible>

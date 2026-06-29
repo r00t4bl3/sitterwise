@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useCallback } from 'react';
 import AvailabilityWeekGrid from '@/components/availability-week-grid';
 import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
@@ -28,6 +29,11 @@ interface Props {
 
 export default function ManageAvailability() {
     const { caregiver, availabilities } = usePage<Props>().props;
+
+    const fetchMonthUrl = useCallback(
+        (y: number, m: number) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
+        [caregiver.id],
+    );
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -74,7 +80,7 @@ export default function ManageAvailability() {
                     <AvailabilityWeekGrid
                         initial={availabilities}
                         saveUrl={`/availabilities/${caregiver.id}`}
-                        fetchMonthUrl={(y, m) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`}
+                        fetchMonthUrl={fetchMonthUrl}
                     />
                 </div>
             </div>

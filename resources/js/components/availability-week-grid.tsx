@@ -86,8 +86,6 @@ const SLOT_LABELS: Record<string, string> = {
     evening: 'Evening',
 };
 
-let toastTimeout: ReturnType<typeof setTimeout> | null = null;
-
 export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }: AvailabilityWeekGridProps) {
     const todayStr = todayInPT();
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -96,7 +94,6 @@ export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }
     const [draft, setDraft] = useState<Record<string, string[]>>({});
     const [saving, setSaving] = useState(false);
     const [loadingMonth, setLoadingMonth] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -109,22 +106,6 @@ export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }
         });
         setSavedByDate(map);
     }, [initial]);
-
-    useEffect(() => {
-        if (toast) {
-            if (toastTimeout) {
-clearTimeout(toastTimeout);
-}
-
-            toastTimeout = setTimeout(() => setToast(null), 2200);
-
-            return () => {
-                if (toastTimeout) {
-clearTimeout(toastTimeout);
-}
-            };
-        }
-    }, [toast]);
 
     const fetchMonth = useCallback(async (y: number, m: number) => {
         setLoadingMonth(true);
@@ -145,7 +126,7 @@ return;
         } finally {
             setLoadingMonth(false);
         }
-    }, []);
+    }, [fetchMonthUrl]);
 
     const prevMonth = () => {
         const d = new Date(year, month - 1, 1);
@@ -227,7 +208,6 @@ return;
                         return next;
                     });
                     closeModal();
-                    setToast('Availability saved');
                 },
                 onError: () => {
                     setSaving(false);
@@ -496,12 +476,6 @@ closeModal();
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            {toast && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-sidebar-primary text-sidebar-primary-foreground px-5 py-2.5 text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    {toast}
-                </div>
-            )}
         </>
     );
 }

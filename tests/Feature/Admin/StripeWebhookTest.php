@@ -182,4 +182,57 @@ describe('Stripe Webhook', function () {
 
         expect($result['success'])->toBeFalse();
     });
+
+    test('POST /webhooks/stripe returns 200 with valid signature', function () {
+        Config::set('services.stripe.webhook_secret', 'whsec_test');
+
+        $booking = completedBooking();
+        $payload = [
+            'id' => 'evt_'.uniqid(),
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'pi_'.uniqid(),
+                    'amount' => 10000,
+                    'metadata' => [
+                        'booking_id' => $booking->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $jsonPayload = json_encode($payload);
+        $timestamp = time();
+        $signature = hash_hmac('sha256', "{$timestamp}.{$jsonPayload}", 'whsec_test');
+
+        $response = $this->postJson('/webhooks/stripe', $payload, [
+            'Stripe-Signature' => "t={$timestamp},v1={$signature}",
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+    });
+
+    test('POST /webhooks/stripe returns failure with invalid signature', function () {
+        Config::set('services.stripe.webhook_secret', 'whsec_test');
+
+        $payload = [
+            'id' => 'evt_'.uniqid(),
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'pi_'.uniqid(),
+                    'amount' => 1000,
+                    'metadata' => [],
+                ],
+            ],
+        ];
+
+        $response = $this->postJson('/webhooks/stripe', $payload, [
+            'Stripe-Signature' => 't='.time().',v1=garbage_signature',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => false]);
+    });
 });

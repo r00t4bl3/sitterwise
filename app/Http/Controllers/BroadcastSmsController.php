@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Twilio\Security\RequestValidator;
@@ -85,6 +86,16 @@ class BroadcastSmsController extends Controller
         if ($messageSid && $messageStatus) {
             BroadcastMessage::where('twilio_message_sid', $messageSid)
                 ->update(['status' => $messageStatus]);
+
+            Log::info('Twilio status callback: updated', [
+                'message_sid' => $messageSid,
+                'status' => $messageStatus,
+            ]);
+        } else {
+            Log::warning('Twilio status callback: missing MessageSid or MessageStatus', [
+                'message_sid' => $messageSid,
+                'message_status' => $messageStatus,
+            ]);
         }
 
         return response()->json(['ok' => true]);
@@ -94,8 +105,20 @@ class BroadcastSmsController extends Controller
     {
         $this->validateTwilioRequest($request);
 
-        $fromDigits = preg_replace('/\D/', '', (string) $request->input('From'));
+        $from = (string) $request->input('From');
+        $fromDigits = preg_replace('/\D/', '', $from);
         $body = strtoupper(trim((string) $request->input('Body')));
+
+        $maskedFrom = strlen($fromDigits) >= 4
+            ? '***'.substr($fromDigits, -4)
+            : '***';
+
+        if (! $from || ! $body) {
+            Log::warning('Twilio inbound: missing From or Body', [
+                'from' => $maskedFrom,
+                'body' => $body,
+            ]);
+        }
 
         if (in_array($body, ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT'])) {
             $normPhoneDigits = fn ($phone) => preg_replace('/\D/', '', $phone);
@@ -110,6 +133,11 @@ class BroadcastSmsController extends Controller
 
             if ($caregiver) {
                 $caregiver->update(['sms_opted_out' => true]);
+
+                Log::info('Twilio inbound: caregiver opted out', [
+                    'from' => $maskedFrom,
+                    'caregiver_id' => $caregiver->id,
+                ]);
             } else {
                 $client = Client::whereNotNull('phone')
                     ->get()
@@ -117,6 +145,15 @@ class BroadcastSmsController extends Controller
 
                 if ($client) {
                     $client->update(['sms_opted_out' => true]);
+
+                    Log::info('Twilio inbound: client opted out', [
+                        'from' => $maskedFrom,
+                        'client_id' => $client->id,
+                    ]);
+                } else {
+                    Log::warning('Twilio inbound: opt-out from unknown number', [
+                        'from' => $maskedFrom,
+                    ]);
                 }
             }
         }
@@ -134,6 +171,12 @@ class BroadcastSmsController extends Controller
         $signature = $request->header('X-Twilio-Signature');
 
         if (! $authToken || ! $signature) {
+            Log::warning('Twilio webhook: missing auth token or signature', [
+                'url' => $request->fullUrl(),
+                'has_auth_token' => ! is_null($authToken),
+                'has_signature' => ! is_null($signature),
+            ]);
+
             abort(401, 'Missing Twilio signature.');
         }
 
@@ -145,6 +188,10 @@ class BroadcastSmsController extends Controller
         );
 
         if (! $isValid) {
+            Log::warning('Twilio webhook: invalid signature', [
+                'url' => $request->fullUrl(),
+            ]);
+
             abort(401, 'Invalid Twilio signature.');
         }
     }
