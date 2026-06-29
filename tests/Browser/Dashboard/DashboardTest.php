@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Booking;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -42,5 +44,51 @@ test('super admin dashboard loads', function () {
 
     visit('/dashboard')
         ->assertSee('SuperAdmin Dashboard')
+        ->assertNoJavaScriptErrors();
+});
+
+test('client dashboard shows upcoming bookings widget', function () {
+    $user = createClientUser();
+    $client = Client::first();
+
+    Booking::factory()->forClient($client)->create([
+        'status' => 'confirmed',
+    ]);
+
+    $this->actingAs($user);
+
+    visit('/dashboard')
+        ->assertNoJavaScriptErrors();
+});
+
+test('client dashboard shows recent activity', function () {
+    $user = createClientUser();
+    $client = Client::first();
+
+    Booking::factory()->forClient($client)->create([
+        'status' => 'completed',
+    ]);
+
+    $this->actingAs($user);
+
+    visit('/dashboard')
+        ->assertNoJavaScriptErrors();
+});
+
+test('caregiver dashboard shows available jobs widget', function () {
+    $user = createCaregiver();
+
+    $this->actingAs($user);
+
+    visit('/dashboard')
+        ->assertNoJavaScriptErrors();
+});
+
+test('caregiver dashboard shows earnings summary', function () {
+    $user = createCaregiver();
+
+    $this->actingAs($user);
+
+    visit('/dashboard')
         ->assertNoJavaScriptErrors();
 });

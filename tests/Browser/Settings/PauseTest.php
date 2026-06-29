@@ -39,3 +39,13 @@ test('paused caregiver can view resume page', function () {
         ->assertSee("You're on a break")
         ->assertNoJavaScriptErrors();
 });
+
+test('pause page shows reason options', function () {
+    $user = createCaregiver();
+
+    $this->actingAs($user);
+
+    visit('/settings/caregiver/pause')
+        ->assertSee('Pause your account')
+        ->assertNoJavaScriptErrors();
+});

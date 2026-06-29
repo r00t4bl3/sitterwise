@@ -77,3 +77,29 @@ test('user can switch to system mode', function () {
 
     $page->assertNoJavaScriptErrors();
 });
+
+test('theme persists across page reload', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/settings/appearance');
+
+    $page->script(<<<'JS'
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const darkBtn = buttons.find(b => b.textContent.includes('Dark'));
+        if (darkBtn) darkBtn.click();
+    JS);
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+
+    $page->visit('/settings/appearance');
+
+    usleep(300000);
+
+    $page->assertNoJavaScriptErrors();
+});

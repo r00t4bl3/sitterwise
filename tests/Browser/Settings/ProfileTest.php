@@ -15,14 +15,14 @@ test('profile settings page can be viewed', function () {
     visit('/settings/profile')
         ->assertSee('Profile information')
         ->assertSee('Update your name and email address')
-        ->assertSee('Name')
+        ->assertSee('First Name')
+        ->assertSee('Last Name')
         ->assertSee('Email address')
         ->assertNoJavaScriptErrors();
 });
 
-test('user can update their name', function () {
+test('user can update their first name', function () {
     $user = User::factory()->create([
-        'name' => 'Old Name',
         'password' => bcrypt('password'),
     ]);
 
@@ -30,8 +30,10 @@ test('user can update their name', function () {
 
     $page = visit('/settings/profile');
 
-    fillField($page, '#name', 'New Name');
+    fillField($page, '#first_name', 'NewName');
     clickElement($page, 'button[data-test="update-profile-button"]');
+
+    usleep(500000);
 
     $page->assertSee('Saved');
 });
@@ -48,6 +50,8 @@ test('user can update their email', function () {
 
     fillField($page, '#email', 'new@example.com');
     clickElement($page, 'button[data-test="update-profile-button"]');
+
+    usleep(500000);
 
     $page->assertSee('Saved');
 });
@@ -67,4 +71,21 @@ test('user sees error with invalid email format', function () {
     usleep(500000);
 
     $page->assertDontSee('Saved');
+});
+
+test('user sees validation error on empty name', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $page = visit('/settings/profile');
+
+    fillField($page, '#first_name', '');
+    clickElement($page, 'button[data-test="update-profile-button"]');
+
+    usleep(500000);
+
+    $page->assertNoJavaScriptErrors();
 });

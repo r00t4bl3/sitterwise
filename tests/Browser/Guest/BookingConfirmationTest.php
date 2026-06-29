@@ -34,3 +34,18 @@ test('confirmation page shows password setup link', function () {
         ->assertSee('Set Your Password')
         ->assertNoJavaScriptErrors();
 });
+
+test('confirmation page shows booking details with status and service type', function () {
+    $user = User::factory()->create(['role' => 'client']);
+    $client = Client::factory()->create(['user_id' => $user->id]);
+    $booking = Booking::factory()->forClient($client)->create();
+
+    $this->actingAs($user);
+
+    visit('/book/confirmation/'.$booking->ulid)
+        ->assertSee('Booking #')
+        ->assertSee($booking->ulid)
+        ->assertSee($booking->status)
+        ->assertSee($booking->service_type)
+        ->assertNoJavaScriptErrors();
+});

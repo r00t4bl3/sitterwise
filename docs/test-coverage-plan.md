@@ -3,7 +3,7 @@
 **Tool**: Pest 4 Browser Plugin + Playwright (headless Chromium)
 **Language**: PHP (Pest) with real browser interactions via Playwright
 **Location**: `tests/Browser/`
-**Status**: In Progress — 218 of ~330 tests complete (66%)
+**Status**: In Progress — 240 of ~330 tests complete (73%)
 
 ---
 
@@ -24,13 +24,13 @@
 | Tier | Plan | Done | % | Priority |
 |------|------|------|---|----------|
 | **1. Core Auth** | ~30 | **27** | 90% | Critical |
-| **2. Guest Booking Flow** | ~35 | **21** | 60% | Critical |
-| **3. Authenticated CRUD** | ~70 | **43** | 61% | High |
+| **2. Guest Booking Flow** | ~35 | **32** | 91% | Critical |
+| **3. Authenticated CRUD** | ~70 | **66** | 94% | High |
 | **4. Admin Back Office** | ~70 | **48** | 69% | Medium |
 | **5. Caregiver Application** | ~23 | **21** | 91% | High |
 | **6. Misc & Reference** | ~8 | **5** | 63% | Low |
 | **7. Edge Cases & Smoke** | ~65 | **46** | 71% | High |
-| **Total** | **~330** | **218** | **66%** | |
+| **Total** | **~330** | **240** | **73%** | |
 
 ---
 
@@ -83,7 +83,7 @@
 
 ---
 
-## Tier 2: Guest Booking Flow (≈3 days, ~35 tests) — 16 done
+## Tier 2: Guest Booking Flow (≈3 days, ~35 tests) — 30 done
 
 **Goal**: Full end-to-end journey of a guest creating a booking through payment to confirmation. This is the highest business-value flow.
 
@@ -102,37 +102,42 @@
 | 2.9 | Confirmation page shows booking details | `Guest/BookingConfirmationTest.php` |
 | 2.10 | Confirmation page shows password setup link | `Guest/BookingConfirmationTest.php` |
 | 2.11 | Payment page redirects to create without session data | `Guest/BookingPaymentTest.php` |
+| 2.11b | Successful booking post redirects to payment URL | `Guest/BookingPaymentTest.php` |
+| 2.11c | Guest visits payment page with valid session | `Guest/BookingPaymentTest.php` |
 | 2.12 | Guest can view review page via signed url | `Guest/BookingReviewTest.php` |
 | 2.13 | Guest can submit review with rating and comment | `Guest/BookingReviewTest.php` |
 | 2.14 | Tip input shows stripe card input when filled | `Guest/BookingReviewTest.php` |
 | 2.15 | Tip input hides stripe card input when cleared | `Guest/BookingReviewTest.php` |
 | 2.16 | Submit with tip but no card shows error | `Guest/BookingReviewTest.php` |
+| 2.17 | Guest searches and selects a hotel from autocomplete | `Guest/BookingCreateTest.php` |
+| 2.18 | Guest adds a single date block | `Guest/BookingCreateTest.php` |
+| 2.19 | Guest adds multiple date blocks | `Guest/BookingCreateTest.php` |
+| 2.20 | Guest removes a date block | `Guest/BookingCreateTest.php` |
+| 2.22 | Guest toggles sitter preferences checkboxes | `Guest/BookingCreateTest.php` |
+| 2.23 | Guest fills optional textareas | `Guest/BookingCreateTest.php` |
+| 2.26 | Guest submits booking with same-day date | `Guest/BookingCreateTest.php` |
+| 2.27 | Guest creates booking that overlaps dates | `Guest/BookingCreateTest.php` |
+| 2.29 | BookingProgress indicator shows step 1 | `Guest/BookingCreateTest.php` |
+| 2.30 | Date block enforces 4-hour minimum | `Guest/BookingCreateTest.php` |
+| 2.31 | Guest enters invalid email format | `Guest/BookingCreateTest.php` |
+| 2.33 | Address section shows with private home location | `Guest/BookingCreateTest.php` |
+| 2.24 | Guest visits payment page (BookingProgress step 2) | `Guest/BookingPaymentTest.php` |
+| 2.29c | Confirmation page shows booking details with status and service type | `Guest/BookingConfirmationTest.php` |
 
 ### Planned Tests (remaining)
 
 | # | Test | Key assertions |
 |---|------|----------------|
-| 2.17 | Guest searches and selects a hotel from autocomplete | Type in autocomplete, click suggestion, assert value set |
-| 2.18 | Guest adds a single date block | Pick start/end DateTimePicker, assert block added |
-| 2.19 | Guest adds multiple date blocks | Click "Add Dates", assert new row appears, no overlap validation |
-| 2.20 | Guest removes a date block | Click remove, assert block removed |
 | 2.21 | Guest fills address with Google Autocomplete | Type partial address, select suggestion, assert fields populated |
-| 2.22 | Guest toggles sitter preferences checkboxes | Assert checkboxes toggle |
-| 2.23 | Guest fills optional textareas | caregiver_notes, notes_to_sitterwise, emergency_instructions, special_needs_notes |
-| 2.24 | Guest visits payment page | `assertPathIs()`, `assertSee('Payment')`, BookingProgress shows step 2 |
 | 2.25 | Guest completes Stripe payment | Interact with Stripe EmbeddedCheckout, assert redirected to confirmation |
-| 2.26 | Guest submits booking with same-day date | Assert same-day warning banner visible |
-| 2.27 | Guest creates booking that overlaps dates | Assert overlap validation warning shown |
 | 2.28 | Guest resumes partially filled booking via browser back | Form state restored (if applicable) |
-| 2.29 | BookingProgress indicator shows correct step | assert step 1 active on `/book`, step 2 on payment, step 3 on confirmation |
-| 2.30 | Date block enforces 4-hour minimum | Set start, assert end auto-adjusts to start + 4h |
-| 2.31 | Guest enters invalid email format | Assert validation error |
+| 2.32 | Guest booking form shows pricing summary | Fill dates, assert price calculation visible |
 
 > **Note**: Stripe EmbeddedCheckout tests require Stripe test mode keys and test card numbers. These tests should use the Stripe testing `Visa` card (`4242 4242 4242 4242`).
 
 ---
 
-## Tier 3: Authenticated CRUD (≈5 days, ~70 tests) — 12 done
+## Tier 3: Authenticated CRUD (≈5 days, ~70 tests) — 66 done
 
 **Goal**: All role-specific dashboards, booking lists, settings, and profile management work correctly.
 
@@ -148,6 +153,7 @@
 | 3.6 | Profile settings page can be viewed | `Settings/ProfileTest.php` |
 | 3.7 | User can update their name (browser flow) | `Settings/ProfileTest.php` |
 | 3.8 | User can update their email (browser flow) | `Settings/ProfileTest.php` |
+| 3.8b | User sees error with invalid email format | `Settings/ProfileTest.php` |
 | 3.9 | Security settings page can be viewed | `Settings/SecurityTest.php` |
 | 3.10 | User can update their password | `Settings/SecurityTest.php` |
 | 3.11 | User sees error with wrong current password | `Settings/SecurityTest.php` |
@@ -180,6 +186,29 @@
 | 3.37 | Caregiver cancels a confirmed job | `Caregiver/CancelJobTest.php` |
 | 3.39 | Payments index page loads | `Client/PaymentsTest.php` |
 | 3.43 | Payouts page loads for caregiver | `Caregiver/PayoutsTest.php` |
+| 3.7b | Responsive mobile viewport (3 tests) | `Layout/ResponsiveTest.php` |
+| 3.45 | Bookings index shows client bookings | `Client/BookingsTest.php` |
+| 3.46 | Bookings index shows booking status | `Client/BookingsTest.php` |
+| 3.47 | Booking detail shows status badge | `Client/BookingDetailTest.php` |
+| 3.48 | Client can cancel an upcoming booking | `Client/BookingDetailTest.php` |
+| 3.49 | Client sees empty state when no bookings exist | `Client/BookingsTest.php` |
+| 3.52 | Profile page shows validation on empty name submit | `Settings/ProfileTest.php` |
+| 3.53 | Push notifications page can be viewed | `Settings/PushNotificationsTest.php` |
+| 3.54 | Security page shows confirm password field | `Settings/SecurityTest.php` |
+| 3.56 | Caregiver can search jobs by client name | `Caregiver/JobsTest.php` |
+| 3.57 | Caregiver job detail shows client information | `Caregiver/JobActionsTest.php` |
+| 3.57b | Caregiver job detail shows start and end times | `Caregiver/JobActionsTest.php` |
+| 3.58 | Caregiver sees empty state when no jobs exist | `Caregiver/JobsTest.php` |
+| 3.59 | Caregiver can filter jobs by status | `Caregiver/JobsTest.php` |
+| 3.60 | Caregiver job shows client info | `Caregiver/JobActionsTest.php` |
+| 3.61 | Client dashboard shows upcoming bookings widget | `Dashboard/DashboardTest.php` |
+| 3.62 | Client dashboard shows recent activity | `Dashboard/DashboardTest.php` |
+| 3.63 | Caregiver dashboard shows available jobs widget | `Dashboard/DashboardTest.php` |
+| 3.64 | Caregiver dashboard shows earnings summary | `Dashboard/DashboardTest.php` |
+| 3.65 | Appearance page persists theme across sessions | `Settings/AppearanceTest.php` |
+| 3.66 | Pause page shows reason options | `Settings/PauseTest.php` |
+| 3.68 | Security password form shows confirmation field | `Settings/SecurityTest.php` |
+| 3.51 | User can update their first name | `Settings/ProfileTest.php` |
 
 ### Skipped Tests (not applicable)
 
@@ -196,19 +225,16 @@
 | 3.42 | Client removes payment method | Requires Stripe test keys |
 | 3.44 | Caregiver initiates Stripe Connect onboarding | Requires Stripe test keys |
 
-### Planned Tests (remaining)
+### Planned Tests (remaining ~4 tests)
 
-#### Settings — remaining
+#### Not Yet Implemented
 
-| # | Test | Key assertions |
-|---|------|----------------|
-| 3.28 | Settings — switch theme between light/dark/system | ✅ — dark, light, and system modes all tested |
-
-#### Client Bookings — remaining
-
-| # | Test | Key assertions |
-|---|------|----------------|
-| 3.29c | Client creates booking with dynamic children/pets (browser) | Add child via "Add Child" button, fill fields, submit via browser |
+| # | Test | Key assertions | Reason |
+|---|------|----------------|--------|
+| 3.50 | Client can sort bookings by date | Click date column header, assert sort changes | No sort UI on client bookings index |
+| 3.51 | Client can update phone number | Fill phone field, submit, assert success | No phone field on profile page |
+| 3.55 | Caregiver can update profile bio | Fill bio textarea, submit, assert success | No bio field on caregiver settings page |
+| 3.67 | User can update timezone in profile | Select timezone, submit, assert success | No timezone field on profile page |
 
 ---
 
@@ -493,14 +519,14 @@ tests/Browser/
 │   └── AuthorizationTest.php      — 7 tests
 ├── Guest/
 │   ├── BookingCreateTest.php      — 20 tests
-│   ├── BookingPaymentTest.php     — 3 tests
-│   ├── BookingConfirmationTest.php — 2 tests
+│   ├── BookingPaymentTest.php     — 4 tests
+│   ├── BookingConfirmationTest.php — 3 tests
 │   ├── BookingReviewTest.php      — 5 tests
 │   └── ReferenceSubmitTest.php    — 3 tests
 ├── Client/
-│   ├── BookingsTest.php           — 2 tests
-│   ├── BookingDetailTest.php      — 1 test
-│   ├── CreateBookingTest.php      — 2 tests
+│   ├── BookingsTest.php           — 5 tests
+│   ├── BookingDetailTest.php      — 3 tests
+│   ├── CreateBookingTest.php      — 4 tests
 │   ├── PaymentsTest.php           — 1 test
 │   └── ReviewTest.php             — 1 test
 ├── Caregiver/
@@ -508,8 +534,8 @@ tests/Browser/
 │   ├── BookingsTest.php           — 1 test
 │   ├── CancelJobTest.php          — 1 test
 │   ├── CheckoutTest.php           — 1 test
-│   ├── JobActionsTest.php         — 1 test
-│   ├── JobsTest.php               — 1 test
+│   ├── JobActionsTest.php         — 3 tests
+│   ├── JobsTest.php               — 4 tests
 │   ├── PayoutsTest.php            — 1 test
 │   ├── ReleaseReservationTest.php — 1 test
 │   └── ReserveConfirmTest.php     — 1 test
@@ -525,12 +551,13 @@ tests/Browser/
 │   ├── UserMenuTest.php           — 1 test
 │   └── ResponsiveTest.php         — 3 tests
 ├── Dashboard/
-│   └── DashboardTest.php          — 4 tests
+│   └── DashboardTest.php          — 8 tests
 ├── Settings/
-│   ├── AppearanceTest.php         — 2 tests
-│   ├── PauseTest.php              — 2 tests
-│   ├── ProfileTest.php            — 3 tests
-│   └── SecurityTest.php           — 3 tests
+│   ├── AppearanceTest.php         — 5 tests
+│   ├── PauseTest.php              — 3 tests
+│   ├── ProfileTest.php            — 5 tests
+│   ├── PushNotificationsTest.php  — 1 test
+│   └── SecurityTest.php           — 4 tests
 ├── Smoke/
 │   ├── ClientSmokeTest.php        — 5 tests (8 pages)
 │   ├── CaregiverSmokeTest.php     — 8 tests (13 pages)
@@ -591,10 +618,10 @@ tests/Browser/
 | Tier | Tests | Done | Dev Effort Remaining | Business Impact |
 |------|-------|------|---------------------|-----------------|
 | 1. Core Auth | ~30 | 27 | <0.5 day | Critical |
-| 2. Guest Booking Flow | ~35 | 21 | ~1 day | Critical |
-| 3. Authenticated CRUD | ~70 | 43 | ~2.5 days | High |
+| 2. Guest Booking Flow | ~35 | 32 | <0.5 day | Critical |
+| 3. Authenticated CRUD | ~70 | 66 | <0.5 day | High |
 | 4. Admin Back Office | ~70 | 48 | ~1.5 days | Medium |
 | 5. Caregiver Application | ~23 | 21 | <0.5 day | High |
 | 6. Misc & Reference | ~8 | 3 | <1 day | Low |
 | 7. Edge Cases & Smoke | ~65 | 46 | ~1 day | High |
-| **Total** | **~330** | **193** | **~10 days** | |
+| **Total** | **~330** | **240** | **~5 days** | |
