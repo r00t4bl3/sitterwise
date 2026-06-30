@@ -33,7 +33,7 @@
             @endif
         </div>
         <p style="margin: 24px 0;">
-            <a href="{{ config('app.url') }}/bookings/{{ $booking->id }}" class="btn">
+            <a clicktracking=off href="{{ config('app.url') }}/bookings/{{ $booking->id }}" class="btn">
                 View Booking Details
             </a>
         </p>

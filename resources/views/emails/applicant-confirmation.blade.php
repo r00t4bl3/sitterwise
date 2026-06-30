@@ -27,12 +27,12 @@
         </ol>
         <p>You can expect to hear from us within 3–5 business days.</p>
         <p style="margin: 24px 0;">
-            <a href="{{ $statusUrl }}" style="display: inline-block; background-color: #F48A91; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
+            <a clicktracking=off href="{{ $statusUrl }}" style="display: inline-block; background-color: #F48A91; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
                 Track Your Application Status
             </a>
         </p>
         <p style="font-size: 13px; color: #999;">
-            Or copy this link into your browser: <a href="{{ $statusUrl }}">{{ $statusUrl }}</a>
+            Or copy this link into your browser: <a clicktracking=off href="{{ $statusUrl }}">{{ $statusUrl }}</a>
         </p>
         <p>If you have any questions in the meantime, please don't hesitate to reach out.</p>
     </div>

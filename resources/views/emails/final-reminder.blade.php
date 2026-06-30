@@ -23,7 +23,7 @@
         <p>This is a final reminder that your Sitterwise application is still incomplete. If you don't finish it soon, your progress will be lost.</p>
         <p>Don't worry — your information is saved. Just click below to pick up where you left off.</p>
         <div style="text-align: center;">
-            <a href="{{ config('app.url') }}/caregiver/apply" class="cta-button">
+            <a clicktracking=off href="{{ config('app.url') }}/caregiver/apply" class="cta-button">
                 Complete Application Now
             </a>
         </div>

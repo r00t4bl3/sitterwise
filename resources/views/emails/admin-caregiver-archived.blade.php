@@ -38,7 +38,7 @@
             <span class="value">Inactive</span>
         </div>
         <p style="margin: 24px 0;">
-            <a href="{{ config('app.url') }}/caregivers/{{ $caregiverId }}" class="btn">
+            <a clicktracking=off href="{{ config('app.url') }}/caregivers/{{ $caregiverId }}" class="btn">
                 View Caregiver Profile
             </a>
         </p>

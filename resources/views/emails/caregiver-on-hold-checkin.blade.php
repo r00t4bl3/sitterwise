@@ -32,12 +32,12 @@
         @endif
 
         <p style="margin: 24px 0;">
-            <a href="{{ config('app.url') }}/settings/caregiver/pause" style="display: inline-block; background-color: #F48A91; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
+            <a clicktracking=off href="{{ config('app.url') }}/settings/caregiver/pause" style="display: inline-block; background-color: #F48A91; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
                 Manage Your Account
             </a>
         </p>
         <p style="font-size: 13px; color: #999;">
-            Or copy this link: <a href="{{ config('app.url') }}/settings/caregiver/pause">{{ config('app.url') }}/settings/caregiver/pause</a>
+            Or copy this link: <a clicktracking=off href="{{ config('app.url') }}/settings/caregiver/pause">{{ config('app.url') }}/settings/caregiver/pause</a>
         </p>
     </div>
     <div class="footer">

@@ -23,7 +23,7 @@
         <p>We hope you had a great experience with <strong>{{ $caregiverName }}</strong> on <strong>{{ $date }}</strong>.</p>
         <p>Your feedback helps us maintain the highest quality of care and helps other families find the perfect sitter. It only takes a minute!</p>
         <div style="text-align: center;">
-            <a href="{{ $reviewUrl }}" class="cta-button">
+            <a clicktracking=off href="{{ $reviewUrl }}" class="cta-button">
                 Leave a Review
             </a>
         </div>

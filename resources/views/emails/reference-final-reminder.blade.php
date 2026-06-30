@@ -23,7 +23,7 @@
         <p>This is a final reminder that <strong>{{ $applicantName }}</strong> is still waiting for your reference to complete their Sitterwise application.</p>
         <p>Please take a few minutes to submit your feedback so we can move forward with their application.</p>
         <div style="text-align: center;">
-            <a href="{{ config('app.url') }}/references/{{ $token }}" class="cta-button">
+            <a clicktracking=off href="{{ config('app.url') }}/references/{{ $token }}" class="cta-button">
                 Complete Reference Now
             </a>
         </div>

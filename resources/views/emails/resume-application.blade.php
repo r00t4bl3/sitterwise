@@ -23,7 +23,7 @@
         <p>We noticed you started an application to join Sitterwise but haven't finished yet. We'd love to see your completed application!</p>
         <p>Most applications take about 10–15 minutes to complete. You can pick up right where you left off.</p>
         <div style="text-align: center;">
-            <a href="{{ config('app.url') }}/caregiver/apply" class="cta-button">
+            <a clicktracking=off href="{{ config('app.url') }}/caregiver/apply" class="cta-button">
                 Resume Application
             </a>
         </div>

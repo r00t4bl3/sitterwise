@@ -123,7 +123,7 @@
     </div>
 
     <div style="text-align: center;">
-        <a href="{{ config('app.url') }}/bookings/available/{{ $booking->id }}" class="cta-button">
+        <a clicktracking=off href="{{ config('app.url') }}/bookings/available/{{ $booking->id }}" class="cta-button">
             View & Accept Booking
         </a>
     </div>

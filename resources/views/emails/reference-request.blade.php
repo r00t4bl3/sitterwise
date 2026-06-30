@@ -23,7 +23,7 @@
         <p><strong>{{ $applicantName }}</strong> has listed you as a reference as part of their application to join Sitterwise, San Diego's most trusted childcare agency.</p>
         <p>Your feedback helps us ensure we're bringing the best caregivers onto our team. The reference form takes approximately 5–10 minutes to complete and includes questions about your experience with the applicant.</p>
         <div style="text-align: center;">
-            <a href="{{ config('app.url') }}/references/{{ $token }}" class="cta-button">
+            <a clicktracking=off href="{{ config('app.url') }}/references/{{ $token }}" class="cta-button">
                 Complete Reference
             </a>
         </div>
