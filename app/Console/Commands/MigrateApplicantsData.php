@@ -12,7 +12,8 @@ class MigrateApplicantsData extends Command
         {file? : Path to the JSON export file (import mode)}
         {--export : Export data from the current database to a JSON file}
         {--output= : Output path for export (default: storage/app/migration.json)}
-        {--dry-run : Preview import without writing}';
+        {--dry-run : Preview import without writing}
+        {--update : Apply the import (default is preview only)}';
 
     protected $description = 'Migrate caregiver applicant data between deployments';
 
@@ -176,13 +177,30 @@ class MigrateApplicantsData extends Command
         }
 
         $dryRun = $this->option('dry-run');
+        $update = $this->option('update');
 
-        // Validate structure — warn about missing/missing tables
+        // Validate structure — warn about missing tables
         $missingTables = [];
         $this->validateStructure($data, $missingTables);
 
-        if ($dryRun) {
-            return $this->previewImport($data, $missingTables);
+        // Always show diff preview
+        $this->showDiff($data);
+
+        if (! empty($missingTables)) {
+            $this->newLine();
+            $this->warn('Missing tables in export (skipped): '.implode(', ', $missingTables));
+        }
+
+        $this->newLine();
+
+        if ($dryRun || ! $update) {
+            $this->info('Run with --update to apply.');
+
+            return Command::SUCCESS;
+        }
+
+        if (! $this->confirm('Apply the import above? This cannot be undone.')) {
+            return Command::SUCCESS;
         }
 
         $this->info('Importing data...');
@@ -263,12 +281,22 @@ class MigrateApplicantsData extends Command
         }
     }
 
-    protected function previewImport(array $data, array $missingTables): int
+    protected function getAllowedUpdateFields(string $table): ?array
     {
-        $this->info('Dry-run preview:');
+        return match ($table) {
+            'users' => ['name', 'last_login_at', 'email_verified_at', 'password', 'remember_token'],
+            default => null,
+        };
+    }
+
+    protected function showDiff(array $data): void
+    {
+        $this->info('Import preview:');
         $this->newLine();
 
-        foreach (self::TABLE_CONFIG as $table => $config) {
+        $sorted = collect(self::TABLE_CONFIG)->sortBy('order');
+
+        foreach ($sorted as $table => $config) {
             $rows = $data[$table] ?? [];
 
             if (empty($rows)) {
@@ -278,24 +306,124 @@ class MigrateApplicantsData extends Command
             }
 
             $remap = $config['remap'] ?? null;
+            $uniqueField = $config['unique'] ?? null;
+
+            // Build remap label
             $remapLabel = '';
             if ($remap) {
                 $remaps = isset($remap['fk']) ? [$remap] : $remap;
                 $parts = array_map(fn ($r) => "{$r['fk']} ← new {$r['parent']}.id", $remaps);
                 $remapLabel = ' ('.implode(', ', $parts).')';
             }
+
             $this->line(sprintf('  %s: %d rows%s', $table, count($rows), $remapLabel));
-        }
 
-        if (! empty($missingTables)) {
+            $inserts = 0;
+            $updates = 0;
+            $skips = 0;
+            $updateDetails = [];
+
+            if ($table === 'quick_links') {
+                $existingCount = DB::table($table)->count();
+                $this->line(sprintf('    ⚠ %d existing rows will be deleted, %d rows inserted', $existingCount, count($rows)));
+
+                continue;
+            }
+
+            foreach ($rows as $row) {
+                $oldId = $row['id'] ?? '?';
+                $identifier = $row['name'] ?? $row['email'] ?? $row['title'] ?? "#{$oldId}";
+
+                if ($uniqueField && isset($row[$uniqueField])) {
+                    $existing = DB::table($table)->where($uniqueField, $row[$uniqueField])->first();
+
+                    if ($existing) {
+                        $changes = $this->diffRow($table, $row, $existing);
+
+                        if ($changes) {
+                            $updates++;
+
+                            $updateDetails[] = compact('oldId', 'identifier', 'changes');
+                        } else {
+                            $skips++;
+                        }
+                    } else {
+                        $inserts++;
+                    }
+                } else {
+                    $inserts++;
+                }
+            }
+
+            $parts = [];
+
+            if ($inserts > 0) {
+                $parts[] = "{$inserts} to insert";
+            }
+
+            if ($updates > 0) {
+                $parts[] = "{$updates} to update";
+            }
+
+            if ($skips > 0) {
+                $parts[] = "{$skips} unchanged (skip)";
+            }
+
+            $this->line('    '.implode(', ', $parts));
+
+            foreach ($updateDetails as $detail) {
+                $this->line(sprintf('    [%d] %s:', $detail['oldId'], $detail['identifier']));
+
+                foreach ($detail['changes'] as $change) {
+                    $this->line(sprintf('      %s: %s', $change['field'], $change['diff']));
+                }
+            }
+
             $this->newLine();
-            $this->warn('Missing tables: '.implode(', ', $missingTables));
+        }
+    }
+
+    protected function diffRow(string $table, array $row, object $existing): array
+    {
+        $changes = [];
+        $jsonColumns = self::JSON_COLUMNS[$table] ?? [];
+        $allowedFields = $this->getAllowedUpdateFields($table);
+
+        foreach ($row as $key => $value) {
+            if ($key === 'id') {
+                continue;
+            }
+
+            if (in_array($key, ['created_at', 'updated_at', 'deleted_at'])) {
+                continue;
+            }
+
+            // Only diff fields that would actually be updated on conflict
+            if ($allowedFields !== null && ! in_array($key, $allowedFields)) {
+                continue;
+            }
+
+            $oldVal = $existing->$key ?? null;
+
+            if (in_array($key, $jsonColumns)) {
+                $oldStr = is_string($oldVal) ? $oldVal : json_encode($oldVal);
+                $newStr = is_array($value) ? json_encode($value) : (string) $value;
+
+                if ($oldStr !== $newStr) {
+                    $changes[] = ['field' => $key, 'diff' => '(changed)'];
+                }
+
+                continue;
+            }
+
+            if ($value !== $oldVal) {
+                $oldStr = is_null($oldVal) ? '(none)' : (is_string($oldVal) ? $oldVal : json_encode($oldVal));
+                $newStr = is_null($value) ? '(none)' : (is_string($value) ? $value : json_encode($value));
+                $changes[] = ['field' => $key, 'diff' => "{$oldStr} → {$newStr}"];
+            }
         }
 
-        $this->newLine();
-        $this->info('Run without --dry-run to import.');
-
-        return Command::SUCCESS;
+        return $changes;
     }
 
     protected function importTable(string $table, array $config, array $rows): void
@@ -305,6 +433,7 @@ class MigrateApplicantsData extends Command
         $inserted = 0;
         $skipped = 0;
         $errors = 0;
+        $updated = 0;
 
         if ($table === 'quick_links') {
             DB::table($table)->delete();
@@ -326,9 +455,18 @@ class MigrateApplicantsData extends Command
                     $existing = DB::table($table)->where($uniqueField, $row[$uniqueField])->first();
 
                     if ($existing) {
-                        $this->warn("  {$table}: '{$row[$uniqueField]}' already exists (id={$existing->id}), reusing existing");
+                        if ($table === 'users') {
+                            $allowedFields = $this->getAllowedUpdateFields($table);
+                            $updateData = array_intersect_key($row, array_flip($allowedFields));
+                            $updateData = $this->castTimestamps($updateData);
+                            DB::table($table)->where('id', $existing->id)->update($updateData);
+                            $this->line("  {$table}: '{$row[$uniqueField]}' updated (id={$existing->id})");
+                        } else {
+                            $this->warn("  {$table}: '{$row[$uniqueField]}' already exists (id={$existing->id}), reusing existing");
+                        }
+
                         $this->idMaps[$table][$oldId] = $existing->id;
-                        $skipped++;
+                        $updated++;
 
                         continue;
                     }
@@ -382,7 +520,7 @@ class MigrateApplicantsData extends Command
             }
         }
 
-        $this->stats[$table] = compact('inserted', 'skipped', 'errors');
+        $this->stats[$table] = compact('inserted', 'skipped', 'errors', 'updated');
     }
 
     protected function verifyImport(): void
@@ -469,13 +607,17 @@ class MigrateApplicantsData extends Command
         $this->info('Import summary:');
 
         foreach (self::TABLE_CONFIG as $table => $config) {
-            $stats = $this->stats[$table] ?? ['inserted' => 0, 'skipped' => 0, 'errors' => 0];
+            $stats = $this->stats[$table] ?? ['inserted' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
-            if ($stats['inserted'] === 0 && $stats['skipped'] === 0) {
+            if ($stats['inserted'] === 0 && $stats['updated'] === 0 && $stats['skipped'] === 0) {
                 continue;
             }
 
             $parts = ["inserted: {$stats['inserted']}"];
+
+            if ($stats['updated'] > 0) {
+                $parts[] = "updated: {$stats['updated']}";
+            }
 
             if ($stats['skipped'] > 0) {
                 $parts[] = "skipped: {$stats['skipped']}";
