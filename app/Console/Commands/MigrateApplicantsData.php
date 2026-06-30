@@ -20,28 +20,28 @@ class MigrateApplicantsData extends Command
     protected const TABLE_CONFIG = [
         'users' => ['order' => 1,  'remap' => null, 'unique' => 'email'],
         'interview_talking_points' => ['order' => 2,  'remap' => null, 'unique' => 'label'],
-        'caregivers' => ['order' => 3,  'remap' => ['fk' => 'user_id', 'parent' => 'users']],
-        'caregiver_applications' => ['order' => 4,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
+        'caregivers' => ['order' => 3,  'remap' => ['fk' => 'user_id', 'parent' => 'users'], 'unique' => 'user_id'],
+        'caregiver_applications' => ['order' => 4,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => 'caregiver_id'],
         'caregiver_interviews' => ['order' => 5,  'remap' => [
             ['fk' => 'caregiver_id', 'parent' => 'caregivers'],
             ['fk' => 'evaluator_id', 'parent' => 'users'],
             ['fk' => 'application_id', 'parent' => 'caregiver_applications'],
-        ]],
+        ], 'unique' => ['caregiver_id', 'application_id']],
         'caregiver_interview_talking_points' => ['order' => 6,  'remap' => [
             ['fk' => 'caregiver_interview_id', 'parent' => 'caregiver_interviews'],
             ['fk' => 'talking_point_id', 'parent' => 'interview_talking_points'],
-        ]],
-        'caregiver_educations' => ['order' => 7,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_certifications' => ['order' => 8,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_specialties' => ['order' => 9,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_locations' => ['order' => 10, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_agreements' => ['order' => 11, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_references' => ['order' => 12, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'caregiver_sponsors' => ['order' => 13, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'onboarding_checklist_items' => ['order' => 14, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'availabilities' => ['order' => 15, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'reference_requests' => ['order' => 16, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers']],
-        'entity_attribute_values' => ['order' => 17, 'remap' => ['fk' => 'entity_id', 'parent' => 'caregivers']],
+        ], 'unique' => ['caregiver_interview_id', 'talking_point_id']],
+        'caregiver_educations' => ['order' => 7,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'education_type']],
+        'caregiver_certifications' => ['order' => 8,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'certification_type_id']],
+        'caregiver_specialties' => ['order' => 9,  'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'specialty_type_id']],
+        'caregiver_locations' => ['order' => 10, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'location_id']],
+        'caregiver_agreements' => ['order' => 11, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'type']],
+        'caregiver_references' => ['order' => 12, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'reference_name']],
+        'caregiver_sponsors' => ['order' => 13, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'email']],
+        'onboarding_checklist_items' => ['order' => 14, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'item_key']],
+        'availabilities' => ['order' => 15, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => ['caregiver_id', 'date']],
+        'reference_requests' => ['order' => 16, 'remap' => ['fk' => 'caregiver_id', 'parent' => 'caregivers'], 'unique' => 'token'],
+        'entity_attribute_values' => ['order' => 17, 'remap' => ['fk' => 'entity_id', 'parent' => 'caregivers'], 'unique' => ['entity_id', 'attribute_definition_id', 'entity_type']],
         'incomplete_applications' => ['order' => 18, 'remap' => null, 'unique' => 'email'],
         'quick_links' => ['order' => 19, 'remap' => null],
     ];
@@ -132,7 +132,11 @@ class MigrateApplicantsData extends Command
             return "SELECT citp.* FROM caregiver_interview_talking_points citp JOIN caregiver_interviews ci ON ci.id = citp.caregiver_interview_id WHERE ci.caregiver_id IN ({$ids})";
         }
 
-        if (in_array($table, ['entity_attribute_values', 'interview_talking_points', 'quick_links'])) {
+        if ($table === 'entity_attribute_values') {
+            return "SELECT * FROM entity_attribute_values WHERE entity_type = 'caregiver' AND entity_id IN ({$ids})";
+        }
+
+        if (in_array($table, ['interview_talking_points', 'quick_links'])) {
             return "SELECT * FROM {$table}";
         }
 
@@ -330,12 +334,18 @@ class MigrateApplicantsData extends Command
                 continue;
             }
 
+            // Filter entity_attribute_values to rows matching exported caregivers
+            if ($table === 'entity_attribute_values') {
+                $exportedCaregiverIds = array_map(fn ($c) => $c['id'], $data['caregivers'] ?? []);
+                $rows = array_values(array_filter($rows, fn ($r) => ($r['entity_type'] ?? null) === 'caregiver' && in_array($r['entity_id'] ?? null, $exportedCaregiverIds)));
+            }
+
             foreach ($rows as $row) {
                 $oldId = $row['id'] ?? '?';
                 $identifier = $row['name'] ?? $row['email'] ?? $row['title'] ?? "#{$oldId}";
 
-                if ($uniqueField && isset($row[$uniqueField])) {
-                    $existing = DB::table($table)->where($uniqueField, $row[$uniqueField])->first();
+                if ($uniqueField) {
+                    $existing = $this->findExistingRow($table, $uniqueField, $row);
 
                     if ($existing) {
                         $changes = $this->diffRow($table, $row, $existing);
@@ -426,6 +436,32 @@ class MigrateApplicantsData extends Command
         return $changes;
     }
 
+    protected function findExistingRow(string $table, string|array $uniqueField, array $data): ?object
+    {
+        $fields = is_array($uniqueField) ? $uniqueField : [$uniqueField];
+
+        $query = DB::table($table);
+
+        foreach ($fields as $field) {
+            if (! isset($data[$field])) {
+                return null;
+            }
+
+            $query->where($field, $data[$field]);
+        }
+
+        return $query->first();
+    }
+
+    protected function formatUniqueValue(string|array $uniqueField, array $data): string
+    {
+        if (is_string($uniqueField)) {
+            return $data[$uniqueField] ?? '?';
+        }
+
+        return implode('/', array_map(fn ($f) => $data[$f] ?? '?', $uniqueField));
+    }
+
     protected function importTable(string $table, array $config, array $rows): void
     {
         $remap = $config['remap'] ?? null;
@@ -450,23 +486,19 @@ class MigrateApplicantsData extends Command
                     continue;
                 }
 
-                // Check for unique constraint conflicts (e.g., duplicate email)
-                if ($uniqueField && isset($row[$uniqueField])) {
-                    $existing = DB::table($table)->where($uniqueField, $row[$uniqueField])->first();
+                // entity_attribute_values: skip rows not linked to exported caregivers
+                if ($table === 'entity_attribute_values') {
+                    if (($row['entity_type'] ?? null) !== 'caregiver') {
+                        $this->line("  {$table}: row '{$oldId}' skipped (entity_type={$row['entity_type']}, not caregiver)");
 
-                    if ($existing) {
-                        if ($table === 'users') {
-                            $allowedFields = $this->getAllowedUpdateFields($table);
-                            $updateData = array_intersect_key($row, array_flip($allowedFields));
-                            $updateData = $this->castTimestamps($updateData);
-                            DB::table($table)->where('id', $existing->id)->update($updateData);
-                            $this->line("  {$table}: '{$row[$uniqueField]}' updated (id={$existing->id})");
-                        } else {
-                            $this->warn("  {$table}: '{$row[$uniqueField]}' already exists (id={$existing->id}), reusing existing");
-                        }
+                        continue;
+                    }
 
-                        $this->idMaps[$table][$oldId] = $existing->id;
-                        $updated++;
+                    $parentMap = $this->idMaps['caregivers'] ?? [];
+                    $oldEntityId = $row['entity_id'] ?? null;
+
+                    if ($oldEntityId === null || ! isset($parentMap[$oldEntityId])) {
+                        $this->line("  {$table}: row '{$oldId}' skipped (caregiver {$oldEntityId} not in applicant scope)");
 
                         continue;
                     }
@@ -479,7 +511,7 @@ class MigrateApplicantsData extends Command
                 // Handle nullable timestamps — convert string to Carbon
                 $insertData = $this->castTimestamps($insertData);
 
-                // Remap FK(s)
+                // Remap FK(s) — before unique check so remapped values are used
                 if ($remap) {
                     $remaps = isset($remap['fk']) ? [$remap] : $remap;
 
@@ -499,6 +531,29 @@ class MigrateApplicantsData extends Command
                         }
 
                         $insertData[$r['fk']] = $parentMap[$oldFk];
+                    }
+                }
+
+                // Check for unique constraint conflicts (uses remapped values)
+                if ($uniqueField) {
+                    $existing = $this->findExistingRow($table, $uniqueField, $insertData);
+
+                    if ($existing) {
+                        if ($table === 'users') {
+                            $allowedFields = $this->getAllowedUpdateFields($table);
+                            $updateData = array_intersect_key($insertData, array_flip($allowedFields));
+                            DB::table($table)->where('id', $existing->id)->update($updateData);
+                            $identifier = $this->formatUniqueValue($uniqueField, $insertData);
+                            $this->line("  {$table}: '{$identifier}' updated (id={$existing->id})");
+                        } else {
+                            $identifier = $this->formatUniqueValue($uniqueField, $insertData);
+                            $this->warn("  {$table}: '{$identifier}' already exists (id={$existing->id}), reusing existing");
+                        }
+
+                        $this->idMaps[$table][$oldId] = $existing->id;
+                        $updated++;
+
+                        continue;
                     }
                 }
 
