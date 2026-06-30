@@ -377,7 +377,9 @@ class AdminBookingService implements BookingServiceInterface
                 'availability_id' => null,
                 'start_datetime' => $dateEntry['start_datetime'],
                 'end_datetime' => $dateEntry['end_datetime'],
-                'status' => $validated['status'],
+                'status' => ($validated['caregiver_id'] ?? null) && $validated['status'] === BookingStatus::Received->value
+                    ? BookingStatus::Confirmed->value
+                    : $validated['status'],
                 'total_amount' => 0,
                 'payment_status' => $validated['payment_status'],
             ]);
@@ -559,16 +561,6 @@ class AdminBookingService implements BookingServiceInterface
     public function update(Request $request, Booking $booking)
     {
         $validated = $request->validated();
-
-        // Validate minimum 4-hour duration
-        $start = new \DateTime($validated['start_datetime']);
-        $end = new \DateTime($validated['end_datetime']);
-        $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
-        if ($diffHours < 4) {
-            throw ValidationException::withMessages([
-                'end_datetime' => 'Booking must be at least 4 hours long.',
-            ]);
-        }
 
         // Create new client address if private_home and new address provided
         $addressId = $validated['address_id'] ?? null;

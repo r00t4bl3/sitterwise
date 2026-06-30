@@ -45,7 +45,7 @@ class UpdateBookingRequest extends FormRequest
         return match ($this->user()->role) {
             'admin' => $this->adminRules(),
             'client' => $this->clientRules(),
-            default => [],
+            default => $this->adminRules(),
         };
     }
 
