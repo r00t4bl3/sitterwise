@@ -48,6 +48,7 @@ class ImportUserService
         $newBubbleIds = [];
         $updateIds = [];
         $updateData = [];
+        $seenEmails = [];
         $defaultPasswordHash = Hash::make('changeme123');
 
         $i = 0;
@@ -97,6 +98,14 @@ class ImportUserService
                     $emailUser->update(['bubble_id' => $externalId, 'name' => $fullName, 'role' => $role, 'profile_photo_url' => $photoUrl]);
                     $existingByBubble[$externalId] = $emailUser;
                 } else {
+                    if (isset($seenEmails[$email])) {
+                        $timestamp = explode('x', $externalId)[0];
+                        $emailParts = explode('@', $email);
+                        $email = $emailParts[0].'+'.$timestamp.'@'.$emailParts[1];
+                    } else {
+                        $seenEmails[$email] = true;
+                    }
+
                     $newRecords[] = [
                         'bubble_id' => $externalId,
                         'email' => $email,
