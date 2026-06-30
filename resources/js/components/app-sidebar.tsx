@@ -121,6 +121,11 @@ const superAdminNavItems: NavItem[] = [
         icon: MessageCircle,
     },
     {
+        title: 'Users',
+        href: '/users',
+        icon: Users,
+    },
+    {
         title: 'Certifications',
         href: '/certifications',
         icon: Award,

@@ -32,6 +32,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\TrackEmailCheckStrikes;
 use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
@@ -209,6 +210,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('talking-points/{talkingPoint}', [InterviewTalkingPointController::class, 'update'])->name('talking-points.update');
         Route::delete('talking-points/{talkingPoint}', [InterviewTalkingPointController::class, 'destroy'])->name('talking-points.destroy');
         Route::post('talking-points/reorder', [InterviewTalkingPointController::class, 'reorder'])->name('talking-points.reorder');
+
+        // User management
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     });
 
     // Route::middleware('super_admin')->group(function () {
