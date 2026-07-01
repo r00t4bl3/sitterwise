@@ -994,6 +994,9 @@ class ImportUserService
     public static function extractCaregiverData(array $source, User $user): array
     {
         $statusName = $source['cg_status_option_cg_status_options'] ?? 'inactive';
+        if ($statusName === 'in_process') {
+            $statusName = 'under_review';
+        }
         $statusEnum = CaregiverStatus::tryFrom($statusName) ?? CaregiverStatus::Inactive;
         $names = self::parseSourceNames($source, $user->email);
 

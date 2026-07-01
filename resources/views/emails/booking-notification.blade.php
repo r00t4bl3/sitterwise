@@ -85,7 +85,7 @@
 <body>
     <div class="header">
         <h1>New Booking Available</h1>
-        <p>A new booking has been assigned to you</p>
+        <p>A new booking is available!</p>
     </div>
 
     <div class="warning">

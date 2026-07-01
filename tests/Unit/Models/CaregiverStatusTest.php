@@ -13,7 +13,6 @@ test('has all expected cases', function () {
     expect(CaregiverStatus::HiredOnboarding->value)->toBe('hired_onboarding');
     expect(CaregiverStatus::Active->value)->toBe('active');
     expect(CaregiverStatus::Inactive->value)->toBe('inactive');
-    expect(CaregiverStatus::InProcess->value)->toBe('in_process');
     expect(CaregiverStatus::NonStarter->value)->toBe('non_starter');
     expect(CaregiverStatus::Fired->value)->toBe('fired');
     expect(CaregiverStatus::Ineligible->value)->toBe('ineligible');
@@ -28,7 +27,6 @@ test('returns correct labels', function () {
     expect(CaregiverStatus::HiredOnboarding->label())->toBe('Hired / Onboarding');
     expect(CaregiverStatus::Active->label())->toBe('Active');
     expect(CaregiverStatus::Inactive->label())->toBe('Inactive');
-    expect(CaregiverStatus::InProcess->label())->toBe('In Process');
     expect(CaregiverStatus::NonStarter->label())->toBe('Non Starter');
     expect(CaregiverStatus::Fired->label())->toBe('Fired');
     expect(CaregiverStatus::Ineligible->label())->toBe('Ineligible');
@@ -73,7 +71,6 @@ test('returns hex colors', function () {
     expect(CaregiverStatus::HiredOnboarding->color())->toBe('#0EA5E9');
     expect(CaregiverStatus::Active->color())->toBe('#22C55E');
     expect(CaregiverStatus::Inactive->color())->toBe('#6B7280');
-    expect(CaregiverStatus::InProcess->color())->toBe('#F59E0B');
     expect(CaregiverStatus::NonStarter->color())->toBe('#EF4444');
     expect(CaregiverStatus::Fired->color())->toBe('#DC2626');
     expect(CaregiverStatus::Ineligible->color())->toBe('#991B1B');

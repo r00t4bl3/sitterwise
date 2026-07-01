@@ -11,7 +11,6 @@ enum CaregiverStatus: string
     case HiredOnboarding = 'hired_onboarding';
     case Active = 'active';
     case Inactive = 'inactive';
-    case InProcess = 'in_process';
     case NonStarter = 'non_starter';
     case Fired = 'fired';
     case Ineligible = 'ineligible';
@@ -27,7 +26,6 @@ enum CaregiverStatus: string
             self::HiredOnboarding => 'Hired / Onboarding',
             self::Active => 'Active',
             self::Inactive => 'Inactive',
-            self::InProcess => 'In Process',
             self::NonStarter => 'Non Starter',
             self::Fired => 'Fired',
             self::Ineligible => 'Ineligible',
@@ -45,7 +43,6 @@ enum CaregiverStatus: string
             self::HiredOnboarding => '#0EA5E9',
             self::Active => '#22C55E',
             self::Inactive => '#6B7280',
-            self::InProcess => '#F59E0B',
             self::NonStarter => '#EF4444',
             self::Fired => '#DC2626',
             self::Ineligible => '#991B1B',
