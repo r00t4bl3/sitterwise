@@ -174,9 +174,10 @@ export default function BookingDetail({
     const hasHours = booking.total_working_hour != null;
     const hasReimbursement = booking.reimbursement != null;
     const hasTotal = booking.charge_to_client != null;
+    const hasTip = booking.tip != null && booking.tip > 0;
 
     const showFeesSection =
-        hasHourlyRate || hasHours || hasReimbursement || hasTotal;
+        hasHourlyRate || hasHours || hasReimbursement || hasTotal || hasTip;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -562,6 +563,16 @@ export default function BookingDetail({
                                                     )}
                                                 </div>
                                             </>
+                                        )}
+                                        {hasTip && (
+                                            <div className="flex items-center justify-between pt-2">
+                                                <span className="text-sm text-muted-foreground">
+                                                    You tipped
+                                                </span>
+                                                <span className="text-sm font-medium text-foreground">
+                                                    {formatCurrency(booking.tip)}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
