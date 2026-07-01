@@ -466,10 +466,15 @@ export function BookingDetailsSection({
                                     form.setData('start_datetime', datetime);
 
                                     if (datetime) {
-                                        form.setData(
-                                            'end_datetime',
-                                            autoSetEndDateTime(datetime),
-                                        );
+                                        const newEnd =
+                                            autoSetEndDateTime(datetime);
+                                        form.setData('end_datetime', newEnd);
+                                        form.setData('dates', [
+                                            {
+                                                start_datetime: datetime,
+                                                end_datetime: newEnd,
+                                            },
+                                        ]);
                                     }
                                 }}
                             />
@@ -500,6 +505,12 @@ export function BookingDetailsSection({
                                 }
                                 onChange={(datetime) => {
                                     form.setData('end_datetime', datetime);
+                                    form.setData('dates', [
+                                        {
+                                            start_datetime: startDatetime,
+                                            end_datetime: datetime,
+                                        },
+                                    ]);
                                 }}
                             />
                             {form.errors.end_datetime && (

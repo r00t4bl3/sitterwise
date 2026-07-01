@@ -5,7 +5,7 @@ use App\Enums\CaregiverStatus;
 test('has all expected cases', function () {
     $cases = CaregiverStatus::cases();
 
-    expect($cases)->toHaveCount(12);
+    expect($cases)->toHaveCount(11);
     expect(CaregiverStatus::Applicant->value)->toBe('applicant');
     expect(CaregiverStatus::UnderReview->value)->toBe('under_review');
     expect(CaregiverStatus::InterviewScheduled->value)->toBe('interview_scheduled');
@@ -46,7 +46,7 @@ test('returns terminal statuses', function () {
 test('toArray returns all statuses with correct structure', function () {
     $statuses = CaregiverStatus::toArray();
 
-    expect($statuses)->toHaveCount(12);
+    expect($statuses)->toHaveCount(11);
 
     foreach ($statuses as $item) {
         expect($item)->toHaveKeys(['value', 'label', 'color', 'is_terminal']);
