@@ -2,6 +2,7 @@
 
 namespace App\Services\ClientPayment\Contracts;
 
+use App\Models\Client;
 use Inertia\Response as InertiaResponse;
 use Stripe\PaymentMethod;
 
@@ -22,4 +23,6 @@ interface ClientPaymentServiceInterface
     public function setDefaultPaymentMethod(int $paymentMethodId): array;
 
     public function deletePaymentMethod(int $paymentMethodId): array;
+
+    public function syncPaymentMethodsFromStripe(?Client $client = null): array;
 }

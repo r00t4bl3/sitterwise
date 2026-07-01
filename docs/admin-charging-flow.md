@@ -108,6 +108,34 @@ Handles async Stripe events as a safety net:
 - `payment_intent.succeeded`: Updates booking to `payment_status: 'charged'`, ClientPayment to `captured`
 - `payment_intent.payment_failed`: Updates booking to `payment_status: 'failed'`, ClientPayment to `failed`, dispatches `PaymentFailureHandler`
 
+### 7. Client Payment Method Sync
+
+**Files**:
+- `app/Services/ClientPayment/ClientPaymentService.php`
+- `app/Console/Commands/SyncClientPaymentMethods.php`
+
+Client payment methods (`ClientPaymentMethod` records) are populated through four channels:
+
+1. **Stripe webhooks** (`payment_method.attached`, `setup_intent.succeeded`, `checkout.session.completed`) — captures new payment methods in real-time
+2. **User setup flow** — client adds a card via Stripe EmbeddedCheckout on the payments page
+3. **Auto-sync fallback** — `showPaymentMethods()` calls `syncPaymentMethodsFromStripe()` if no local methods exist and the client has a `stripe_customer_id`
+4. **Backfill command** — `php artisan payments:sync-client-methods` for one-time catch-up
+
+The sync method `syncPaymentMethodsFromStripe`:
+1. Fetches all card payment methods from `GET /v1/customers/{id}/payment_methods`
+2. `updateOrCreate`s each as a `ClientPaymentMethod` record (matched by `provider_method_id`)
+3. Sets the first synced method as `is_default: true` if the client has no existing default, and updates Stripe customer's `invoice_settings.default_payment_method`
+4. Fails gracefully on Stripe errors — logs the error, returns empty array, does not block the page
+
+**Backfill command**:
+```bash
+# Backfill all clients (safe, idempotent)
+php artisan payments:sync-client-methods
+
+# Verify with a specific client
+php artisan payments:sync-client-methods --client=42
+```
+
 ---
 
 ## Key Database Tables
@@ -136,4 +164,6 @@ Handles async Stripe events as a safety net:
 | `resources/js/pages/admin/transactions/index.tsx` | Transactions UI (active) |
 | `resources/js/pages/admin/bookings/charge.tsx` | Charge page UI (dormant alternative) |
 | `app/Services/Billing/TipChargeService.php` | Separate tip charging flow via client review |
+| `app/Services/ClientPayment/ClientPaymentService.php` | Payment method management + Stripe sync |
+| `app/Console/Commands/SyncClientPaymentMethods.php` | Backfill command for legacy payment methods |
 | `config/services.php` | `enable_caregiver_transfers` flag (default `false`) |

@@ -12,6 +12,7 @@ use App\Notifications\BookingCreatedNotification;
 use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Services\ClientPayment\Contracts\ClientPaymentServiceInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Response as InertiaResponse;
 use Stripe\PaymentMethod;
 use Stripe\StripeClient;
@@ -69,6 +70,90 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             ->orderBy('created_at', 'desc')
             ->get();
 
+        if ($methods->isEmpty() && $client->stripe_customer_id) {
+            return $this->syncPaymentMethodsFromStripe($client);
+        }
+
+        return $this->formatMethods($methods);
+    }
+
+    public function syncPaymentMethodsFromStripe(?Client $client = null): array
+    {
+        $client = $client ?? $this->getClient();
+
+        if (! $client->stripe_customer_id) {
+            return [];
+        }
+
+        try {
+            $stripeMethods = $this->stripe->customers->allPaymentMethods(
+                $client->stripe_customer_id,
+                ['type' => 'card']
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch payment methods from Stripe', [
+                'client_id' => $client->id,
+                'stripe_customer_id' => $client->stripe_customer_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        $hasDefault = ClientPaymentMethod::where('client_id', $client->id)
+            ->where('is_default', true)
+            ->exists();
+
+        $synced = [];
+
+        foreach ($stripeMethods as $pm) {
+            $card = $pm->card ?? null;
+
+            $method = ClientPaymentMethod::updateOrCreate(
+                ['provider_method_id' => $pm->id],
+                [
+                    'client_id' => $client->id,
+                    'provider' => 'stripe',
+                    'brand' => $card->brand ?? 'unknown',
+                    'last4' => $card->last4 ?? '****',
+                    'exp_month' => $card->exp_month ?? 1,
+                    'exp_year' => $card->exp_year ?? 2025,
+                    'status' => 'active',
+                    'is_default' => false,
+                ]
+            );
+
+            if (! $hasDefault && empty($synced)) {
+                $method->update(['is_default' => true]);
+
+                try {
+                    $this->stripe->customers->update($client->stripe_customer_id, [
+                        'invoice_settings' => [
+                            'default_payment_method' => $pm->id,
+                        ],
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to update Stripe default payment method', [
+                        'client_id' => $client->id,
+                        'payment_method_id' => $pm->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $synced[] = $method;
+        }
+
+        Log::info('Synced payment methods from Stripe', [
+            'client_id' => $client->id,
+            'count' => count($synced),
+        ]);
+
+        return $this->formatMethods(collect($synced));
+    }
+
+    protected function formatMethods($methods): array
+    {
         return $methods->map(fn ($method) => [
             'id' => $method->id,
             'brand' => $method->brand,

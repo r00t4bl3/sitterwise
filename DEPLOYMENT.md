@@ -77,6 +77,12 @@ php artisan app:parse-children --from-cache
 php artisan app:sync-caregiver-ratings
 ```
 
+- [ ] **Sync client payment methods** — backfill client payment methods from Stripe for clients who had methods before the webhook infrastructure was in place (idempotent, safe to re-run)
+
+```bash
+php artisan payments:sync-client-methods
+```
+
 ## Environment Configuration
 
 - [ ] **Generate `APP_KEY`**
@@ -292,6 +298,7 @@ stdout_logfile=/path/to/storage/logs/worker.log
 | `caregivers:import-trustline` | **< 30 sec** | 178 name matches |
 | `app:parse-children --from-cache` | **3–10 min** | 16K+ cached AI records (no API calls) |
 | `app:sync-caregiver-ratings` | **< 1 min** | Aggregate query + batch update |
+| `payments:sync-client-methods` | **< 1 min** | Quick Stripe API reads, idempotent |
 
 ### Totals
 
