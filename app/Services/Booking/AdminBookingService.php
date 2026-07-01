@@ -774,7 +774,7 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
-        if ($booking->caregiver_id && ! $oldCaregiverId && $booking->getOriginal('status') === BookingStatus::Received->value) {
+        if ($booking->caregiver_id && ! $oldCaregiverId && in_array($booking->getOriginal('status'), [BookingStatus::Received->value, BookingStatus::Pending->value], true)) {
             $booking->updateQuietly(['status' => BookingStatus::Confirmed->value]);
         }
 
