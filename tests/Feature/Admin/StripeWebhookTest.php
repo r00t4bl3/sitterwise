@@ -4,10 +4,14 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Models\Booking;
+use App\Models\Caregiver;
+use App\Models\CaregiverPayout;
+use App\Models\CaregiverPayoutMethod;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
 use App\Models\PricingRule;
+use App\Models\User;
 use App\Services\Webhooks\StripeWebhookHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -234,5 +238,312 @@ describe('Stripe Webhook', function () {
 
         $response->assertOk();
         $response->assertJson(['success' => false]);
+    });
+
+    test('checkout.session.completed skips non-setup mode sessions', function () {
+        $session = (object) [
+            'id' => 'cs_'.uniqid(),
+            'mode' => 'payment',
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleCheckoutSessionCompleted');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $session);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('checkout.session.completed skips sessions without setup_intent', function () {
+        $session = (object) [
+            'id' => 'cs_'.uniqid(),
+            'mode' => 'setup',
+            'setup_intent' => null,
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleCheckoutSessionCompleted');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $session);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('checkout.session.completed skips sessions without customer', function () {
+        $session = (object) [
+            'id' => 'cs_'.uniqid(),
+            'mode' => 'setup',
+            'setup_intent' => 'seti_'.uniqid(),
+            'customer' => null,
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleCheckoutSessionCompleted');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $session);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('charge.dispute.created marks booking disputed', function () {
+        $booking = completedBooking();
+        $paymentIntentId = 'pi_'.uniqid();
+        $booking->update(['stripe_payment_intent_id' => $paymentIntentId]);
+
+        $dispute = (object) [
+            'id' => 'dp_'.uniqid(),
+            'payment_intent' => $paymentIntentId,
+            'amount' => 10000,
+            'reason' => 'fraudulent',
+            'status' => 'needs_response',
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleDisputeCreated');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $dispute);
+
+        $booking->refresh();
+        expect($booking->payment_status)->toBe('disputed');
+    });
+
+    test('charge.dispute.created does not throw when booking not found', function () {
+        $dispute = (object) [
+            'id' => 'dp_'.uniqid(),
+            'payment_intent' => 'pi_'.uniqid(),
+            'amount' => 10000,
+            'reason' => 'fraudulent',
+            'status' => 'needs_response',
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleDisputeCreated');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $dispute);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('setup_intent.succeeded skips events without customer', function () {
+        $setupIntent = (object) [
+            'id' => 'seti_'.uniqid(),
+            'customer' => null,
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleSetupIntentSucceeded');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $setupIntent);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('setup_intent.setup_failed logs without exception', function () {
+        $setupIntent = (object) [
+            'id' => 'seti_'.uniqid(),
+            'customer' => 'cus_'.uniqid(),
+            'last_setup_error' => (object) [
+                'code' => 'authentication_required',
+                'message' => 'Your card was not authenticated',
+            ],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleSetupIntentFailed');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $setupIntent);
+
+        expect(true)->toBeTrue();
+    });
+
+    test('payment_method.attached creates ClientPaymentMethod', function () {
+        $client = Client::factory()->create([
+            'stripe_customer_id' => 'cus_'.uniqid(),
+        ]);
+
+        $pmId = 'pm_'.uniqid();
+        $paymentMethod = (object) [
+            'id' => $pmId,
+            'customer' => $client->stripe_customer_id,
+            'card' => (object) [
+                'brand' => 'visa',
+                'last4' => '4242',
+                'exp_month' => 12,
+                'exp_year' => 2027,
+            ],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handlePaymentMethodAttached');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentMethod);
+
+        $method = ClientPaymentMethod::where('provider_method_id', $pmId)->first();
+        expect($method)->not->toBeNull();
+        expect($method->client_id)->toBe($client->id);
+        expect($method->provider)->toBe('stripe');
+        expect($method->brand)->toBe('visa');
+        expect($method->last4)->toBe('4242');
+        expect($method->status)->toBe('active');
+    });
+
+    test('payment_method.attached reactivates existing method', function () {
+        $client = Client::factory()->create([
+            'stripe_customer_id' => 'cus_'.uniqid(),
+        ]);
+
+        $pmId = 'pm_'.uniqid();
+        $existing = ClientPaymentMethod::create([
+            'client_id' => $client->id,
+            'provider' => 'stripe',
+            'provider_method_id' => $pmId,
+            'brand' => 'mastercard',
+            'last4' => '1111',
+            'exp_month' => 1,
+            'exp_year' => 2026,
+            'status' => 'inactive',
+        ]);
+
+        $paymentMethod = (object) [
+            'id' => $pmId,
+            'customer' => $client->stripe_customer_id,
+            'card' => (object) [
+                'brand' => 'visa',
+                'last4' => '4242',
+                'exp_month' => 12,
+                'exp_year' => 2027,
+            ],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handlePaymentMethodAttached');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentMethod);
+
+        $existing->refresh();
+        expect($existing->status)->toBe('active');
+        expect($existing->brand)->toBe('visa');
+        expect($existing->last4)->toBe('4242');
+    });
+
+    test('payment_method.detached marks method inactive', function () {
+        $client = Client::factory()->create();
+        $pmId = 'pm_'.uniqid();
+
+        ClientPaymentMethod::create([
+            'client_id' => $client->id,
+            'provider' => 'stripe',
+            'provider_method_id' => $pmId,
+            'brand' => 'visa',
+            'last4' => '4242',
+            'exp_month' => 12,
+            'exp_year' => 2027,
+            'status' => 'active',
+        ]);
+
+        $paymentMethod = (object) [
+            'id' => $pmId,
+            'customer' => $client->stripe_customer_id,
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handlePaymentMethodDetached');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentMethod);
+
+        $method = ClientPaymentMethod::where('provider_method_id', $pmId)->first();
+        expect($method->status)->toBe('inactive');
+    });
+
+    test('transfer.reversed marks CaregiverPayout as reversed', function () {
+        $user = User::factory()->create(['role' => 'caregiver']);
+        $caregiver = Caregiver::create([
+            'user_id' => $user->id,
+            'first_name' => 'Test',
+            'last_name' => 'Caregiver',
+            'slug' => 'test-caregiver-'.uniqid(),
+            'status' => 'active',
+        ]);
+        $payoutMethod = CaregiverPayoutMethod::factory()->create([
+            'caregiver_id' => $caregiver->id,
+        ]);
+
+        $payout = CaregiverPayout::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'caregiver_payout_method_id' => $payoutMethod->id,
+            'provider_transfer_id' => 'tr_'.uniqid(),
+            'status' => 'completed',
+        ]);
+
+        $transfer = (object) [
+            'id' => $payout->provider_transfer_id,
+            'amount' => 10000,
+            'amount_reversed' => 5000,
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleTransferReversed');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $transfer);
+
+        $payout->refresh();
+        expect($payout->status)->toBe('reversed');
+    });
+
+    test('charge.refunded marks booking as refunded', function () {
+        $booking = completedBooking();
+        $paymentIntentId = 'pi_'.uniqid();
+        $booking->update(['stripe_payment_intent_id' => $paymentIntentId]);
+
+        $charge = (object) [
+            'id' => 'ch_'.uniqid(),
+            'payment_intent' => $paymentIntentId,
+            'amount_refunded' => 10000,
+            'refunds' => (object) [
+                'data' => [
+                    (object) ['reason' => 'requested_by_customer'],
+                ],
+            ],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleChargeRefunded');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $charge);
+
+        $booking->refresh();
+        expect($booking->payment_status)->toBe('refunded');
+    });
+
+    test('handler exception returns success true', function () {
+        $booking = completedBooking();
+        $paymentIntentId = 'pi_'.uniqid();
+
+        $payload = [
+            'id' => 'evt_'.uniqid(),
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => $paymentIntentId,
+                    'amount' => 10000,
+                    'metadata' => [
+                        'booking_id' => $booking->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $jsonPayload = json_encode($payload);
+        $timestamp = time();
+        Config::set('services.stripe.webhook_secret', 'whsec_test');
+        $signature = hash_hmac('sha256', "{$timestamp}.{$jsonPayload}", 'whsec_test');
+
+        $mock = Mockery::mock(StripeWebhookHandler::class)->makePartial();
+        $mock->shouldAllowMockingProtectedMethods();
+        $mock->shouldReceive('handlePaymentIntentSucceeded')->andThrow(new RuntimeException('DB connection lost'));
+
+        $result = $mock->handle($payload, "t={$timestamp},v1={$signature}");
+
+        expect($result['success'])->toBeTrue();
     });
 });

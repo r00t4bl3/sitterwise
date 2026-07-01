@@ -137,14 +137,14 @@ export function BookingChildrenSection({
                                         </SelectTrigger>
                                         <SelectContent>
                                             {MONTH_ABBR.map(
-                                                (monthAbbr, index) => {
+                                                (monthAbbr: string, index: number) => {
                                                     if (index === 0) {
                                                         return null;
                                                     }
 
                                                     return (
                                                         <SelectItem
-                                                            key={monthAbbr}
+                                                            key={`month-${index}`}
                                                             value={String(
                                                                 index,
                                                             )}

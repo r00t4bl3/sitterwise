@@ -503,7 +503,74 @@ class AdminBookingService implements BookingServiceInterface
         $caregiverAllIds = $recommended->pluck('id')->toArray();
         $caregiverTotal = $recommended->count();
 
+        $serviceTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ServiceType::cases()
+        );
+
+        $locationTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            LocationType::cases()
+        );
+
+        $petTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            PetType::cases()
+        );
+
+        $paymentStatuses = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            BookingPaymentStatus::cases()
+        );
+
+        $sitterPreferences = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            SitterPreference::cases()
+        );
+
+        $clientTypes = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            ClientType::cases()
+        );
+
+        $discoverySources = array_map(
+            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
+            DiscoverySource::cases()
+        );
+
+        $hotels = Hotel::where('is_active', true)->get()->map(fn ($h) => [
+            'id' => $h->id,
+            'name' => $h->name,
+            'city' => $h->city,
+            'line1' => $h->line1,
+            'line2' => $h->line2,
+            'state' => $h->state,
+            'zip' => $h->zip,
+        ]);
+
+        $caregivers = Caregiver::query()
+            ->where('status', CaregiverStatus::Active->value)
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->first_name.' '.$c->last_name,
+            ]);
+
         return Inertia::render('admin/bookings/show', [
+            'service_types' => $serviceTypes,
+            'location_types' => $locationTypes,
+            'pet_types' => $petTypes,
+            'payment_statuses' => $paymentStatuses,
+            'sitter_preferences' => $sitterPreferences,
+            'client_types' => $clientTypes,
+            'discovery_sources' => $discoverySources,
+            'hotels' => $hotels,
+            'caregivers' => $caregivers,
+            'clients' => [[
+                'id' => $booking->client->id,
+                'name' => trim($booking->client->first_name.' '.$booking->client->last_name),
+            ]],
+            'booking_attributes' => [],
             'booking_statuses' => $bookingStatuses,
             'caregiver_suggestions' => $caregiverSuggestions,
             'caregiver_all_ids' => $caregiverAllIds,
@@ -551,6 +618,7 @@ class AdminBookingService implements BookingServiceInterface
                 'caregiver_rating' => $booking->caregiver_rating,
                 'booking_group' => $group ? [
                     'id' => $group->id,
+                    'client_id' => $group->client_id,
                     'bookings_count' => $group->bookings->count(),
                     'sibling_bookings' => $siblingBookings,
                 ] : null,

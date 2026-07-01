@@ -364,7 +364,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'caregiver_name' => $booking->caregiver
                     ? $booking->caregiver->first_name.' '.$booking->caregiver->last_name
                     : null,
-                'has_review' => $booking->relationLoaded('caregiverRating') && $booking->getRelation('caregiverRating') !== null,
+                'caregiver_rating' => $booking->caregiver_rating,
                 'address_line1' => $booking->address_line1,
                 'address_line2' => $booking->address_line2,
                 'address_city' => $booking->address_city,

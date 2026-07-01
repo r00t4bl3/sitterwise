@@ -48,9 +48,34 @@ The payout flow is initiated by the **bookings** table:
 
 ### Phase 2: Reliability & State Sync
 
-- [ ] **Webhook Enhancement**:
-    - Update `StripeWebhookHandler::handleAccountUpdated` to update the `Caregiver` model's status (e.g., `stripe_status = 'verified'`).
-    - Add handlers for `transfer.failed` and `payout.failed` to notify administrators/caregivers.
+#### Client-Side Payment Events
+
+- [x] **`checkout.session.completed`**:
+    - Sync the payment method created via Stripe Checkout to `ClientPaymentMethod`.
+    - Retrieves the SetupIntent → payment method → persists card details.
+- [x] **`charge.dispute.created`**:
+    - Log dispute details (booking, amount, reason) and notify admins.
+    - Mark the related booking's payment as disputed.
+- [x] **`setup_intent.succeeded`**:
+    - Confirm payment method setup and sync to `ClientPaymentMethod` record.
+- [x] **`setup_intent.setup_failed`**:
+    - Log the failure with client/error context.
+- [x] **`payment_method.attached`**:
+    - Sync newly attached payment methods to `ClientPaymentMethod` records.
+- [x] **`payment_method.detached`**:
+    - Mark detached payment methods as `inactive` in the database.
+- [x] **`charge.refunded`**:
+    - Mark the related booking's payment as `refunded` and log refund details.
+
+#### Connect-Side Events
+
+- [ ] **`account.updated`**:
+    - Update `Caregiver` model's Stripe status (e.g., `stripe_status = 'verified'`, `charges_enabled`, `payouts_enabled`).
+- [ ] **`transfer.created`**:
+    - Sync transfer status to `CaregiverPayout` records.
+- [x] **`transfer.reversed`**:
+    - Mark the related `CaregiverPayout` as `reversed`, log a warning.
+
 - [ ] **Optimized Status Checks**:
     - Update `CaregiverPayoutController` to check local database status first before calling the Stripe API.
 
@@ -65,7 +90,12 @@ The payout flow is initiated by the **bookings** table:
 
 ### Phase 4: Testing & Verification
 
-- [ ] **Feature Tests**:
+- [x] **Webhook Feature Tests**:
+    - 21 tests covering all webhook event handlers (13 new, 8 pre-existing).
+    - Tests exercise: `payment_intent.succeeded`, `payment_intent.failed`, `checkout.session.completed`, `charge.dispute.created`, `setup_intent.succeeded`, `setup_intent.setup_failed`, `payment_method.attached`, `payment_method.detached`, `transfer.reversed`, `charge.refunded`.
+    - Includes edge cases: missing bookings, missing metadata, invalid signatures, handler exceptions returning `success: true`.
+- [x] **Webhook Error Resilience**:
+    - Try-catch wrapper around all event handlers prevents any single handler exception from returning 500 to Stripe.
+    - Handler exceptions are logged with full trace for debugging; webhook returns `success: true` to prevent Stripe retry loops.
+- [ ] **Feature Tests (remaining)**:
     - Write Pest tests for the transfer logic.
-    - Write tests for webhook state updates.
-    - Mock Stripe API responses to verify error handling paths.

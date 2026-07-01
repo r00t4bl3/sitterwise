@@ -103,6 +103,10 @@ describe('Booking - Admin', function () {
             'total_amount' => 100,
             'status' => 'received',
             'payment_status' => 'pending',
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
         ]);
 
         $response->assertForbidden();
@@ -113,13 +117,15 @@ describe('Booking - Admin', function () {
         $this->actingAs($caregiverUser);
 
         $booking = Booking::factory()->create();
+        $start = $booking->start_datetime;
+        $end = $start->copy()->addHours(4);
 
         $response = $this->patch(route('bookings.update', $booking), [
             'client_id' => $booking->client_id,
             'service_type' => $booking->service_type,
             'location_type' => $booking->location_type,
-            'start_datetime' => $booking->start_datetime->toISOString(),
-            'end_datetime' => $booking->end_datetime->toISOString(),
+            'start_datetime' => $start->toISOString(),
+            'end_datetime' => $end->toISOString(),
             'total_amount' => $booking->total_amount,
             'status' => 'confirmed',
             'payment_status' => $booking->payment_status,

@@ -55,7 +55,11 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
-    has_review: boolean;
+    caregiver_rating: {
+        id: number;
+        rating: number;
+        comment: string | null;
+    } | null;
     charge_to_client_hourly: number | null;
     total_working_hour: number | null;
     charge_to_client: number | null;
@@ -586,6 +590,63 @@ export default function BookingDetail({
                                         />
                                     </div>
                                 )}
+
+                            {booking.caregiver_rating && (
+                                <div>
+                                    <h2 className="text-md mb-2 font-semibold text-foreground">
+                                        Your Feedback
+                                    </h2>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex">
+                                                {[1, 2, 3, 4, 5].map(
+                                                    (star) => (
+                                                        <div
+                                                            key={star}
+                                                            className="relative h-4 w-4"
+                                                        >
+                                                            <Star className="absolute inset-0 h-4 w-4 text-yellow-400" />
+                                                            <div
+                                                                className="absolute inset-0 overflow-hidden"
+                                                                style={{
+                                                                    width: `${Math.min(
+                                                                        Math.max(
+                                                                            (booking
+                                                                                .caregiver_rating!
+                                                                                .rating -
+                                                                                (star -
+                                                                                    1)) *
+                                                                                100,
+                                                                            0,
+                                                                        ),
+                                                                        100,
+                                                                    )}%`,
+                                                                }}
+                                                            >
+                                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                            </div>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                            <span className="text-sm font-medium text-foreground">
+                                                {Number(
+                                                    booking.caregiver_rating
+                                                        .rating,
+                                                ).toFixed(1)}
+                                            </span>
+                                        </div>
+                                        {booking.caregiver_rating.comment && (
+                                            <p className="text-sm text-muted-foreground">
+                                                {
+                                                    booking.caregiver_rating
+                                                        .comment
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -593,7 +654,7 @@ export default function BookingDetail({
                 <div className="flex justify-end gap-2">
                     {(booking.status === 'completed' ||
                         booking.status === 'paid') &&
-                        !booking.has_review && (
+                        !booking.caregiver_rating && (
                             <Button asChild>
                                 <Link href={`/reviews/${booking.ulid}`}>
                                     <Star className="mr-2 h-4 w-4" />

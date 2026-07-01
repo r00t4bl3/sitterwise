@@ -1052,15 +1052,17 @@ export function useBookingSheet({
 
             setSelectedCaregiverName('');
 
-            const hasDirectAddress = !!booking.booking_group?.address_line1;
+            const bookingAddress = fullBooking.address_line1;
+            const groupAddress = booking.booking_group?.address_line1;
+            const hasDirectAddress = !!bookingAddress || !!groupAddress;
 
             if (hasDirectAddress) {
                 const addressParts = [
-                    booking.booking_group?.address_line1,
-                    booking.booking_group?.address_line2,
-                    booking.booking_group?.address_city,
-                    booking.booking_group?.address_state,
-                    booking.booking_group?.address_zip,
+                    bookingAddress || booking.booking_group?.address_line1,
+                    fullBooking.address_line2 || booking.booking_group?.address_line2,
+                    fullBooking.address_city || booking.booking_group?.address_city,
+                    fullBooking.address_state || booking.booking_group?.address_state,
+                    fullBooking.address_zip || booking.booking_group?.address_zip,
                 ].filter(Boolean);
                 setAddressValue(addressParts.join(', '));
                 setShowManualAddressInput(true);

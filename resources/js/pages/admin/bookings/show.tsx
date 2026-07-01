@@ -1,6 +1,7 @@
-import { Link, Head, useForm } from '@inertiajs/react';
+import { Link, Head, useForm, router } from '@inertiajs/react';
 import {
     Calendar,
+    Copy,
     ExternalLink,
     MapPin,
     Star,
@@ -39,6 +40,8 @@ import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { NotifyCaregiversSheet } from './notify-caregivers-sheet';
 import { ReplaceCaregiverSheet } from './replace-caregiver-sheet';
+import { BookingSheet } from './booking-sheet';
+import { useBookingSheet } from './use-booking-sheet';
 
 interface Booking {
     id: number;
@@ -117,7 +120,8 @@ interface BookingStatus {
     };
 }
 
-interface PageProps {
+interface Props {
+    [key: string]: unknown;
     booking: Booking;
     booking_statuses: BookingStatus[];
     caregiver_suggestions: Array<{
@@ -129,6 +133,31 @@ interface PageProps {
     }>;
     caregiver_all_ids: number[];
     caregiver_total: number;
+    service_types: Array<{ value: string; label: string }>;
+    location_types: Array<{ value: string; label: string }>;
+    pet_types: Array<{ value: string; label: string }>;
+    payment_statuses: Array<{ value: string; label: string }>;
+    sitter_preferences: Array<{ value: string; label: string }>;
+    client_types: Array<{ value: string; label: string }>;
+    discovery_sources: Array<{ value: string; label: string }>;
+    hotels: Array<{
+        id: number;
+        name: string;
+        line1: string | null;
+        line2: string | null;
+        city: string | null;
+        state: string | null;
+        zip: string | null;
+    }>;
+    caregivers: Array<{ id: number; name: string; [key: string]: unknown }>;
+    clients: Array<{ id: number; name: string; [key: string]: unknown }>;
+    booking_attributes: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        type: string;
+        options: string[];
+    }>;
 }
 
 const breadcrumbs = [
@@ -152,11 +181,37 @@ export default function BookingDetail({
     caregiver_suggestions,
     caregiver_all_ids,
     caregiver_total,
-}: PageProps) {
+    service_types,
+    location_types,
+    pet_types,
+    payment_statuses,
+    sitter_preferences,
+    client_types,
+    discovery_sources,
+    hotels,
+    caregivers,
+    clients,
+    booking_attributes,
+}: Props) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
+
+    const sheet = useBookingSheet({
+        clients,
+        hotels,
+        caregivers,
+        service_types,
+        location_types,
+        booking_statuses,
+        payment_statuses,
+        booking_attributes,
+        sitter_preferences,
+        pet_types,
+        client_types,
+        discovery_sources,
+    });
 
     const [caregiverSuggestions, setCaregiverSuggestions] = useState<
         Array<{ id: number; name: string; age?: number | null; matchIcons?: string[]; hasBeenNotified?: boolean; [key: string]: unknown }>
@@ -380,9 +435,20 @@ export default function BookingDetail({
                 <div className="rounded-lg border border-border bg-card p-6">
                     <div className="grid gap-6 lg:grid-cols-2">
                         <div className="left-panel">
-                            <h2 className="mb-4 text-lg font-semibold text-foreground">
-                                Booking Information
-                            </h2>
+                            <div className="mb-4 flex items-center gap-2">
+                                <h2 className="text-lg font-semibold text-foreground">
+                                    Booking Information
+                                </h2>
+                                <Button
+                                    size="sm"
+                                    onClick={() =>
+                                        sheet.openDuplicateSheet(booking as any)
+                                    }
+                                >
+                                    <Copy className="mr-1 h-4 w-4" />
+                                    Duplicate
+                                </Button>
+                            </div>
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Heart className="h-4 w-4 text-muted-foreground" />
@@ -890,58 +956,6 @@ export default function BookingDetail({
                                         <h3 className="mb-2 text-sm font-medium text-foreground">
                                             Feedback from Client
                                         </h3>
-                                        {booking.client_rating ? (
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex items-center gap-1">
-                                                    {[1, 2, 3, 4, 5].map(
-                                                        (star) => (
-                                                            <Star
-                                                                key={star}
-                                                                className={`h-5 w-5 ${
-                                                                    star <=
-                                                                    booking
-                                                                        .client_rating!
-                                                                        .rating
-                                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                                        : 'text-gray-300'
-                                                                }`}
-                                                            />
-                                                        ),
-                                                    )}
-                                                    <span className="ml-2 text-sm text-muted-foreground">
-                                                        (
-                                                        {
-                                                            booking
-                                                                .client_rating
-                                                                .rating
-                                                        }
-                                                        /5)
-                                                    </span>
-                                                </div>
-                                                {booking.client_rating
-                                                    .comment && (
-                                                    <p className="text-sm text-muted-foreground italic">
-                                                        &quot;
-                                                        {
-                                                            booking
-                                                                .client_rating
-                                                                .comment
-                                                        }
-                                                        &quot;
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground italic">
-                                                No feedback from client yet.
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="rounded-lg border border-border bg-card p-4">
-                                        <h3 className="mb-2 text-sm font-medium text-foreground">
-                                            Review from Caregiver
-                                        </h3>
                                         {booking.caregiver_rating ? (
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex items-center gap-1">
@@ -977,6 +991,58 @@ export default function BookingDetail({
                                                         {
                                                             booking
                                                                 .caregiver_rating
+                                                                .comment
+                                                        }
+                                                        &quot;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">
+                                                No feedback from client yet.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-card p-4">
+                                        <h3 className="mb-2 text-sm font-medium text-foreground">
+                                            Review from Caregiver
+                                        </h3>
+                                        {booking.client_rating ? (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4, 5].map(
+                                                        (star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`h-5 w-5 ${
+                                                                    star <=
+                                                                    booking
+                                                                        .client_rating!
+                                                                        .rating
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ),
+                                                    )}
+                                                    <span className="ml-2 text-sm text-muted-foreground">
+                                                        (
+                                                        {
+                                                            booking
+                                                                .client_rating
+                                                                .rating
+                                                        }
+                                                        /5)
+                                                    </span>
+                                                </div>
+                                                {booking.client_rating
+                                                    .comment && (
+                                                    <p className="text-sm text-muted-foreground italic">
+                                                        &quot;
+                                                        {
+                                                            booking
+                                                                .client_rating
                                                                 .comment
                                                         }
                                                         &quot;
@@ -1064,6 +1130,8 @@ export default function BookingDetail({
                 onAgeFilterChange={handleAgeFilterChange}
                 onSearchChange={handleSearchChange}
             />
+
+            <BookingSheet {...sheet} />
 
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
                 <DialogContent>
