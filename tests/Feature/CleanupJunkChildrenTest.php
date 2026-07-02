@@ -57,6 +57,66 @@ describe('cleanup:junk-children command', function () {
         expect($children)->toBe([['name' => 'Alice', 'birth_year' => 2018]]);
     });
 
+    test('clears birthless placeholder children from petsitter groups', function () {
+        $group = BookingGroup::factory()->create([
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'children' => [
+                ['name' => 'Child 1'],
+                ['name' => 'Child 2'],
+            ],
+        ]);
+
+        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+
+        $children = json_decode(
+            DB::table('booking_groups')->where('id', $group->id)->value('children'),
+            true,
+        );
+
+        expect($children)->toBe([]);
+    });
+
+    test('keeps count-only placeholder children on babysitter groups', function () {
+        $group = BookingGroup::factory()->create([
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'children' => [
+                ['name' => 'Child 1'],
+                ['name' => 'Child 2'],
+            ],
+        ]);
+
+        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+
+        $children = json_decode(
+            DB::table('booking_groups')->where('id', $group->id)->value('children'),
+            true,
+        );
+
+        expect($children)->toBe([['name' => 'Child 1'], ['name' => 'Child 2']]);
+    });
+
+    test('keeps a dated child even on a petsitter group', function () {
+        $group = BookingGroup::factory()->create([
+            'client_id' => $this->client->id,
+            'service_type' => 'companion_care',
+            'children' => [
+                ['name' => 'Real Kid', 'birth_year' => 2015],
+                ['name' => 'Child 2'],
+            ],
+        ]);
+
+        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+
+        $children = json_decode(
+            DB::table('booking_groups')->where('id', $group->id)->value('children'),
+            true,
+        );
+
+        expect($children)->toBe([['name' => 'Real Kid', 'birth_year' => 2015]]);
+    });
+
     test('empties a group whose children is a junk string', function () {
         $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
         DB::table('booking_groups')->where('id', $group->id)->update(['children' => '"None"']);

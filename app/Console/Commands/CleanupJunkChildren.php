@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\DB;
 #[Description('Remove junk "None"/"N/A" children with no birth data from client profiles and booking groups')]
 class CleanupJunkChildren extends Command
 {
+    /**
+     * Services that never involve children, so any birthless child entry on
+     * their booking groups is junk (e.g. count-only "Child 2" placeholders).
+     *
+     * @var list<string>
+     */
+    private const CHILD_FREE_SERVICES = ['petsitter', 'companion_care'];
+
     public function handle(): int
     {
         $dryRun = (bool) $this->option('dry-run');
@@ -76,10 +84,14 @@ class CleanupJunkChildren extends Command
 
         DB::table('booking_groups')
             ->whereNotNull('children')
-            ->select('id', 'children')
+            ->select('id', 'children', 'service_type')
             ->orderBy('id')
             ->chunk(500, function ($groups) use ($dryRun, &$groupsAffected, &$entriesRemoved) {
                 foreach ($groups as $group) {
+                    // Pet/companion services have no children, so any birthless
+                    // entry there is junk (even count-only "Child 2" placeholders).
+                    $childFree = in_array($group->service_type, self::CHILD_FREE_SERVICES, true);
+
                     $decoded = json_decode($group->children, true);
 
                     // The whole value is junk (e.g. the literal string "None").
@@ -96,7 +108,7 @@ class CleanupJunkChildren extends Command
 
                     $kept = array_values(array_filter(
                         $decoded,
-                        fn ($child) => ! $this->isJunkChildEntry($child),
+                        fn ($child) => ! $this->isJunkChildEntry($child, $childFree),
                     ));
 
                     $removed = count($decoded) - count($kept);
@@ -129,7 +141,7 @@ class CleanupJunkChildren extends Command
             ->update(['children' => json_encode($children)]);
     }
 
-    private function isJunkChildEntry(mixed $child): bool
+    private function isJunkChildEntry(mixed $child, bool $childFree = false): bool
     {
         if (! is_array($child)) {
             return true;
@@ -139,6 +151,18 @@ class CleanupJunkChildren extends Command
             || ! empty($child['birth_month'])
             || ! empty($child['birth_date']);
 
-        return ! $hasBirthData && ImportUserService::isJunkChildName($child['name'] ?? null);
+        // Keep anything with real birth data — even on a pet/companion booking a
+        // dated child likely means the booking was mis-categorised, not junk.
+        if ($hasBirthData) {
+            return false;
+        }
+
+        // Pet/companion services shouldn't have children at all, so a birthless
+        // entry is junk regardless of name (catches "Child 2" placeholders).
+        if ($childFree) {
+            return true;
+        }
+
+        return ImportUserService::isJunkChildName($child['name'] ?? null);
     }
 }
