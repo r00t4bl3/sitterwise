@@ -111,8 +111,9 @@ class AdminBookingService implements BookingServiceInterface
 
         $clientsWithPaymentCapability = [];
         if (! empty($clientIds)) {
-            $clientsWithStripeCustomer = Client::whereIn('id', $clientIds)
+            $clientsWithValidCustomer = Client::whereIn('id', $clientIds)
                 ->whereNotNull('stripe_customer_id')
+                ->where('stripe_customer_id', '!=', '')
                 ->pluck('id')
                 ->toArray();
 
@@ -122,7 +123,7 @@ class AdminBookingService implements BookingServiceInterface
                 ->toArray();
 
             $clientsWithPaymentCapability = array_values(array_unique(
-                array_merge($clientsWithStripeCustomer, $clientsWithActivePM)
+                array_intersect($clientsWithValidCustomer, $clientsWithActivePM)
             ));
         }
 
