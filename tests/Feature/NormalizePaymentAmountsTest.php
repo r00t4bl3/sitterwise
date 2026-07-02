@@ -32,7 +32,7 @@ it('runs with client_payments that have bubble_id', function () {
         'booking_id' => $booking->id,
         'client_id' => $client->id,
         'amount' => 18113.00,
-        'status' => 'captured',
+        'status' => 'succeeded',
         'provider' => 'stripe',
         'bubble_id' => 'test_bubble_id_123',
     ]);
@@ -54,7 +54,7 @@ it('does not modify amounts with --apply', function () {
         'booking_id' => $booking->id,
         'client_id' => $client->id,
         'amount' => 100.00,
-        'status' => 'captured',
+        'status' => 'succeeded',
         'provider' => 'stripe',
         'bubble_id' => 'test_nonexistent',
     ]);

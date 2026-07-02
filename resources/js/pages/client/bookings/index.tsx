@@ -1,11 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { formatDisplayDateTimeInPT } from '@/lib/datetime';
+import { formatDisplayDateTimeRangeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -75,131 +75,145 @@ export default function ClientBookingsIndex() {
                     </Button>
                 </div>
 
-                {bookings.data.length === 0 ? (
-                    <div className="rounded-lg border border-border bg-card p-12 text-center">
-                        <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                        <h3 className="text-lg font-medium text-foreground">
-                            No bookings found
-                        </h3>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            You haven&apos;t booked any services yet.
-                        </p>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="space-y-4">
-                            {bookings.data.map((booking) => (
-                                <div
+                <div className="border border-border bg-card">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-table-header">
+                                <th className="w-12 px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    #
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Date
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Caregiver
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Status
+                                </th>
+                                <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bookings.data.map((booking, index) => (
+                                <tr
                                     key={booking.id}
-                                    className="rounded-lg border border-border bg-card p-6"
+                                    className="border-b border-border transition hover:bg-blush"
                                 >
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-medium text-foreground">
-                                                    {booking.caregiver_name ||
-                                                        'Caregiver not assigned'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {formatDisplayDateTimeInPT(
-                                                        booking.start_datetime,
-                                                    )}{' '}
-                                                    -{' '}
-                                                    {formatDisplayDateTimeInPT(
-                                                        booking.end_datetime,
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <StatusBadge
-                                                    status={booking.status}
-                                                    bookingStatuses={
-                                                        bookingStatuses
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                                        {(bookings.current_page - 1) *
+                                            bookings.per_page +
+                                            index +
+                                            1}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {formatDisplayDateTimeRangeInPT(
+                                            booking.start_datetime,
+                                            booking.end_datetime,
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-foreground">
+                                        {booking.caregiver_name || (
+                                            <span className="text-muted-foreground">
+                                                —
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <StatusBadge
+                                                status={booking.status}
+                                                bookingStatuses={
+                                                    bookingStatuses
+                                                }
+                                            />
+                                            {booking.booking_group?.bookings_count >
+                                                1 && (
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    Multi-Day (
+                                                    {
+                                                        booking.booking_group
+                                                            .bookings_count
                                                     }
-                                                />
-                                                {booking.booking_group &&
-                                                    booking.booking_group
-                                                        .bookings_count > 1 && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="text-xs"
-                                                        >
-                                                            Multi-Day (
-                                                            {
-                                                                booking
-                                                                    .booking_group
-                                                                    .bookings_count
-                                                            }
-                                                            )
-                                                        </Badge>
-                                                    )}
-                                            </div>
+                                                    )
+                                                </Badge>
+                                            )}
                                         </div>
-
-                                        <div className="flex items-center gap-4">
-                                            <Link
-                                                href={`/bookings/${booking.ulid}`}
-                                            >
-                                                <Button size="sm">
-                                                    View Details
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <Link
+                                            href={`/bookings/${booking.ulid}`}
+                                        >
+                                            <Button size="sm">
+                                                View Details
+                                            </Button>
+                                        </Link>
+                                    </td>
+                                </tr>
                             ))}
+                            {bookings.data.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={5}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
+                                        No booking history found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {bookings.last_page > 1 && (
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                            Page {bookings.current_page} of{' '}
+                            {bookings.last_page}
+                        </p>
+                        <div className="flex gap-1">
+                            {bookings.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-table-header text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${
+                                            !link.url
+                                                ? 'pointer-events-none opacity-50'
+                                                : ''
+                                        }`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </div>
-
-                        {bookings.last_page > 1 && (
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm text-muted-foreground">
-                                    Page {bookings.current_page} of{' '}
-                                    {bookings.last_page}
-                                </p>
-                                <div className="flex gap-1">
-                                    {bookings.links.map((link, index) => {
-                                        if (link.label === '...') {
-                                            return null;
-                                        }
-
-                                        const isPrev =
-                                            link.label.includes('Previous') ||
-                                            link.label.includes('&laquo;');
-                                        const isNext =
-                                            link.label.includes('Next') ||
-                                            link.label.includes('&raquo;');
-
-                                        return (
-                                            <Link
-                                                key={index}
-                                                href={link.url || '#'}
-                                                className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
-                                                    link.active
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'border border-border text-muted-foreground hover:bg-accent'
-                                                } ${
-                                                    !link.url
-                                                        ? 'pointer-events-none opacity-50'
-                                                        : ''
-                                                }`}
-                                            >
-                                                {isPrev ? (
-                                                    <ChevronLeft className="h-4 w-4" />
-                                                ) : isNext ? (
-                                                    <ChevronRight className="h-4 w-4" />
-                                                ) : (
-                                                    link.label
-                                                )}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>

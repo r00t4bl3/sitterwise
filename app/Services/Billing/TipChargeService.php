@@ -125,7 +125,7 @@ class TipChargeService
             $booking->update(['tip' => $tipAmount]);
 
             $clientPayment->update([
-                'status' => 'captured',
+                'status' => 'succeeded',
                 'provider_payment_id' => $paymentIntent->id,
                 'paid_at' => now(),
             ]);

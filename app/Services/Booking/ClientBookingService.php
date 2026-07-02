@@ -52,7 +52,8 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         $bookings = $client->bookings()
             ->with(['caregiver.user'])
             ->with(['bookingGroup' => fn ($q) => $q->withCount('bookings')])
-            ->paginate(15)
+            ->orderBy('start_datetime', 'desc')
+            ->paginate(10)
             ->through(function ($booking) {
                 $group = $booking->bookingGroup;
 

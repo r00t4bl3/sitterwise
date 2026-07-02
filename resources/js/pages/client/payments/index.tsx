@@ -1,5 +1,5 @@
-import { Head, usePage } from '@inertiajs/react';
-import { CreditCard, Plus, Trash2, Star } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, CreditCard, Plus, Trash2, Star } from 'lucide-react';
 import { useState } from 'react';
 import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import { Button } from '@/components/ui/button';
@@ -72,25 +72,27 @@ interface Props {
 }
 
 function StatusBadge({ status }: { status: string }) {
-    const statusColors: Record<string, { bg: string; text: string }> = {
-        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
-        authorized: { bg: 'bg-blue-100', text: 'text-blue-800' },
-        captured: { bg: 'bg-green-100', text: 'text-green-800' },
-        failed: { bg: 'bg-red-100', text: 'text-red-800' },
-        refunded: { bg: 'bg-gray-100', text: 'text-gray-800' },
+    const statusConfig: Record<string, { bg: string; text: string; border: string; label: string }> = {
+        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200', label: 'Pending' },
+        authorized: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', label: 'Authorized' },
+        succeeded: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', label: 'Succeeded' },
+        failed: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', label: 'Failed' },
+        refunded: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', label: 'Refunded' },
     };
 
-    const colors = statusColors[status] || {
+    const config = statusConfig[status] || {
         bg: 'bg-gray-100',
         text: 'text-gray-800',
+        border: 'border-gray-300',
+        label: status,
     };
 
     return (
-        <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colors.bg} ${colors.text}`}
+        <div
+            className={`inline-flex w-24 items-center justify-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${config.bg} ${config.text} ${config.border}`}
         >
-            {status}
-        </span>
+            {config.label}
+        </div>
     );
 }
 
@@ -285,6 +287,9 @@ export default function ClientPaymentsIndex() {
                     <table className="w-full">
                         <thead>
                             <tr className="bg-table-header">
+                                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase w-12">
+                                    #
+                                </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Date
                                 </th>
@@ -303,11 +308,17 @@ export default function ClientPaymentsIndex() {
                             </tr>
                         </thead>
                         <tbody>
-                            {payments.data.map((payment) => (
+                            {payments.data.map((payment, index) => (
                                 <tr
                                     key={payment.id}
                                     className="border-b border-border transition hover:bg-blush"
                                 >
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                                        {(payments.current_page - 1) *
+                                            payments.per_page +
+                                            index +
+                                            1}
+                                    </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {formatDisplayDateTimeInPT(
                                             payment.paid_at,
@@ -341,7 +352,7 @@ export default function ClientPaymentsIndex() {
                             {payments.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-4 py-8 text-center text-muted-foreground"
                                     >
                                         No payment history found.
@@ -357,6 +368,40 @@ export default function ClientPaymentsIndex() {
                         <p className="text-sm text-muted-foreground">
                             Page {payments.current_page} of {payments.last_page}
                         </p>
+                        <div className="flex gap-1">
+                            {payments.links.map((link, index) => {
+                                if (link.label === '...') {
+                                    return null;
+                                }
+
+                                const isPrev =
+                                    link.label.includes('Previous') ||
+                                    link.label.includes('&laquo;');
+                                const isNext =
+                                    link.label.includes('Next') ||
+                                    link.label.includes('&raquo;');
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url || '#'}
+                                        className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                                            link.active
+                                                ? 'bg-table-header text-white'
+                                                : 'border border-border text-muted-foreground hover:bg-accent'
+                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                        {isPrev ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : isNext ? (
+                                            <ChevronRight className="h-4 w-4" />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

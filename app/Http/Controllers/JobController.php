@@ -20,7 +20,13 @@ class JobController extends Controller
 {
     public function index(Request $request)
     {
-        $caregiver = $request->user()->caregiver;
+        $user = $request->user();
+
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return redirect()->route('bookings.index');
+        }
+
+        $caregiver = $user->caregiver;
 
         if (! $caregiver) {
             abort(403, 'Caregiver profile not found');
@@ -52,7 +58,7 @@ class JobController extends Controller
         }
 
         $bookings = $query->orderBy('start_datetime', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->appends($request->query());
 
         $bookings->getCollection()->transform(fn ($booking) => [
@@ -95,7 +101,15 @@ class JobController extends Controller
 
     public function show(Request $request, Booking $booking)
     {
-        $caregiver = $request->user()->caregiver;
+        $user = $request->user();
+
+        // Admins have no caregiver profile; send them to the admin booking view
+        // instead of a dead-end 403.
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return redirect()->route('bookings.show', $booking->ulid);
+        }
+
+        $caregiver = $user->caregiver;
 
         if (! $caregiver) {
             abort(403, 'Caregiver profile not found');
@@ -112,6 +126,12 @@ class JobController extends Controller
 
         if ($isInvited && ! $isAssigned && $booking->caregiver_id === null) {
             return redirect()->route('bookings.show', $booking->ulid);
+        }
+
+        // Invited, but the job was already claimed by another caregiver. Show a
+        // friendly, PII-free page instead of leaking the client's details.
+        if (! $isAssigned && $booking->caregiver_id !== null) {
+            return Inertia::render('caregiver/jobs/filled');
         }
 
         $booking->load('bookingGroup', 'client.user', 'hotel', 'address', 'clientRating', 'caregiverRating');

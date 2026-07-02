@@ -30,7 +30,7 @@ class JobBillingService
             ];
         }
 
-        if ($booking->payment_status === 'charged' || $booking->payment_status === 'captured') {
+        if ($booking->payment_status === 'charged' || $booking->payment_status === 'succeeded') {
             return [
                 'success' => false,
                 'message' => 'This booking has already been charged',
@@ -134,7 +134,7 @@ class JobBillingService
 
             // 3. Update ClientPayment on Success
             $clientPayment->update([
-                'status' => 'captured',
+                'status' => 'succeeded',
                 'provider_payment_id' => $paymentIntent->id,
                 'paid_at' => now(),
             ]);
@@ -172,7 +172,7 @@ class JobBillingService
                 return false;
             }
 
-            if (in_array($locked->payment_status, ['charged', 'captured'], true)) {
+            if (in_array($locked->payment_status, ['charged', 'succeeded'], true)) {
                 return false;
             }
 

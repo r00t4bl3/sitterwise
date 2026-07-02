@@ -55,7 +55,7 @@ describe('ChargingController', function () {
 
     test('returns error when booking already charged', function () {
         $booking = makeBooking($this->client, $this->caregiver, [
-            'payment_status' => 'captured',
+            'payment_status' => 'succeeded',
         ]);
 
         $response = $this->actingAs($this->admin)

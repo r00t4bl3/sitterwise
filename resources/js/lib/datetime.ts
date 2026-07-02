@@ -239,10 +239,10 @@ export const formatDisplayDateTimeRangeInPT = (
     const endTime = formatDisplayTimeInPT(endStr);
 
     if (startShort === endShort) {
-        return `${startShort} ${startTime} - ${endTime}`;
+        return `${startShort}, ${startTime} - ${endTime}`;
     }
 
-    return `${startShort} ${startTime} - ${endShort} ${endTime}`;
+    return `${startShort}, ${startTime} - ${endShort}, ${endTime}`;
 };
 
 /**

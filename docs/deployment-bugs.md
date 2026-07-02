@@ -7,7 +7,7 @@ Every bug was traced to specific code. Summary of who/what is needed:
 | # | Bug | Severity | Root cause found | Fixable in code | Needs prod DB / Aji |
 |---|-----|----------|------------------|-----------------|---------------------|
 | 148 | Job links 404 (numeric ID vs ULID) | CRITICAL | Yes | ✅ DONE | Deploy + verify prod binder |
-| 149 | Bare 404/403 on job pages | High | Yes | Yes | Deploy |
+| 149 | Bare 404/403 on job pages | High | Yes | ✅ DONE | Deploy (rebuild SSR) |
 | 150 | Dashboard "today" in UTC | High | Yes | ✅ DONE | Deploy |
 | 151 | 12,600 "pending" reviews | High | Yes | ✅ DONE | Deploy (no email risk — verified) |
 | 161 | Duplicate review reminders (~4×) | Medium | Yes | ✅ DONE | Deploy + migrate |
@@ -37,7 +37,19 @@ Note: the current code's `Booking::resolveRouteBinding` (Booking.php:131-138) ac
 
 **Fix:** pass `->ulid` explicitly in both places (plus `SearchController.php:71`); point the email button at `route('jobs.short', $booking->ulid)`; keep the dual binder so old numeric links in caregivers' phones still work. Do NOT set a global `getRouteKeyName()` — it would flip every admin URL too.
 
-## 149 — Bare 404 / 403 on job pages (High)
+## 149 — Bare 404 / 403 on job pages (High) — ✅ RESOLVED
+
+**Fix applied (three parts):**
+- **Admin dead-end:** `JobController::show()`/`index()` now check `isAdmin()`/`isSuperAdmin()` *before* touching `->caregiver` and redirect to `bookings.show`/`bookings.index` (the admin booking view) instead of aborting 403.
+- **Privacy leak:** `show()` adds a branch — invited caregiver + job claimed by a *different* caregiver → renders the new **PII-free** `caregiver/jobs/filled` page (no props at all). Ordering guarantees it only reaches invited caregivers; assigned still get the full page, open-invite still redirects to the accept page. (Also covers the assigned-then-replaced caregiver.)
+- **Friendly error pages:** `bootstrap/app.php` `withExceptions` now renders `errors/error` (self-contained page, status→copy map) for 403/404/500/503. Guards: 419 → `back()` with flash; `expectsJson()` bypass for API/webhooks; **skipped in `local`/`testing`** so the existing suite is untouched (a dedicated test forces `$this->app['env']='production'`).
+
+New pages: `resources/js/pages/caregiver/jobs/filled.tsx` (AppLayout), `resources/js/pages/errors/error.tsx` (self-contained). Tests: `JobShowTest` (admin redirects + PII-free regression lock asserting the filled page carries no client email/name), `ErrorPagesTest` (prod render for 404/403, JSON bypass, testing-env control).
+
+**Deploy note:** run `npm run build` (**incl. SSR bundle**) so SSR can resolve the two new components; if SSR is down, Inertia falls back to client render (no crash).
+
+## 149 — original triage
+
 
 - Admin 403: `JobController.php:98-102` aborts with "Caregiver profile not found" for any user without a caregiver profile. Fix: redirect admins to the admin booking view.
 - No "job already filled" state exists anywhere. **Worse (privacy leak):** an invited caregiver opening an already-claimed job sees the full detail page *including the client's phone and email* (`JobController.php:104-155`). Fix: claimed-by-someone-else → render a friendly "This job has already been filled" page.

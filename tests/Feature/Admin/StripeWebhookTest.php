@@ -99,7 +99,7 @@ describe('Stripe Webhook', function () {
         $ref->invoke($handler, $paymentIntent);
 
         $payment = ClientPayment::where('booking_id', $booking->id)->first();
-        expect($payment->status)->toBe('captured');
+        expect($payment->status)->toBe('succeeded');
         expect($payment->provider_payment_id)->toBe($paymentIntentId);
     });
 

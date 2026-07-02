@@ -1416,7 +1416,7 @@ class AdminBookingService implements BookingServiceInterface
 
         // Bail before mutating amounts if this booking is already paid — a stray
         // re-submit must not overwrite the figures that were actually charged.
-        if (in_array($booking->payment_status, ['charged', 'captured'], true)) {
+        if (in_array($booking->payment_status, ['charged', 'succeeded'], true)) {
             return redirect()->back()->with('error', 'This booking has already been charged.');
         }
 

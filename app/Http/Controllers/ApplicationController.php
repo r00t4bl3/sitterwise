@@ -41,7 +41,7 @@ class ApplicationController extends Controller
 
         $applications = $query
             ->orderBy('submitted_at', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->through(fn ($app) => [
                 'id' => $app->id,
                 'caregiver_id' => $app->caregiver_id,

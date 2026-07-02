@@ -2087,6 +2087,26 @@ class ImportUserService
         return trim($name);
     }
 
+    /**
+     * Normalize a raw amount value from Bubble staging data.
+     *
+     * Floats are treated as dollars (unchanged).
+     * Integers >= 1000 are treated as cents and divided by 100.
+     * Integers < 1000 are treated as dollars (tips, unchanged).
+     */
+    public static function normalizeAmount(float|int $amount): float
+    {
+        if (is_float($amount)) {
+            return $amount;
+        }
+
+        if ($amount >= 1000) {
+            return $amount / 100;
+        }
+
+        return (float) $amount;
+    }
+
     public function finalizeCaregiverSlugs(): int
     {
         $caregivers = Caregiver::where('slug', 'like', 'import-%')->get();

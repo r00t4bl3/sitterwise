@@ -34,8 +34,8 @@ class TransactionController extends Controller
                         });
                 });
             })
-            ->latest()
-            ->paginate(15)
+            ->orderBy('start_datetime', 'desc')
+            ->paginate(10)
             ->through(function ($booking) {
                 return [
                     'id' => $booking->id,

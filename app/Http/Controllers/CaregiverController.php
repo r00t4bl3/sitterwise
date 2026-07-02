@@ -57,7 +57,7 @@ class CaregiverController extends Controller
             $direction = 'asc';
         }
 
-        $caregivers = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
+        $caregivers = $query->orderBy($sort, $direction)->paginate(10)->appends($request->query());
         $statuses = array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
@@ -224,7 +224,7 @@ class CaregiverController extends Controller
         }
 
         $bookings = $query->orderBy('start_datetime', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->appends($request->query());
 
         $bookings->getCollection()->transform(fn ($booking) => [

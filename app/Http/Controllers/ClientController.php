@@ -78,7 +78,7 @@ class ClientController extends Controller
             $direction = 'desc';
         }
 
-        $clients = $query->orderBy($sort, $direction)->paginate(20)->appends($request->query());
+        $clients = $query->orderBy($sort, $direction)->paginate(10)->appends($request->query());
 
         $clients->getCollection()->transform(fn ($client) => [
             ...$client->toArray(),
@@ -408,7 +408,7 @@ class ClientController extends Controller
         }
 
         $bookings = $query->orderBy('start_datetime', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->appends($request->query());
 
         $bookingStatuses = array_map(

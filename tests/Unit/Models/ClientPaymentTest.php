@@ -69,9 +69,9 @@ test('defines paymentMethod relationship', function () {
 });
 
 test('factory states produce correct statuses', function () {
-    $captured = ClientPayment::factory()->captured()->create();
-    expect($captured->status)->toBe('captured');
-    expect($captured->paid_at)->not->toBeNull();
+    $succeeded = ClientPayment::factory()->succeeded()->create();
+    expect($succeeded->status)->toBe('succeeded');
+    expect($succeeded->paid_at)->not->toBeNull();
 
     $failed = ClientPayment::factory()->failed()->create();
     expect($failed->status)->toBe('failed');

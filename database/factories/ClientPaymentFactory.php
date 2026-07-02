@@ -16,7 +16,7 @@ class ClientPaymentFactory extends Factory
             'payment_method_id' => null,
             'amount' => fake()->randomFloat(2, 50, 500),
             'currency' => 'usd',
-            'status' => fake()->randomElement(['pending', 'captured', 'failed', 'refunded']),
+            'status' => fake()->randomElement(['pending', 'succeeded', 'failed', 'refunded']),
             'provider' => 'stripe',
             'provider_payment_id' => 'pi_'.fake()->unique()->uuid(),
             'provider_charge_id' => 'ch_'.fake()->unique()->uuid(),
@@ -24,12 +24,17 @@ class ClientPaymentFactory extends Factory
         ];
     }
 
-    public function captured(): static
+    public function succeeded(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'captured',
+            'status' => 'succeeded',
             'paid_at' => now(),
         ]);
+    }
+
+    public function captured(): static
+    {
+        return $this->succeeded();
     }
 
     public function failed(): static
