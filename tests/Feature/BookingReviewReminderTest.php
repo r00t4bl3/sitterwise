@@ -108,7 +108,7 @@ test('command skips bookings without a client user', function () {
     Notification::assertNothingSent();
 });
 
-test('command is idempotent within the same window', function () {
+test('command does not resend the email reminder on a second run', function () {
     $booking = Booking::factory()->forClient($this->client)->create([
         'caregiver_id' => $this->caregiver->id,
         'status' => BookingStatus::Completed->value,
@@ -118,12 +118,36 @@ test('command is idempotent within the same window', function () {
     Notification::fake();
 
     $this->artisan('app:send-review-reminders')->assertSuccessful();
+    $this->artisan('app:send-review-reminders')->assertSuccessful();
 
-    Notification::assertSentTo(
+    Notification::assertSentToTimes(
         $this->clientUser,
         BookingReviewReminderNotification::class,
         1,
     );
+
+    expect($booking->fresh()->review_reminder_email_sent_at)->not->toBeNull();
+});
+
+test('command does not resend the SMS reminder on a second run', function () {
+    $booking = Booking::factory()->forClient($this->client)->create([
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Completed->value,
+        'end_datetime' => now()->subHours(50),
+    ]);
+
+    Notification::fake();
+
+    $this->artisan('app:send-review-reminders')->assertSuccessful();
+    $this->artisan('app:send-review-reminders')->assertSuccessful();
+
+    Notification::assertSentToTimes(
+        $this->clientUser,
+        BookingReviewReminderNotification::class,
+        1,
+    );
+
+    expect($booking->fresh()->review_reminder_sms_sent_at)->not->toBeNull();
 });
 
 test('command sends SMS for bookings completed 48+ hours ago', function () {

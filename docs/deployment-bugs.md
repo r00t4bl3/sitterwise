@@ -8,8 +8,9 @@ Every bug was traced to specific code. Summary of who/what is needed:
 |---|-----|----------|------------------|-----------------|---------------------|
 | 148 | Job links 404 (numeric ID vs ULID) | CRITICAL | Yes | ✅ DONE | Deploy + verify prod binder |
 | 149 | Bare 404/403 on job pages | High | Yes | Yes | Deploy |
-| 150 | Dashboard "today" in UTC | High | Yes | Yes | Deploy |
-| 151 | 12,600 "pending" reviews | High | Yes | Yes | Deploy (no email risk — verified) |
+| 150 | Dashboard "today" in UTC | High | Yes | ✅ DONE | Deploy |
+| 151 | 12,600 "pending" reviews | High | Yes | ✅ DONE | Deploy (no email risk — verified) |
+| 161 | Duplicate review reminders (~4×) | Medium | Yes | ✅ DONE | Deploy + migrate |
 | 152 | "83 unassigned" inflated | Medium | Yes | Yes + data repair | SQL repair on prod |
 | 153 | Child records named "None" | Medium | Yes | ✅ DONE | Run cleanup on prod |
 | 154 | No Cancel for unassigned bookings | Medium | Yes | ✅ DONE | Deploy |
@@ -42,13 +43,33 @@ Note: the current code's `Booking::resolveRouteBinding` (Booking.php:131-138) ac
 - No "job already filled" state exists anywhere. **Worse (privacy leak):** an invited caregiver opening an already-claimed job sees the full detail page *including the client's phone and email* (`JobController.php:104-155`). Fix: claimed-by-someone-else → render a friendly "This job has already been filled" page.
 - No Inertia error pages are registered at all (`bootstrap/app.php` withExceptions is empty) — all errors are raw Symfony pages. Fix: register friendly 403/404/500 pages.
 
-## 150 — Dashboard "today" computed in UTC (High)
+## 150 — Dashboard "today" computed in UTC (High) — ✅ RESOLVED
+
+**Fix applied (query-boundary only — no `config/app.php` change, no data migration, stored datetimes stay UTC):** added `App\Support\BusinessTime` (holds the `America/Los_Angeles` constant + `now()`). All day/month/year boundaries now compute in Pacific and convert to UTC for the query via `->utc()`. Call sites fixed: `Booking::scopeInFuture` + `scopeInToday`; `AdminBookingService::index` + `export` month windows; `DashboardController` month/YTD/last-year bounds. The `> $now` "is-it-upcoming" comparisons stay as the real current instant. Tests: `BookingScopeTimezoneTest` freezes the clock at 7pm Pacific (already next-day UTC) and asserts `inToday`/`inFuture` use the Pacific day (fails on old code).
+
+## 150 — original triage
+
 
 `config/app.php:68` sets timezone UTC; `scopeInToday` (`app/Models/Booking.php:443-446`) uses `now()->startOfDay()` — after 5 PM Pacific "today" is tomorrow. Same bug in `scopeInFuture` (line 438), the calendar month window (`AdminBookingService.php:73-74`), the monthly export window (`AdminBookingService.php:1252-1256`), and dashboard month/YTD stats.
 
 **Fix:** compute all boundaries in `America/Los_Angeles`, convert to UTC for queries. One pattern, five call sites. (Availability code already does this correctly — the Booking scopes are the outliers.)
 
-## 151 — 12,600 "pending" reviews (High)
+## 151 — 12,600 "pending" reviews (High) — ✅ RESOLVED
+
+**Fix applied (read-only query fixes in `DashboardController`):**
+- `pendingReviewsCount` now adds `->whereNull('bubble_id')`, excluding the migrated Bubble backlog so the count reflects only real, reviewable bookings.
+- Star breakdown moved to `caregiverRatingDistribution()`: buckets by nearest whole star via `(int) floor((float) $rating + 0.5)` in PHP (portable across MySQL/SQLite; rating set is small), so a `4.5` counts as 5★ and buckets sum to `totalReviews`.
+
+Tests: `DashboardReviewStatsTest` (bubble bookings excluded from pending count; `4.5`/`3.5` bucket correctly and sum to total). Email-blast risk verified safe (reminder is tightly windowed), so the count fix carries no mailing risk. The duplicate-reminder issue found here is fixed as **#161** below.
+
+## 161 — Duplicate review reminders (~4× emails + SMS) — ✅ RESOLVED
+
+**Fix applied:** added nullable `review_reminder_email_sent_at` + `review_reminder_sms_sent_at` columns (migration, no data change). `SendReviewReminders` now filters `whereNull(...)` per channel and stamps the timestamp with `saveQuietly()` after sending, so a booking is reminded once per channel instead of on every run across the 24h window. The notification takes an explicit `channels` arg so the email window sends **mail only** and the SMS window sends **SMS only** (previously the SMS window re-sent the email too). Tests: `BookingReviewReminderTest` — running the command twice sends exactly once for both email and SMS, and stamps the columns.
+
+**Deploy note:** run `php artisan migrate` (adds the two columns). Existing completed bookings have null flags, so the next run may send one reminder to any still within the window — a one-time catch-up, not a re-blast.
+
+## 151 — original triage
+
 
 `DashboardController.php:271-273` counts every completed booking ever without a rating — including the entire migrated Bubble history. Star breakdown (lines 274-280) uses exact integer equality but ratings are decimals (4.5 matches no bucket → 414 ≠ 430).
 

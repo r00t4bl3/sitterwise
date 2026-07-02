@@ -35,6 +35,7 @@ use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverPayout\CaregiverPayoutService;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use App\Support\BusinessTime;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -66,12 +67,14 @@ class AdminBookingService implements BookingServiceInterface
 
     public function index(Request $request)
     {
-        $month = (int) $request->input('month', now()->month);
-        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', BusinessTime::now()->month);
+        $year = (int) $request->input('year', BusinessTime::now()->year);
         $status = $request->input('status');
 
-        $startDate = now()->year($year)->month($month)->startOfMonth();
-        $endDate = $startDate->endOfMonth()->addDay();
+        // Compute the month window in the business timezone, then convert to UTC
+        // for the query (start_datetime is stored in UTC).
+        $startDate = BusinessTime::now()->setDate($year, $month, 1)->startOfDay()->utc();
+        $endDate = BusinessTime::now()->setDate($year, $month, 1)->endOfMonth()->addDay()->utc();
 
         $query = Booking::select([
             'id', 'ulid', 'booking_group_id', 'caregiver_id',
@@ -1295,11 +1298,12 @@ class AdminBookingService implements BookingServiceInterface
 
     public function export(Request $request)
     {
-        $month = (int) $request->input('month', now()->month);
-        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', BusinessTime::now()->month);
+        $year = (int) $request->input('year', BusinessTime::now()->year);
 
-        $startDate = now()->year($year)->month($month)->startOfMonth();
-        $endDate = $startDate->endOfMonth();
+        // Business-timezone month window, converted to UTC for the query.
+        $startDate = BusinessTime::now()->setDate($year, $month, 1)->startOfDay()->utc();
+        $endDate = BusinessTime::now()->setDate($year, $month, 1)->endOfMonth()->utc();
 
         $bookings = Booking::with([
             'client.user',

@@ -9,6 +9,7 @@ use App\Enums\SpecialConsideration;
 use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
+use App\Support\BusinessTime;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -218,6 +219,8 @@ class Booking extends Model
             'end_datetime' => 'datetime',
             'reservation_expires_at' => 'datetime',
             'confirmed_at' => 'datetime',
+            'review_reminder_email_sent_at' => 'datetime',
+            'review_reminder_sms_sent_at' => 'datetime',
             'last_charge_attempt_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'checkout_at' => 'datetime',
@@ -437,12 +440,17 @@ class Booking extends Model
 
     public function scopeInFuture($query)
     {
-        return $query->where('start_datetime', '>', now()->startOfDay());
+        return $query->where('start_datetime', '>', BusinessTime::now()->startOfDay()->utc());
     }
 
     public function scopeInToday($query)
     {
-        return $query->whereBetween('start_datetime', [now()->startOfDay(), now()->endOfDay()]);
+        $today = BusinessTime::now();
+
+        return $query->whereBetween('start_datetime', [
+            $today->copy()->startOfDay()->utc(),
+            $today->copy()->endOfDay()->utc(),
+        ]);
     }
 
     public function scopeSearchGroupFields($query, string $search)

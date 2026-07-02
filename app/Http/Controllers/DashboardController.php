@@ -24,6 +24,7 @@ use App\Models\QuickLink;
 use App\Models\ReferenceRequest;
 use App\Models\User;
 use App\Services\CaregiverBadgeService;
+use App\Support\BusinessTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -54,9 +55,12 @@ class DashboardController extends Controller
 
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             $now = now();
-            $monthStart = $now->copy()->startOfMonth();
-            $monthEnd = $now->copy()->endOfMonth();
-            $ytdStart = $now->copy()->startOfYear();
+            // Period boundaries in the business timezone (converted to UTC for
+            // the query); $now stays the real current instant for "> $now".
+            $bizNow = BusinessTime::now();
+            $monthStart = $bizNow->copy()->startOfMonth()->utc();
+            $monthEnd = $bizNow->copy()->endOfMonth()->utc();
+            $ytdStart = $bizNow->copy()->startOfYear()->utc();
 
             $completedStatuses = [BookingStatus::Completed->value, BookingStatus::Paid->value];
             $activeStatuses = [BookingStatus::Received->value, BookingStatus::Pending->value, BookingStatus::Confirmed->value];
@@ -82,7 +86,7 @@ class DashboardController extends Controller
             $ytdTotal = $ytdCompleted + $ytdUpcoming;
 
             $lastYearDate = $now->copy()->subYear();
-            $lastYearStart = $lastYearDate->copy()->startOfYear();
+            $lastYearStart = $bizNow->copy()->subYear()->startOfYear()->utc();
             $lytdTotal = Booking::whereBetween('start_datetime', [$lastYearStart, $lastYearDate])
                 ->whereIn('status', [...$completedStatuses, ...$activeStatuses])
                 ->count();
@@ -266,15 +270,10 @@ class DashboardController extends Controller
                         ->avg('rating') ?? 0, 2),
                     'totalReviews' => BookingRating::where('ratable_type', Caregiver::class)->count(),
                     'pendingReviewsCount' => Booking::whereIn('status', $completedStatuses)
+                        ->whereNull('bubble_id')
                         ->whereDoesntHave('ratings', fn ($q) => $q->where('ratable_type', Caregiver::class))
                         ->count(),
-                    'ratingDistribution' => [
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 5)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 4)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 3)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 2)->count(),
-                        BookingRating::where('ratable_type', Caregiver::class)->where('rating', 1)->count(),
-                    ],
+                    'ratingDistribution' => $this->caregiverRatingDistribution(),
                 ],
                 'needsAttention' => [
                     // [
@@ -541,5 +540,29 @@ class DashboardController extends Controller
             'admin' => $adminData,
             'quickLinks' => $quickLinks,
         ]);
+    }
+
+    /**
+     * Caregiver rating counts bucketed by nearest whole star (index 0 = 5★ …
+     * index 4 = 1★). Ratings are stored as decimals, so a 4.5 is rounded to 5★
+     * rather than matching no exact-integer bucket. Bucketing in PHP keeps it
+     * portable across MySQL/SQLite; the rating set is small (a few hundred rows).
+     *
+     * @return array<int, int>
+     */
+    private function caregiverRatingDistribution(): array
+    {
+        $byStar = BookingRating::query()
+            ->where('ratable_type', Caregiver::class)
+            ->pluck('rating')
+            ->countBy(fn ($rating) => (int) floor((float) $rating + 0.5));
+
+        return [
+            $byStar[5] ?? 0,
+            $byStar[4] ?? 0,
+            $byStar[3] ?? 0,
+            $byStar[2] ?? 0,
+            $byStar[1] ?? 0,
+        ];
     }
 }

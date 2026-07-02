@@ -14,10 +14,18 @@ class BookingReviewReminderNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
-    public function __construct(public Booking $booking) {}
+    /**
+     * @param  list<string>|null  $channels  Explicit delivery channels. When null,
+     *                                       falls back to the legacy time-based rule.
+     */
+    public function __construct(public Booking $booking, public ?array $channels = null) {}
 
     public function via(object $notifiable): array
     {
+        if ($this->channels !== null) {
+            return $this->channels;
+        }
+
         $channels = ['mail'];
 
         if ($this->booking->end_datetime->lt(now()->subHours(48))) {
