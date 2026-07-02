@@ -25,7 +25,15 @@ class StoreBookingRequest extends FormRequest
 
                 $serviceType = $this->input('service_type');
 
-                if ($serviceType !== 'group_childcare_invoiced') {
+                // Pet-only and companion care services have no children; group
+                // childcare tracks them at the group level. Don't force a child.
+                $childExemptServices = [
+                    'group_childcare_invoiced',
+                    'petsitter',
+                    'companion_care',
+                ];
+
+                if (! in_array($serviceType, $childExemptServices, true)) {
                     $newChildren = $this->input('new_children', []);
 
                     if (empty($newChildren)) {

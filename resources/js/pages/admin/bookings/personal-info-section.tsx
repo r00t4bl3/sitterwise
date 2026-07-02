@@ -184,6 +184,17 @@ export function PersonalInfoSection({
 
     const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
 
+    // Legacy/imported bookings can store children/pets as a string or with null
+    // entries; guard so the summary never throws and blanks the whole sheet.
+    const rawGroupChildren = editingBooking?.booking_group?.children;
+    const groupChildren = Array.isArray(rawGroupChildren)
+        ? rawGroupChildren.filter(Boolean)
+        : [];
+    const rawGroupPets = editingBooking?.booking_group?.pets;
+    const groupPets = Array.isArray(rawGroupPets)
+        ? rawGroupPets.filter(Boolean)
+        : [];
+
     return (
         <>
             {editingBooking && (
@@ -225,33 +236,25 @@ export function PersonalInfoSection({
                         <p className="text-sm text-muted-foreground">
                             {editingBooking.booking_group?.children_notes
                                 ? editingBooking.booking_group?.children_notes
-                                : editingBooking.booking_group?.children &&
-                                    editingBooking.booking_group?.children
-                                        .length > 0
-                                  ? editingBooking.booking_group?.children.map(
-                                        (child, index) => (
-                                            <span key={`child-${index}`}>
-                                                {child.name}
-                                                {child.birth_month &&
-                                                child.birth_year
-                                                    ? ` (${calculateAge(
-                                                          child.birth_year,
-                                                          child.birth_month,
-                                                      )})`
-                                                    : ''}
-                                                {index <
-                                                editingBooking.booking_group
-                                                    ?.children!.length -
-                                                    1
-                                                    ? ', '
-                                                    : ''}
-                                            </span>
-                                        ),
-                                    )
+                                : groupChildren.length > 0
+                                  ? groupChildren.map((child, index) => (
+                                        <span key={`child-${index}`}>
+                                            {child?.name}
+                                            {child?.birth_month &&
+                                            child?.birth_year
+                                                ? ` (${calculateAge(
+                                                      child.birth_year,
+                                                      child.birth_month,
+                                                  )})`
+                                                : ''}
+                                            {index < groupChildren.length - 1
+                                                ? ', '
+                                                : ''}
+                                        </span>
+                                    ))
                                   : '(No children)'}
-                            {editingBooking.booking_group?.pets &&
-                                editingBooking.booking_group?.pets.length > 0 &&
-                                ` • ${editingBooking.booking_group?.pets.length} pet${editingBooking.booking_group?.pets.length > 1 ? 's' : ''}`}
+                            {groupPets.length > 0 &&
+                                ` • ${groupPets.length} pet${groupPets.length > 1 ? 's' : ''}`}
                         </p>
                     </div>
                     {['received', 'pending'].includes(form.data.status) &&
@@ -332,7 +335,9 @@ export function PersonalInfoSection({
                                 displayValue={selectedClientName}
                                 showAddNew={true}
                                 onAddNew={(query) => {
-                                    const [firstName, ...rest] = query.trim().split(/\s+/);
+                                    const [firstName, ...rest] = query
+                                        .trim()
+                                        .split(/\s+/);
                                     form.setData('new_client', {
                                         ...form.data.new_client,
                                         first_name: firstName || '',

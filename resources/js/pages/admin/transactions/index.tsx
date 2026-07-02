@@ -29,6 +29,7 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -191,10 +192,17 @@ export default function TransactionsIndex() {
         }
 
         paymentForm.post(`/bookings/${selectedBooking.id}/process-payment`, {
+            preserveScroll: true,
             onSuccess: () => {
                 setShowPaymentSheet(false);
                 setShowConfirmDialog(false);
                 setSelectedBooking(null);
+            },
+            onError: () => {
+                // Surface the failure: close the confirm dialog so the flash
+                // toast is visible, but keep the sheet open so the admin can
+                // adjust and retry instead of seeing a silent no-op.
+                setShowConfirmDialog(false);
             },
         });
     };
@@ -328,9 +336,19 @@ export default function TransactionsIndex() {
         }
     };
 
+    // The backend charges total_service_amount (service + reimbursement + bonus;
+    // tips are charged separately). A $0 charge — e.g. a booking with no matched
+    // pricing rule — is rejected server-side, so block Confirm and explain why.
+    const serviceChargeAmount =
+        recalculatedValues.charge_to_client +
+        (parseFloat(localValues.reimbursement) || 0) +
+        (parseFloat(localValues.bonus) || 0);
+    const isChargeInvalid = serviceChargeAmount <= 0;
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Transactions" />
+            <ToasterMessage />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
@@ -863,12 +881,20 @@ export default function TransactionsIndex() {
                                 </div>
                             </div>
                         </div>
+
+                        {isChargeInvalid && (
+                            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                                This booking has a $0 service charge (no pricing
+                                found). Set the working hours or an hourly rate
+                                before processing — a $0 charge will be rejected.
+                            </div>
+                        )}
                     </div>
 
                     <div className="mt-10 flex w-full gap-2 space-y-2 px-4">
                         <Button
                             onClick={() => setShowConfirmDialog(true)}
-                            disabled={paymentForm.processing}
+                            disabled={paymentForm.processing || isChargeInvalid}
                             className="flex-1"
                         >
                             {paymentForm.processing && (
@@ -909,7 +935,7 @@ export default function TransactionsIndex() {
                         </Button>
                         <Button
                             onClick={handlePaymentSubmit}
-                            disabled={paymentForm.processing}
+                            disabled={paymentForm.processing || isChargeInvalid}
                         >
                             {paymentForm.processing && (
                                 <Spinner className="mr-2 h-4 w-4" />

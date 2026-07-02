@@ -9,8 +9,8 @@ interface BookingStatus {
 }
 
 interface StatusBadgeProps {
-    status: string;
-    bookingStatuses: BookingStatus[];
+    status: string | null | undefined;
+    bookingStatuses?: BookingStatus[] | null;
     className?: string;
 }
 
@@ -19,8 +19,11 @@ export function StatusBadge({
     bookingStatuses,
     className = '',
 }: StatusBadgeProps) {
-    const statusKey = status.toLowerCase();
-    const statusObj = bookingStatuses.find((s) => s.value === statusKey);
+    const safeStatus = status ?? '';
+    const statusKey = safeStatus.toLowerCase();
+    const statusObj = (bookingStatuses ?? []).find(
+        (s) => s.value === statusKey,
+    );
     const colors = statusObj?.colors;
 
     if (colors) {
@@ -28,7 +31,7 @@ export function StatusBadge({
             <div
                 className={`inline-flex w-24 items-center justify-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${colors.bg} ${colors.text} ${colors.border} ${className}`}
             >
-                {statusObj.label || status.toUpperCase()}
+                {statusObj.label || safeStatus.toUpperCase()}
             </div>
         );
     }
@@ -37,7 +40,7 @@ export function StatusBadge({
         <div
             className={`inline-flex w-24 items-center justify-center rounded-[3px] border border-gray-300 bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-800 dark:border-gray-700/50 dark:bg-gray-800/50 dark:text-gray-400 ${className}`}
         >
-            {status.toUpperCase()}
+            {safeStatus ? safeStatus.toUpperCase() : 'UNKNOWN'}
         </div>
     );
 }

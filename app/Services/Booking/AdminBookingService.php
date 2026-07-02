@@ -419,10 +419,14 @@ class AdminBookingService implements BookingServiceInterface
                 'bookingGroup.bookings.caregiver',
             ]);
 
-            $booking->client->setRelation(
-                'previousCaregivers',
-                $booking->client->previousCaregivers()->with('user')->get()
-            );
+            // Group bookings can have no client (unlinked group); guard so the
+            // edit sheet doesn't 500 on "Call to a member function on null".
+            if ($booking->client) {
+                $booking->client->setRelation(
+                    'previousCaregivers',
+                    $booking->client->previousCaregivers()->with('user')->get()
+                );
+            }
 
             $group = $booking->bookingGroup;
             $siblingBookings = $group?->bookings
@@ -439,13 +443,21 @@ class AdminBookingService implements BookingServiceInterface
                         : null,
                 ]);
 
+            // Legacy/imported groups may store children/pets as a string or with
+            // null entries; hand the frontend a clean list so the edit sheet
+            // render can't throw on a bad shape.
+            $normalizeList = fn ($value) => collect(is_array($value) ? $value : [])
+                ->filter()
+                ->values()
+                ->all();
+
             $data = $booking->toArray();
             $data['booking_group'] = $group ? [
                 'id' => $group->id,
                 'client_id' => $group->client_id,
                 'address_city' => $group->address_city,
-                'children' => $group->children,
-                'pets' => $group->pets,
+                'children' => $normalizeList($group->children),
+                'pets' => $normalizeList($group->pets),
                 'children_notes' => $group->children_notes,
                 'service_type' => $group->service_type,
                 'location_type' => $group->location_type,
@@ -969,29 +981,63 @@ class AdminBookingService implements BookingServiceInterface
             return redirect()->back()->with('error', 'Booking is already cancelled.');
         }
 
-        DB::transaction(function () use ($booking, $request) {
-            $booking->update([
-                'status' => BookingStatus::Cancelled->value,
-                'cancelled_at' => now(),
-                'cancellation_reason' => $request->input('reason'),
-                'cancelled_by' => auth()->id(),
-                'charge_to_client' => 0,
-                'paid_to_caregiver' => 0,
-                'sitterwise_cut' => 0,
-                'total_service_amount' => 0,
-                'total_amount' => 0,
-            ]);
+        $reason = (string) $request->input('reason');
 
-            $assignment = $booking->assignments()->unresolved()->first();
+        // A multi-day booking is stored as sibling rows in one group. Cancelling
+        // only the opened row leaves the siblings confirmed (still on the
+        // schedule, still sending reminders), so allow cancelling the whole group.
+        $targets = collect([$booking]);
 
-            if ($assignment) {
-                $assignment->resolve(AssignmentResolution::CancelledBySitterwise, $request->input('reason'));
+        if ($request->boolean('cancel_group') && $booking->booking_group_id) {
+            $targets = $booking->bookingGroup
+                ->bookings()
+                ->where('status', '!=', BookingStatus::Cancelled->value)
+                ->get();
+
+            if (! $targets->contains('id', $booking->id)) {
+                $targets->push($booking);
+            }
+        }
+
+        $cancelledIds = [];
+
+        DB::transaction(function () use ($targets, $reason, &$cancelledIds) {
+            foreach ($targets as $target) {
+                if ($target->status === BookingStatus::Cancelled->value) {
+                    continue;
+                }
+
+                $target->update([
+                    'status' => BookingStatus::Cancelled->value,
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => $reason,
+                    'cancelled_by' => auth()->id(),
+                    'charge_to_client' => 0,
+                    'paid_to_caregiver' => 0,
+                    'sitterwise_cut' => 0,
+                    'total_service_amount' => 0,
+                    'total_amount' => 0,
+                ]);
+
+                $assignment = $target->assignments()->unresolved()->first();
+
+                if ($assignment) {
+                    $assignment->resolve(AssignmentResolution::CancelledBySitterwise, $reason);
+                }
+
+                $cancelledIds[] = $target->id;
             }
         });
 
-        event(new BookingCancelled($booking->fresh(), $request->input('reason'), $request->user()));
+        foreach ($cancelledIds as $id) {
+            event(new BookingCancelled(Booking::find($id), $reason, $request->user()));
+        }
 
-        return redirect()->back()->with('success', 'Booking cancelled successfully.');
+        $message = count($cancelledIds) > 1
+            ? count($cancelledIds).' bookings cancelled successfully.'
+            : 'Booking cancelled successfully.';
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function replaceCaregiver(Request $request, Booking $booking)
@@ -1362,6 +1408,12 @@ class AdminBookingService implements BookingServiceInterface
             'tip' => 'nullable|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
         ]);
+
+        // Bail before mutating amounts if this booking is already paid — a stray
+        // re-submit must not overwrite the figures that were actually charged.
+        if (in_array($booking->payment_status, ['charged', 'captured'], true)) {
+            return redirect()->back()->with('error', 'This booking has already been charged.');
+        }
 
         // 1. Update the booking with adjustments (this triggers calculateTotalAmount)
         Log::debug('AdminBookingService::processPayment', [

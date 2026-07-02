@@ -78,6 +78,37 @@ it('processes manual payment and calls billing service', function () {
     expect((float) $booking->total_amount)->toBe(115.0); // 110 + 5
 });
 
+it('does not mutate amounts or charge when the booking is already charged', function () {
+    $booking = Booking::factory()->forClient($this->client)->create([
+        'status' => BookingStatus::Paid->value,
+        'payment_status' => 'charged',
+        'charge_to_client_hourly' => 20,
+        'start_datetime' => Carbon::parse('2026-05-01 10:00:00'),
+        'end_datetime' => Carbon::parse('2026-05-01 15:00:00'), // 5 hours
+        'total_working_hour' => 5,
+        'reimbursement' => 10,
+    ]);
+
+    $mockBillingService = Mockery::mock(JobBillingService::class);
+    $mockBillingService->shouldNotReceive('charge');
+    $this->app->instance(JobBillingService::class, $mockBillingService);
+    $this->app->instance(Booking::class, $booking);
+
+    $response = $this->actingAs($this->admin)
+        ->withoutMiddleware()
+        ->post(route('bookings.processPayment', $booking), [
+            'total_working_hour' => 8,
+            'reimbursement' => 999,
+        ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error', 'This booking has already been charged.');
+
+    $booking->refresh();
+    expect((float) $booking->reimbursement)->toBe(10.0);
+    expect((float) $booking->total_working_hour)->toBe(5.0);
+});
+
 it('handles payment failure and keeps booking details', function () {
     $start = Carbon::parse('2026-05-01 10:00:00');
     $end = Carbon::parse('2026-05-01 15:00:00'); // 5 hours

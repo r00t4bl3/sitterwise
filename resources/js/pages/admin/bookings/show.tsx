@@ -224,7 +224,13 @@ export default function BookingDetail({
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
     const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
 
-    const cancelForm = useForm({ reason: '' });
+    const cancelForm = useForm({ reason: '', cancel_group: false });
+
+    const activeSiblingCount = booking.booking_group
+        ? booking.booking_group.sibling_bookings.filter(
+              (sibling) => sibling.status !== 'cancelled',
+          ).length
+        : 0;
 
     const deleteForm = useForm({});
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1070,15 +1076,17 @@ export default function BookingDetail({
                             Notify Caregivers
                         </Button>
                     )}
-                    {booking.status !== 'cancelled' && booking.caregiver_id && (
+                    {booking.status !== 'cancelled' && (
                         <>
-                            <Button
-                                variant="outline"
-                                onClick={() => setReplaceSheetOpen(true)}
-                            >
-                                <UserPlus className="mr-1 h-4 w-4" />
-                                Replace Caregiver
-                            </Button>
+                            {booking.caregiver_id && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setReplaceSheetOpen(true)}
+                                >
+                                    <UserPlus className="mr-1 h-4 w-4" />
+                                    Replace Caregiver
+                                </Button>
+                            )}
                             <Button
                                 variant="destructive"
                                 onClick={() => setCancelDialogOpen(true)}
@@ -1161,6 +1169,30 @@ export default function BookingDetail({
                                 </p>
                             )}
                         </div>
+
+                        {activeSiblingCount > 0 && (
+                            <div className="flex items-start gap-3 rounded-md border border-border bg-muted/50 p-3">
+                                <Checkbox
+                                    id="cancel_group"
+                                    checked={cancelForm.data.cancel_group}
+                                    onCheckedChange={(checked) =>
+                                        cancelForm.setData(
+                                            'cancel_group',
+                                            checked === true,
+                                        )
+                                    }
+                                />
+                                <Label
+                                    htmlFor="cancel_group"
+                                    className="text-sm font-normal"
+                                >
+                                    This is a multi-day booking. Also cancel the
+                                    other {activeSiblingCount} date
+                                    {activeSiblingCount > 1 ? 's' : ''} in this
+                                    group.
+                                </Label>
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button

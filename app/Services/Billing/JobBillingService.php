@@ -7,6 +7,7 @@ use App\Events\BookingReceipt;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use Illuminate\Support\Facades\DB;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\StripeClient;
@@ -70,6 +71,15 @@ class JobBillingService
 
         $amountInCents = (int) round($totalToCharge * 100);
 
+        // Atomically claim this booking so two concurrent confirms (double-click
+        // or two admins) can't both reach Stripe and double-charge the client.
+        if (! $this->claimForCharge($booking)) {
+            return [
+                'success' => false,
+                'message' => 'This booking is already being charged or has been charged',
+            ];
+        }
+
         // 1. Create a trial record in "pending" status
         $clientPayment = ClientPayment::create([
             'booking_id' => $booking->id,
@@ -90,6 +100,12 @@ class JobBillingService
         ]);
 
         try {
+            // Defense-in-depth against double charges: a stable key per charge
+            // attempt lets Stripe collapse duplicate requests (network retries,
+            // races) into a single charge. handleFailure() bumps the attempt
+            // count, so a legitimate retry after a decline gets a fresh key.
+            $idempotencyKey = "booking_{$booking->id}_charge_".($booking->charge_attempt_count ?? 0);
+
             $paymentIntent = $this->stripe->paymentIntents->create([
                 'amount' => $amountInCents,
                 'currency' => 'usd',
@@ -103,6 +119,8 @@ class JobBillingService
                     'client_id' => $client->id,
                     'total_service_amount' => $totalToCharge,
                 ],
+            ], [
+                'idempotency_key' => $idempotencyKey,
             ]);
 
             // 2. Update Booking on Success
@@ -135,6 +153,51 @@ class JobBillingService
         } catch (ApiErrorException $e) {
             return $this->handleFailure($booking, $clientPayment, $e);
         }
+    }
+
+    /**
+     * Atomically claim a booking for charging under a row lock so that two
+     * concurrent charge attempts cannot both proceed to Stripe. Returns false
+     * when another charge has already succeeded or is currently in flight.
+     */
+    protected function claimForCharge(Booking $booking): bool
+    {
+        return DB::transaction(function () use ($booking) {
+            $locked = Booking::query()
+                ->whereKey($booking->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked) {
+                return false;
+            }
+
+            if (in_array($locked->payment_status, ['charged', 'captured'], true)) {
+                return false;
+            }
+
+            // A "charging" claim from the last 2 minutes is treated as genuinely
+            // in flight. An older one is considered abandoned (e.g. the request
+            // died mid-charge) and may be retried.
+            if (
+                $locked->payment_status === 'charging'
+                && $locked->last_charge_attempt_at
+                && $locked->last_charge_attempt_at->gt(now()->subMinutes(2))
+            ) {
+                return false;
+            }
+
+            $locked->update([
+                'payment_status' => 'charging',
+                'last_charge_attempt_at' => now(),
+            ]);
+
+            // Keep the in-memory instance consistent with the claimed row.
+            $booking->setAttribute('payment_status', $locked->payment_status);
+            $booking->setAttribute('last_charge_attempt_at', $locked->last_charge_attempt_at);
+
+            return true;
+        });
     }
 
     protected function handleFailure(Booking $booking, ClientPayment $clientPayment, \Exception $e): array

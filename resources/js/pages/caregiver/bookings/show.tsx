@@ -329,7 +329,7 @@ export default function BookingDetail({
                 <div className="rounded-lg border border-border bg-card p-6">
                     <div className="grid gap-6 lg:grid-cols-2">
                         {/* Client Information */}
-                        <div className="left-panel">
+                        <div className="left-panel min-w-0">
                             <h2 className="mb-4 text-lg font-semibold text-foreground">
                                 Client Information
                             </h2>
@@ -356,9 +356,9 @@ export default function BookingDetail({
                                     </div>
                                 )}
                                 {booking.client_email && (
-                                    <div className="flex items-center gap-2">
-                                        <Mail className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        <span className="min-w-0 break-all text-sm text-muted-foreground">
                                             {booking.client_email}
                                         </span>
                                     </div>
@@ -451,20 +451,20 @@ export default function BookingDetail({
                                     </div>
                                 )}
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex min-w-0 items-start gap-2">
                                     {React.createElement(
                                         getLocationIcon(booking.location_type),
                                         {
                                             className:
-                                                'mt-0.5 h-4 w-4 text-muted-foreground',
+                                                'mt-0.5 h-4 w-4 shrink-0 text-muted-foreground',
                                         },
                                     )}
-                                    <span className="text-sm text-muted-foreground">
+                                    <span className="min-w-0 break-words text-sm text-muted-foreground">
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-primary hover:underline"
+                                            className="break-words text-primary hover:underline"
                                         >
                                             {booking.address_line1 && (
                                                 <span>
@@ -500,7 +500,7 @@ export default function BookingDetail({
                             </div>
                         </div>
 
-                        <div className="right-panel grid gap-6">
+                        <div className="right-panel grid min-w-0 gap-6">
                             {/* Children  */}
                             {booking.children_notes ? (
                                 <div>
@@ -606,20 +606,23 @@ export default function BookingDetail({
                     </div>
                 </div>
 
-                {/* Accept Button */}
-                <div className="flex justify-end">
-                    <Button
-                        size="lg"
-                        onClick={startReservation}
-                        disabled={reserveForm.processing || confirmed}
-                    >
-                        {reserveForm.processing && (
-                            <Spinner className="mr-2 h-4 w-4" />
-                        )}
-                        {reserveForm.processing
-                            ? 'Reserving...'
-                            : 'Accept Booking'}
-                    </Button>
+                {/* Accept Button — sticky full-width bar on mobile, inline on desktop */}
+                <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-background p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:pb-0">
+                    <div className="flex justify-end">
+                        <Button
+                            size="lg"
+                            onClick={startReservation}
+                            disabled={reserveForm.processing || confirmed}
+                            className="w-full sm:w-auto"
+                        >
+                            {reserveForm.processing && (
+                                <Spinner className="mr-2 h-4 w-4" />
+                            )}
+                            {reserveForm.processing
+                                ? 'Reserving...'
+                                : 'Accept Booking'}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Confirmation Sheet */}

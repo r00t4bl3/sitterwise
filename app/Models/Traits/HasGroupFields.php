@@ -23,17 +23,23 @@ trait HasGroupFields
 
     public function getChildrenAttribute(): array
     {
-        return $this->bookingGroup?->children ?? [];
+        $children = $this->bookingGroup?->children;
+
+        return is_array($children) ? $children : [];
     }
 
     public function getPetsAttribute(): array
     {
-        return $this->bookingGroup?->pets ?? [];
+        $pets = $this->bookingGroup?->pets;
+
+        return is_array($pets) ? $pets : [];
     }
 
     public function getSitterPreferencesAttribute(): array
     {
-        return $this->bookingGroup?->sitter_preferences ?? [];
+        $preferences = $this->bookingGroup?->sitter_preferences;
+
+        return is_array($preferences) ? $preferences : [];
     }
 
     public function getOtherAdultsPresentAttribute(): ?string
@@ -43,7 +49,9 @@ trait HasGroupFields
 
     public function getSpecialConsiderationsAttribute(): array
     {
-        return $this->bookingGroup?->special_considerations ?? [];
+        $considerations = $this->bookingGroup?->special_considerations;
+
+        return is_array($considerations) ? $considerations : [];
     }
 
     public function getClientFirstNameAttribute(): ?string

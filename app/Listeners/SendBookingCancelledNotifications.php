@@ -5,9 +5,10 @@ namespace App\Listeners;
 use App\Events\BookingCancelled;
 use App\Models\User;
 use App\Notifications\BookingCancelledNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 
-class SendBookingCancelledNotifications
+class SendBookingCancelledNotifications implements ShouldQueue
 {
     public function handle(BookingCancelled $event): void
     {

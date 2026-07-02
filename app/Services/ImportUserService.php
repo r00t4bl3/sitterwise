@@ -1261,7 +1261,7 @@ class ImportUserService
             $name = trim($m[1]);
         }
 
-        if (! $name || ! preg_match('/\p{L}/u', $name)) {
+        if (! $name || ! preg_match('/\p{L}/u', $name) || self::isJunkChildName($name)) {
             return null;
         }
 
@@ -1966,9 +1966,31 @@ class ImportUserService
         return array_values(array_unique($considerations));
     }
 
+    /**
+     * True for junk / negation child names produced by imports, e.g. "None",
+     * "N/A", "no kids". Shared with the junk-children cleanup command.
+     */
+    public static function isJunkChildName(?string $name): bool
+    {
+        if ($name === null) {
+            return true;
+        }
+
+        return in_array(trim(strtolower($name)), [
+            '', 'no', 'none', 'n/a', 'na', 'n.a.', 'nil', 'nan',
+            'no children', 'no child', 'no kids', 'tbd', 'unknown', '-', '--',
+        ], true);
+    }
+
     protected static function parseChildren(?string $text, ?string $countStr): ?array
     {
         if (! $text && ! $countStr) {
+            return null;
+        }
+
+        // A negation ("None"/"N/A") means no children — don't fabricate
+        // placeholder rows to satisfy the count.
+        if ($text && self::isJunkChildName($text)) {
             return null;
         }
 
@@ -1978,8 +2000,9 @@ class ImportUserService
         if ($text) {
             $parts = preg_split('/[,;]/', $text);
             foreach ($parts as $part) {
-                if (trim($part)) {
-                    $children[] = ['name' => trim($part)];
+                $trimmed = trim($part);
+                if ($trimmed && ! self::isJunkChildName($trimmed)) {
+                    $children[] = ['name' => $trimmed];
                 }
             }
         }
@@ -1988,7 +2011,7 @@ class ImportUserService
             $children[] = ['name' => 'Child '.(count($children) + 1)];
         }
 
-        return $children;
+        return $children ?: null;
     }
 
     protected static function parsePets(?string $text): ?array

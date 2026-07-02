@@ -50,7 +50,7 @@ function bookingWithCaregiver(): array
     ]);
 
     $booking = Booking::factory()->forClient($client)->create([
-        'status' => BookingStatus::Received->value,
+        'status' => BookingStatus::Confirmed->value,
         'caregiver_id' => $caregiver->id,
         'confirmed_by' => $caregiver->id,
         'confirmed_at' => now(),

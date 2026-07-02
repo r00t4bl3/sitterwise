@@ -110,6 +110,10 @@ class JobController extends Controller
             abort(403, 'You are not authorized to view this job');
         }
 
+        if ($isInvited && ! $isAssigned && $booking->caregiver_id === null) {
+            return redirect()->route('bookings.show', $booking->ulid);
+        }
+
         $booking->load('bookingGroup', 'client.user', 'hotel', 'address', 'clientRating', 'caregiverRating');
 
         return Inertia::render('caregiver/jobs/show', [

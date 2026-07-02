@@ -194,6 +194,55 @@ describe('Booking - Admin', function () {
         ]);
     });
 
+    test('admin can create a petsitter booking without children', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+        ]);
+    });
+
+    test('babysitter booking still requires at least one child', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertSessionHasErrors('new_children');
+    });
+
     test('admin can create a booking with unlisted hotel name', function () {
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);

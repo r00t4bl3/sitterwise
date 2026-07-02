@@ -16,7 +16,7 @@ let lastFingerprint: string | null = null;
 export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
     const { props } = usePage();
     const flash = props.flash as
-        | { success?: string; error?: string }
+        | { success?: string; error?: string; warning?: string; info?: string }
         | undefined;
     const errors = props.errors;
 
@@ -27,6 +27,8 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
         if (
             !flash?.success &&
             !flash?.error &&
+            !flash?.warning &&
+            !flash?.info &&
             !propMessage?.content &&
             Object.keys(errors).length === 0
         ) {
@@ -82,6 +84,18 @@ export function ToasterMessage({ message: propMessage }: ToasterMessageProps) {
 
         if (flash?.error) {
             showToast('error', flash.error);
+
+            return;
+        }
+
+        if (flash?.warning) {
+            showToast('warning', flash.warning);
+
+            return;
+        }
+
+        if (flash?.info) {
+            showToast('info', flash.info);
 
             return;
         }

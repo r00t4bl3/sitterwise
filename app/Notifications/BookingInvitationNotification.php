@@ -99,15 +99,17 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
 
     private function childAge(array $child): ?int
     {
-        if (isset($child['birth_year'])) {
+        // Guard against birth_year 0 (junk import data) which would otherwise
+        // report an age of ~2026.
+        if (! empty($child['birth_year'])) {
             return now()->year - (int) $child['birth_year'];
         }
 
-        if (isset($child['birth_date'])) {
+        if (! empty($child['birth_date'])) {
             return Carbon::parse($child['birth_date'])->diffInYears(now());
         }
 
-        return isset($child['age']) ? (int) $child['age'] : null;
+        return ! empty($child['age']) ? (int) $child['age'] : null;
     }
 
     public function toWebPush(object $notifiable, object $notification): WebPushMessage

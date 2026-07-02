@@ -15,6 +15,7 @@ use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -53,6 +54,80 @@ test('admin can cancel a booking via cancel endpoint', function () {
 
     $booking->refresh();
     expect($booking->status)->toBe(BookingStatus::Cancelled->value);
+});
+
+test('admin can cancel an unassigned booking (no caregiver)', function () {
+    $booking = Booking::factory()
+        ->forClient($this->client)
+        ->withBookingGroup(fn ($group) => $group->state(['service_type' => ServiceType::GroupChildcareInvoiced->value]))
+        ->create([
+            'status' => BookingStatus::Received->value,
+            'caregiver_id' => null,
+            'start_datetime' => now()->addDays(10),
+            'end_datetime' => now()->addDays(10)->addHours(4),
+        ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('bookings.cancel', $booking), [
+            'reason' => 'No caregiver claimed it in time',
+        ])
+        ->assertRedirect();
+
+    expect($booking->fresh()->status)->toBe(BookingStatus::Cancelled->value);
+});
+
+test('cancel_group cancels every active sibling in the group', function () {
+    $group = BookingGroup::factory()->create([
+        'client_id' => $this->client->id,
+        'service_type' => ServiceType::Babysitter->value,
+    ]);
+
+    $bookings = Booking::factory()->count(3)->create([
+        'booking_group_id' => $group->id,
+        'status' => BookingStatus::Confirmed->value,
+        'start_datetime' => now()->addDays(10),
+        'end_datetime' => now()->addDays(10)->addHours(4),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('bookings.cancel', $bookings[0]), [
+            'reason' => 'Family emergency — cancel all dates',
+            'cancel_group' => true,
+        ])
+        ->assertRedirect();
+
+    foreach ($bookings as $booking) {
+        expect($booking->fresh()->status)->toBe(BookingStatus::Cancelled->value);
+    }
+});
+
+test('cancel without cancel_group leaves siblings confirmed', function () {
+    $group = BookingGroup::factory()->create([
+        'client_id' => $this->client->id,
+        'service_type' => ServiceType::Babysitter->value,
+    ]);
+
+    $bookings = Booking::factory()->count(3)->create([
+        'booking_group_id' => $group->id,
+        'status' => BookingStatus::Confirmed->value,
+        'start_datetime' => now()->addDays(10),
+        'end_datetime' => now()->addDays(10)->addHours(4),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('bookings.cancel', $bookings[0]), [
+            'reason' => 'Only this date',
+        ])
+        ->assertRedirect();
+
+    expect($bookings[0]->fresh()->status)->toBe(BookingStatus::Cancelled->value)
+        ->and($bookings[1]->fresh()->status)->toBe(BookingStatus::Confirmed->value)
+        ->and($bookings[2]->fresh()->status)->toBe(BookingStatus::Confirmed->value);
+});
+
+test('cancellation notification listener is queued', function () {
+    expect(app(SendBookingCancelledNotifications::class))
+        ->toBeInstanceOf(ShouldQueue::class);
 });
 
 test('update endpoint rejects cancelled status', function () {

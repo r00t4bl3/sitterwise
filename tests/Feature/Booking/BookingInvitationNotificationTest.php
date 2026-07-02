@@ -133,6 +133,15 @@ describe('Booking Invitation Notifications', function () {
         expect($mail->booking->id)->toBe($booking->id);
     });
 
+    test('invitation email renders the short job link and not the dead available route', function () {
+        [$booking] = invitedBooking();
+
+        $rendered = (new CaregiverBookingInvitationMail($booking))->render();
+
+        expect($rendered)->toContain(route('jobs.short', $booking))
+            ->and($rendered)->not->toContain('/bookings/available');
+    });
+
     describe('toSms', function () {
         test('private home format', function () {
             [$booking, $caregiver] = invitedBookingWithGroup();
@@ -154,6 +163,17 @@ describe('Booking Invitation Notifications', function () {
             $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
 
             expect($result->message)->toContain('Hotel del Coronado · 1 child (3)');
+        });
+
+        test('child with birth_year 0 does not report a bogus age', function () {
+            [$booking, $caregiver] = invitedBookingWithGroup(
+                children: [['birth_year' => 0, 'name' => 'Baby']],
+            );
+
+            $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
+
+            expect($result->message)->not->toContain('2026')
+                ->and($result->message)->toContain('1 child');
         });
 
         test('singular child label', function () {
