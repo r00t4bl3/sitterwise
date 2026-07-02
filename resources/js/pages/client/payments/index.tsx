@@ -310,7 +310,7 @@ export default function ClientPaymentsIndex() {
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {formatDisplayDateTimeInPT(
-                                            payment.created_at,
+                                            payment.paid_at,
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
