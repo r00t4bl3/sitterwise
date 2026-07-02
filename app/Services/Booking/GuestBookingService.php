@@ -497,9 +497,16 @@ class GuestBookingService
                 'is_default' => $client->paymentMethods()->count() === 0,
             ]);
 
-            $client->update([
-                'stripe_customer_id' => $pm->id,
-            ]);
+            if (! $client->stripe_customer_id || str_starts_with($client->stripe_customer_id, 'pm_')) {
+                $stripeCustomer = $stripe->customers->create([
+                    'email' => $client->user?->email,
+                    'name' => $client->full_name,
+                    'metadata' => ['client_id' => $client->id],
+                ]);
+                $client->update(['stripe_customer_id' => $stripeCustomer->id]);
+            }
+
+            $stripe->paymentMethods->attach($pm->id, ['customer' => $client->stripe_customer_id]);
 
         } catch (\Exception $e) {
             Log::error('Failed to attach payment method: '.$e->getMessage());
