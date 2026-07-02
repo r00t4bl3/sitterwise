@@ -52,7 +52,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
         $payments = ClientPayment::where('client_id', $client->id)
             ->with(['booking', 'paymentMethod'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('paid_at', 'desc')
             ->paginate(20);
 
         return inertia('client/payments/index', [
