@@ -70,11 +70,14 @@ interface Booking {
     end_datetime: string;
     total_price: number;
     status: string;
+    payment_form: string | null;
+    requires_payment: boolean;
     checkout_at: string | null;
     total_working_hour: number | null;
     children: Array<{ name: string }> | null;
     pets: Array<{ name: string; type: string | null }> | null;
     service_type: string;
+    service_type_label: string | null;
     reimbursement: number | null;
     reimbursement_description: string | null;
     tip: number | null;
@@ -403,6 +406,9 @@ export default function TransactionsIndex() {
                                             Caregiver
                                         </th>
                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Service
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                             Date & Time
                                         </th>
                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -459,6 +465,10 @@ export default function TransactionsIndex() {
                                                     </span>
                                                 )}
                                             </td>
+                                            <td className="px-4 py-3 text-sm text-foreground">
+                                                {booking.service_type_label ??
+                                                    '—'}
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -490,33 +500,37 @@ export default function TransactionsIndex() {
                                                     }
                                                 />
                                             </td>
-                                            <td className="flex flex-col items-end gap-y-1 px-4 py-3">
-                                                {booking.status ===
-                                                    'completed' && (
-                                                    <div className="flex flex-col items-center gap-y-1">
-                                                        <Button
-                                                            size="sm"
-                                                            disabled={
-                                                                !booking.client
-                                                                    .has_active_payment_method
-                                                            }
-                                                            onClick={() =>
-                                                                openPaymentSheet(
-                                                                    booking,
-                                                                )
-                                                            }
-                                                        >
-                                                            Payment Approval
-                                                        </Button>
-                                                        {!booking.client
-                                                            .has_active_payment_method && (
-                                                            <span className="text-[10px] font-medium text-destructive">
-                                                                No active
-                                                                payment method
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                )}
+                                            <td className="flex flex-col items-end justify-center gap-y-1 px-4 py-3">
+                                                {booking.status === 'completed' &&
+                                                    booking.requires_payment &&
+                                                    booking.payment_form ===
+                                                        'Stripe' && (
+                                                        <div className="flex flex-col items-center gap-y-1">
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={
+                                                                    !booking
+                                                                        .client
+                                                                        .has_active_payment_method
+                                                                }
+                                                                onClick={() =>
+                                                                    openPaymentSheet(
+                                                                        booking,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Payment Approval
+                                                            </Button>
+                                                            {!booking.client
+                                                                .has_active_payment_method && (
+                                                                <span className="text-[10px] font-medium text-destructive">
+                                                                    No active
+                                                                    payment
+                                                                    method
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                             </td>
                                         </tr>
                                     ))}
@@ -886,7 +900,8 @@ export default function TransactionsIndex() {
                             <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                                 This booking has a $0 service charge (no pricing
                                 found). Set the working hours or an hourly rate
-                                before processing — a $0 charge will be rejected.
+                                before processing — a $0 charge will be
+                                rejected.
                             </div>
                         )}
                     </div>

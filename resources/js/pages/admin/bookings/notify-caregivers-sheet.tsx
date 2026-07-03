@@ -75,9 +75,7 @@ export function NotifyCaregiversSheet({
     const [searchInput, setSearchInput] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleSearchInput = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchInput(value);
 

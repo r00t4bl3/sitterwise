@@ -185,8 +185,7 @@ export function BookingAddressFields({
                 }
             });
 
-            const outsideArea =
-                state !== 'CA';
+            const outsideArea = state !== 'CA';
 
             form.setData('address_line1', line1);
             form.setData('address_line2', line2);

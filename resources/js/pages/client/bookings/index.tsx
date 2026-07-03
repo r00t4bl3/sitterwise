@@ -129,8 +129,8 @@ export default function ClientBookingsIndex() {
                                                     bookingStatuses
                                                 }
                                             />
-                                            {booking.booking_group?.bookings_count >
-                                                1 && (
+                                            {booking.booking_group
+                                                ?.bookings_count > 1 && (
                                                 <Badge
                                                     variant="outline"
                                                     className="text-xs"
@@ -173,8 +173,7 @@ export default function ClientBookingsIndex() {
                 {bookings.last_page > 1 && (
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            Page {bookings.current_page} of{' '}
-                            {bookings.last_page}
+                            Page {bookings.current_page} of {bookings.last_page}
                         </p>
                         <div className="flex gap-1">
                             {bookings.links.map((link, index) => {

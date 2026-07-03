@@ -168,6 +168,7 @@ class Booking extends Model
         'corporate_id',
         'children_notes',
         'requires_payment',
+        'payment_form',
         'client_id',
     ];
 

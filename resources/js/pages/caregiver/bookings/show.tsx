@@ -358,7 +358,7 @@ export default function BookingDetail({
                                 {booking.client_email && (
                                     <div className="flex min-w-0 items-center gap-2">
                                         <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="min-w-0 break-all text-sm text-muted-foreground">
+                                        <span className="min-w-0 text-sm break-all text-muted-foreground">
                                             {booking.client_email}
                                         </span>
                                     </div>
@@ -459,7 +459,7 @@ export default function BookingDetail({
                                                 'mt-0.5 h-4 w-4 shrink-0 text-muted-foreground',
                                         },
                                     )}
-                                    <span className="min-w-0 break-words text-sm text-muted-foreground">
+                                    <span className="min-w-0 text-sm break-words text-muted-foreground">
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
                                             target="_blank"

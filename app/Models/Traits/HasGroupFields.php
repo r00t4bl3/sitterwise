@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use App\Models\PricingRule;
+
 /**
  * These accessors delegate to bookingGroup for in-memory reads.
  *
@@ -132,6 +134,21 @@ trait HasGroupFields
     public function getRequiresPaymentAttribute(): bool
     {
         return $this->bookingGroup?->requires_payment ?? true;
+    }
+
+    public function getPaymentFormAttribute(): ?string
+    {
+        return $this->bookingGroup?->payment_form;
+    }
+
+    /**
+     * True only for jobs settled by card via Stripe (billable AND Stripe rail).
+     * Corporate/group (invoiced) and comped (free) are excluded.
+     */
+    public function isStripeCharge(): bool
+    {
+        return $this->requires_payment
+            && $this->payment_form === PricingRule::PAYMENT_FORM_STRIPE;
     }
 
     public function getHotelIdAttribute(): ?int

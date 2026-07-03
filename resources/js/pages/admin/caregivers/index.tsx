@@ -156,8 +156,7 @@ export default function CaregiversIndex() {
 
     useEffect(() => {
         sortFieldRef.current = filters.sort || 'id';
-        sortDirRef.current =
-            (filters.direction as 'asc' | 'desc') || 'asc';
+        sortDirRef.current = (filters.direction as 'asc' | 'desc') || 'asc';
     }, [filters.sort, filters.direction]);
 
     return (
@@ -249,38 +248,126 @@ export default function CaregiversIndex() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('id')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() => handleSort('id')}
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         ID
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'id' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'id' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField === 'id' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField === 'id' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('last_name')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() => handleSort('last_name')}
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         Name
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'last_name' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'last_name' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField === 'last_name' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField === 'last_name' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('rating')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() => handleSort('rating')}
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         Rating
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'rating' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'rating' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField === 'rating' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField === 'rating' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('date_of_birth')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() =>
+                                            handleSort('date_of_birth')
+                                        }
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         Age
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'date_of_birth' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'date_of_birth' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField ===
+                                                        'date_of_birth' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField ===
+                                                        'date_of_birth' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
@@ -305,7 +392,11 @@ export default function CaregiversIndex() {
                             {caregivers.data.map((caregiver) => (
                                 <tr
                                     key={caregiver.id}
-                                    onClick={() => router.visit(`/caregivers/${caregiver.id}`)}
+                                    onClick={() =>
+                                        router.visit(
+                                            `/caregivers/${caregiver.id}`,
+                                        )
+                                    }
                                     className="cursor-pointer border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
@@ -327,7 +418,9 @@ export default function CaregiversIndex() {
                                             />
                                             <Link
                                                 href={`/caregivers/${caregiver.id}`}
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"
                                             >
                                                 {caregiver.first_name}{' '}
@@ -467,7 +560,9 @@ export default function CaregiversIndex() {
                                         )}
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
-                                        <span onClick={(e) => e.stopPropagation()}>
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <Button asChild className="h-8">
                                                 <Link
                                                     href={`/caregivers/${caregiver.id}`}

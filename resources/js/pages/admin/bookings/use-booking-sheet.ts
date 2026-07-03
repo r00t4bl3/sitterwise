@@ -406,7 +406,11 @@ export function useBookingSheet({
         }
 
         setLoadingMoreCaregivers(true);
-        await populateCaregiverSuggestions(caregiverCurrentPage + 1, ageFilter, caregiverSearch);
+        await populateCaregiverSuggestions(
+            caregiverCurrentPage + 1,
+            ageFilter,
+            caregiverSearch,
+        );
         setLoadingMoreCaregivers(false);
     };
 
@@ -1059,10 +1063,14 @@ export function useBookingSheet({
             if (hasDirectAddress) {
                 const addressParts = [
                     bookingAddress || booking.booking_group?.address_line1,
-                    fullBooking.address_line2 || booking.booking_group?.address_line2,
-                    fullBooking.address_city || booking.booking_group?.address_city,
-                    fullBooking.address_state || booking.booking_group?.address_state,
-                    fullBooking.address_zip || booking.booking_group?.address_zip,
+                    fullBooking.address_line2 ||
+                        booking.booking_group?.address_line2,
+                    fullBooking.address_city ||
+                        booking.booking_group?.address_city,
+                    fullBooking.address_state ||
+                        booking.booking_group?.address_state,
+                    fullBooking.address_zip ||
+                        booking.booking_group?.address_zip,
                 ].filter(Boolean);
                 setAddressValue(addressParts.join(', '));
                 setShowManualAddressInput(true);

@@ -168,7 +168,9 @@ export default function BookingDetail({
 
     const mapsUrl = buildGoogleMapsUrl();
 
-    const pricingNotSet = booking.charge_to_client_hourly === null && booking.charge_to_client === 0;
+    const pricingNotSet =
+        booking.charge_to_client_hourly === null &&
+        booking.charge_to_client === 0;
 
     const hasHourlyRate = booking.charge_to_client_hourly != null;
     const hasHours = booking.total_working_hour != null;
@@ -551,7 +553,7 @@ export default function BookingDetail({
                                                         Total
                                                     </span>
                                                     {pricingNotSet ? (
-                                                        <span className="text-sm italic text-muted-foreground">
+                                                        <span className="text-sm text-muted-foreground italic">
                                                             To be calculated
                                                         </span>
                                                     ) : (
@@ -570,7 +572,9 @@ export default function BookingDetail({
                                                     You tipped
                                                 </span>
                                                 <span className="text-sm font-medium text-foreground">
-                                                    {formatCurrency(booking.tip)}
+                                                    {formatCurrency(
+                                                        booking.tip,
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
@@ -610,35 +614,33 @@ export default function BookingDetail({
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <div className="flex">
-                                                {[1, 2, 3, 4, 5].map(
-                                                    (star) => (
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <div
+                                                        key={star}
+                                                        className="relative h-4 w-4"
+                                                    >
+                                                        <Star className="absolute inset-0 h-4 w-4 text-yellow-400" />
                                                         <div
-                                                            key={star}
-                                                            className="relative h-4 w-4"
+                                                            className="absolute inset-0 overflow-hidden"
+                                                            style={{
+                                                                width: `${Math.min(
+                                                                    Math.max(
+                                                                        (booking
+                                                                            .caregiver_rating!
+                                                                            .rating -
+                                                                            (star -
+                                                                                1)) *
+                                                                            100,
+                                                                        0,
+                                                                    ),
+                                                                    100,
+                                                                )}%`,
+                                                            }}
                                                         >
-                                                            <Star className="absolute inset-0 h-4 w-4 text-yellow-400" />
-                                                            <div
-                                                                className="absolute inset-0 overflow-hidden"
-                                                                style={{
-                                                                    width: `${Math.min(
-                                                                        Math.max(
-                                                                            (booking
-                                                                                .caregiver_rating!
-                                                                                .rating -
-                                                                                (star -
-                                                                                    1)) *
-                                                                                100,
-                                                                            0,
-                                                                        ),
-                                                                        100,
-                                                                    )}%`,
-                                                                }}
-                                                            >
-                                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                            </div>
+                                                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                                         </div>
-                                                    ),
-                                                )}
+                                                    </div>
+                                                ))}
                                             </div>
                                             <span className="text-sm font-medium text-foreground">
                                                 {Number(

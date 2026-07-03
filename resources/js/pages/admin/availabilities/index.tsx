@@ -108,8 +108,14 @@ function formatDateHeader(dateString: string): { day: string; date: string } {
     }
 
     return {
-        day: date.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', weekday: 'short' }),
-        date: date.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', day: 'numeric' }),
+        day: date.toLocaleDateString('en-US', {
+            timeZone: 'America/Los_Angeles',
+            weekday: 'short',
+        }),
+        date: date.toLocaleDateString('en-US', {
+            timeZone: 'America/Los_Angeles',
+            day: 'numeric',
+        }),
     };
 }
 
@@ -268,7 +274,9 @@ export default function AvailabilitiesIndex() {
                                         const availabilityMap =
                                             caregiver.availabilities.reduce(
                                                 (acc, av) => {
-                                                    acc[extractDateStr(av.date)] = av;
+                                                    acc[
+                                                        extractDateStr(av.date)
+                                                    ] = av;
 
                                                     return acc;
                                                 },

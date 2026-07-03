@@ -13,6 +13,7 @@ use App\Models\BookingCaregiverNotification;
 use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -196,10 +197,19 @@ class JobController extends Controller
             'bonus' => 'nullable|numeric|min:0',
         ]);
 
+        // Recompute worked hours explicitly from the submitted times. The model
+        // only recalculates hours when start/end change, so a caregiver who
+        // confirms the pre-filled times without editing them would otherwise
+        // leave a stale total_working_hour (0 for imported bookings) and the
+        // job would complete at $0 and never be charged.
+        $workingHours = Carbon::parse($validated['start_datetime'])
+            ->diffInMinutes(Carbon::parse($validated['end_datetime'])) / 60;
+
         $booking->update([
             'checkout_at' => now(),
             'start_datetime' => $validated['start_datetime'],
             'end_datetime' => $validated['end_datetime'],
+            'total_working_hour' => $workingHours,
             'reimbursement' => $validated['reimbursement'] ?? null,
             'reimbursement_description' => $validated['reimbursement_description'] ?? null,
             'bonus' => $validated['bonus'] ?? null,

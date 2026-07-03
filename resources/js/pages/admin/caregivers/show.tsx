@@ -678,7 +678,7 @@ export default function CaregiverShow() {
                         {/* Summary tab */}
                         {activeTab === 'summary' && (
                             <div className="border border-border bg-card p-6">
-                                <div className="flex flex-col gap-x-6 gap-y-2 sm:grid sm:grid-cols-2 ">
+                                <div className="flex flex-col gap-x-6 gap-y-2 sm:grid sm:grid-cols-2">
                                     <div>
                                         <p className="text-xs tracking-wider text-muted-foreground uppercase">
                                             Email
@@ -1169,7 +1169,9 @@ export default function CaregiverShow() {
                                                                 <>
                                                                     <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
                                                                         <Check className="h-3 w-3" />
-                                                                        {avg ?? '—'}/5
+                                                                        {avg ??
+                                                                            '—'}
+                                                                        /5
                                                                     </span>
                                                                     <button
                                                                         type="button"
@@ -1276,50 +1278,61 @@ export default function CaregiverShow() {
                                                                             }
                                                                         </p>
                                                                     )}
-                                                                     {ref.additional_comments && (
-                                                                         <p className="text-xs text-muted-foreground">
-                                                                             <span className="font-medium text-foreground">
-                                                                                 Additional
-                                                                                 Comments:
-                                                                             </span>{' '}
-                                                                             {
-                                                                                 ref.additional_comments
-                                                                             }
-                                                                         </p>
-                                                                     )}
-                                                                          <div className="border-t border-border pt-2">
-                                                                               <p className="text-xs font-semibold text-foreground">
-                                                                                   Background
-                                                                               </p>
-                                                                              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                                                                                  <p>
-                                                                                      <span className="font-medium text-foreground">
-                                                                                          Drug/Alcohol:
-                                                                                      </span>{' '}
-                                                                                      {ref.background_drug_alcohol ?? '—'}
-                                                                                  </p>
-                                                                                  <p>
-                                                                                      <span className="font-medium text-foreground">
-                                                                                          Tobacco:
-                                                                                      </span>{' '}
-                                                                                      {ref.background_tobacco ?? '—'}
-                                                                                  </p>
-                                                                                  <p>
-                                                                                      <span className="font-medium text-foreground">
-                                                                                          Trust 6+ hrs:
-                                                                                      </span>{' '}
-                                                                                      {ref.trust_own_child ?? '—'}
-                                                                                  </p>
-                                                                                  <p>
-                                                                                      <span className="font-medium text-foreground">
-                                                                                          Reason not care:
-                                                                                      </span>{' '}
-                                                                                      {ref.reason_not_care ?? '—'}
-                                                                                      {ref.reason_not_care === 'Yes' && ref.reason_not_care_explanation && ` — ${ref.reason_not_care_explanation}`}
-                                                                                  </p>
-                                                                              </div>
-                                                                          </div>
-                                                                 </div>
+                                                                    {ref.additional_comments && (
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            <span className="font-medium text-foreground">
+                                                                                Additional
+                                                                                Comments:
+                                                                            </span>{' '}
+                                                                            {
+                                                                                ref.additional_comments
+                                                                            }
+                                                                        </p>
+                                                                    )}
+                                                                    <div className="border-t border-border pt-2">
+                                                                        <p className="text-xs font-semibold text-foreground">
+                                                                            Background
+                                                                        </p>
+                                                                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                                                            <p>
+                                                                                <span className="font-medium text-foreground">
+                                                                                    Drug/Alcohol:
+                                                                                </span>{' '}
+                                                                                {ref.background_drug_alcohol ??
+                                                                                    '—'}
+                                                                            </p>
+                                                                            <p>
+                                                                                <span className="font-medium text-foreground">
+                                                                                    Tobacco:
+                                                                                </span>{' '}
+                                                                                {ref.background_tobacco ??
+                                                                                    '—'}
+                                                                            </p>
+                                                                            <p>
+                                                                                <span className="font-medium text-foreground">
+                                                                                    Trust
+                                                                                    6+
+                                                                                    hrs:
+                                                                                </span>{' '}
+                                                                                {ref.trust_own_child ??
+                                                                                    '—'}
+                                                                            </p>
+                                                                            <p>
+                                                                                <span className="font-medium text-foreground">
+                                                                                    Reason
+                                                                                    not
+                                                                                    care:
+                                                                                </span>{' '}
+                                                                                {ref.reason_not_care ??
+                                                                                    '—'}
+                                                                                {ref.reason_not_care ===
+                                                                                    'Yes' &&
+                                                                                    ref.reason_not_care_explanation &&
+                                                                                    ` — ${ref.reason_not_care_explanation}`}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                     </div>
                                                 );

@@ -205,7 +205,9 @@ export function BookingDetailsSection({
             if (field === 'start_datetime') {
                 const newStart = new Date(value);
                 const currentEnd = new Date(d.end_datetime);
-                const minEnd = new Date(newStart.getTime() + 4 * 60 * 60 * 1000);
+                const minEnd = new Date(
+                    newStart.getTime() + 4 * 60 * 60 * 1000,
+                );
 
                 if (isNaN(currentEnd.getTime()) || currentEnd <= minEnd) {
                     next.end_datetime = autoSetEndDateTime(value);

@@ -1,5 +1,12 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, CreditCard, Plus, Trash2, Star } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    CreditCard,
+    Plus,
+    Trash2,
+    Star,
+} from 'lucide-react';
 import { useState } from 'react';
 import { StripeCheckout } from '@/components/stripe/stripe-checkout';
 import { Button } from '@/components/ui/button';
@@ -72,12 +79,40 @@ interface Props {
 }
 
 function StatusBadge({ status }: { status: string }) {
-    const statusConfig: Record<string, { bg: string; text: string; border: string; label: string }> = {
-        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200', label: 'Pending' },
-        authorized: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', label: 'Authorized' },
-        succeeded: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', label: 'Succeeded' },
-        failed: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', label: 'Failed' },
-        refunded: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', label: 'Refunded' },
+    const statusConfig: Record<
+        string,
+        { bg: string; text: string; border: string; label: string }
+    > = {
+        pending: {
+            bg: 'bg-yellow-100',
+            text: 'text-yellow-800',
+            border: 'border-yellow-200',
+            label: 'Pending',
+        },
+        authorized: {
+            bg: 'bg-blue-100',
+            text: 'text-blue-800',
+            border: 'border-blue-200',
+            label: 'Authorized',
+        },
+        succeeded: {
+            bg: 'bg-green-100',
+            text: 'text-green-800',
+            border: 'border-green-200',
+            label: 'Succeeded',
+        },
+        failed: {
+            bg: 'bg-red-100',
+            text: 'text-red-800',
+            border: 'border-red-200',
+            label: 'Failed',
+        },
+        refunded: {
+            bg: 'bg-gray-100',
+            text: 'text-gray-800',
+            border: 'border-gray-200',
+            label: 'Refunded',
+        },
     };
 
     const config = statusConfig[status] || {
@@ -287,7 +322,7 @@ export default function ClientPaymentsIndex() {
                     <table className="w-full">
                         <thead>
                             <tr className="bg-table-header">
-                                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase w-12">
+                                <th className="w-12 px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     #
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">

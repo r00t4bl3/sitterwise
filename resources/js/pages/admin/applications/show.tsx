@@ -450,11 +450,17 @@ export default function ApplicationShow() {
         editForm.setData('strengths', ref.strengths ?? '');
         editForm.setData('concerns', ref.concerns ?? '');
         editForm.setData('additional_comments', ref.additional_comments ?? '');
-        editForm.setData('background_drug_alcohol', ref.background_drug_alcohol ?? '');
+        editForm.setData(
+            'background_drug_alcohol',
+            ref.background_drug_alcohol ?? '',
+        );
         editForm.setData('background_tobacco', ref.background_tobacco ?? '');
         editForm.setData('trust_own_child', ref.trust_own_child ?? '');
         editForm.setData('reason_not_care', ref.reason_not_care ?? '');
-        editForm.setData('reason_not_care_explanation', ref.reason_not_care_explanation ?? '');
+        editForm.setData(
+            'reason_not_care_explanation',
+            ref.reason_not_care_explanation ?? '',
+        );
         setEditingRefId(ref.id);
     }
 
@@ -1337,10 +1343,10 @@ export default function ApplicationShow() {
                                         'rating_maturity',
                                         'rating_communication',
                                         'rating_warmth',
-                                                'rating_overall_recommendation',
-                                                'rating_appearance',
-                                                'rating_punctuality',
-                                            ] as const;
+                                        'rating_overall_recommendation',
+                                        'rating_appearance',
+                                        'rating_punctuality',
+                                    ] as const;
                                     const ratings = ratingKeys
                                         .map(
                                             (k) =>
@@ -1458,12 +1464,12 @@ export default function ApplicationShow() {
                                                                                         'Communication',
                                                                                     rating_warmth:
                                                                                         'Warmth',
-                                                                                rating_overall_recommendation:
-                                                                                    'Overall',
-                                                                                rating_appearance:
-                                                                                    'Appearance',
-                                                                                rating_punctuality:
-                                                                                    'Punctuality',
+                                                                                    rating_overall_recommendation:
+                                                                                        'Overall',
+                                                                                    rating_appearance:
+                                                                                        'Appearance',
+                                                                                    rating_punctuality:
+                                                                                        'Punctuality',
                                                                                 };
                                                                             const val =
                                                                                 ref[
@@ -1514,51 +1520,62 @@ export default function ApplicationShow() {
                                                                         }
                                                                     </p>
                                                                 )}
-                                                                        {ref.additional_comments && (
-                                                                             <p className="text-xs text-muted-foreground">
-                                                                                 <span className="font-medium text-foreground">
-                                                                                     Additional
-                                                                                     Comments:
-                                                                                 </span>{' '}
-                                                                                 {
-                                                                                     ref.additional_comments
-                                                                                 }
-                                                                             </p>
-                                                                         )}
-                                                                              <div className="border-t border-border pt-2">
-                                                                                   <p className="text-xs font-semibold text-foreground">
-                                                                                       Background
-                                                                                   </p>
-                                                                                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                                                                                      <p>
-                                                                                          <span className="font-medium text-foreground">
-                                                                                              Drug/Alcohol:
-                                                                                          </span>{' '}
-                                                                                          {ref.background_drug_alcohol ?? '—'}
-                                                                                      </p>
-                                                                                      <p>
-                                                                                          <span className="font-medium text-foreground">
-                                                                                              Tobacco:
-                                                                                          </span>{' '}
-                                                                                          {ref.background_tobacco ?? '—'}
-                                                                                      </p>
-                                                                                      <p>
-                                                                                          <span className="font-medium text-foreground">
-                                                                                              Trust 6+ hrs:
-                                                                                          </span>{' '}
-                                                                                          {ref.trust_own_child ?? '—'}
-                                                                                      </p>
-                                                                                      <p>
-                                                                                          <span className="font-medium text-foreground">
-                                                                                              Reason not care:
-                                                                                          </span>{' '}
-                                                                                          {ref.reason_not_care ?? '—'}
-                                                                                          {ref.reason_not_care === 'Yes' && ref.reason_not_care_explanation && ` — ${ref.reason_not_care_explanation}`}
-                                                                                      </p>
-                                                                                  </div>
-                                                                              </div>
-                                                                     </div>
-                                                                 )}
+                                                                {ref.additional_comments && (
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        <span className="font-medium text-foreground">
+                                                                            Additional
+                                                                            Comments:
+                                                                        </span>{' '}
+                                                                        {
+                                                                            ref.additional_comments
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                                <div className="border-t border-border pt-2">
+                                                                    <p className="text-xs font-semibold text-foreground">
+                                                                        Background
+                                                                    </p>
+                                                                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                                                        <p>
+                                                                            <span className="font-medium text-foreground">
+                                                                                Drug/Alcohol:
+                                                                            </span>{' '}
+                                                                            {ref.background_drug_alcohol ??
+                                                                                '—'}
+                                                                        </p>
+                                                                        <p>
+                                                                            <span className="font-medium text-foreground">
+                                                                                Tobacco:
+                                                                            </span>{' '}
+                                                                            {ref.background_tobacco ??
+                                                                                '—'}
+                                                                        </p>
+                                                                        <p>
+                                                                            <span className="font-medium text-foreground">
+                                                                                Trust
+                                                                                6+
+                                                                                hrs:
+                                                                            </span>{' '}
+                                                                            {ref.trust_own_child ??
+                                                                                '—'}
+                                                                        </p>
+                                                                        <p>
+                                                                            <span className="font-medium text-foreground">
+                                                                                Reason
+                                                                                not
+                                                                                care:
+                                                                            </span>{' '}
+                                                                            {ref.reason_not_care ??
+                                                                                '—'}
+                                                                            {ref.reason_not_care ===
+                                                                                'Yes' &&
+                                                                                ref.reason_not_care_explanation &&
+                                                                                ` — ${ref.reason_not_care_explanation}`}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                 </div>
                                                 <div className="ml-4 flex shrink-0 gap-1">
                                                     <Button
@@ -1698,19 +1715,31 @@ export default function ApplicationShow() {
                                 </h2>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Status</span>
-                                        <span className="font-medium capitalize">{interview.status}</span>
+                                        <span className="text-muted-foreground">
+                                            Status
+                                        </span>
+                                        <span className="font-medium capitalize">
+                                            {interview.status}
+                                        </span>
                                     </div>
                                     {interview.composite !== null && (
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Score</span>
-                                            <span className="font-medium">{interview.composite}/36</span>
+                                            <span className="text-muted-foreground">
+                                                Score
+                                            </span>
+                                            <span className="font-medium">
+                                                {interview.composite}/36
+                                            </span>
                                         </div>
                                     )}
                                     {interview.evaluator_name && (
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Evaluator</span>
-                                            <span className="font-medium">{interview.evaluator_name}</span>
+                                            <span className="text-muted-foreground">
+                                                Evaluator
+                                            </span>
+                                            <span className="font-medium">
+                                                {interview.evaluator_name}
+                                            </span>
                                         </div>
                                     )}
                                     <Link
@@ -2126,10 +2155,7 @@ export default function ApplicationShow() {
                                             'rating_appearance',
                                             'Appearance & Presentation',
                                         ],
-                                        [
-                                            'rating_punctuality',
-                                            'Punctuality',
-                                        ],
+                                        ['rating_punctuality', 'Punctuality'],
                                     ] as const
                                 ).map(([key, label]) => (
                                     <div key={key}>
@@ -2242,9 +2268,13 @@ export default function ApplicationShow() {
                                             </label>
                                         </div>
                                     </RadioGroup>
-                                    {editForm.errors.background_drug_alcohol && (
+                                    {editForm.errors
+                                        .background_drug_alcohol && (
                                         <p className="text-sm text-destructive">
-                                            {editForm.errors.background_drug_alcohol}
+                                            {
+                                                editForm.errors
+                                                    .background_drug_alcohol
+                                            }
                                         </p>
                                     )}
                                 </div>
@@ -2254,8 +2284,7 @@ export default function ApplicationShow() {
                                     </Label>
                                     <RadioGroup
                                         value={
-                                            editForm.data
-                                                .background_tobacco ||
+                                            editForm.data.background_tobacco ||
                                             undefined
                                         }
                                         onValueChange={(value) =>
@@ -2292,8 +2321,7 @@ export default function ApplicationShow() {
                                     </Label>
                                     <RadioGroup
                                         value={
-                                            editForm.data
-                                                .trust_own_child ||
+                                            editForm.data.trust_own_child ||
                                             undefined
                                         }
                                         onValueChange={(value) =>
@@ -2336,8 +2364,7 @@ export default function ApplicationShow() {
                                     </Label>
                                     <RadioGroup
                                         value={
-                                            editForm.data
-                                                .reason_not_care ||
+                                            editForm.data.reason_not_care ||
                                             undefined
                                         }
                                         onValueChange={(value) =>
@@ -2390,9 +2417,13 @@ export default function ApplicationShow() {
                                                 )
                                             }
                                         />
-                                        {editForm.errors.reason_not_care_explanation && (
+                                        {editForm.errors
+                                            .reason_not_care_explanation && (
                                             <p className="text-sm text-destructive">
-                                                {editForm.errors.reason_not_care_explanation}
+                                                {
+                                                    editForm.errors
+                                                        .reason_not_care_explanation
+                                                }
                                             </p>
                                         )}
                                     </div>

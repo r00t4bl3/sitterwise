@@ -8,6 +8,7 @@ use App\Models\BookingGroup;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Models\PricingRule;
 use App\Notifications\BookingCreatedNotification;
 use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Services\ClientPayment\Contracts\ClientPaymentServiceInterface;
@@ -336,7 +337,8 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
         $pendingBookings = Booking::whereHas('bookingGroup', fn ($q) => $q
             ->where('client_id', $client->id)
-            ->where('requires_payment', true))
+            ->where('requires_payment', true)
+            ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE))
             ->where('payment_status', BookingPaymentStatus::Pending->value)
             ->get();
 
@@ -346,6 +348,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
         $pendingGroups = BookingGroup::where('client_id', $client->id)
             ->where('requires_payment', true)
+            ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE)
             ->has('bookings', '>', 1)
             ->get();
 

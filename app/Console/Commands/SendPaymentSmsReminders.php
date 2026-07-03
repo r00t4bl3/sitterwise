@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Booking;
+use App\Models\PricingRule;
 use App\Notifications\ClientPaymentSmsReminderNotification;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -16,7 +17,9 @@ class SendPaymentSmsReminders extends Command
     {
         $sent = 0;
 
-        $bookings = Booking::whereHas('bookingGroup', fn ($q) => $q->where('requires_payment', true))
+        $bookings = Booking::whereHas('bookingGroup', fn ($q) => $q
+            ->where('requires_payment', true)
+            ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE))
             ->where('payment_status', 'pending')
             ->whereNull('payment_reminder_sent_at')
             ->where('created_at', '<', now()->subHours(24))

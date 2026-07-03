@@ -139,8 +139,8 @@ export default function ClientDashboard({
                         <p className="text-2xl font-bold text-foreground">
                             {upcomingBookings.length}
                         </p>
-                        </div>
                     </div>
+                </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <div className="flex flex-col gap-4">

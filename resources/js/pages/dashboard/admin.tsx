@@ -570,59 +570,97 @@ export default function AdminDashboard({
                                                     Recent Reviews
                                                 </h4>
                                                 <div className="space-y-2">
-                                                    {admin.recentReviews.map((review) => (
-                                                        <Link
-                                                            key={review.id}
-                                                            href={`/bookings/${review.booking_ulid}`}
-                                                            className="flex items-start justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
-                                                        >
-                                                            <div className="flex items-start gap-3">
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <div className={`flex h-8 w-8 flex-shrink-0 cursor-default items-center justify-center rounded ${review.type === 'caregiver' ? 'bg-amber-100' : 'bg-rose-100'}`}>
-                                                                            {review.type === 'caregiver' ? (
-                                                                                <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                                                                            ) : (
-                                                                                <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
-                                                                            )}
-                                                                        </div>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent side="top">
-                                                                        {review.type === 'caregiver'
-                                                                            ? `${review.rater_name} (client) reviewed ${review.subject_first_name} ${review.subject_last_name} (caregiver)`
-                                                                            : `${review.rater_name} (caregiver) reviewed ${review.subject_first_name} ${review.subject_last_name} (client)`}
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                                <div>
-                                                                    <p className="text-sm font-medium">
-                                                                        {review.rater_name}{' '}
-                                                                        <span className="text-muted-foreground font-normal">reviewed</span>{' '}
-                                                                        {review.subject_first_name} {review.subject_last_name}
-                                                                    </p>
-                                                                    <div className="mt-0.5 flex items-center gap-1">
-                                                                        {[1, 2, 3, 4, 5].map((star) => (
-                                                                            <Star
-                                                                                key={star}
-                                                                                className={`h-3 w-3 ${star <= review.rating ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground/30'}`}
-                                                                            />
-                                                                        ))}
-                                                                        <span className="ml-1 text-xs text-muted-foreground">
-                                                                            {new Date(review.created_at).toLocaleDateString('en-US', {
-                                                                                month: 'short',
-                                                                                day: 'numeric',
-                                                                            })}
-                                                                        </span>
-                                                                    </div>
-                                                                    {review.comment && (
-                                                                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                                                            "{review.comment}"
+                                                    {admin.recentReviews.map(
+                                                        (review) => (
+                                                            <Link
+                                                                key={review.id}
+                                                                href={`/bookings/${review.booking_ulid}`}
+                                                                className="flex items-start justify-between rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/50"
+                                                            >
+                                                                <div className="flex items-start gap-3">
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger
+                                                                            asChild
+                                                                        >
+                                                                            <div
+                                                                                className={`flex h-8 w-8 flex-shrink-0 cursor-default items-center justify-center rounded ${review.type === 'caregiver' ? 'bg-amber-100' : 'bg-rose-100'}`}
+                                                                            >
+                                                                                {review.type ===
+                                                                                'caregiver' ? (
+                                                                                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                                                                ) : (
+                                                                                    <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
+                                                                                )}
+                                                                            </div>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent side="top">
+                                                                            {review.type ===
+                                                                            'caregiver'
+                                                                                ? `${review.rater_name} (client) reviewed ${review.subject_first_name} ${review.subject_last_name} (caregiver)`
+                                                                                : `${review.rater_name} (caregiver) reviewed ${review.subject_first_name} ${review.subject_last_name} (client)`}
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                    <div>
+                                                                        <p className="text-sm font-medium">
+                                                                            {
+                                                                                review.rater_name
+                                                                            }{' '}
+                                                                            <span className="font-normal text-muted-foreground">
+                                                                                reviewed
+                                                                            </span>{' '}
+                                                                            {
+                                                                                review.subject_first_name
+                                                                            }{' '}
+                                                                            {
+                                                                                review.subject_last_name
+                                                                            }
                                                                         </p>
-                                                                    )}
+                                                                        <div className="mt-0.5 flex items-center gap-1">
+                                                                            {[
+                                                                                1,
+                                                                                2,
+                                                                                3,
+                                                                                4,
+                                                                                5,
+                                                                            ].map(
+                                                                                (
+                                                                                    star,
+                                                                                ) => (
+                                                                                    <Star
+                                                                                        key={
+                                                                                            star
+                                                                                        }
+                                                                                        className={`h-3 w-3 ${star <= review.rating ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground/30'}`}
+                                                                                    />
+                                                                                ),
+                                                                            )}
+                                                                            <span className="ml-1 text-xs text-muted-foreground">
+                                                                                {new Date(
+                                                                                    review.created_at,
+                                                                                ).toLocaleDateString(
+                                                                                    'en-US',
+                                                                                    {
+                                                                                        month: 'short',
+                                                                                        day: 'numeric',
+                                                                                    },
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                        {review.comment && (
+                                                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                                                                "
+                                                                                {
+                                                                                    review.comment
+                                                                                }
+                                                                                "
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            <ChevronRight className="mt-2 h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                                        </Link>
-                                                    ))}
+                                                                <ChevronRight className="mt-2 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                                            </Link>
+                                                        ),
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -630,7 +668,8 @@ export default function AdminDashboard({
                                         {admin.recentBookings.length === 0 &&
                                             admin.recentCaregivers.length ===
                                                 0 &&
-                                            admin.recentReviews.length === 0 && (
+                                            admin.recentReviews.length ===
+                                                0 && (
                                                 <p className="py-4 text-center text-sm text-muted-foreground">
                                                     No recent activity
                                                 </p>
@@ -843,9 +882,7 @@ export default function AdminDashboard({
                             </div>
                         )}
 
-                        {quickLinks && (
-                            <QuickLinks links={quickLinks} />
-                        )}
+                        {quickLinks && <QuickLinks links={quickLinks} />}
                     </div>
                 </div>
 

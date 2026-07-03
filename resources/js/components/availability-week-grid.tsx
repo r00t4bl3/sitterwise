@@ -30,7 +30,10 @@ function formatDate(year: number, month: number, day: number): string {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function getWeeks(year: number, month: number): Array<Array<{ day: number; monthOffset: number; date: string }>> {
+function getWeeks(
+    year: number,
+    month: number,
+): Array<Array<{ day: number; monthOffset: number; date: string }>> {
     const firstWeekday = new Date(year, month, 1).getDay();
     const daysInCurrent = new Date(year, month + 1, 0).getDate();
     const daysInPrev = new Date(year, month, 0).getDate();
@@ -44,11 +47,19 @@ function getWeeks(year: number, month: number): Array<Array<{ day: number; month
     for (let i = leading - 1; i >= 0; i--) {
         const y = month === 0 ? year - 1 : year;
         const m = month === 0 ? 11 : month - 1;
-        cells.push({ day: daysInPrev - i, monthOffset: -1, date: formatDate(y, m, daysInPrev - i) });
+        cells.push({
+            day: daysInPrev - i,
+            monthOffset: -1,
+            date: formatDate(y, m, daysInPrev - i),
+        });
     }
 
     for (let d = 1; d <= daysInCurrent; d++) {
-        cells.push({ day: d, monthOffset: 0, date: formatDate(year, month, d) });
+        cells.push({
+            day: d,
+            monthOffset: 0,
+            date: formatDate(year, month, d),
+        });
     }
 
     for (let d = 1; d <= trailing; d++) {
@@ -57,7 +68,9 @@ function getWeeks(year: number, month: number): Array<Array<{ day: number; month
         cells.push({ day: d, monthOffset: 1, date: formatDate(y, m, d) });
     }
 
-    const weeks: Array<Array<{ day: number; monthOffset: number; date: string }>> = [];
+    const weeks: Array<
+        Array<{ day: number; monthOffset: number; date: string }>
+    > = [];
 
     for (let i = 0; i < cells.length; i += 7) {
         weeks.push(cells.slice(i, i + 7));
@@ -67,7 +80,9 @@ function getWeeks(year: number, month: number): Array<Array<{ day: number; month
 }
 
 function getMonthName(month: number): string {
-    return new Date(2000, month, 1).toLocaleDateString('en-US', { month: 'long' });
+    return new Date(2000, month, 1).toLocaleDateString('en-US', {
+        month: 'long',
+    });
 }
 
 function countDays(draft: Record<string, string[]>): number {
@@ -86,10 +101,16 @@ const SLOT_LABELS: Record<string, string> = {
     evening: 'Evening',
 };
 
-export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }: AvailabilityWeekGridProps) {
+export default function AvailabilityWeekGrid({
+    initial,
+    saveUrl,
+    fetchMonthUrl,
+}: AvailabilityWeekGridProps) {
     const todayStr = todayInPT();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [savedByDate, setSavedByDate] = useState<Record<string, AvailabilityData>>({});
+    const [savedByDate, setSavedByDate] = useState<
+        Record<string, AvailabilityData>
+    >({});
     const [openWeekIdx, setOpenWeekIdx] = useState<number | null>(null);
     const [draft, setDraft] = useState<Record<string, string[]>>({});
     const [saving, setSaving] = useState(false);
@@ -107,26 +128,29 @@ export default function AvailabilityWeekGrid({ initial, saveUrl, fetchMonthUrl }
         setSavedByDate(map);
     }, [initial]);
 
-    const fetchMonth = useCallback(async (y: number, m: number) => {
-        setLoadingMonth(true);
+    const fetchMonth = useCallback(
+        async (y: number, m: number) => {
+            setLoadingMonth(true);
 
-        try {
-            const res = await fetch(fetchMonthUrl(y, m + 1));
+            try {
+                const res = await fetch(fetchMonthUrl(y, m + 1));
 
-            if (!res.ok) {
-return;
-}
+                if (!res.ok) {
+                    return;
+                }
 
-            const data = await res.json();
-            const map: Record<string, AvailabilityData> = {};
-            data.availabilities.forEach((av: AvailabilityData) => {
-                map[av.date] = av;
-            });
-            setSavedByDate((prev) => ({ ...prev, ...map }));
-        } finally {
-            setLoadingMonth(false);
-        }
-    }, [fetchMonthUrl]);
+                const data = await res.json();
+                const map: Record<string, AvailabilityData> = {};
+                data.availabilities.forEach((av: AvailabilityData) => {
+                    map[av.date] = av;
+                });
+                setSavedByDate((prev) => ({ ...prev, ...map }));
+            } finally {
+                setLoadingMonth(false);
+            }
+        },
+        [fetchMonthUrl],
+    );
 
     const prevMonth = () => {
         const d = new Date(year, month - 1, 1);
@@ -172,8 +196,8 @@ return;
 
     const saveWeek = () => {
         if (saving) {
-return;
-}
+            return;
+        }
 
         setSaving(true);
 
@@ -197,7 +221,12 @@ return;
 
                             if (time_slots.length > 0) {
                                 next[date] = {
-                                    ...(existing || { id: 0, date, specific_time: null, booked_slots: [] }),
+                                    ...(existing || {
+                                        id: 0,
+                                        date,
+                                        specific_time: null,
+                                        booked_slots: [],
+                                    }),
                                     time_slots,
                                 };
                             } else {
@@ -216,7 +245,14 @@ return;
         );
     };
 
-    const ordinalLabels = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
+    const ordinalLabels = [
+        'First',
+        'Second',
+        'Third',
+        'Fourth',
+        'Fifth',
+        'Sixth',
+    ];
 
     const isLocked = (dateStr: string) => dateStr <= todayStr;
 
@@ -227,32 +263,39 @@ return;
     const allChecked = openWeek
         ? openWeek.every(({ date }) => {
               if (isLocked(date)) {
-return true;
-}
+                  return true;
+              }
 
               const bookedSlots = savedByDate[date]?.booked_slots ?? [];
               const selected = draft[date] ?? [];
-              const editable = (['morning', 'afternoon', 'evening'] as const).filter((s) => !bookedSlots.includes(s));
+              const editable = (
+                  ['morning', 'afternoon', 'evening'] as const
+              ).filter((s) => !bookedSlots.includes(s));
 
-              return editable.length > 0 && editable.every((s) => selected.includes(s));
+              return (
+                  editable.length > 0 &&
+                  editable.every((s) => selected.includes(s))
+              );
           })
         : false;
 
     const toggleAll = () => {
         if (!openWeek) {
-return;
-}
+            return;
+        }
 
         setDraft((prev) => {
             const next = { ...prev };
             openWeek.forEach(({ date }) => {
                 if (isLocked(date)) {
-return;
-}
+                    return;
+                }
 
                 const bookedSlots = savedByDate[date]?.booked_slots ?? [];
-                const allSlots = (['morning', 'afternoon', 'evening'] as const);
-                const editableSlots = allSlots.filter((s) => !bookedSlots.includes(s));
+                const allSlots = ['morning', 'afternoon', 'evening'] as const;
+                const editableSlots = allSlots.filter(
+                    (s) => !bookedSlots.includes(s),
+                );
 
                 if (allChecked) {
                     next[date] = [];
@@ -267,192 +310,108 @@ return;
 
     return (
         <>
-            <div className="flex items-center justify-between mb-4">
-                    <button
-                        type="button"
-                        onClick={prevMonth}
-                        disabled={loadingMonth}
-                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background cursor-pointer hover:bg-accent disabled:opacity-40"
+            <div className="mb-4 flex items-center justify-between">
+                <button
+                    type="button"
+                    onClick={prevMonth}
+                    disabled={loadingMonth}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-none border border-input bg-background hover:bg-accent disabled:opacity-40"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm font-semibold text-foreground">
+                    {loadingMonth
+                        ? 'Loading...'
+                        : `${getMonthName(month)} ${year}`}
+                </span>
+                <button
+                    type="button"
+                    onClick={nextMonth}
+                    disabled={loadingMonth}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-none border border-input bg-background hover:bg-accent disabled:opacity-40"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+
+            <div className="mb-px grid grid-cols-7 gap-px">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                    <div
+                        key={d}
+                        className="py-1 text-center text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <span className="font-semibold text-foreground text-sm">
-                        {loadingMonth ? 'Loading...' : `${getMonthName(month)} ${year}`}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={nextMonth}
-                        disabled={loadingMonth}
-                        className="flex h-8 w-8 items-center justify-center rounded-none border border-input bg-background cursor-pointer hover:bg-accent disabled:opacity-40"
+                        {d[0]}
+                    </div>
+                ))}
+            </div>
+
+            {weeks.map((week, wi) => {
+                const allPast = week.every(({ date }) => isLocked(date));
+
+                return (
+                    <div
+                        key={wi}
+                        className={`mb-2 grid grid-cols-7 gap-2 ${allPast ? '' : 'group cursor-pointer'}`}
+                        onClick={() => !allPast && openModal(wi)}
                     >
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
-                </div>
+                        {week.map(({ day, monthOffset, date }) => {
+                            const av = savedByDate[date];
+                            const slots = av?.time_slots ?? [];
+                            const bookedSlots = av?.booked_slots ?? [];
+                            const currentMonth = monthOffset === 0;
+                            const today = isToday(date);
 
-                <div className="grid grid-cols-7 gap-px mb-px">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                        <div key={d} className="py-1 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            {d[0]}
-                        </div>
-                    ))}
-                </div>
+                            const slotDots = (
+                                ['morning', 'afternoon', 'evening'] as const
+                            ).filter(
+                                (s) =>
+                                    slots.includes(s) &&
+                                    !bookedSlots.includes(s),
+                            );
 
-                {weeks.map((week, wi) => {
-                    const allPast = week.every(({ date }) => isLocked(date));
+                            const showBookedTag =
+                                bookedSlots.length > 0 &&
+                                (slots.length === 0 ||
+                                    bookedSlots.length === slots.length);
 
-                    return (
-                        <div
-                            key={wi}
-                            className={`grid grid-cols-7 gap-2 mb-2 ${allPast ? '' : 'group cursor-pointer'}`}
-                            onClick={() => !allPast && openModal(wi)}
-                        >
-                            {week.map(({ day, monthOffset, date }) => {
-                                const av = savedByDate[date];
-                                const slots = av?.time_slots ?? [];
-                                const bookedSlots = av?.booked_slots ?? [];
-                                const currentMonth = monthOffset === 0;
-                                const today = isToday(date);
-
-                                const slotDots = (['morning', 'afternoon', 'evening'] as const)
-                                    .filter((s) => slots.includes(s) && !bookedSlots.includes(s));
-
-                                const showBookedTag = bookedSlots.length > 0 && (slots.length === 0 || bookedSlots.length === slots.length);
-
-                                return (
-                                    <div
-                                        key={date}
-                                        className={`flex min-h-16 flex-col border p-2 transition-colors ${
-                                            currentMonth
-                                                ? 'border-border bg-background group-hover:bg-primary/20'
-                                                : 'border-dashed border-border bg-card opacity-60'
-                                        } ${today ? 'bg-blush' : ''}`}
-                                    >
-                                        <span className={`text-sm ${
+                            return (
+                                <div
+                                    key={date}
+                                    className={`flex min-h-16 flex-col border p-2 transition-colors ${
+                                        currentMonth
+                                            ? 'border-border bg-background group-hover:bg-primary/20'
+                                            : 'border-dashed border-border bg-card opacity-60'
+                                    } ${today ? 'bg-blush' : ''}`}
+                                >
+                                    <span
+                                        className={`text-sm ${
                                             today
                                                 ? 'font-bold text-foreground'
                                                 : currentMonth
                                                   ? 'font-medium text-foreground'
                                                   : 'font-medium text-muted-foreground'
-                                        }`}>
-                                            {day}
-                                        </span>
-                                        <div className="mt-auto flex flex-col items-start gap-0.5">
-                                            {slotDots.length > 0 && (
-                                                <div className="flex items-end gap-1">
-                                                    {slotDots.map((s) => (
-                                                        <span
-                                                            key={s}
-                                                            className="h-2 w-2 rounded-full"
-                                                            style={{ backgroundColor: SLOT_COLORS[s] }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {showBookedTag && (
-                                                <span className="text-[8px] font-semibold text-muted-foreground/60 tracking-wider">
-                                                    Booked
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    );
-                })}
-
-                <div className="flex flex-wrap items-center gap-3 mt-4">
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#F2C14E' }} />
-                        Morning
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#84D0D2' }} />
-                        Afternoon
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#1B3A5C' }} />
-                        Evening
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#9aa6ad' }} />
-                        Booked
-                    </span>
-                </div>
-
-            <Dialog open={openWeekIdx !== null} onOpenChange={(open) => {
- if (!open) {
-closeModal();
-} 
-}}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {openWeekIdx !== null ? ordinalLabels[openWeekIdx] : ''} week of {getMonthName(month)}
-                        </DialogTitle>
-                        {openWeek && (
-                            <DialogDescription>
-                                {openWeek.filter((c) => c.monthOffset === 0).length > 0
-                                    ? `${getMonthName(month)} ${openWeek.find((c) => c.monthOffset === 0)?.day} – ${[...openWeek].filter((c) => c.monthOffset === 0).pop()?.day}, ${year}`
-                                    : `${getMonthName(month)} ${year}`
-                                }
-                            </DialogDescription>
-                        )}
-                    </DialogHeader>
-
-                    <div className="flex items-center justify-between px-1 -mt-2">
-                        <p className="text-xs text-muted-foreground">
-                            {openWeek && (openWeek.filter(({ date }) => !isLocked(date)).length)} editable days
-                        </p>
-                        <button
-                            type="button"
-                            onClick={toggleAll}
-                            className="text-xs font-medium text-primary hover:underline cursor-pointer"
-                        >
-                            {allChecked ? 'Uncheck all' : 'Check all'}
-                        </button>
-                    </div>
-
-                    <div className="-mx-6 px-6 overflow-y-auto max-h-[55vh] border-y border-border">
-                        {openWeek && openWeek.map(({ date }) => {
-                            const bookedSlots = savedByDate[date]?.booked_slots ?? [];
-                            const selectedSlots = draft[date] ?? [];
-                            const locked = isLocked(date);
-
-                            return (
-                                <div key={date} className={`py-3 border-b border-border last:border-b-0 ${locked ? 'opacity-50' : ''}`}>
-                                    <p className="font-medium text-sm text-foreground mb-2">
-                                        {formatDisplayDateInPT(date)}
-                                    </p>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {(['morning', 'afternoon', 'evening'] as const).map((slot) => {
-                                            const isBookedSlot = bookedSlots.includes(slot);
-                                            const isSelected = selectedSlots.includes(slot);
-
-                                            return (
-                                                <button
-                                                    key={slot}
-                                                    type="button"
-                                                    disabled={locked || isBookedSlot}
-                                                    onClick={() => toggleSlot(date, slot)}
-                                                    className={`inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium rounded-full border transition-all duration-100 cursor-pointer
-                                                        ${isBookedSlot
-                                                            ? 'bg-muted text-muted-foreground border-border cursor-not-allowed'
-                                                            : isSelected
-                                                                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                                                                : 'bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground'
-                                                        }
-                                                        ${locked && !isBookedSlot ? 'cursor-not-allowed opacity-60' : ''}
-                                                    `}
-                                                    style={{ width: 'auto', flex: '0 0 auto' }}
-                                                >
-                                                    {SLOT_LABELS[slot]}
-                                                </button>
-                                            );
-                                        })}
-                                        {bookedSlots.length > 0 && (
-                                            <span className="text-[10px] font-medium text-muted-foreground/60 ml-1">
-                                                {bookedSlots.length} slot{bookedSlots.length > 1 ? 's' : ''} booked
+                                        }`}
+                                    >
+                                        {day}
+                                    </span>
+                                    <div className="mt-auto flex flex-col items-start gap-0.5">
+                                        {slotDots.length > 0 && (
+                                            <div className="flex items-end gap-1">
+                                                {slotDots.map((s) => (
+                                                    <span
+                                                        key={s}
+                                                        className="h-2 w-2 rounded-full"
+                                                        style={{
+                                                            backgroundColor:
+                                                                SLOT_COLORS[s],
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                        {showBookedTag && (
+                                            <span className="text-[8px] font-semibold tracking-wider text-muted-foreground/60">
+                                                Booked
                                             </span>
                                         )}
                                     </div>
@@ -460,16 +419,179 @@ closeModal();
                             );
                         })}
                     </div>
+                );
+            })}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+                <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: '#F2C14E' }}
+                    />
+                    Morning
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: '#84D0D2' }}
+                    />
+                    Afternoon
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: '#1B3A5C' }}
+                    />
+                    Evening
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: '#9aa6ad' }}
+                    />
+                    Booked
+                </span>
+            </div>
+
+            <Dialog
+                open={openWeekIdx !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {openWeekIdx !== null
+                                ? ordinalLabels[openWeekIdx]
+                                : ''}{' '}
+                            week of {getMonthName(month)}
+                        </DialogTitle>
+                        {openWeek && (
+                            <DialogDescription>
+                                {openWeek.filter((c) => c.monthOffset === 0)
+                                    .length > 0
+                                    ? `${getMonthName(month)} ${openWeek.find((c) => c.monthOffset === 0)?.day} – ${[...openWeek].filter((c) => c.monthOffset === 0).pop()?.day}, ${year}`
+                                    : `${getMonthName(month)} ${year}`}
+                            </DialogDescription>
+                        )}
+                    </DialogHeader>
+
+                    <div className="-mt-2 flex items-center justify-between px-1">
+                        <p className="text-xs text-muted-foreground">
+                            {openWeek &&
+                                openWeek.filter(({ date }) => !isLocked(date))
+                                    .length}{' '}
+                            editable days
+                        </p>
+                        <button
+                            type="button"
+                            onClick={toggleAll}
+                            className="cursor-pointer text-xs font-medium text-primary hover:underline"
+                        >
+                            {allChecked ? 'Uncheck all' : 'Check all'}
+                        </button>
+                    </div>
+
+                    <div className="-mx-6 max-h-[55vh] overflow-y-auto border-y border-border px-6">
+                        {openWeek &&
+                            openWeek.map(({ date }) => {
+                                const bookedSlots =
+                                    savedByDate[date]?.booked_slots ?? [];
+                                const selectedSlots = draft[date] ?? [];
+                                const locked = isLocked(date);
+
+                                return (
+                                    <div
+                                        key={date}
+                                        className={`border-b border-border py-3 last:border-b-0 ${locked ? 'opacity-50' : ''}`}
+                                    >
+                                        <p className="mb-2 text-sm font-medium text-foreground">
+                                            {formatDisplayDateInPT(date)}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {(
+                                                [
+                                                    'morning',
+                                                    'afternoon',
+                                                    'evening',
+                                                ] as const
+                                            ).map((slot) => {
+                                                const isBookedSlot =
+                                                    bookedSlots.includes(slot);
+                                                const isSelected =
+                                                    selectedSlots.includes(
+                                                        slot,
+                                                    );
+
+                                                return (
+                                                    <button
+                                                        key={slot}
+                                                        type="button"
+                                                        disabled={
+                                                            locked ||
+                                                            isBookedSlot
+                                                        }
+                                                        onClick={() =>
+                                                            toggleSlot(
+                                                                date,
+                                                                slot,
+                                                            )
+                                                        }
+                                                        className={`inline-flex cursor-pointer items-center justify-center rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-100 ${
+                                                            isBookedSlot
+                                                                ? 'cursor-not-allowed border-border bg-muted text-muted-foreground'
+                                                                : isSelected
+                                                                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                                                  : 'border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground'
+                                                        } ${locked && !isBookedSlot ? 'cursor-not-allowed opacity-60' : ''} `}
+                                                        style={{
+                                                            width: 'auto',
+                                                            flex: '0 0 auto',
+                                                        }}
+                                                    >
+                                                        {SLOT_LABELS[slot]}
+                                                    </button>
+                                                );
+                                            })}
+                                            {bookedSlots.length > 0 && (
+                                                <span className="ml-1 text-[10px] font-medium text-muted-foreground/60">
+                                                    {bookedSlots.length} slot
+                                                    {bookedSlots.length > 1
+                                                        ? 's'
+                                                        : ''}{' '}
+                                                    booked
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                    </div>
 
                     <DialogFooter className="sm:justify-between">
-                        <p className="text-xs text-muted-foreground self-center">
-                            Set <strong className="text-foreground">{countDays(draft)}</strong> day{countDays(draft) !== 1 ? 's' : ''} this week
+                        <p className="self-center text-xs text-muted-foreground">
+                            Set{' '}
+                            <strong className="text-foreground">
+                                {countDays(draft)}
+                            </strong>{' '}
+                            day{countDays(draft) !== 1 ? 's' : ''} this week
                         </p>
                         <div className="flex gap-2">
-                            <Button type="button" variant="outline" onClick={closeModal}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={closeModal}
+                            >
                                 Cancel
                             </Button>
-                            <Button type="button" onClick={saveWeek} disabled={saving}>
+                            <Button
+                                type="button"
+                                onClick={saveWeek}
+                                disabled={saving}
+                            >
                                 {saving ? 'Saving...' : 'Save week'}
                             </Button>
                         </div>

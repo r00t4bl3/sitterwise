@@ -25,6 +25,16 @@ class BookingGroup extends Model
         static::creating(function (BookingGroup $group) {
             $group->calculateSpecialConsiderations();
         });
+
+        // Keep the settlement rail snapshot in sync with the service type. Derived
+        // centrally so every create/update path (admin, guest, client) is
+        // consistent. The importer bulk-inserts (bypassing model events) and sets
+        // this explicitly instead.
+        static::saving(function (BookingGroup $group) {
+            if ($group->service_type) {
+                $group->payment_form = PricingRule::paymentFormFor($group->service_type);
+            }
+        });
     }
 
     protected $fillable = [
@@ -59,6 +69,7 @@ class BookingGroup extends Model
         'admin_notes',
         'corporate_id',
         'requires_payment',
+        'payment_form',
         'special_considerations',
     ];
 

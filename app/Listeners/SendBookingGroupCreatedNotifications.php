@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\Enums\BookingPaymentStatus;
 use App\Events\BookingGroupCreated;
 use App\Mail\AdminGroupBookingCreatedMail;
+use App\Models\PricingRule;
 use App\Notifications\ClientGroupBookingCreatedNotification;
 use App\Notifications\ClientPaymentRequiredNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,6 +26,7 @@ class SendBookingGroupCreatedNotifications implements ShouldQueue
 
         if ($client && $client->user) {
             $needsPaymentMethod = $group->requires_payment
+                && $group->payment_form === PricingRule::PAYMENT_FORM_STRIPE
                 && $firstBooking
                 && $firstBooking->payment_status === BookingPaymentStatus::Pending->value
                 && ! $client->hasPaymentMethod();

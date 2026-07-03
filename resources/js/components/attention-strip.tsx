@@ -1,7 +1,4 @@
-import {
-    AlertTriangle,
-    Calendar,
-} from 'lucide-react';
+import { AlertTriangle, Calendar } from 'lucide-react';
 
 interface AttentionItem {
     icon: 'AlertTriangle' | 'Calendar';

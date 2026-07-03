@@ -176,7 +176,7 @@ export default function JobDetail({ booking }: PageProps) {
                                 {booking.client_email && (
                                     <div className="flex min-w-0 items-center gap-2">
                                         <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="min-w-0 break-all text-sm text-muted-foreground">
+                                        <span className="min-w-0 text-sm break-all text-muted-foreground">
                                             {booking.client_email}
                                         </span>
                                     </div>
@@ -235,7 +235,7 @@ export default function JobDetail({ booking }: PageProps) {
                                                 'mt-0.5 h-4 w-4 shrink-0 text-muted-foreground',
                                         },
                                     )}
-                                    <span className="min-w-0 break-words text-sm text-muted-foreground">
+                                    <span className="min-w-0 text-sm break-words text-muted-foreground">
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address_line1} ${booking.address_line2 || ''} ${booking.address_city} ${booking.address_state} ${booking.address_zip}`)}`}
                                             target="_blank"
@@ -386,7 +386,15 @@ export default function JobDetail({ booking }: PageProps) {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">
-                                                Base Pay ({Number(booking.total_working_hour)}h @ ${Number(booking.paid_to_caregiver_hourly).toFixed(2)}/hr)
+                                                Base Pay (
+                                                {Number(
+                                                    booking.total_working_hour,
+                                                )}
+                                                h @ $
+                                                {Number(
+                                                    booking.paid_to_caregiver_hourly,
+                                                ).toFixed(2)}
+                                                /hr)
                                             </span>
                                             <span className="font-medium text-foreground">
                                                 ${computedBase.toFixed(2)}
@@ -398,17 +406,26 @@ export default function JobDetail({ booking }: PageProps) {
                                                     Bonus
                                                 </span>
                                                 <span className="font-medium text-green-600">
-                                                    +${Number(booking.bonus).toFixed(2)}
+                                                    +$
+                                                    {Number(
+                                                        booking.bonus,
+                                                    ).toFixed(2)}
                                                 </span>
                                             </div>
                                         )}
                                         {Number(booking.reimbursement) > 0 && (
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-muted-foreground">
-                                                    Reimbursement{booking.reimbursement_description ? ` (${booking.reimbursement_description})` : ''}
+                                                    Reimbursement
+                                                    {booking.reimbursement_description
+                                                        ? ` (${booking.reimbursement_description})`
+                                                        : ''}
                                                 </span>
                                                 <span className="font-medium text-green-600">
-                                                    +${Number(booking.reimbursement).toFixed(2)}
+                                                    +$
+                                                    {Number(
+                                                        booking.reimbursement,
+                                                    ).toFixed(2)}
                                                 </span>
                                             </div>
                                         )}
@@ -418,7 +435,10 @@ export default function JobDetail({ booking }: PageProps) {
                                                     Tip
                                                 </span>
                                                 <span className="font-medium text-green-600">
-                                                    +${Number(booking.tip).toFixed(2)}
+                                                    +$
+                                                    {Number(
+                                                        booking.tip,
+                                                    ).toFixed(2)}
                                                 </span>
                                             </div>
                                         )}

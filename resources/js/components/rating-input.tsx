@@ -41,7 +41,7 @@ export function RatingInput({
 }: RatingInputProps) {
     const [hoverValue, setHoverValue] = React.useState<number | null>(null);
 
-    const displayValue = hoverValue !== null ? hoverValue : value ?? 0;
+    const displayValue = hoverValue !== null ? hoverValue : (value ?? 0);
 
     const handleMouseMove = (
         e: React.MouseEvent<HTMLDivElement>,
@@ -96,9 +96,10 @@ export function RatingInput({
             >
                 {Array.from({ length: max }).map((_, index) => {
                     const isFull = displayValue >= index + 1;
-                    const isHalf = !wholeStarsOnly
-                        && displayValue >= index + 0.5
-                        && !isFull;
+                    const isHalf =
+                        !wholeStarsOnly &&
+                        displayValue >= index + 0.5 &&
+                        !isFull;
 
                     return (
                         <div

@@ -87,7 +87,9 @@ export default function GuestReviewBooking({ booking }: PageProps) {
                         <div className="mt-2">
                             <RatingInput
                                 value={form.data.rating}
-                                onChange={(val) => form.setData('rating', val ?? 0)}
+                                onChange={(val) =>
+                                    form.setData('rating', val ?? 0)
+                                }
                             />
                         </div>
                         {form.errors.rating && (

@@ -154,10 +154,10 @@
         @apply border-border;
     }
 
-body {
-    @apply overflow-x-hidden bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
-}
+    body {
+        @apply overflow-x-hidden bg-background text-foreground;
+        font-family: 'Poppins', sans-serif;
+    }
 
     h1,
     h2,

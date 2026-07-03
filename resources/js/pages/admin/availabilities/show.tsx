@@ -31,7 +31,8 @@ export default function ManageAvailability() {
     const { caregiver, availabilities } = usePage<Props>().props;
 
     const fetchMonthUrl = useCallback(
-        (y: number, m: number) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
+        (y: number, m: number) =>
+            `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
         [caregiver.id],
     );
 

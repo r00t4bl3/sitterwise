@@ -214,13 +214,24 @@ export default function BookingDetail({
     });
 
     const [caregiverSuggestions, setCaregiverSuggestions] = useState<
-        Array<{ id: number; name: string; age?: number | null; matchIcons?: string[]; hasBeenNotified?: boolean; [key: string]: unknown }>
+        Array<{
+            id: number;
+            name: string;
+            age?: number | null;
+            matchIcons?: string[];
+            hasBeenNotified?: boolean;
+            [key: string]: unknown;
+        }>
     >(caregiver_suggestions);
-    const [caregiverAllIds, setCaregiverAllIds] = useState<number[]>(caregiver_all_ids);
+    const [caregiverAllIds, setCaregiverAllIds] =
+        useState<number[]>(caregiver_all_ids);
     const [caregiverTotal, setCaregiverTotal] = useState(caregiver_total);
     const [caregiverCurrentPage, setCaregiverCurrentPage] = useState(1);
     const [caregiverLastPage, setCaregiverLastPage] = useState(1);
-    const [loadingCaregiverRecommendations, setLoadingCaregiverRecommendations] = useState(false);
+    const [
+        loadingCaregiverRecommendations,
+        setLoadingCaregiverRecommendations,
+    ] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
     const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
 
@@ -363,7 +374,9 @@ export default function BookingDetail({
                 params.append('end_datetime', booking.end_datetime);
             }
 
-            const res = await fetch(`/bookings/recommended-caregivers?${params}`);
+            const res = await fetch(
+                `/bookings/recommended-caregivers?${params}`,
+            );
             const json = await res.json();
             const data = json.data;
 
@@ -387,12 +400,19 @@ export default function BookingDetail({
     };
 
     const handleLoadMore = async (filter = 'all') => {
-        if (loadingMoreCaregivers || caregiverCurrentPage >= caregiverLastPage) {
+        if (
+            loadingMoreCaregivers ||
+            caregiverCurrentPage >= caregiverLastPage
+        ) {
             return;
         }
 
         setLoadingMoreCaregivers(true);
-        await fetchCaregivers(caregiverCurrentPage + 1, filter, caregiverSearchQuery);
+        await fetchCaregivers(
+            caregiverCurrentPage + 1,
+            filter,
+            caregiverSearchQuery,
+        );
         setLoadingMoreCaregivers(false);
     };
 
@@ -651,6 +671,7 @@ export default function BookingDetail({
                                                                                             {
                                                                                                 sib.caregiver_name
                                                                                             }
+
                                                                                             )
                                                                                         </span>
                                                                                     )}
@@ -1116,7 +1137,9 @@ export default function BookingDetail({
                 caregiverTotal={caregiverTotal}
                 caregiverCurrentPage={caregiverCurrentPage}
                 caregiverLastPage={caregiverLastPage}
-                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingCaregiverRecommendations={
+                    loadingCaregiverRecommendations
+                }
                 loadingMoreCaregivers={loadingMoreCaregivers}
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}
@@ -1132,7 +1155,9 @@ export default function BookingDetail({
                 caregiverTotal={caregiverTotal}
                 caregiverCurrentPage={caregiverCurrentPage}
                 caregiverLastPage={caregiverLastPage}
-                loadingCaregiverRecommendations={loadingCaregiverRecommendations}
+                loadingCaregiverRecommendations={
+                    loadingCaregiverRecommendations
+                }
                 loadingMoreCaregivers={loadingMoreCaregivers}
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}

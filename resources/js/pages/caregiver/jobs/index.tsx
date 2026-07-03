@@ -958,8 +958,8 @@ export default function CaregiverJobsIndex() {
                                     <strong className="block">
                                         {cancellingJob.client_name ?? 'Client'}
                                         {cancellingJob.children &&
-                                            cancellingJob.children
-                                                .length > 0 && (
+                                            cancellingJob.children.length >
+                                                0 && (
                                                 <>
                                                     {' '}
                                                     &middot;{' '}

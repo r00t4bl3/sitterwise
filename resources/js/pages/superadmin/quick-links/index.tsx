@@ -127,7 +127,10 @@ export default function QuickLinksIndex() {
             sort_order: link.sort_order,
             is_active: link.is_active,
             is_external: link.is_external,
-            visible_for_roles: link.visible_for_roles ?? ['admin', 'super_admin'],
+            visible_for_roles: link.visible_for_roles ?? [
+                'admin',
+                'super_admin',
+            ],
         });
         setIsSheetOpen(true);
     };
@@ -220,16 +223,24 @@ export default function QuickLinksIndex() {
                                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                                         <div className="flex items-center gap-2">
                                             {(() => {
-                                                const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+                                                const IconComp =
+                                                    iconOptions[
+                                                        link.icon ?? 'Link'
+                                                    ] ?? LinkIcon;
 
-                                                return <IconComp className="h-4 w-4" />;
+                                                return (
+                                                    <IconComp className="h-4 w-4" />
+                                                );
                                             })()}
                                             {link.title}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-foreground">
                                         {(() => {
-                                            const IconComp = iconOptions[link.icon ?? 'Link'] ?? LinkIcon;
+                                            const IconComp =
+                                                iconOptions[
+                                                    link.icon ?? 'Link'
+                                                ] ?? LinkIcon;
 
                                             return (
                                                 <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100">

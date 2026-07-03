@@ -44,10 +44,8 @@ interface Props {
 }
 
 export default function MyAvailability() {
-    const {
-        availabilities: initialAvailabilities,
-        timeSlots,
-    } = usePage<Props>().props;
+    const { availabilities: initialAvailabilities, timeSlots } =
+        usePage<Props>().props;
 
     const [availabilities, setAvailabilities] = useState(initialAvailabilities);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);

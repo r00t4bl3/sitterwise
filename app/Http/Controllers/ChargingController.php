@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ChargeBookingRequest;
 use App\Models\Booking;
+use App\Models\PricingRule;
 use App\Services\Billing\JobBillingService;
 use App\Services\CaregiverPayout\CaregiverPayoutService;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,13 @@ class ChargingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'This booking does not require payment.',
+            ], 400);
+        }
+
+        if ($booking->payment_form !== PricingRule::PAYMENT_FORM_STRIPE) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking is settled via '.($booking->payment_form ?? 'another method').', not a card charge.',
             ], 400);
         }
 

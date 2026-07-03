@@ -21,7 +21,7 @@ class SendBookingCreatedNotifications implements ShouldQueue
 
         // 2. Notify the Client (gated by payment method)
         if ($event->booking->client && $event->booking->client->user) {
-            $needsPaymentMethod = $event->booking->requires_payment
+            $needsPaymentMethod = $event->booking->isStripeCharge()
                 && $event->booking->payment_status === BookingPaymentStatus::Pending->value
                 && ! $event->booking->client->hasPaymentMethod();
 

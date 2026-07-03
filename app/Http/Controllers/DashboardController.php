@@ -20,6 +20,7 @@ use App\Models\Caregiver;
 use App\Models\CaregiverApplication;
 use App\Models\Client;
 use App\Models\Hotel;
+use App\Models\PricingRule;
 use App\Models\QuickLink;
 use App\Models\ReferenceRequest;
 use App\Models\User;
@@ -101,7 +102,9 @@ class DashboardController extends Controller
                 ->whereBetween('start_datetime', [$monthStart, $monthEnd])
                 ->count();
 
-            $missingPayment = Booking::whereHas('bookingGroup', fn ($q) => $q->where('requires_payment', true))
+            $missingPayment = Booking::whereHas('bookingGroup', fn ($q) => $q
+                ->where('requires_payment', true)
+                ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE))
                 ->whereIn('payment_status', [BookingPaymentStatus::Pending->value, BookingPaymentStatus::Failed->value])
                 ->where('status', '!=', BookingStatus::Cancelled->value)
                 ->count();

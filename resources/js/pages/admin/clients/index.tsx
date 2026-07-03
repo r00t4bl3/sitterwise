@@ -153,8 +153,7 @@ export default function ClientsIndex() {
 
     useEffect(() => {
         sortFieldRef.current = filters.sort || 'id';
-        sortDirRef.current =
-            (filters.direction as 'asc' | 'desc') || 'desc';
+        sortDirRef.current = (filters.direction as 'asc' | 'desc') || 'desc';
     }, [filters.sort, filters.direction]);
 
     return (
@@ -246,29 +245,96 @@ export default function ClientsIndex() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('id')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() => handleSort('id')}
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         ID
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'id' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'id' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField === 'id' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField === 'id' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('last_name')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() => handleSort('last_name')}
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         Name
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'last_name' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'last_name' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField === 'last_name' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField === 'last_name' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
-                                    <button onClick={() => handleSort('client_type')} className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary">
+                                    <button
+                                        onClick={() =>
+                                            handleSort('client_type')
+                                        }
+                                        className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                    >
                                         Type
                                         <span className="text-[9px] leading-none">
-                                            <span className={sortField === 'client_type' && sortDir === 'asc' ? '' : 'opacity-30'}>▲</span>
-                                            <span className={sortField === 'client_type' && sortDir === 'desc' ? '' : 'opacity-30'}>▼</span>
+                                            <span
+                                                className={
+                                                    sortField ===
+                                                        'client_type' &&
+                                                    sortDir === 'asc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▲
+                                            </span>
+                                            <span
+                                                className={
+                                                    sortField ===
+                                                        'client_type' &&
+                                                    sortDir === 'desc'
+                                                        ? ''
+                                                        : 'opacity-30'
+                                                }
+                                            >
+                                                ▼
+                                            </span>
                                         </span>
                                     </button>
                                 </th>
@@ -293,7 +359,9 @@ export default function ClientsIndex() {
                             {clients.data.map((client) => (
                                 <tr
                                     key={client.id}
-                                    onClick={() => router.visit(`/clients/${client.id}`)}
+                                    onClick={() =>
+                                        router.visit(`/clients/${client.id}`)
+                                    }
                                     className="cursor-pointer border-b border-border transition hover:bg-blush"
                                 >
                                     <td className="px-4 py-3 text-sm text-foreground">
@@ -315,7 +383,9 @@ export default function ClientsIndex() {
                                             />
                                             <Link
                                                 href={`/clients/${client.id}`}
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
                                                 className="text-sm font-medium text-ring hover:text-foreground hover:underline"
                                             >
                                                 {client.first_name}{' '}
@@ -341,7 +411,9 @@ export default function ClientsIndex() {
                                         {formatPhoneDisplay(client.phone)}
                                     </td>
                                     <td className="flex justify-end gap-x-2 px-4 py-3">
-                                        <span onClick={(e) => e.stopPropagation()}>
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <Button asChild className="h-8">
                                                 <Link
                                                     href={`/clients/${client.id}`}

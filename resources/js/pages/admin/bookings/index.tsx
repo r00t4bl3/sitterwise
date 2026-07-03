@@ -744,7 +744,13 @@ export default function Bookings() {
                                                             </span>
                                                             <span className="w-full truncate leading-tight font-semibold whitespace-nowrap">
                                                                 {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
-                                                                    clients?.find(c => c.id === booking.booking_group?.client_id)?.name ||
+                                                                    clients?.find(
+                                                                        (c) =>
+                                                                            c.id ===
+                                                                            booking
+                                                                                .booking_group
+                                                                                ?.client_id,
+                                                                    )?.name ||
                                                                     'Unknown Client'}
                                                             </span>
                                                         </div>
@@ -769,17 +775,18 @@ export default function Bookings() {
                                                         booking.payment_status !==
                                                             'paid' &&
                                                         !clients_with_payment_capability.includes(
-                                                            booking.booking_group
+                                                            booking
+                                                                .booking_group
                                                                 ?.client_id,
                                                         ) && (
-                                                        <div
-                                                            className="absolute right-0 top-0 z-10 h-[14px] w-[14px] bg-amber-500"
-                                                            style={{
-                                                                clipPath:
-                                                                    'polygon(0 0, 100% 0, 100% 100%)',
-                                                            }}
-                                                        />
-                                                    )}
+                                                            <div
+                                                                className="absolute top-0 right-0 z-10 h-[14px] w-[14px] bg-amber-500"
+                                                                style={{
+                                                                    clipPath:
+                                                                        'polygon(0 0, 100% 0, 100% 100%)',
+                                                                }}
+                                                            />
+                                                        )}
                                                 </div>
                                             );
                                         })}
@@ -942,10 +949,19 @@ export default function Bookings() {
                                                                     }
                                                                     className="hover:underline"
                                                                 >
-                                                                {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
-                                                                    clients?.find(c => c.id === booking.booking_group?.client_id)?.name ||
-                                                                    'Unknown Client'}
-                                                            </Link>
+                                                                    {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
+                                                                        clients?.find(
+                                                                            (
+                                                                                c,
+                                                                            ) =>
+                                                                                c.id ===
+                                                                                booking
+                                                                                    .booking_group
+                                                                                    ?.client_id,
+                                                                        )
+                                                                            ?.name ||
+                                                                        'Unknown Client'}
+                                                                </Link>
                                                                 <div className="flex items-center gap-1">
                                                                     {booking
                                                                         .booking_group
@@ -990,21 +1006,21 @@ export default function Bookings() {
                                                                                 .booking_group
                                                                                 ?.client_id,
                                                                         ) && (
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger
-                                                                                asChild
-                                                                            >
-                                                                                <TriangleAlert className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>
-                                                                                No
-                                                                                payment
-                                                                                method
-                                                                                on
-                                                                                file
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    )}
+                                                                            <Tooltip>
+                                                                                <TooltipTrigger
+                                                                                    asChild
+                                                                                >
+                                                                                    <TriangleAlert className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent>
+                                                                                    No
+                                                                                    payment
+                                                                                    method
+                                                                                    on
+                                                                                    file
+                                                                                </TooltipContent>
+                                                                            </Tooltip>
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -1240,7 +1256,13 @@ export default function Bookings() {
                                                 </div>
                                                 <div className="truncate font-semibold whitespace-nowrap">
                                                     {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
-                                                        clients?.find(c => c.id === booking.booking_group?.client_id)?.name ||
+                                                        clients?.find(
+                                                            (c) =>
+                                                                c.id ===
+                                                                booking
+                                                                    .booking_group
+                                                                    ?.client_id,
+                                                        )?.name ||
                                                         'Unknown Client'}
                                                 </div>
                                             </div>

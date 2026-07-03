@@ -31,11 +31,13 @@ import TrustlineCard from '@/components/trustline-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import AppLayout from '@/layouts/app-layout';
 import {
-    formatDisplayDateTimeInPT,
-} from '@/lib/datetime';
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from '@/components/ui/collapsible';
+import AppLayout from '@/layouts/app-layout';
+import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -137,7 +139,8 @@ export default function CaregiverDashboard({
     badges,
 }: CaregiverDashboardProps) {
     const fetchMonthUrl = useCallback(
-        (y: number, m: number) => `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
+        (y: number, m: number) =>
+            `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
         [caregiver.id],
     );
 
@@ -354,7 +357,7 @@ export default function CaregiverDashboard({
                             )}
                         </div>
 
-                       {quickLinks && quickLinks.length > 0 && (
+                        {quickLinks && quickLinks.length > 0 && (
                             <div className="rounded-none border border-border bg-card px-6 py-4 shadow-sm">
                                 <p className="mb-4 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                     <ExternalLink className="h-4 w-4 text-primary" />
@@ -362,24 +365,47 @@ export default function CaregiverDashboard({
                                 </p>
                                 <div className="grid grid-cols-2 gap-2">
                                     {quickLinks.map((link) => {
-                                        const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-                                            ExternalLink, Globe, FileText, BookOpen, Phone, Mail,
-                                            HelpCircle, Home, Calendar, Users,
+                                        const iconMap: Record<
+                                            string,
+                                            React.ComponentType<{
+                                                className?: string;
+                                            }>
+                                        > = {
+                                            ExternalLink,
+                                            Globe,
+                                            FileText,
+                                            BookOpen,
+                                            Phone,
+                                            Mail,
+                                            HelpCircle,
+                                            Home,
+                                            Calendar,
+                                            Users,
                                         };
-                                        const Icon = iconMap[link.icon ?? ''] ?? LucideLink;
+                                        const Icon =
+                                            iconMap[link.icon ?? ''] ??
+                                            LucideLink;
 
                                         return (
                                             <a
                                                 key={link.id}
                                                 href={link.url}
-                                                target={link.is_external ? '_blank' : '_self'}
-                                                rel={link.is_external ? 'noopener noreferrer' : ''}
+                                                target={
+                                                    link.is_external
+                                                        ? '_blank'
+                                                        : '_self'
+                                                }
+                                                rel={
+                                                    link.is_external
+                                                        ? 'noopener noreferrer'
+                                                        : ''
+                                                }
                                                 className="flex items-center gap-2 rounded-none border border-border bg-card p-3 transition-colors hover:bg-accent/50"
                                             >
                                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-blue-100">
                                                     <Icon className="h-4 w-4 text-blue-600" />
                                                 </div>
-                                                <span className="text-sm font-medium leading-tight">
+                                                <span className="text-sm leading-tight font-medium">
                                                     {link.title}
                                                 </span>
                                             </a>
@@ -388,7 +414,6 @@ export default function CaregiverDashboard({
                                 </div>
                             </div>
                         )}
-
                     </div>
 
                     {/* Secondary Side: Schedule & Availability */}
@@ -399,7 +424,10 @@ export default function CaregiverDashboard({
                             firstName={caregiver.firstName}
                         />
 
-                        <Collapsible defaultOpen className="rounded-none border border-border bg-card shadow-sm">
+                        <Collapsible
+                            defaultOpen
+                            className="rounded-none border border-border bg-card shadow-sm"
+                        >
                             <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-6 py-4">
                                 <p className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                     <CalendarRange className="h-4 w-4 text-primary" />
@@ -417,7 +445,10 @@ export default function CaregiverDashboard({
                         </Collapsible>
 
                         {badges && badges.length > 0 && (
-                            <Collapsible defaultOpen className="rounded-none border border-border bg-card shadow-sm">
+                            <Collapsible
+                                defaultOpen
+                                className="rounded-none border border-border bg-card shadow-sm"
+                            >
                                 <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-6 py-4">
                                     <p className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                         <Award className="h-4 w-4 text-primary" />
@@ -427,14 +458,18 @@ export default function CaregiverDashboard({
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="px-6 pb-4">
                                     <p className="text-sm text-muted-foreground">
-                                        Milestones you&apos;ve earned. They never expire.
+                                        Milestones you&apos;ve earned. They
+                                        never expire.
                                     </p>
                                     <div className="mt-3 flex flex-wrap gap-3">
                                         {badges
                                             .filter((b) => b.earned)
                                             .slice(0, 4)
                                             .map((badge) => (
-                                                <div key={badge.slug} className="flex flex-col items-center gap-0.5">
+                                                <div
+                                                    key={badge.slug}
+                                                    className="flex flex-col items-center gap-0.5"
+                                                >
                                                     <Medallion
                                                         tier={badge.tier}
                                                         variant={badge.variant}
@@ -450,7 +485,8 @@ export default function CaregiverDashboard({
                                                     )}
                                                 </div>
                                             ))}
-                                        {badges.filter((b) => !b.earned).length > 0 && (
+                                        {badges.filter((b) => !b.earned)
+                                            .length > 0 && (
                                             <div className="flex flex-col items-center gap-0.5">
                                                 <Medallion
                                                     tier="navy"
@@ -458,7 +494,12 @@ export default function CaregiverDashboard({
                                                     earned={false}
                                                 />
                                                 <span className="text-[10px] font-medium text-muted-foreground">
-                                                    {badges.filter((b) => !b.earned).length} locked
+                                                    {
+                                                        badges.filter(
+                                                            (b) => !b.earned,
+                                                        ).length
+                                                    }{' '}
+                                                    locked
                                                 </span>
                                             </div>
                                         )}
@@ -495,8 +536,8 @@ export default function CaregiverDashboard({
                             </div>
                         </div>
                     </div>
-                    </div>
                 </div>
+            </div>
         </AppLayout>
     );
 }

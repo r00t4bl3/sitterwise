@@ -124,10 +124,10 @@ export default function Register() {
                         <InputError message={form.errors.email} />
                     </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <PasswordRequirements />
-                            <PasswordInput
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <PasswordRequirements />
+                        <PasswordInput
                             id="password"
                             required
                             tabIndex={5}

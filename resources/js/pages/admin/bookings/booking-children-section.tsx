@@ -137,7 +137,10 @@ export function BookingChildrenSection({
                                         </SelectTrigger>
                                         <SelectContent>
                                             {MONTH_ABBR.map(
-                                                (monthAbbr: string, index: number) => {
+                                                (
+                                                    monthAbbr: string,
+                                                    index: number,
+                                                ) => {
                                                     if (index === 0) {
                                                         return null;
                                                     }

@@ -178,7 +178,8 @@ export default function UsersIndex() {
     };
 
     const handleSort = (field: string) => {
-        const newDir = field === sortField && sortDir === 'asc' ? 'desc' : 'asc';
+        const newDir =
+            field === sortField && sortDir === 'asc' ? 'desc' : 'asc';
         sortFieldRef.current = field;
         sortDirRef.current = newDir;
         applyFilters(searchQuery);
@@ -198,8 +199,7 @@ export default function UsersIndex() {
 
     useEffect(() => {
         sortFieldRef.current = filters.sort || 'id';
-        sortDirRef.current =
-            (filters.direction as 'asc' | 'desc') || 'desc';
+        sortDirRef.current = (filters.direction as 'asc' | 'desc') || 'desc';
     }, [filters.sort, filters.direction]);
 
     const openCreateSheet = () => {
@@ -212,8 +212,14 @@ export default function UsersIndex() {
     const openEditSheet = (user: User) => {
         setEditingId(user.id);
         const spaceIndex = user.name.indexOf(' ');
-        form.setData('first_name', spaceIndex === -1 ? user.name : user.name.slice(0, spaceIndex));
-        form.setData('last_name', spaceIndex === -1 ? '' : user.name.slice(spaceIndex + 1));
+        form.setData(
+            'first_name',
+            spaceIndex === -1 ? user.name : user.name.slice(0, spaceIndex),
+        );
+        form.setData(
+            'last_name',
+            spaceIndex === -1 ? '' : user.name.slice(spaceIndex + 1),
+        );
         form.setData('email', user.email);
         form.setData('role', user.role);
         form.setData('password', '');
@@ -293,9 +299,7 @@ export default function UsersIndex() {
                             )}
                         </p>
                     </div>
-                    <Button onClick={openCreateSheet}>
-                        Add User
-                    </Button>
+                    <Button onClick={openCreateSheet}>Add User</Button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -304,9 +308,7 @@ export default function UsersIndex() {
                             type="text"
                             placeholder="Search by name or email..."
                             value={searchQuery}
-                            onChange={(e) =>
-                                handleSearchChange(e.target.value)
-                            }
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             className="h-8"
                         />
                         {searchQuery && (
@@ -491,7 +493,7 @@ export default function UsersIndex() {
                                 <tr>
                                     <td
                                         colSpan={6}
-                                        className="px-4 py-8 text-center text-sm italic text-muted-foreground"
+                                        className="px-4 py-8 text-center text-sm text-muted-foreground italic"
                                     >
                                         No users found.
                                     </td>
@@ -697,10 +699,7 @@ export default function UsersIndex() {
                                     type="password"
                                     value={form.data.password}
                                     onChange={(e) =>
-                                        form.setData(
-                                            'password',
-                                            e.target.value,
-                                        )
+                                        form.setData('password', e.target.value)
                                     }
                                     required
                                 />
@@ -811,10 +810,7 @@ export default function UsersIndex() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={handleCancelDelete}
-                        >
+                        <Button variant="outline" onClick={handleCancelDelete}>
                             Cancel
                         </Button>
                         <Button

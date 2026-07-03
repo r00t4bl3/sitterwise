@@ -29,6 +29,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPaymentMethod;
 use App\Models\ClientPet;
 use App\Models\Hotel;
+use App\Models\PricingRule;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
 use App\Services\Booking\Contracts\BookingServiceInterface;
@@ -50,6 +51,21 @@ use OpenSpout\Writer\XLSX\Writer;
 
 class AdminBookingService implements BookingServiceInterface
 {
+    /**
+     * Statuses in which a booking is hidden from the assigned caregiver's
+     * "My Jobs" list and dashboard. Assigning a caregiver while a booking is in
+     * one of these must promote it to Confirmed. 'reserved' is used at the DB
+     * level during a caregiver's short-lived reservation and is intentionally
+     * included even though it is not a BookingStatus enum case.
+     *
+     * @var list<string>
+     */
+    private const CAREGIVER_HIDDEN_STATUSES = [
+        BookingStatus::Received->value,
+        BookingStatus::Pending->value,
+        'reserved',
+    ];
+
     public function __construct(
         protected CaregiverRecommendationService $recommendationService,
         protected JobBillingService $billingService,
@@ -58,11 +74,10 @@ class AdminBookingService implements BookingServiceInterface
 
     private function requiresPaymentForServiceType(?string $serviceType): bool
     {
-        return in_array($serviceType, [
-            ServiceType::Babysitter->value,
-            ServiceType::Petsitter->value,
-            ServiceType::CompanionCare->value,
-        ]);
+        // Billable = the pricing table charges the client (> 0). This now
+        // includes corporate/group invoiced jobs (owed via invoice); only comped
+        // (charge 0) is non-billable. payment_form decides the settlement rail.
+        return PricingRule::requiresPaymentFor($serviceType);
     }
 
     public function index(Request $request)
@@ -381,7 +396,7 @@ class AdminBookingService implements BookingServiceInterface
                 'availability_id' => null,
                 'start_datetime' => $dateEntry['start_datetime'],
                 'end_datetime' => $dateEntry['end_datetime'],
-                'status' => ($validated['caregiver_id'] ?? null) && $validated['status'] === BookingStatus::Received->value
+                'status' => ($validated['caregiver_id'] ?? null) && in_array($validated['status'], self::CAREGIVER_HIDDEN_STATUSES, true)
                     ? BookingStatus::Confirmed->value
                     : $validated['status'],
                 'total_amount' => 0,
@@ -790,7 +805,12 @@ class AdminBookingService implements BookingServiceInterface
             }
         }
 
-        if ($booking->caregiver_id && ! $oldCaregiverId && in_array($booking->getOriginal('status'), [BookingStatus::Received->value, BookingStatus::Pending->value], true)) {
+        // A booking with a caregiver assigned must be Confirmed, otherwise the
+        // caregiver's "My Jobs" list and dashboard (which filter to Confirmed/
+        // Completed/Paid) hide it while the admin still sees the caregiver set.
+        // Only promote from statuses that hide the job; never override a
+        // finalized status (completed/paid/cancelled) an admin set deliberately.
+        if ($booking->caregiver_id && in_array($booking->status, self::CAREGIVER_HIDDEN_STATUSES, true)) {
             $booking->updateQuietly(['status' => BookingStatus::Confirmed->value]);
         }
 
@@ -1076,12 +1096,22 @@ class AdminBookingService implements BookingServiceInterface
                 );
             }
 
-            $booking->update(['caregiver_id' => $validated['caregiver_id']]);
-
-            $booking->assignments()->create([
+            // Finalized bookings are already rejected above, so the booking is
+            // always in a pre-service status here. Assigning a caregiver must
+            // also confirm it, or the job stays invisible to that caregiver.
+            $booking->update([
                 'caregiver_id' => $validated['caregiver_id'],
-                'assigned_at' => now(),
+                'status' => BookingStatus::Confirmed->value,
             ]);
+
+            // The Booking::saved hook already creates the assignment when
+            // caregiver_id changes; use firstOrCreate so this explicit call is
+            // idempotent instead of violating the unique (caregiver_id,
+            // booking_id) constraint and 500ing the whole request.
+            $booking->assignments()->firstOrCreate(
+                ['caregiver_id' => $validated['caregiver_id']],
+                ['assigned_at' => now()],
+            );
         });
 
         return redirect()->back()->with('success', 'Caregiver replaced successfully.');

@@ -58,16 +58,16 @@ export default function Security({
             <h1 className="sr-only">Security settings</h1>
 
             <SettingsLayout>
-                    <div className="space-y-6">
-                        <Heading
-                            variant="small"
-                            title="Update password"
-                            description="Ensure your account is using a long, random password to stay secure"
-                        />
+                <div className="space-y-6">
+                    <Heading
+                        variant="small"
+                        title="Update password"
+                        description="Ensure your account is using a long, random password to stay secure"
+                    />
 
-                        <PasswordRequirements />
+                    <PasswordRequirements />
 
-                        <Form
+                    <Form
                         {...SecurityController.update.form()}
                         options={{
                             preserveScroll: true,

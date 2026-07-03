@@ -7,6 +7,7 @@ use App\Events\BookingReceipt;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Models\PricingRule;
 use Illuminate\Support\Facades\DB;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
@@ -27,6 +28,13 @@ class JobBillingService
             return [
                 'success' => false,
                 'message' => 'This booking does not require payment',
+            ];
+        }
+
+        if ($booking->payment_form !== PricingRule::PAYMENT_FORM_STRIPE) {
+            return [
+                'success' => false,
+                'message' => 'This booking is settled via '.($booking->payment_form ?? 'another method').', not a card charge',
             ];
         }
 

@@ -67,7 +67,9 @@ export function ReplaceCaregiverSheet({
     onSearchChange,
 }: ReplaceCaregiverSheetProps) {
     const replaceForm = useForm({ caregiver_id: 0 });
-    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>('all');
+    const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>(
+        'all',
+    );
     const [searchInput, setSearchInput] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -136,7 +138,11 @@ export function ReplaceCaregiverSheet({
                 <SheetHeader className="shrink-0 pb-0">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <SheetTitle>{currentCaregiverName ? 'Replace Caregiver' : 'Assign Caregiver'}</SheetTitle>
+                            <SheetTitle>
+                                {currentCaregiverName
+                                    ? 'Replace Caregiver'
+                                    : 'Assign Caregiver'}
+                            </SheetTitle>
                             <SheetDescription>
                                 {currentCaregiverName ? (
                                     <>
@@ -163,26 +169,33 @@ export function ReplaceCaregiverSheet({
                 {caregiverTotal !== undefined && (
                     <div className="flex items-center justify-between px-4 pt-3 pb-1">
                         <span className="text-xs text-muted-foreground">
-                            Showing {caregiverSuggestions.length} of {caregiverTotal} caregivers
+                            Showing {caregiverSuggestions.length} of{' '}
+                            {caregiverTotal} caregivers
                         </span>
                         <div className="flex gap-0.5">
-                            {(['all', 'younger', 'seasoned'] as const).map((f) => (
-                                <button
-                                    key={f}
-                                    type="button"
-                                    onClick={() => {
-                                        setAgeFilter(f);
-                                        onAgeFilterChange?.(f);
-                                    }}
-                                    className={`rounded-[3px] px-2 py-1 text-xs font-medium transition-colors ${
-                                        ageFilter === f
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-accent text-muted-foreground hover:bg-accent/80'
-                                    }`}
-                                >
-                                    {f === 'all' ? 'All' : f === 'younger' ? 'Younger (18-34)' : 'Seasoned (35+)'}
-                                </button>
-                            ))}
+                            {(['all', 'younger', 'seasoned'] as const).map(
+                                (f) => (
+                                    <button
+                                        key={f}
+                                        type="button"
+                                        onClick={() => {
+                                            setAgeFilter(f);
+                                            onAgeFilterChange?.(f);
+                                        }}
+                                        className={`rounded-[3px] px-2 py-1 text-xs font-medium transition-colors ${
+                                            ageFilter === f
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-accent text-muted-foreground hover:bg-accent/80'
+                                        }`}
+                                    >
+                                        {f === 'all'
+                                            ? 'All'
+                                            : f === 'younger'
+                                              ? 'Younger (18-34)'
+                                              : 'Seasoned (35+)'}
+                                    </button>
+                                ),
+                            )}
                         </div>
                     </div>
                 )}
@@ -308,29 +321,32 @@ export function ReplaceCaregiverSheet({
                             );
                         })
                     )}
-                    {caregiverCurrentPage < caregiverLastPage && onLoadMoreCaregivers && (
-                        <div className="flex justify-center pt-2 pb-4">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onLoadMoreCaregivers(ageFilter)}
-                                disabled={loadingMoreCaregivers}
-                                className="w-full"
-                            >
-                                {loadingMoreCaregivers ? (
-                                    <>
-                                        <Spinner className="mr-2 size-4" />
-                                        Loading more caregivers...
-                                    </>
-                                ) : (
-                                    <>
-                                        <ChevronDown className="mr-2 h-4 w-4" />
-                                        Load More
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    )}
+                    {caregiverCurrentPage < caregiverLastPage &&
+                        onLoadMoreCaregivers && (
+                            <div className="flex justify-center pt-2 pb-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        onLoadMoreCaregivers(ageFilter)
+                                    }
+                                    disabled={loadingMoreCaregivers}
+                                    className="w-full"
+                                >
+                                    {loadingMoreCaregivers ? (
+                                        <>
+                                            <Spinner className="mr-2 size-4" />
+                                            Loading more caregivers...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ChevronDown className="mr-2 h-4 w-4" />
+                                            Load More
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        )}
                 </div>
 
                 <SheetFooter className="mt-4 flex shrink-0 gap-2 border-t border-border px-4 py-6">
@@ -342,7 +358,9 @@ export function ReplaceCaregiverSheet({
                         {replaceForm.processing && (
                             <Spinner className="size-4" />
                         )}
-                        {currentCaregiverName ? 'Replace Caregiver' : 'Assign Caregiver'}
+                        {currentCaregiverName
+                            ? 'Replace Caregiver'
+                            : 'Assign Caregiver'}
                     </Button>
                     <Button
                         variant="outline"

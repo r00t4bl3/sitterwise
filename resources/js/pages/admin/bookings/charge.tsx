@@ -78,7 +78,8 @@ export default function ChargeBooking() {
     const sitterwiseCut = booking?.sitterwise_cut ?? 0;
     const paidToCaregiver = booking?.paid_to_caregiver ?? 0;
     const paidToCaregiverTotal = booking?.paid_to_caregiver_total ?? 0;
-    const totalServiceAmount = booking?.total_service_amount ?? booking?.total_amount ?? 0;
+    const totalServiceAmount =
+        booking?.total_service_amount ?? booking?.total_amount ?? 0;
 
     const reimbursementValue = parseFloat(reimbursement) || 0;
     const tipValue = parseFloat(tip) || 0;
@@ -148,7 +149,10 @@ export default function ChargeBooking() {
                     <p className="text-muted-foreground">
                         No booking selected. Please select a booking to charge.
                     </p>
-                    <Button variant="outline" onClick={() => router.visit('/bookings')}>
+                    <Button
+                        variant="outline"
+                        onClick={() => router.visit('/bookings')}
+                    >
                         Go to Bookings
                     </Button>
                 </div>

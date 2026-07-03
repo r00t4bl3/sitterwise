@@ -68,7 +68,8 @@ export default function Submit({
         relationship: defaults.relationship ?? '',
         years_known: defaults.years_known ?? '',
         rating_reliability: defaults.rating_reliability?.toString() ?? '',
-        rating_trustworthiness: defaults.rating_trustworthiness?.toString() ?? '',
+        rating_trustworthiness:
+            defaults.rating_trustworthiness?.toString() ?? '',
         rating_maturity: defaults.rating_maturity?.toString() ?? '',
         rating_communication: defaults.rating_communication?.toString() ?? '',
         rating_warmth: defaults.rating_warmth?.toString() ?? '',
@@ -185,9 +186,7 @@ export default function Submit({
                                         {label}
                                     </Label>
                                     <RatingInput
-                                        value={
-                                            parseInt(form.data[key]) || null
-                                        }
+                                        value={parseInt(form.data[key]) || null}
                                         onChange={(val) =>
                                             form.setData(
                                                 key,

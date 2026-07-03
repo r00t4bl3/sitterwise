@@ -17,6 +17,7 @@ use App\Models\Client as ClientModel;
 use App\Models\ClientPayment;
 use App\Models\Hotel;
 use App\Models\Location;
+use App\Models\PricingRule;
 use App\Models\Traits\Phone as PhoneTrait;
 use App\Models\User;
 use Carbon\Carbon;
@@ -1387,7 +1388,8 @@ class ImportUserService
                     : null,
                 'pets' => self::parsePets($source['pets_text'] ?? null),
                 'special_considerations' => self::mapSpecialConsiderations($source),
-                'requires_payment' => ! $isInvoiced,
+                'requires_payment' => PricingRule::requiresPaymentFor($serviceType),
+                'payment_form' => PricingRule::paymentFormFor($serviceType),
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

@@ -12,10 +12,7 @@ import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/ui/phone-input';
-import {
-    RadioGroup,
-    RadioGroupItem,
-} from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     Select,
     SelectContent,
@@ -685,12 +682,11 @@ export default function GuestBookingCreate() {
                                                             'application/json',
                                                         'X-Requested-With':
                                                             'XMLHttpRequest',
-                                                        'X-XSRF-TOKEN':
-                                                            match
-                                                                ? decodeURIComponent(
-                                                                      match[1],
-                                                                  )
-                                                                : '',
+                                                        'X-XSRF-TOKEN': match
+                                                            ? decodeURIComponent(
+                                                                  match[1],
+                                                              )
+                                                            : '',
                                                     },
                                                     body: JSON.stringify({
                                                         email,
@@ -808,7 +804,12 @@ export default function GuestBookingCreate() {
                         <div>
                             <Label className="text-sm font-medium text-foreground">
                                 SMS Consent{' '}
-                                <span className="text-primary" aria-hidden="true">*</span>
+                                <span
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
                             </Label>
                             <RadioGroup
                                 value={form.data.sms_consent ? 'yes' : 'no'}
@@ -826,19 +827,26 @@ export default function GuestBookingCreate() {
                                     <Label htmlFor="sms-no">No</Label>
                                 </div>
                             </RadioGroup>
-                             {(validationErrors.sms_consent || form.errors.sms_consent) && (
-                                 <InputError
-                                     message={validationErrors.sms_consent || form.errors.sms_consent}
-                                 />
-                             )}
-                                 </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            By selecting "Yes," I agree to receive SMS text messages from Sitterwise
-                            about my booking, including confirmations, reminders, schedule changes,
-                            and post-job follow-up at the phone number I provided. Message frequency
-                            varies. Message and data rates may apply. Reply STOP to opt out at any
-                            time, or HELP for assistance. Sitterwise does not share phone numbers
-                            with third parties for marketing purposes. See our{' '}
+                            {(validationErrors.sms_consent ||
+                                form.errors.sms_consent) && (
+                                <InputError
+                                    message={
+                                        validationErrors.sms_consent ||
+                                        form.errors.sms_consent
+                                    }
+                                />
+                            )}
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                            By selecting "Yes," I agree to receive SMS text
+                            messages from Sitterwise about my booking, including
+                            confirmations, reminders, schedule changes, and
+                            post-job follow-up at the phone number I provided.
+                            Message frequency varies. Message and data rates may
+                            apply. Reply STOP to opt out at any time, or HELP
+                            for assistance. Sitterwise does not share phone
+                            numbers with third parties for marketing purposes.
+                            See our{' '}
                             <a
                                 href="https://sitterwise.com/privacy/"
                                 target="_blank"

@@ -6,6 +6,7 @@ use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\Client;
+use App\Models\PricingRule;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -188,8 +189,23 @@ test('caregiver sees future availabilities', function () {
 test('admin dashboard loads with bookings that require payment', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 
+    // A Stripe (card-charged) pricing rule so the group resolves payment_form
+    // to Stripe — the missing-payment card only counts card-charged jobs.
+    PricingRule::create([
+        'service_type' => 'babysitter',
+        'number_of_children' => 1,
+        'is_for_pets' => false,
+        'charge_to_client' => 35.00,
+        'paid_to_caregiver' => 23.00,
+        'payment_form' => 'Stripe',
+        'sitterwise_cut' => 12.00,
+    ]);
+
     Booking::factory()
-        ->withBookingGroup(fn ($group) => $group->state(['requires_payment' => true]))
+        ->withBookingGroup(fn ($group) => $group->state([
+            'requires_payment' => true,
+            'service_type' => 'babysitter',
+        ]))
         ->create([
             'payment_status' => 'pending',
             'status' => BookingStatus::Confirmed->value,
