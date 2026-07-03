@@ -30,7 +30,7 @@ describe('cleanup:junk-children command', function () {
             'birth_date' => '2019-05-01',
         ]);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         expect(ClientChild::find($junk->id))->toBeNull();
         expect(ClientChild::find($real->id))->not->toBeNull();
@@ -47,7 +47,7 @@ describe('cleanup:junk-children command', function () {
             ],
         ]);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         $children = json_decode(
             DB::table('booking_groups')->where('id', $group->id)->value('children'),
@@ -67,7 +67,7 @@ describe('cleanup:junk-children command', function () {
             ],
         ]);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         $children = json_decode(
             DB::table('booking_groups')->where('id', $group->id)->value('children'),
@@ -87,7 +87,7 @@ describe('cleanup:junk-children command', function () {
             ],
         ]);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         $children = json_decode(
             DB::table('booking_groups')->where('id', $group->id)->value('children'),
@@ -107,7 +107,7 @@ describe('cleanup:junk-children command', function () {
             ],
         ]);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         $children = json_decode(
             DB::table('booking_groups')->where('id', $group->id)->value('children'),
@@ -121,7 +121,7 @@ describe('cleanup:junk-children command', function () {
         $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
         DB::table('booking_groups')->where('id', $group->id)->update(['children' => '"None"']);
 
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
 
         $children = json_decode(
             DB::table('booking_groups')->where('id', $group->id)->value('children'),
@@ -139,11 +139,11 @@ describe('cleanup:junk-children command', function () {
         ]);
 
         // First run soft-deletes it (recoverable).
-        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --execute')->assertSuccessful();
         expect(ClientChild::withTrashed()->find($junk->id)->trashed())->toBeTrue();
 
         // Second run with --purge sweeps up the soft-deleted junk permanently.
-        $this->artisan('app:cleanup-junk-children --purge')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --purge --execute')->assertSuccessful();
         expect(ClientChild::withTrashed()->find($junk->id))->toBeNull();
     });
 
@@ -155,7 +155,7 @@ describe('cleanup:junk-children command', function () {
         ]);
         $realDeleted->delete();
 
-        $this->artisan('app:cleanup-junk-children --purge')->assertSuccessful();
+        $this->artisan('app:cleanup-junk-children --purge --execute')->assertSuccessful();
 
         expect(ClientChild::withTrashed()->find($realDeleted->id))->not->toBeNull();
     });
@@ -171,6 +171,18 @@ describe('cleanup:junk-children command', function () {
         $this->artisan('app:cleanup-junk-children --purge --dry-run')->assertSuccessful();
 
         expect(ClientChild::withTrashed()->find($junk->id))->not->toBeNull();
+    });
+
+    test('defaults to dry-run when no flags are passed', function () {
+        $junk = ClientChild::factory()->create([
+            'client_id' => $this->client->id,
+            'name' => 'None',
+            'birth_date' => null,
+        ]);
+
+        $this->artisan('app:cleanup-junk-children')->assertSuccessful();
+
+        expect(ClientChild::find($junk->id))->not->toBeNull();
     });
 
     test('dry run reports but changes nothing', function () {

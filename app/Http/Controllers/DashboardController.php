@@ -96,8 +96,9 @@ class DashboardController extends Controller
                 : ($ytdTotal > 0 ? 100 : null);
 
             $unassigned = Booking::whereNull('caregiver_id')
+                ->whereNull('cancelled_at')
                 ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
-                ->inFuture()
+                ->whereBetween('start_datetime', [$monthStart, $monthEnd])
                 ->count();
 
             $missingPayment = Booking::whereHas('bookingGroup', fn ($q) => $q->where('requires_payment', true))
@@ -172,8 +173,9 @@ class DashboardController extends Controller
             $adminData = [
                 'bookingsNeedingAttention' => Booking::with(['client.user'])
                     ->whereNull('caregiver_id')
+                    ->whereNull('cancelled_at')
                     ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
-                    ->inFuture()
+                    ->whereBetween('start_datetime', [$monthStart, $monthEnd])
                     ->orderBy('start_datetime', 'asc')
                     ->limit(5)
                     ->get(),

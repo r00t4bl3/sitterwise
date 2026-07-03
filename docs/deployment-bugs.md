@@ -11,7 +11,7 @@ Every bug was traced to specific code. Summary of who/what is needed:
 | 150 | Dashboard "today" in UTC | High | Yes | ✅ DONE | Deploy |
 | 151 | 12,600 "pending" reviews | High | Yes | ✅ DONE | Deploy (no email risk — verified) |
 | 161 | Duplicate review reminders (~4×) | Medium | Yes | ✅ DONE | Deploy + migrate |
-| 152 | "83 unassigned" inflated | Medium | Yes | Yes + data repair | SQL repair on prod |
+| 152 | "83 unassigned" inflated | Medium | Yes | ✅ DONE | Deploy (widget now current-month) |
 | 153 | Child records named "None" | Medium | Yes | ✅ DONE | Run cleanup on prod |
 | 154 | No Cancel for unassigned bookings | Medium | Yes | ✅ DONE | Deploy |
 | 155 | Accept button cut off on mobile | CRITICAL | Yes | ✅ DONE | Deploy |
@@ -19,7 +19,7 @@ Every bug was traced to specific code. Summary of who/what is needed:
 | 157 | Payment Confirm silently no-ops | CRITICAL | Yes | ✅ DONE | 1 DB lookup to confirm #14459 |
 | 158 | No payment feedback / double-charge risk | High | Yes | ✅ DONE | Deploy; test money path |
 | 159 | Edit Booking blank white screen | High | Yes (reproduced) | ✅ DONE | Deploy |
-| 160 | Transactions sorted by ID | Low | Yes | Yes (1-line) | Deploy |
+| 160 | Transactions sorted by ID | Low | Yes | ✅ DONE | (already sorted) |
 
 ---
 
@@ -91,7 +91,28 @@ Tests: `DashboardReviewStatsTest` (bubble bookings excluded from pending count; 
 
 **Fix:** scope pending count to eligible bookings (e.g. exclude rows with `bubble_id`); bucket the star breakdown by range/rounding.
 
-## 152 — "83 unassigned" (Medium)
+## 152 — "83 unassigned" (Medium) — ✅ RESOLVED
+
+**Actual intended behavior:** the "unassigned / needs attention" widget should show unassigned bookings **for the current month only**. The "82" was inflated because the query used `inFuture()` (all future bookings), so it pulled far-future Bubble bookings through Jan 2027 into a "this month" view. (Prod verification confirmed the 82 were genuine, not a `cancelled_at` data bug — the count was identical with/without a `cancelled_at` guard, and the import *had* mapped assignments: 13,450 Bubble bookings have a caregiver, so the 77 unassigned ones were genuinely caregiver-less. The triage's cancelled-status hypothesis did not hold.)
+
+**Fix applied:**
+- **Current-month scope:** `$unassigned` and `bookingsNeedingAttention` in `DashboardController` now use `->whereBetween('start_datetime', [$monthStart, $monthEnd])` (the Pacific current-month boundaries already computed for the month stats, via #150) instead of `->inFuture()`. This is the fix that actually addresses the complaint.
+- **`inFuture()` UTC fix** (via #150) — legitimate correctness fix that also feeds the month boundaries used here.
+- **Query guard:** `->whereNull('cancelled_at')` on both queries — one-line invariant (a cancelled booking is never "unassigned"); a cheap runtime safety net.
+- **Root cause at import:** `ImportUserService` forces `status = Cancelled` whenever the Bubble `cancellation_date_date` is set, preventing a cancelled-with-stale-status row on any future import.
+
+**Removed:** a `RepairCancelledBookingStatus` command was built on the triage's (incorrect) cancelled-status hypothesis, but prod had **0** such rows, so the command + its test were deleted as dead weight. (The dry-run-by-default convention it introduced still applies to `app:cleanup-junk-children`: default = preview, `--execute` to write.)
+
+Note: current-month scope includes bookings earlier this month (whole calendar month). If only *upcoming* this-month is wanted, add `start_datetime >= start of today`.
+
+Tests: `DashboardControllerTest` — current-month scoping (this-month counts; next-month and cancelled excluded) + the cleanup command's default-dry-run test.
+
+## 160 — Transactions sort (Low) — ✅ RESOLVED
+
+`TransactionController::index` already orders `->orderBy('start_datetime', 'desc')` (no `->latest()` remains). Added a regression test (`TransactionSortTest`) asserting start_datetime-desc ordering when `created_at` ties across rows.
+
+## 152 — original triage
+
 
 `DashboardController.php:94-98` counts `whereNull('caregiver_id')` + status received/pending + `inFuture()`. Two gaps: (1) the Bubble import maps any unrecognized status ("canceled", "cancelled by client"…) to **Received** while still setting `cancelled_at` (`ImportUserService.php:1320-1330`) — cancelled future bookings count as unassigned; (2) `inFuture()` has the UTC bug (#150).
 

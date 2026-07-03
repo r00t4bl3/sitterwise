@@ -175,6 +175,8 @@ class BroadcastSmsController extends Controller
                 'url' => $request->fullUrl(),
                 'has_auth_token' => ! is_null($authToken),
                 'has_signature' => ! is_null($signature),
+                'content_type' => $request->header('Content-Type'),
+                'method' => $request->method(),
             ]);
 
             abort(401, 'Missing Twilio signature.');
@@ -190,6 +192,14 @@ class BroadcastSmsController extends Controller
         if (! $isValid) {
             Log::warning('Twilio webhook: invalid signature', [
                 'url' => $request->fullUrl(),
+                'scheme' => $request->getScheme(),
+                'host' => $request->getHost(),
+                'port' => $request->getPort(),
+                'content_type' => $request->header('Content-Type'),
+                'post_param_keys' => array_keys($request->post() ?? []),
+                'post_param_count' => count($request->post() ?? []),
+                'signature_prefix' => substr($signature, 0, 20),
+                'auth_token_configured' => strlen($authToken),
             ]);
 
             abort(401, 'Invalid Twilio signature.');

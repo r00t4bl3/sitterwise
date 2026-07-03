@@ -131,9 +131,9 @@ describe('Caregiver Job History', function () {
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->has('bookings.data', 20)
+            ->has('bookings.data', 10)
             ->where('bookings.total', 25)
-            ->where('bookings.last_page', 2)
+            ->where('bookings.last_page', 3)
         );
     });
 
@@ -147,7 +147,7 @@ describe('Caregiver Job History', function () {
 
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page
-            ->has('bookings.data', 20)
+            ->has('bookings.data', 10)
             ->where('bookings.total', 25)
         );
     });

@@ -9,7 +9,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-#[Signature('app:cleanup-junk-children {--dry-run : Report what would be removed without changing anything} {--purge : Permanently delete matching client_children (including ones already soft-deleted) instead of soft-deleting}')]
+#[Signature('app:cleanup-junk-children {--dry-run : Preview only (this is the default)} {--execute : Apply the changes} {--purge : Permanently delete matching client_children (including ones already soft-deleted) instead of soft-deleting}')]
 #[Description('Remove junk "None"/"N/A" children with no birth data from client profiles and booking groups')]
 class CleanupJunkChildren extends Command
 {
@@ -23,11 +23,13 @@ class CleanupJunkChildren extends Command
 
     public function handle(): int
     {
-        $dryRun = (bool) $this->option('dry-run');
+        // Dry-run is the default; writing requires an explicit --execute, and an
+        // explicit --dry-run always wins over --execute for safety.
+        $dryRun = $this->option('dry-run') || ! $this->option('execute');
         $purge = (bool) $this->option('purge');
 
         if ($dryRun) {
-            $this->info('DRY RUN — no records will be changed.');
+            $this->info('DRY RUN — no records will be changed. Re-run with --execute to apply.');
         }
 
         if ($purge && ! $dryRun) {

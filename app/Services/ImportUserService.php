@@ -1334,6 +1334,13 @@ class ImportUserService
                 $status = BookingStatus::Completed;
             }
 
+            // A cancellation date is the source of truth: unrecognized Bubble
+            // statuses ("canceled", "cancelled by client") otherwise fall back to
+            // Received, leaving cancelled bookings counted as unassigned.
+            if (self::timestampToDateTime($source['cancellation_date_date'] ?? null)) {
+                $status = BookingStatus::Cancelled;
+            }
+
             $geo = $source['street_address_geographic_address'] ?? [];
             $components = $geo['components'] ?? [];
 

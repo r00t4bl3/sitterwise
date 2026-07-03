@@ -15,11 +15,11 @@ use Stripe\Webhook;
 
 class StripeWebhookHandler
 {
-    public function handle(array $payload, string $signature): array
+    public function handle(string $payload, string $signature): array
     {
         try {
             $event = Webhook::constructEvent(
-                json_encode($payload),
+                $payload,
                 $signature,
                 config('services.stripe.webhook_secret')
             );

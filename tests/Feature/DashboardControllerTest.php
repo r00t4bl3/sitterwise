@@ -27,6 +27,48 @@ test('admin sees dashboard with stats', function () {
     );
 });
 
+test('unassigned count is scoped to the current month and excludes cancelled', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $client = Client::factory()->create();
+
+    // Day 10 of the current month (always in-month, deterministic).
+    $thisMonth = now()->startOfMonth()->addDays(9)->setTime(12, 0);
+    $nextMonth = now()->startOfMonth()->addMonthNoOverflow()->addDays(9)->setTime(12, 0);
+
+    // Genuine unassigned booking this month → counts.
+    Booking::factory()->forClient($client)->create([
+        'caregiver_id' => null,
+        'status' => BookingStatus::Received->value,
+        'cancelled_at' => null,
+        'start_datetime' => $thisMonth,
+        'end_datetime' => $thisMonth->copy()->addHours(4),
+    ]);
+
+    // Cancelled booking this month with a stale received status → excluded.
+    Booking::factory()->forClient($client)->create([
+        'caregiver_id' => null,
+        'status' => BookingStatus::Received->value,
+        'cancelled_at' => now(),
+        'start_datetime' => $thisMonth,
+        'end_datetime' => $thisMonth->copy()->addHours(4),
+    ]);
+
+    // Unassigned booking next month → excluded (out of the current-month window).
+    Booking::factory()->forClient($client)->create([
+        'caregiver_id' => null,
+        'status' => BookingStatus::Received->value,
+        'cancelled_at' => null,
+        'start_datetime' => $nextMonth,
+        'end_datetime' => $nextMonth->copy()->addHours(4),
+    ]);
+
+    $this->actingAs($admin)->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.troubledUnassigned', 1)
+        );
+});
+
 test('caregiver sees dashboard with caregiver data', function () {
     $user = User::factory()->create(['role' => 'caregiver', 'name' => 'Jane Smith']);
 

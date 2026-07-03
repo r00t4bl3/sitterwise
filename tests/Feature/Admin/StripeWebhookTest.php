@@ -170,7 +170,7 @@ describe('Stripe Webhook', function () {
 
         $handler = new StripeWebhookHandler;
 
-        $result = $handler->handle([
+        $result = $handler->handle(json_encode([
             'id' => 'evt_'.uniqid(),
             'type' => 'payment_intent.succeeded',
             'data' => [
@@ -182,7 +182,7 @@ describe('Stripe Webhook', function () {
                     ],
                 ],
             ],
-        ], 'completely-wrong-signature');
+        ]), 'completely-wrong-signature');
 
         expect($result['success'])->toBeFalse();
     });
@@ -542,7 +542,7 @@ describe('Stripe Webhook', function () {
         $mock->shouldAllowMockingProtectedMethods();
         $mock->shouldReceive('handlePaymentIntentSucceeded')->andThrow(new RuntimeException('DB connection lost'));
 
-        $result = $mock->handle($payload, "t={$timestamp},v1={$signature}");
+        $result = $mock->handle($jsonPayload, "t={$timestamp},v1={$signature}");
 
         expect($result['success'])->toBeTrue();
     });

@@ -10,7 +10,7 @@ class StripeWebhookController extends Controller
 {
     public function __invoke(Request $request, StripeWebhookHandler $handler): JsonResponse
     {
-        $payload = $request->all();
+        $payload = $request->getContent();
         $signature = $request->header('Stripe-Signature');
 
         $result = $handler->handle($payload, $signature);
