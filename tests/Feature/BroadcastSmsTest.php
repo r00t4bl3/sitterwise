@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CaregiverStatus;
+use App\Http\Controllers\BroadcastSmsController;
 use App\Jobs\SendBroadcastMessage;
 use App\Models\BroadcastMessage;
 use App\Models\Caregiver;
@@ -55,6 +56,7 @@ it('shows the broadcast page with recipient count for super admin', function () 
         ->assertInertia(fn ($page) => $page
             ->component('superadmin/broadcast-sms/index')
             ->where('recipientCount', 3)
+            ->where('complianceFooter', BroadcastSmsController::COMPLIANCE_FOOTER)
         );
 });
 
@@ -116,7 +118,10 @@ it('creates broadcast and dispatches jobs on send', function () {
     expect($broadcast)->not->toBeNull();
     expect($broadcast->sent_by_user_id)->toBe($user->id);
     expect($broadcast->recipient_count)->toBe(3);
-    expect($broadcast->message_body)->toEndWith('Reply STOP to opt out.');
+    // Twilio appends the STOP opt-out disclosure, so our stored body ends with
+    // just the pause nudge (no duplicate STOP language).
+    expect($broadcast->message_body)->toEndWith('Pause your account to stop.')
+        ->and($broadcast->message_body)->not->toContain('Reply STOP');
 
     expect(BroadcastMessage::count())->toBe(3);
 

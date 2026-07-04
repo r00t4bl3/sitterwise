@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SanDiegoCity;
 use App\Http\Requests\StoreLocationRequest;
 use App\Http\Requests\UpdateLocationRequest;
 use App\Models\Location;
-use App\Services\CaregiverRecommendation\LocationMatcher;
+use App\Models\ZipCode;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LocationController extends Controller
 {
-    public function __construct(
-        protected LocationMatcher $locationMatcher,
-    ) {}
-
     public function index(): Response
     {
         $locations = Location::orderBy('name')->get()
@@ -25,26 +20,28 @@ class LocationController extends Controller
                 'name' => $location->name,
                 'svg_icon' => $location->svg_icon,
                 'is_active' => $location->is_active,
-                'cities' => $this->locationMatcher->parseCities($location),
+            ]);
+
+        $zipCodes = ZipCode::with('location:id,name')
+            ->orderBy('zip_code')
+            ->get()
+            ->map(fn (ZipCode $zip) => [
+                'id' => $zip->id,
+                'zip_code' => $zip->zip_code,
+                'area' => $zip->area,
+                'location_id' => $zip->location_id,
+                'location_name' => $zip->location?->name,
             ]);
 
         return Inertia::render('superadmin/locations/index', [
             'locations' => $locations,
-            'knownCities' => SanDiegoCity::labels(),
+            'zipCodes' => $zipCodes,
         ]);
     }
 
     public function store(StoreLocationRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
-        $cities = $validated['cities'] ?? [];
-        unset($validated['cities']);
-
-        $location = Location::create($validated);
-
-        if (! empty($cities)) {
-            $this->locationMatcher->updateLocationCities($location, $cities);
-        }
+        Location::create($request->validated());
 
         return redirect()->route('locations.index')
             ->with('success', 'Location created successfully');
@@ -52,12 +49,7 @@ class LocationController extends Controller
 
     public function update(UpdateLocationRequest $request, Location $location): RedirectResponse
     {
-        $validated = $request->validated();
-        $cities = $validated['cities'] ?? [];
-        unset($validated['cities']);
-
-        $location->update($validated);
-        $this->locationMatcher->updateLocationCities($location, $cities);
+        $location->update($request->validated());
 
         return redirect()->route('locations.index')
             ->with('success', 'Location updated successfully');

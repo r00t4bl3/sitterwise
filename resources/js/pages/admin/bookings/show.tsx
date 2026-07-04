@@ -62,6 +62,8 @@ interface Booking {
     address_city: string | null;
     address_state: string | null;
     address_zip: string | null;
+    area: string | null;
+    region: string | null;
     start_datetime: string;
     end_datetime: string;
     status: string;
@@ -198,6 +200,19 @@ export default function BookingDetail({
     const [replaceSheetOpen, setReplaceSheetOpen] = useState(false);
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
 
+    // Return to where we came from (e.g. a client's booking history) when a
+    // `?from=` context is present; otherwise fall back to the bookings list.
+    // Only same-origin relative paths are honored to avoid open redirects.
+    const fromParam =
+        typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search).get('from')
+            : null;
+    const backHref =
+        fromParam && fromParam.startsWith('/') && !fromParam.startsWith('//')
+            ? fromParam
+            : '/bookings';
+    const backLabel = backHref === '/bookings' ? 'Back to Bookings' : 'Back';
+
     const sheet = useBookingSheet({
         clients,
         hotels,
@@ -236,6 +251,15 @@ export default function BookingDetail({
     const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
 
     const cancelForm = useForm({ reason: '', cancel_group: false });
+    const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+    const reopenForm = useForm({});
+
+    const submitReopen = () => {
+        reopenForm.post(`/bookings/${booking.ulid}/reopen`, {
+            preserveScroll: true,
+            onSuccess: () => setReopenDialogOpen(false),
+        });
+    };
 
     const activeSiblingCount = booking.booking_group
         ? booking.booking_group.sibling_bookings.filter(
@@ -460,7 +484,7 @@ export default function BookingDetail({
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center gap-4">
                     <Link
-                        href="/bookings"
+                        href={backHref}
                         className="flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-accent"
                     >
                         <ArrowLeft className="h-5 w-5" />
@@ -824,6 +848,21 @@ export default function BookingDetail({
                                     </div>
                                 )}
 
+                                {booking.area && (
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                                        <Badge
+                                            variant="outline"
+                                            className="text-xs"
+                                        >
+                                            {booking.area}
+                                            {booking.region
+                                                ? ` · ${booking.region}`
+                                                : ''}
+                                        </Badge>
+                                    </div>
+                                )}
+
                                 {mapsUrl && (
                                     <div className="flex items-start gap-2">
                                         {React.createElement(
@@ -1106,6 +1145,20 @@ export default function BookingDetail({
                 </div>
 
                 <div className="flex justify-end gap-2">
+                    {booking.status !== 'cancelled' && (
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                sheet.openEditSheet(
+                                    booking as unknown as Parameters<
+                                        typeof sheet.openEditSheet
+                                    >[0],
+                                )
+                            }
+                        >
+                            Edit Booking
+                        </Button>
+                    )}
                     {['received', 'pending'].includes(booking.status) && (
                         <Button
                             variant="outline"
@@ -1117,13 +1170,25 @@ export default function BookingDetail({
                     {booking.status !== 'cancelled' && (
                         <>
                             {booking.caregiver_id && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setReplaceSheetOpen(true)}
-                                >
-                                    <UserPlus className="mr-1 h-4 w-4" />
-                                    Replace Caregiver
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setReplaceSheetOpen(true)
+                                        }
+                                    >
+                                        <UserPlus className="mr-1 h-4 w-4" />
+                                        Replace Caregiver
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setReopenDialogOpen(true)
+                                        }
+                                    >
+                                        Unassign &amp; Re-notify
+                                    </Button>
+                                </>
                             )}
                             <Button
                                 variant="destructive"
@@ -1140,7 +1205,7 @@ export default function BookingDetail({
                         Delete Booking
                     </Button>
                     <Button asChild>
-                        <Link href="/bookings">Back to Bookings</Link>
+                        <Link href={backHref}>{backLabel}</Link>
                     </Button>
                 </div>
             </div>
@@ -1182,6 +1247,39 @@ export default function BookingDetail({
             />
 
             <BookingSheet {...sheet} />
+
+            <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unassign &amp; Re-notify</DialogTitle>
+                        <DialogDescription>
+                            Remove{' '}
+                            {booking.caregiver_name
+                                ? booking.caregiver_name
+                                : 'the caregiver'}{' '}
+                            from this booking and reopen it to caregivers? The
+                            job resets to “Received” and you’ll pick who to
+                            re-notify next.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setReopenDialogOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitReopen}
+                            disabled={reopenForm.processing}
+                        >
+                            {reopenForm.processing
+                                ? 'Unassigning...'
+                                : 'Unassign & Re-notify'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
                 <DialogContent>

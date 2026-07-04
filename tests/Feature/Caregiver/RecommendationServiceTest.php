@@ -12,6 +12,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\Location;
 use App\Models\SpecialtyType;
+use App\Models\ZipCode;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\AttributeDefinitionSeeder;
@@ -33,6 +34,13 @@ beforeEach(function () {
     $this->activeStatus = CaregiverStatus::Active;
 
     $this->defaultAvailDate = now()->addDays(5)->format('Y-m-d');
+
+    // La Jolla (92037) -> South County, used by the location-scoring tests.
+    ZipCode::factory()->create([
+        'zip_code' => '92037',
+        'area' => 'La Jolla',
+        'location_id' => Location::where('name', 'South County')->value('id'),
+    ]);
 });
 
 function makeActiveCaregiver(array $overrides = []): Caregiver
@@ -70,8 +78,21 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         expect($recommended->first())->toHaveKeys([
-            'id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified',
+            'id', 'name', 'age', 'score', 'matchIcons', 'hasBeenNotified', 'speaksSpanish',
         ]);
+    });
+
+    test('flags caregivers who speak Spanish', function () {
+        $client = Client::factory()->create();
+        $spanishSpeaker = makeActiveCaregiver(['languages' => ['spanish', 'english']]);
+        $englishOnly = makeActiveCaregiver(['languages' => ['english']]);
+        $noLanguages = makeActiveCaregiver(['languages' => null]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client)->keyBy('id');
+
+        expect($recommended[$spanishSpeaker->id]['speaksSpanish'])->toBeTrue()
+            ->and($recommended[$englishOnly->id]['speaksSpanish'])->toBeFalse()
+            ->and($recommended[$noLanguages->id]['speaksSpanish'])->toBeFalse();
     });
 
     test('blocked caregiver is excluded from recommendations', function () {
@@ -121,7 +142,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
-            'address_city' => 'La Jolla',
+            'address_zip' => '92037',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
@@ -131,6 +152,34 @@ describe('Recommendation Service - Caregiver', function () {
             ->and($result['matchIcons'])->toContain('available')
             ->and($result['matchIcons'])->toContain('specialty')
             ->and($result['matchIcons'])->toContain('location_preferred');
+    });
+
+    test('resolves the booking region from its zip code (no city needed)', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $southCounty = Location::where('name', 'South County')->first();
+        // 92037 -> South County is seeded in beforeEach.
+        $caregiver = makeActiveCaregiver(['rating' => 4.5]);
+        $caregiver->locations()->sync([$southCounty->id => ['is_preferred' => true]]);
+
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+        // Zip only — no city — so the match can only come from the zip lookup.
+        $booking->bookingGroup->update([
+            'service_type' => ServiceType::Babysitter->value,
+            'address_city' => null,
+            'address_zip' => '92037',
+        ]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('location_preferred');
     });
 
     test('good match when specialty and willing location (adjacent fit)', function () {
@@ -153,7 +202,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
-            'address_city' => 'La Jolla',
+            'address_zip' => '92037',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
@@ -192,7 +241,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
-            'address_city' => 'La Jolla',
+            'address_zip' => '92037',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);
@@ -519,7 +568,7 @@ describe('Recommendation Service - Caregiver', function () {
         ]);
         $booking->bookingGroup->update([
             'service_type' => ServiceType::Babysitter->value,
-            'address_city' => 'La Jolla',
+            'address_zip' => '92037',
         ]);
 
         $recommended = $this->service->getRecommendedCaregivers($client, $booking);

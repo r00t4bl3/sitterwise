@@ -33,6 +33,7 @@ use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ZipCodeController;
 use App\Http\Middleware\TrackEmailCheckStrikes;
 use App\Http\Middleware\VerifyEmail;
 use Illuminate\Support\Facades\Route;
@@ -147,6 +148,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('bookings/{booking}/process-payment', [BookingController::class, 'processPayment'])->name('bookings.processPayment');
         Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
         Route::post('bookings/{booking}/replace-caregiver', [BookingController::class, 'replaceCaregiver'])->name('bookings.replace-caregiver');
+        Route::post('bookings/{booking}/reopen', [BookingController::class, 'reopen'])->name('bookings.reopen');
         Route::post('bookings/{booking}/notify', [BookingController::class, 'notify'])->name('bookings.notify');
         Route::post('bookings/groups/{bookingGroup}/split', [BookingController::class, 'splitGroup'])->name('bookings.groups.split');
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
@@ -230,6 +232,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
     Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
     Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
+    Route::post('zip-codes', [ZipCodeController::class, 'store'])->name('zip-codes.store');
+    Route::patch('zip-codes/{zipCode}', [ZipCodeController::class, 'update'])->name('zip-codes.update');
+    Route::delete('zip-codes/{zipCode}', [ZipCodeController::class, 'destroy'])->name('zip-codes.destroy');
     Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
 
     Route::get('hotels/search', [HotelController::class, 'search'])->name('hotels.search');

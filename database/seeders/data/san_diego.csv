@@ -1,114 +1,115 @@
-zip,area,neighborhood,type,included_reason
-91901,South/East County,Alpine,rural,core
-91902,South/East County,Bonita,suburb,core
-91905,South/East County,Boulevard,rural,core
-91906,South/East County,Campo,rural,core
-91910,South/East County,Chula Vista,city,core
-91911,South/East County,Chula Vista,city,core
-91913,South/East County,Chula Vista,city,core
-91914,South/East County,Chula Vista,suburb,core
-91915,South/East County,Eastlake,suburb,core
-91916,South/East County,Descanso,rural,core
-91917,South/East County,Dulzura,rural,core
-91931,South/East County,Guatay,rural,core
-91932,South/East County,Imperial Beach,city,core
-91934,South/East County,Jacumba,rural,core
-91935,South/East County,Jamul,suburb,core
-91941,South/East County,La Mesa,city,core
-91942,South/East County,La Mesa,city,core
-91945,South/East County,Lemon Grove,city,core
-91948,South/East County,Mount Laguna,rural,core
-91950,South/East County,National City,city,core
-91962,South/East County,Pine Valley,rural,core
-91963,South/East County,Potrero,rural,core
-91977,South/East County,Spring Valley,suburb,core
-91978,South/East County,Spring Valley,suburb,core
-91980,South/East County,Tecate,rural,core
-92003,North County,Bonsall,rural,core
-92004,North County,Borrego Springs,rural,core
-92007,North County,Cardiff,suburb,core
-92008,North County,Carlsbad,city,core
-92009,North County,Carlsbad,city,core
-92010,North County,Carlsbad,city,core
-92011,North County,Carlsbad,city,core
-92014,North County,Del Mar,city,core
-92019,South/East County,El Cajon,suburb,core
-92020,South/East County,El Cajon,city,core
-92021,South/East County,El Cajon,suburb,core
-92024,North County,Encinitas,city,core
-92025,North County,Escondido,city,core
-92026,North County,Escondido,city,core
-92027,North County,Escondido,city,core
-92028,North County,Fallbrook,rural,core
-92029,North County,Escondido,city,core
-92036,South/East County,Julian,rural,core
-92037,South/East County,La Jolla,urban,core (client-defined)
-92040,South/East County,Lakeside,suburb,core
-92054,North County,Oceanside,city,core
-92055,North County,Camp Pendleton,military,core
-92056,North County,Oceanside,city,core
-92057,North County,Oceanside,city,core
-92058,North County,Oceanside,city,core
-92059,North County,Pala,rural,core
-92060,North County,Palomar Mountain,rural,core
-92061,North County,Pauma Valley,rural,core
-92064,North County,Poway,city,core
-92065,North County,Ramona,rural,core
-92066,North County,Ranchita,rural,core
-92067,North County,Rancho Santa Fe,suburb,core
-92069,North County,San Marcos,city,core
-92070,North County,Santa Ysabel,rural,core
-92071,South/East County,Santee,city,core
-92075,North County,Solana Beach,city,core
-92078,North County,San Marcos,city,core
-92081,North County,Vista,city,core
-92082,North County,Valley Center,rural,core
-92083,North County,Vista,city,core
-92084,North County,Vista,city,core
-92086,North County,Warner Springs,rural,core
-92091,North County,Rancho Santa Fe,suburb,core
-92093,South/East County,UC San Diego,university,special ZIP
-92096,North County,CSU San Marcos,university,special ZIP
-92101,South/East County,Downtown,urban,core
-92102,South/East County,Golden Hill,urban,core
-92103,South/East County,Hillcrest,urban,core
-92104,South/East County,North Park,urban,core
-92105,South/East County,City Heights,urban,core
-92106,South/East County,Point Loma,urban,core
-92107,South/East County,Ocean Beach,urban,core
-92108,South/East County,Mission Valley,urban,core
-92109,South/East County,Pacific Beach,urban,core
-92110,South/East County,Old Town,urban,core
-92111,South/East County,Linda Vista,urban,core
-92113,South/East County,Logan Heights,urban,core
-92114,South/East County,Encanto,urban,core
-92115,South/East County,College Area,urban,core
-92116,South/East County,Normal Heights,urban,core
-92117,South/East County,Clairemont,urban,core
-92118,South/East County,Coronado,city,core
-92119,South/East County,San Carlos,suburb,core
-92120,South/East County,Del Cerro,suburb,core
-92121,South/East County,UTC,urban,core
-92122,South/East County,University City,urban,core
-92123,South/East County,Serra Mesa,urban,core
-92124,South/East County,Tierrasanta,suburb,core
-92126,South/East County,Mira Mesa,suburb,core
-92127,North County,Rancho Bernardo,suburb,core
-92128,North County,Rancho Bernardo,suburb,core
-92129,North County,Rancho Peñasquitos,suburb,core
-92130,North County,Carmel Valley,suburb,core
-92131,South/East County,Scripps Ranch,suburb,core
-92134,South/East County,Naval Medical Center,military,special ZIP
-92135,South/East County,NAS North Island,military,special ZIP
-92136,South/East County,Naval Station San Diego,military,special ZIP
-92139,South/East County,Paradise Hills,urban,core
-92140,South/East County,MCRD San Diego,military,special ZIP
-92145,South/East County,MCAS Miramar,military,special ZIP
-92154,South/East County,Otay Mesa,urban,core
-92155,South/East County,NAB Coronado,military,special ZIP
-92161,South/East County,VA Medical Center,military,special ZIP
-92173,South/East County,San Ysidro,urban,core
-92182,South/East County,San Diego State University,university,special ZIP
-92259,South/East County,Ocotillo,rural,cross-county edge
-92536,South/East County,Aguanga,rural,cross-county edge
-92672,North County,San Clemente,city,cross-county (Camp Pendleton overlap)
+zip_code,area,county_region
+91901,Alpine,South County
+91902,Bonita,South County
+91905,Boulevard,South County
+91906,Campo,South County
+91910,West Chula Vista,South County
+91911,South Chula Vista,South County
+91913,Otay Ranch,South County
+91914,Eastlake,South County
+91915,Eastlake,South County
+91916,Descanso,South County
+91917,Dulzura,South County
+91932,Imperial Beach,South County
+91934,Jacumba,South County
+91935,Jamul,South County
+91941,Mount Helix,South County
+91942,La Mesa,South County
+91945,Lemon Grove,South County
+91950,National City,South County
+91962,Pine Valley,South County
+91963,Potrero,South County
+91977,Spring Valley,South County
+91978,Rancho San Diego,South County
+91980,Tecate,South County
+91987,Tecate,South County
+92003,Bonsall,North County
+92004,Borrego Springs,North County
+92007,Cardiff-by-the-Sea,North County
+92008,Carlsbad Village,North County
+92009,La Costa,North County
+92010,North Carlsbad,North County
+92011,Aviara,North County
+92014,Del Mar,North County
+92019,Rancho San Diego,South County
+92020,El Cajon,South County
+92021,Granite Hills,South County
+92024,Encinitas,North County
+92025,Central Escondido,North County
+92026,North Escondido,North County
+92027,East Escondido,North County
+92028,Fallbrook,North County
+92029,South Escondido,North County
+92036,Julian,North County
+92037,La Jolla,North County
+92040,Lakeside,North County
+92054,Downtown Oceanside,North County
+92055,Camp Pendleton,North County
+92056,Rancho Del Oro,North County
+92057,Oceanside East,North County
+92058,Camp Pendleton South,North County
+92059,Pala,North County
+92061,Pauma Valley,North County
+92064,Poway,North County
+92065,Ramona,North County
+92066,Ranchita,North County
+92069,San Marcos,North County
+92070,Santa Ysabel,North County
+92071,Santee,South County
+92075,Solana Beach,North County
+92078,San Elijo Hills,North County
+92081,Vista,North County
+92082,Valley Center,North County
+92083,Downtown Vista,North County
+92084,North Vista,North County
+92086,Warner Springs,North County
+92091,Rancho Santa Fe,North County
+92092,UC San Diego,North County
+92093,UC San Diego,North County
+92096,CSU San Marcos,North County
+92101,Downtown,South County
+92102,Golden Hill,South County
+92103,Hillcrest,South County
+92104,North Park,South County
+92105,City Heights,South County
+92106,Point Loma,South County
+92107,Ocean Beach,South County
+92108,Mission Valley,South County
+92109,Pacific Beach,South County
+92110,Old Town,South County
+92111,Clairemont Mesa,South County
+92113,Barrio Logan,South County
+92114,Encanto,South County
+92115,College Area,South County
+92116,Normal Heights,South County
+92117,Clairemont,South County
+92118,Coronado,South County
+92119,San Carlos,South County
+92120,Del Cerro,South County
+92121,UTC,North County
+92122,University City,North County
+92123,Serra Mesa,South County
+92124,Tierrasanta,South County
+92126,Mira Mesa,North County
+92127,4S Ranch,North County
+92128,Rancho Bernardo,North County
+92129,Rancho Peñasquitos,North County
+92130,Carmel Valley,North County
+92131,Scripps Ranch,North County
+92132,Horton Plaza,South County
+92134,MCAS Miramar,North County
+92136,Naval Base San Diego,South County
+92139,Paradise Hills,South County
+92140,Old Town,South County
+92145,Sorrento Valley,North County
+92147,Midway District,South County
+92152,Wooded Area,South County
+92154,Otay Mesa,South County
+92155,North Island,South County
+92158,Otay Mesa,South County
+92161,Hillcrest Medical District,South County
+92173,San Ysidro,South County
+92182,SDSU,South County
+92187,Core-Columbia,South County
+92199,Downtown,South County
+92672,San Clemente,South County

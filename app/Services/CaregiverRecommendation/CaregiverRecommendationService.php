@@ -151,6 +151,7 @@ class CaregiverRecommendationService
                 'score' => $score,
                 'matchIcons' => $this->getMatchIcons($attrs),
                 'hasBeenNotified' => $this->hasBeenNotified($caregiver, $booking),
+                'speaksSpanish' => in_array('spanish', $caregiver->languages ?? [], true),
             ];
         });
 
@@ -164,7 +165,9 @@ class CaregiverRecommendationService
     }
 
     /**
-     * Resolve the booking's location area from the address city or hotel city.
+     * Resolve the booking's region by zip code (exact). A booking with no
+     * recognizable zip resolves to null, which drops the location score to 0
+     * without affecting the other scoring factors.
      */
     protected function resolveBookingLocationId(?Booking $booking): ?int
     {
@@ -172,16 +175,14 @@ class CaregiverRecommendationService
             return null;
         }
 
-        $city = $this->locationMatcher->getBookingCity(
-            $booking->address_city,
-            $booking->relationLoaded('hotel') && $booking->hotel ? $booking->hotel->city : null,
-        );
+        // bookingGroup for real bookings; the raw attribute for the mock booking
+        // built from the create form (its group accessor would otherwise shadow
+        // the directly-set value); hotel zip as a last source.
+        $zip = $booking->bookingGroup?->address_zip
+            ?? ($booking->getAttributes()['address_zip'] ?? null)
+            ?? ($booking->relationLoaded('hotel') && $booking->hotel ? $booking->hotel->zip : null);
 
-        if ($city === null && $booking->bookingGroup) {
-            $city = $booking->bookingGroup->address_city;
-        }
-
-        return $this->locationMatcher->getLocationIdForCity($city);
+        return $this->locationMatcher->getLocationIdForZip($zip);
     }
 
     /**

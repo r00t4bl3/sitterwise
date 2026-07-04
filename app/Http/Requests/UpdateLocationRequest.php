@@ -18,8 +18,6 @@ class UpdateLocationRequest extends FormRequest
             'name' => ['required', 'string', Rule::unique('locations', 'name')->ignore($this->location->id)],
             'svg_icon' => ['nullable', 'string'],
             'is_active' => ['boolean'],
-            'cities' => ['nullable', 'array'],
-            'cities.*' => ['required', 'string', 'max:255'],
         ];
     }
 }

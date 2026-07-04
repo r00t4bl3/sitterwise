@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CaregiverStatus;
+use App\Mail\ReferenceCompletedMail;
 use App\Models\Caregiver;
 use App\Models\ReferenceRequest;
 use App\Models\User;
@@ -190,10 +191,28 @@ describe('Reference Portal - Submit', function () {
             $admin,
             ReferenceCompletedNotification::class,
             function ($notification) use ($reference) {
-                return $notification->referenceName === 'Jane Reference'
+                return $notification->reference->reference_name === 'Jane Reference'
                     && $notification->applicantName === $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
             }
         );
+    });
+
+    it('reference-completed email includes the ratings, review text, and a link', function () {
+        $reference = referencePortalCreateReferenceRequest();
+        $reference->update([
+            'rating_overall_recommendation' => 5,
+            'strengths' => 'Punctual and warm with the kids.',
+            'submitted_at' => now(),
+        ]);
+
+        $applicantName = $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
+        $mail = new ReferenceCompletedMail($reference, $applicantName, 'https://sitterwise.test/applications/9');
+        $rendered = $mail->render();
+
+        expect($rendered)->toContain('Overall recommendation')
+            ->and($rendered)->toContain('5/5')
+            ->and($rendered)->toContain('Punctual and warm with the kids.')
+            ->and($rendered)->toContain('https://sitterwise.test/applications/9');
     });
 
     it('does not send notification when only super admin exists', function () {

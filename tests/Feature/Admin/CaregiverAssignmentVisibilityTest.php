@@ -3,6 +3,7 @@
 use App\Enums\CaregiverStatus;
 use App\Models\Booking;
 use App\Models\Caregiver;
+use App\Models\CaregiverAssignment;
 use App\Models\Client;
 use App\Models\ClientChild;
 use App\Models\Hotel;
@@ -70,6 +71,93 @@ describe('caregiver assignment makes a job visible to the caregiver', function (
                 ->has('jobs.data', 1)
                 ->where('jobs.data.0.id', $booking->id)
             );
+    });
+
+    test('replacing back to a previously-assigned caregiver does not 500 on a duplicate assignment', function () {
+        // Reproduces prod: "Duplicate entry '34-14512' for key unique_assignment"
+        // when replacing a booking's caregiver with one who already has a
+        // (resolved) assignment row on that same booking.
+        $caregiverA = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+        $caregiverB = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiverA->id,
+                'status' => 'confirmed',
+                'start_datetime' => now()->addDays(5),
+                'end_datetime' => now()->addDays(5)->addHours(4),
+            ]);
+
+        // A -> B (leaves A with a resolved assignment row on this booking)
+        $this->actingAs($this->admin)
+            ->post(route('bookings.replace-caregiver', $booking), ['caregiver_id' => $caregiverB->id])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        // B -> A again: must not collide with A's existing (resolved) row.
+        $this->actingAs($this->admin)
+            ->post(route('bookings.replace-caregiver', $booking), ['caregiver_id' => $caregiverA->id])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        expect($booking->refresh()->caregiver_id)->toBe($caregiverA->id);
+        expect(CaregiverAssignment::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiverA->id)->count())->toBe(1);
+        // The re-assigned caregiver's assignment should be active again.
+        expect(CaregiverAssignment::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiverA->id)->whereNull('resolution')->exists())->toBeTrue();
+    });
+
+    test('reopen unassigns the caregiver, resets to received, and opens the notify panel', function () {
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state(['service_type' => 'babysitter']))
+            ->create([
+                'caregiver_id' => $caregiver->id,
+                'status' => 'confirmed',
+                'start_datetime' => now()->addDays(5),
+                'end_datetime' => now()->addDays(5)->addHours(4),
+            ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('bookings.reopen', $booking))
+            ->assertRedirect(route('bookings.show', ['booking' => $booking->ulid, 'notify' => 1]))
+            ->assertSessionHasNoErrors();
+
+        $booking->refresh();
+        expect($booking->caregiver_id)->toBeNull();
+        expect($booking->status)->toBe('received');
+
+        // The prior assignment is resolved (moved off), not left active.
+        expect(CaregiverAssignment::where('booking_id', $booking->id)
+            ->where('caregiver_id', $caregiver->id)->whereNull('resolution')->exists())->toBeFalse();
+    });
+
+    test('reopen on a booking with no caregiver returns an error', function () {
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->create(['caregiver_id' => null, 'status' => 'received']);
+
+        $this->actingAs($this->admin)
+            ->post(route('bookings.reopen', $booking))
+            ->assertSessionHas('error');
+    });
+
+    test('reopen on a finalized booking returns an error', function () {
+        $caregiver = Caregiver::factory()->create(['status' => CaregiverStatus::Active->value]);
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->create(['caregiver_id' => $caregiver->id, 'status' => 'paid']);
+
+        $this->actingAs($this->admin)
+            ->post(route('bookings.reopen', $booking))
+            ->assertSessionHas('error');
+
+        expect($booking->refresh()->caregiver_id)->toBe($caregiver->id);
     });
 
     test('creating a booking with a caregiver and pending status auto-confirms it', function () {

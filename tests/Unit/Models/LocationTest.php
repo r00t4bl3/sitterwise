@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Location;
+use App\Models\ZipCode;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -15,15 +16,20 @@ test('can be instantiated', function () {
 test('has correct fillable fields', function () {
     $location = Location::factory()->create([
         'name' => 'San Diego',
-        'cities' => 'Downtown, La Jolla',
         'svg_icon' => '<svg></svg>',
         'is_active' => true,
     ]);
 
     $this->assertEquals('San Diego', $location->name);
-    $this->assertEquals('Downtown, La Jolla', $location->cities);
     $this->assertEquals('<svg></svg>', $location->svg_icon);
     $this->assertTrue($location->is_active);
+});
+
+test('has many zip codes', function () {
+    $location = Location::factory()->create();
+    ZipCode::factory()->count(3)->create(['location_id' => $location->id]);
+
+    expect($location->zipCodes)->toHaveCount(3);
 });
 
 test('casts is active as boolean', function () {

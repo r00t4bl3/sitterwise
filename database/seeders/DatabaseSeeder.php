@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             CertificationTypeSeeder::class,
             SpecialtyTypeSeeder::class,
             LocationSeeder::class,
+            ZipCodeSeeder::class,
             AttributeDefinitionSeeder::class,
             // CaregiverSeeder::class,
             // ClientSeeder::class,

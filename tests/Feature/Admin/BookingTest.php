@@ -14,7 +14,9 @@ use App\Models\ClientAddress;
 use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
+use App\Models\Location;
 use App\Models\User;
+use App\Models\ZipCode;
 use Carbon\Carbon;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
@@ -23,6 +25,7 @@ use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
 
@@ -684,6 +687,28 @@ describe('Booking - Admin', function () {
 
         $response->assertSuccessful();
         $response->assertJsonPath('status', 'cancelled');
+    });
+
+    test('booking show derives the area and region from the zip code', function () {
+        $this->actingAs($this->user);
+
+        $southCounty = Location::where('name', 'South County')->first();
+        ZipCode::factory()->create([
+            'zip_code' => '92037',
+            'area' => 'La Jolla',
+            'location_id' => $southCounty->id,
+        ]);
+
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+            'address_zip' => '92037',
+        ]))->create(['status' => 'received']);
+
+        $this->get(route('bookings.show', $booking))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('booking.area', 'La Jolla')
+                ->where('booking.region', 'South County')
+            );
     });
 
     test('admin can search hotels', function () {

@@ -18,12 +18,20 @@ use Twilio\Security\RequestValidator;
 
 class BroadcastSmsController extends Controller
 {
+    /**
+     * Footer appended to every broadcast. Single source of truth, forwarded to
+     * the compose page so its preview/char-count always matches what's sent. The
+     * STOP opt-out disclosure is appended by Twilio, so it isn't repeated here.
+     */
+    public const COMPLIANCE_FOOTER = "\n\nPause your account to stop.";
+
     public function index(): Response
     {
         $recipientCount = Caregiver::activeForSms()->count();
 
         return Inertia::render('superadmin/broadcast-sms/index', [
             'recipientCount' => $recipientCount,
+            'complianceFooter' => self::COMPLIANCE_FOOTER,
         ]);
     }
 
@@ -35,8 +43,7 @@ class BroadcastSmsController extends Controller
 
         $user = Auth::user();
 
-        $complianceFooter = "\n\nReply STOP to opt out.";
-        $fullMessage = $validated['message_body'].$complianceFooter;
+        $fullMessage = $validated['message_body'].self::COMPLIANCE_FOOTER;
 
         $caregivers = Caregiver::activeForSms()->get();
 

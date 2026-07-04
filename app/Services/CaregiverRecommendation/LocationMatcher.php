@@ -2,111 +2,89 @@
 
 namespace App\Services\CaregiverRecommendation;
 
-use App\Models\Location;
+use App\Models\ZipCode;
 use Illuminate\Support\Collection;
 
 class LocationMatcher
 {
-    protected ?Collection $cityMap = null;
+    protected ?Collection $zipMap = null;
 
     /**
-     * Get the location ID for a given city by matching against
-     * the city-to-location map built from active locations.
+     * Normalize a raw zip to its 5-digit form (handles ZIP+4 and stray
+     * characters). Returns null when there aren't 5 usable digits.
      */
-    public function getLocationIdForCity(?string $city): ?int
+    public function normalizeZip(?string $zip): ?string
     {
-        if (blank($city)) {
+        if (blank($zip)) {
             return null;
         }
 
-        $city = strtolower(trim($city));
+        $digits = preg_replace('/\D/', '', $zip);
 
-        return $this->getCityMap()->get($city);
+        return strlen((string) $digits) >= 5 ? substr((string) $digits, 0, 5) : null;
     }
 
     /**
-     * Extract the city from a booking context.
-     * The booking's address_city or the hotel's city.
+     * Get the region (Location) ID for a given zip code, or null if the zip is
+     * blank/unrecognized/unassigned.
      */
-    public function getBookingCity(?string $addressCity, ?string $hotelCity = null): ?string
+    public function getLocationIdForZip(?string $zip): ?int
     {
-        if (! blank($addressCity)) {
-            return trim($addressCity);
+        $zip = $this->normalizeZip($zip);
+
+        if ($zip === null) {
+            return null;
         }
 
-        if (! blank($hotelCity)) {
-            return trim($hotelCity);
+        return $this->getZipMap()->get($zip)['location_id'] ?? null;
+    }
+
+    /**
+     * Get the neighborhood ("area of town") for a given zip code, or null.
+     */
+    public function getAreaForZip(?string $zip): ?string
+    {
+        $zip = $this->normalizeZip($zip);
+
+        if ($zip === null) {
+            return null;
         }
 
-        return null;
+        return $this->getZipMap()->get($zip)['area'] ?? null;
     }
 
     /**
-     * Parse a Location's cities string into an array of city names.
+     * Clear the cached zip map (call after zip assignments change).
      */
-    public function parseCities(Location $location): array
+    public function flush(): void
     {
-        if (blank($location->cities)) {
-            return [];
-        }
-
-        return collect(explode(',', $location->cities))
-            ->map(fn ($city) => trim($city))
-            ->filter()
-            ->values()
-            ->all();
+        $this->zipMap = null;
     }
 
     /**
-     * Get all cities grouped by location ID.
+     * Build a map of normalized zip → ['location_id' => int|null, 'area' => string|null].
      */
-    public function getAllCitiesGrouped(): Collection
+    protected function getZipMap(): Collection
     {
-        return $this->getLocations()->mapWithKeys(fn (Location $location) => [
-            $location->id => $this->parseCities($location),
-        ]);
-    }
-
-    /**
-     * Update a location's cities string from an array of city names.
-     */
-    public function updateLocationCities(Location $location, array $cities): void
-    {
-        $cities = collect($cities)
-            ->map(fn ($city) => trim($city))
-            ->filter()
-            ->unique()
-            ->values();
-
-        $description = $cities->isNotEmpty() ? $cities->implode(', ') : null;
-
-        $location->update(['cities' => $description]);
-
-        $this->cityMap = null;
-    }
-
-    /**
-     * Build a map of lowercase city name → location ID.
-     */
-    protected function getCityMap(): Collection
-    {
-        if ($this->cityMap !== null) {
-            return $this->cityMap;
+        if ($this->zipMap !== null) {
+            return $this->zipMap;
         }
 
         $map = collect();
 
-        foreach ($this->getLocations() as $location) {
-            foreach ($this->parseCities($location) as $city) {
-                $map->put(strtolower($city), $location->id);
+        foreach (ZipCode::all(['zip_code', 'area', 'location_id']) as $zipCode) {
+            $normalized = $this->normalizeZip($zipCode->zip_code);
+
+            if ($normalized === null) {
+                continue;
             }
+
+            $map->put($normalized, [
+                'location_id' => $zipCode->location_id,
+                'area' => $zipCode->area,
+            ]);
         }
 
-        return $this->cityMap = $map;
-    }
-
-    protected function getLocations(): Collection
-    {
-        return Location::where('is_active', true)->get();
+        return $this->zipMap = $map;
     }
 }

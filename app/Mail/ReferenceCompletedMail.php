@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\ReferenceRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -13,14 +14,15 @@ class ReferenceCompletedMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public string $referenceName,
+        public ReferenceRequest $reference,
         public string $applicantName,
+        public ?string $reviewUrl = null,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Reference Completed — {$this->referenceName} for {$this->applicantName}",
+            subject: "Reference Completed — {$this->reference->reference_name} for {$this->applicantName}",
         );
     }
 

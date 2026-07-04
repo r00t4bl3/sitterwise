@@ -17,9 +17,10 @@ import type { BreadcrumbItem } from '@/types';
 
 interface Props {
     recipientCount: number;
+    // Forwarded from BroadcastSmsController so the preview always matches what
+    // is actually sent (single source of truth on the backend).
+    complianceFooter: string;
 }
-
-const COMPLIANCE_FOOTER = '\n\nReply STOP to opt out.';
 
 function getSmsSegments(text: string): { chars: number; segments: number } {
     const chars = text.length;
@@ -32,7 +33,10 @@ function getSmsSegments(text: string): { chars: number; segments: number } {
     return { chars, segments };
 }
 
-export default function BroadcastSms({ recipientCount }: Props) {
+export default function BroadcastSms({
+    recipientCount,
+    complianceFooter,
+}: Props) {
     const { data, setData, post, processing, errors } = useForm({
         message_body: '',
     });
@@ -42,7 +46,7 @@ export default function BroadcastSms({ recipientCount }: Props) {
     const showFlashSuccess = flash?.success;
 
     const { chars, segments } = getSmsSegments(data.message_body);
-    const fullMessage = data.message_body + COMPLIANCE_FOOTER;
+    const fullMessage = data.message_body + complianceFooter;
     const { segments: fullSegments } = getSmsSegments(fullMessage);
     const showSegmentWarning = fullSegments > 3;
 
@@ -141,7 +145,7 @@ export default function BroadcastSms({ recipientCount }: Props) {
                         Compliance footer (auto-appended):
                     </span>
                     <pre className="mt-1 font-sans whitespace-pre-wrap">
-                        {COMPLIANCE_FOOTER}
+                        {complianceFooter}
                     </pre>
                 </div>
 

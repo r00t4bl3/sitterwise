@@ -29,6 +29,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPaymentMethod;
 use App\Models\ClientPet;
 use App\Models\Hotel;
+use App\Models\Location;
 use App\Models\PricingRule;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
@@ -36,6 +37,7 @@ use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverPayout\CaregiverPayoutService;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
+use App\Services\CaregiverRecommendation\LocationMatcher;
 use App\Support\BusinessTime;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -596,6 +598,14 @@ class AdminBookingService implements BookingServiceInterface
                 'name' => $c->first_name.' '.$c->last_name,
             ]);
 
+        $locationMatcher = app(LocationMatcher::class);
+        $bookingZip = $booking->address_zip ?: $booking->hotel?->zip;
+        $bookingArea = $locationMatcher->getAreaForZip($bookingZip);
+        $bookingRegionId = $locationMatcher->getLocationIdForZip($bookingZip);
+        $bookingRegion = $bookingRegionId
+            ? Location::whereKey($bookingRegionId)->value('name')
+            : null;
+
         return Inertia::render('admin/bookings/show', [
             'service_types' => $serviceTypes,
             'location_types' => $locationTypes,
@@ -633,6 +643,8 @@ class AdminBookingService implements BookingServiceInterface
                 'address_city' => $booking->address_city,
                 'address_state' => $booking->address_state,
                 'address_zip' => $booking->address_zip,
+                'area' => $bookingArea,
+                'region' => $bookingRegion,
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
@@ -1115,17 +1127,62 @@ class AdminBookingService implements BookingServiceInterface
                 'status' => BookingStatus::Confirmed->value,
             ]);
 
-            // The Booking::saved hook already creates the assignment when
-            // caregiver_id changes; use firstOrCreate so this explicit call is
-            // idempotent instead of violating the unique (caregiver_id,
-            // booking_id) constraint and 500ing the whole request.
-            $booking->assignments()->firstOrCreate(
+            // The Booking::saved hook already (re)activates the assignment when
+            // caregiver_id changes; updateOrCreate keeps this explicit call
+            // idempotent AND reactivates a previously-resolved row instead of
+            // violating the unique (caregiver_id, booking_id) constraint.
+            $booking->assignments()->updateOrCreate(
                 ['caregiver_id' => $validated['caregiver_id']],
-                ['assigned_at' => now()],
+                [
+                    'assigned_at' => now(),
+                    'resolution' => null,
+                    'resolution_at' => null,
+                    'resolution_note' => null,
+                ],
             );
         });
 
         return redirect()->back()->with('success', 'Caregiver replaced successfully.');
+    }
+
+    /**
+     * Unassign the current caregiver and reopen the booking to the pool: resolve
+     * the active assignment, clear the caregiver, reset status to Received, then
+     * land on the booking with the Notify panel open so the admin can re-invite.
+     */
+    public function reopen(Request $request, Booking $booking)
+    {
+        $finalized = [BookingStatus::Completed->value, BookingStatus::Paid->value, BookingStatus::Cancelled->value];
+
+        if (in_array($booking->status, $finalized, true)) {
+            return redirect()->back()->with('error', 'Cannot reopen a finalized booking.');
+        }
+
+        if (! $booking->caregiver_id) {
+            return redirect()->back()->with('error', 'This booking has no assigned caregiver to unassign.');
+        }
+
+        DB::transaction(function () use ($booking) {
+            $currentAssignment = $booking->assignments()->unresolved()->first();
+
+            if ($currentAssignment) {
+                $currentAssignment->resolve(
+                    AssignmentResolution::Reassigned,
+                    'Reopened to the caregiver pool',
+                );
+            }
+
+            // Clearing caregiver_id releases the reservation via the saved hook;
+            // Received puts the job back in the notifiable pool.
+            $booking->update([
+                'caregiver_id' => null,
+                'status' => BookingStatus::Received->value,
+            ]);
+        });
+
+        return redirect()
+            ->route('bookings.show', ['booking' => $booking->ulid, 'notify' => 1])
+            ->with('success', 'Caregiver unassigned. Select caregivers to re-notify.');
     }
 
     public function destroy(Booking $booking)
@@ -1187,6 +1244,7 @@ class AdminBookingService implements BookingServiceInterface
             'start_datetime' => 'nullable|date',
             'end_datetime' => 'nullable|date|after:start_datetime',
             'address_city' => 'nullable|string',
+            'address_zip' => 'nullable|string',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
             'age_filter' => 'nullable|in:all,younger,seasoned',
@@ -1215,6 +1273,7 @@ class AdminBookingService implements BookingServiceInterface
                 $booking->start_datetime = $validated['start_datetime'];
                 $booking->end_datetime = $validated['end_datetime'];
                 $booking->address_city = $validated['address_city'] ?? null;
+                $booking->address_zip = $validated['address_zip'] ?? null;
             }
         }
 
@@ -1225,6 +1284,7 @@ class AdminBookingService implements BookingServiceInterface
             'start_datetime' => $validated['start_datetime'] ?? null,
             'end_datetime' => $validated['end_datetime'] ?? null,
             'address_city' => $validated['address_city'] ?? null,
+            'address_zip' => $validated['address_zip'] ?? null,
         ]));
 
         $page = (int) ($validated['page'] ?? 1);

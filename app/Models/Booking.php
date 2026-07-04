@@ -284,9 +284,19 @@ class Booking extends Model
                     }
                 }
 
-                $booking->assignments()->firstOrCreate(
+                // updateOrCreate (not firstOrCreate): re-assigning a caregiver who
+                // previously had a resolved assignment on this booking must
+                // reactivate that row, otherwise the booking has a caregiver but
+                // no *unresolved* assignment. The unique (caregiver_id, booking_id)
+                // constraint means there is only ever one row per pair to reuse.
+                $booking->assignments()->updateOrCreate(
                     ['caregiver_id' => $booking->caregiver_id],
-                    ['assigned_at' => now()],
+                    [
+                        'assigned_at' => now(),
+                        'resolution' => null,
+                        'resolution_at' => null,
+                        'resolution_note' => null,
+                    ],
                 );
             }
         });

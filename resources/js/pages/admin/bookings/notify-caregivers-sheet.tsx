@@ -6,6 +6,7 @@ import {
     CalendarCheck,
     Heart,
     History,
+    Languages,
     MapPin,
     MapPinCheckInside,
     X,
@@ -243,9 +244,11 @@ export function NotifyCaregiversSheet({
                                 aria-label="Clear search"
                                 onClick={() => {
                                     setSearchInput('');
+
                                     if (debounceRef.current) {
                                         clearTimeout(debounceRef.current);
                                     }
+
                                     onSearchChange?.('', ageFilter);
                                 }}
                                 className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
@@ -435,6 +438,19 @@ export function NotifyCaregiversSheet({
                                                             )}
                                                         </div>
                                                     )}
+                                                {(caregiver as any)
+                                                    .speaksSpanish && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="flex cursor-default items-center">
+                                                                <Languages className="h-4 w-4 text-amber-600" />
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Speaks Spanish
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
                                                 {caregiver.age && (
                                                     <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
                                                         {caregiver.age}y

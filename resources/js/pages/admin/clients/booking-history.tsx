@@ -344,7 +344,9 @@ export default function BookingHistory() {
                                         <td className="flex justify-end gap-x-2 px-4 py-3 whitespace-nowrap">
                                             <Button asChild className="h-8">
                                                 <Link
-                                                    href={`/bookings/${booking.id}`}
+                                                    href={`/bookings/${booking.id}?from=${encodeURIComponent(
+                                                        `/clients/${client.id}/bookings`,
+                                                    )}`}
                                                 >
                                                     View
                                                 </Link>

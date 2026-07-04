@@ -6,6 +6,7 @@ use App\Models\Hotel;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Models\User;
+use App\Models\ZipCode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 
@@ -221,58 +222,60 @@ describe('LocationController', function () {
         expect($location->name)->toBe('Updated Location');
     });
 
-    test('super_admin can create a location with cities', function () {
+    test('super_admin can assign a zip code to a region', function () {
         $this->actingAs($this->user);
+        $region = Location::factory()->create(['name' => 'North County']);
 
-        $response = $this->post(route('locations.store'), [
-            'name' => 'Downtown Area',
-            'cities' => ['La Jolla', 'Downtown', 'Coronado'],
+        $response = $this->post(route('zip-codes.store'), [
+            'zip_code' => '92008',
+            'area' => 'Carlsbad Village',
+            'location_id' => $region->id,
         ]);
 
         $response->assertRedirect();
-
-        $this->assertDatabaseHas('locations', [
-            'name' => 'Downtown Area',
-            'cities' => 'La Jolla, Downtown, Coronado',
+        $this->assertDatabaseHas('zip_codes', [
+            'zip_code' => '92008',
+            'area' => 'Carlsbad Village',
+            'location_id' => $region->id,
         ]);
     });
 
-    test('super_admin can update location cities', function () {
+    test('assigning an already-assigned zip is rejected', function () {
         $this->actingAs($this->user);
+        $region = Location::factory()->create(['name' => 'North County']);
+        ZipCode::factory()->create(['zip_code' => '92008', 'location_id' => $region->id]);
 
-        $location = Location::factory()->create([
-            'name' => 'Test Area',
-            'cities' => 'La Jolla, Downtown',
+        $response = $this->post(route('zip-codes.store'), [
+            'zip_code' => '92008',
+            'location_id' => $region->id,
         ]);
 
-        $response = $this->patch(route('locations.update', $location), [
-            'name' => 'Test Area',
-            'cities' => ['Carlsbad', 'Encinitas', 'Vista'],
-        ]);
-
-        $response->assertRedirect();
-
-        $location->refresh();
-        expect($location->cities)->toBe('Carlsbad, Encinitas, Vista');
+        $response->assertSessionHasErrors('zip_code');
+        expect(ZipCode::where('zip_code', '92008')->count())->toBe(1);
     });
 
-    test('super_admin can clear location cities', function () {
+    test('super_admin can reassign a zip to another region', function () {
         $this->actingAs($this->user);
+        $north = Location::factory()->create(['name' => 'North County']);
+        $south = Location::factory()->create(['name' => 'South County']);
+        $zip = ZipCode::factory()->create(['zip_code' => '92037', 'location_id' => $north->id]);
 
-        $location = Location::factory()->create([
-            'name' => 'Clear Me',
-            'cities' => 'La Jolla, Downtown',
-        ]);
-
-        $response = $this->patch(route('locations.update', $location), [
-            'name' => 'Clear Me',
-            'cities' => [],
+        $response = $this->patch(route('zip-codes.update', $zip), [
+            'location_id' => $south->id,
         ]);
 
         $response->assertRedirect();
+        expect($zip->refresh()->location_id)->toBe($south->id);
+    });
 
-        $location->refresh();
-        expect($location->cities)->toBeNull();
+    test('super_admin can remove a zip', function () {
+        $this->actingAs($this->user);
+        $zip = ZipCode::factory()->create();
+
+        $response = $this->delete(route('zip-codes.destroy', $zip));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('zip_codes', ['id' => $zip->id]);
     });
 
     test('super_admin can delete a location', function () {

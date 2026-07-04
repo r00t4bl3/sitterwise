@@ -80,10 +80,15 @@ class ReferenceController extends Controller
 
         // Notify admins
         $admins = User::where('role', 'admin')->get();
+        $reference->load('caregiver.application');
         $applicantName = $reference->caregiver->first_name.' '.$reference->caregiver->last_name;
+        $reviewUrl = $reference->caregiver->application
+            ? route('applications.show', $reference->caregiver->application)
+            : null;
         Notification::send($admins, new ReferenceCompletedNotification(
-            $reference->reference_name,
+            $reference,
             $applicantName,
+            $reviewUrl,
         ));
 
         return redirect("/references/{$token}")->with('success', 'Your reference has been submitted. Thank you!');

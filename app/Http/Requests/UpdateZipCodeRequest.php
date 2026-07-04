@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreLocationRequest extends FormRequest
+class UpdateZipCodeRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +14,8 @@ class StoreLocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'unique:locations,name'],
-            'svg_icon' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
+            'area' => ['nullable', 'string', 'max:255'],
+            'location_id' => ['nullable', 'exists:locations,id'],
         ];
     }
 }
