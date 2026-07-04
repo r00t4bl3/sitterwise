@@ -1,4 +1,4 @@
-import { Link, Head, useForm, router } from '@inertiajs/react';
+import { Link, Head, useForm } from '@inertiajs/react';
 import {
     Calendar,
     Copy,
@@ -38,9 +38,9 @@ import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { BookingSheet } from './booking-sheet';
 import { NotifyCaregiversSheet } from './notify-caregivers-sheet';
 import { ReplaceCaregiverSheet } from './replace-caregiver-sheet';
-import { BookingSheet } from './booking-sheet';
 import { useBookingSheet } from './use-booking-sheet';
 
 interface Booking {
@@ -436,6 +436,23 @@ export default function BookingDetail({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [notifySheetOpen, replaceSheetOpen]);
+
+    // "Create & Notify" lands here with ?notify=1 — open the Notify panel once,
+    // then strip the flag so a refresh doesn't reopen it.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.get('notify') === '1') {
+            setNotifySheetOpen(true);
+            params.delete('notify');
+            const query = params.toString();
+            window.history.replaceState(
+                {},
+                '',
+                window.location.pathname + (query ? `?${query}` : ''),
+            );
+        }
+    }, []);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

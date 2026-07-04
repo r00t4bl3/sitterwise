@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ServiceType;
 use App\Rules\MinimumBookingDuration;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -23,17 +24,11 @@ class StoreBookingRequest extends FormRequest
                     return;
                 }
 
-                $serviceType = $this->input('service_type');
-
                 // Pet-only and companion care services have no children; group
                 // childcare tracks them at the group level. Don't force a child.
-                $childExemptServices = [
-                    'group_childcare_invoiced',
-                    'petsitter',
-                    'companion_care',
-                ];
+                $serviceType = ServiceType::tryFrom((string) $this->input('service_type'));
 
-                if (! in_array($serviceType, $childExemptServices, true)) {
+                if (! $serviceType || $serviceType->requiresChild()) {
                     $newChildren = $this->input('new_children', []);
 
                     if (empty($newChildren)) {
@@ -42,6 +37,18 @@ class StoreBookingRequest extends FormRequest
                             'At least one child is required.',
                         );
                     }
+                }
+
+                // Hotel bookings must identify a hotel — either a listed one
+                // (hotel_id) or a free-text custom name (hotel_name).
+                if ($this->input('location_type') === 'hotel'
+                    && ! $this->filled('hotel_id')
+                    && ! trim((string) $this->input('hotel_name'))
+                ) {
+                    $validator->errors()->add(
+                        'hotel_name',
+                        'Please select or enter a hotel.',
+                    );
                 }
             },
         ];
@@ -62,7 +69,9 @@ class StoreBookingRequest extends FormRequest
             'client_id' => ['nullable', 'required_without:new_client.first_name', 'exists:clients,id'],
             'service_type' => ['required', 'string'],
             'location_type' => ['required', 'string'],
-            'start_datetime' => ['required', 'date', 'after:now'],
+            // Admins may enter back-dated jobs (e.g. work already performed that
+            // needs to be recorded and billed after the fact), so no "after:now".
+            'start_datetime' => ['required', 'date'],
             'end_datetime' => ['required', 'date', 'after:start_datetime'],
             'dates' => ['nullable', 'array', 'min:1'],
             'dates.*.start_datetime' => ['required', 'date'],
@@ -84,6 +93,9 @@ class StoreBookingRequest extends FormRequest
             'status' => ['required', 'string'],
             'payment_status' => ['required', 'string'],
             'rental_platform' => ['nullable', 'string'],
+            // A booking address is mandatory for every booking so the caregiver
+            // knows where to go — including unlisted hotels, where the admin
+            // enters the address manually instead of it auto-filling.
             'address_line1' => ['required', 'string'],
             'address_line2' => ['nullable', 'string'],
             'address_city' => ['required', 'string'],

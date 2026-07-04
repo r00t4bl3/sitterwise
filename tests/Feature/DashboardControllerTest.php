@@ -8,7 +8,12 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\PricingRule;
 use App\Models\User;
+use Database\Seeders\AttributeDefinitionSeeder;
+use Database\Seeders\CertificationTypeSeeder;
+use Database\Seeders\LocationSeeder;
+use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
@@ -29,20 +34,17 @@ test('admin sees dashboard with stats', function () {
 });
 
 test('unassigned count is scoped to the current month and excludes cancelled', function () {
+    Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00', 'America/Los_Angeles'));
     $admin = User::factory()->create(['role' => 'admin']);
     $client = Client::factory()->create();
 
-    // Day 10 of the current month (always in-month, deterministic).
-    $thisMonth = now()->startOfMonth()->addDays(9)->setTime(12, 0);
-    $nextMonth = now()->startOfMonth()->addMonthNoOverflow()->addDays(9)->setTime(12, 0);
-
-    // Genuine unassigned booking this month → counts.
+    // Genuine upcoming unassigned booking this month → counts.
     Booking::factory()->forClient($client)->create([
         'caregiver_id' => null,
         'status' => BookingStatus::Received->value,
         'cancelled_at' => null,
-        'start_datetime' => $thisMonth,
-        'end_datetime' => $thisMonth->copy()->addHours(4),
+        'start_datetime' => '2026-07-20T18:00:00Z',
+        'end_datetime' => '2026-07-20T22:00:00Z',
     ]);
 
     // Cancelled booking this month with a stale received status → excluded.
@@ -50,8 +52,8 @@ test('unassigned count is scoped to the current month and excludes cancelled', f
         'caregiver_id' => null,
         'status' => BookingStatus::Received->value,
         'cancelled_at' => now(),
-        'start_datetime' => $thisMonth,
-        'end_datetime' => $thisMonth->copy()->addHours(4),
+        'start_datetime' => '2026-07-22T18:00:00Z',
+        'end_datetime' => '2026-07-22T22:00:00Z',
     ]);
 
     // Unassigned booking next month → excluded (out of the current-month window).
@@ -59,8 +61,8 @@ test('unassigned count is scoped to the current month and excludes cancelled', f
         'caregiver_id' => null,
         'status' => BookingStatus::Received->value,
         'cancelled_at' => null,
-        'start_datetime' => $nextMonth,
-        'end_datetime' => $nextMonth->copy()->addHours(4),
+        'start_datetime' => '2026-08-20T18:00:00Z',
+        'end_datetime' => '2026-08-20T22:00:00Z',
     ]);
 
     $this->actingAs($admin)->get('/dashboard')
@@ -68,6 +70,38 @@ test('unassigned count is scoped to the current month and excludes cancelled', f
         ->assertInertia(fn ($page) => $page
             ->where('stats.troubledUnassigned', 1)
         );
+
+    Carbon::setTestNow();
+});
+
+test('unassigned count excludes past-dated bookings that can no longer be assigned (#307)', function () {
+    Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00', 'America/Los_Angeles'));
+    $admin = User::factory()->create(['role' => 'admin']);
+    $client = Client::factory()->create();
+
+    // Upcoming unassigned → counts.
+    Booking::factory()->forClient($client)->create([
+        'caregiver_id' => null,
+        'status' => BookingStatus::Received->value,
+        'start_datetime' => '2026-07-20T18:00:00Z',
+        'end_datetime' => '2026-07-20T22:00:00Z',
+    ]);
+
+    // Past-dated unassigned this month → excluded.
+    Booking::factory()->forClient($client)->create([
+        'caregiver_id' => null,
+        'status' => BookingStatus::Received->value,
+        'start_datetime' => '2026-07-10T18:00:00Z',
+        'end_datetime' => '2026-07-10T22:00:00Z',
+    ]);
+
+    $this->actingAs($admin)->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.troubledUnassigned', 1)
+        );
+
+    Carbon::setTestNow();
 });
 
 test('caregiver sees dashboard with caregiver data', function () {
@@ -220,4 +254,34 @@ test('admin dashboard loads with bookings that require payment', function () {
         ->component('dashboard')
         ->where('stats.troubledMissingPayment', 1)
     );
+});
+
+test('this-month stats use the business timezone, not UTC (regression for #277)', function () {
+    $this->seed([
+        SpecialtyTypeSeeder::class,
+        LocationSeeder::class,
+        CertificationTypeSeeder::class,
+        AttributeDefinitionSeeder::class,
+    ]);
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    // 2026-06-30 23:30 Pacific = 2026-07-01 06:30 UTC. A naive-UTC dashboard
+    // would treat "now" as July; the business-timezone dashboard knows it's June.
+    Carbon::setTestNow(Carbon::parse('2026-06-30 23:30:00', 'America/Los_Angeles'));
+
+    // Two completed bookings in June, one in July (stored UTC).
+    Booking::factory()->completed()->create(['start_datetime' => '2026-06-15T18:00:00Z']);
+    Booking::factory()->completed()->create(['start_datetime' => '2026-06-20T18:00:00Z']);
+    Booking::factory()->completed()->create(['start_datetime' => '2026-07-02T18:00:00Z']);
+
+    $response = $this->actingAs($admin)->get('/dashboard');
+
+    $response->assertOk();
+    // Correct (June) = 2. Under the old UTC bug this would be 1 (the July row).
+    $response->assertInertia(fn ($page) => $page
+        ->component('dashboard')
+        ->where('stats.thisMonthCompleted', 2)
+    );
+
+    Carbon::setTestNow();
 });

@@ -67,7 +67,7 @@ interface Props {
             slug: string;
             name: string;
             group: string;
-            tier: string;
+            tier: 'coral' | 'navy' | 'teal';
             variant: string;
             earned: boolean;
             earned_date: string | null;

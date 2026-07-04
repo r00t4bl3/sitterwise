@@ -155,6 +155,64 @@ it('guest booking requires client details', function () {
     ]);
 });
 
+it('guest can create a pet-only booking without children', function () {
+    $startDate = now()->addDays(2);
+    $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+    $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+
+    $response = $this->post(route('guest.bookings.store'), [
+        'client_first_name' => 'Pat',
+        'client_last_name' => 'Owner',
+        'client_email' => 'pat.owner@example.com',
+        'client_phone' => '+15551230000',
+        'service_type' => 'petsitter',
+        'location_type' => 'private_home',
+        'start_datetime' => $startDatetime->toISOString(),
+        'end_datetime' => $endDatetime->toISOString(),
+        'address_line1' => '123 Main St',
+        'address_line2' => '',
+        'address_city' => 'San Francisco',
+        'address_state' => 'CA',
+        'address_zip' => '94102',
+        'how_did_you_hear' => 'Google',
+        'sms_consent' => true,
+        'new_children' => [],
+        'new_pets' => [
+            ['name' => 'Rex', 'type' => 'dog', 'breed' => 'Lab', 'notes' => ''],
+        ],
+    ]);
+
+    $response->assertSessionHasNoErrors();
+});
+
+it('guest babysitter booking still requires a child', function () {
+    $startDate = now()->addDays(2);
+    $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+    $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+
+    $response = $this->post(route('guest.bookings.store'), [
+        'client_first_name' => 'Pat',
+        'client_last_name' => 'Parent',
+        'client_email' => 'pat.parent@example.com',
+        'client_phone' => '+15551231111',
+        'service_type' => 'babysitter',
+        'location_type' => 'private_home',
+        'start_datetime' => $startDatetime->toISOString(),
+        'end_datetime' => $endDatetime->toISOString(),
+        'address_line1' => '123 Main St',
+        'address_line2' => '',
+        'address_city' => 'San Francisco',
+        'address_state' => 'CA',
+        'address_zip' => '94102',
+        'how_did_you_hear' => 'Google',
+        'sms_consent' => true,
+        'new_children' => [],
+        'new_pets' => [],
+    ]);
+
+    $response->assertSessionHasErrors('new_children');
+});
+
 it('guest booking validates minimum duration', function () {
     $startDate = now()->addDays(2);
     $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);

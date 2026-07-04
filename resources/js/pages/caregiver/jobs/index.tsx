@@ -39,12 +39,12 @@ import {
 } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
-import { formatDateTimeLocal } from '@/lib/datetime';
 import {
     formatDisplayDateInPT,
     formatDisplayDateTimeInPT,
     formatDisplayDateTimeRangeInPT,
     formatDisplayTimeInPT,
+    formatUtcStringFromPt,
     autoSetEndDateTime,
 } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -310,8 +310,8 @@ export default function CaregiverJobsIndex() {
         const hours = calculateTotalHours(job.start_datetime, job.end_datetime);
 
         checkoutForm.setData({
-            start_datetime: formatDateTimeLocal(start),
-            end_datetime: formatDateTimeLocal(end),
+            start_datetime: formatUtcStringFromPt(start),
+            end_datetime: formatUtcStringFromPt(end),
             total_working_hour: hours.toFixed(2),
             reimbursement: '',
             reimbursement_description: '',

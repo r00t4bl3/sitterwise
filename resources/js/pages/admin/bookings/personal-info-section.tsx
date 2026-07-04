@@ -775,6 +775,29 @@ export function PersonalInfoSection({
                                                 setShowUnlistedHotel(true);
                                                 form.setData('hotel_id', null);
                                                 form.setData('hotel_name', '');
+                                                // A custom hotel has no address on
+                                                // file, so clear any auto-filled
+                                                // one and unlock the fields for the
+                                                // admin to enter it (still required).
+                                                form.setData(
+                                                    'address_line1',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_line2',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_city',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_state',
+                                                    '',
+                                                );
+                                                form.setData('address_zip', '');
+                                                setAddressValue('');
+                                                setIsAddressLocked(false);
                                             }}
                                             className="mt-1 cursor-pointer text-sm text-primary hover:underline"
                                         >

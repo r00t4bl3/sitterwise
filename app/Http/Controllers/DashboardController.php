@@ -96,10 +96,13 @@ class DashboardController extends Controller
                 ? round(($ytdTotal - $lytdTotal) / $lytdTotal * 100)
                 : ($ytdTotal > 0 ? 100 : null);
 
+            // Only count upcoming unassigned bookings — a booking that already
+            // started can't be assigned, so counting past-dated ones (common
+            // with imported data) inflates the triage number (#307).
             $unassigned = Booking::whereNull('caregiver_id')
                 ->whereNull('cancelled_at')
                 ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
-                ->whereBetween('start_datetime', [$monthStart, $monthEnd])
+                ->whereBetween('start_datetime', [$now, $monthEnd])
                 ->count();
 
             $missingPayment = Booking::whereHas('bookingGroup', fn ($q) => $q
@@ -178,7 +181,7 @@ class DashboardController extends Controller
                     ->whereNull('caregiver_id')
                     ->whereNull('cancelled_at')
                     ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
-                    ->whereBetween('start_datetime', [$monthStart, $monthEnd])
+                    ->whereBetween('start_datetime', [$now, $monthEnd])
                     ->orderBy('start_datetime', 'asc')
                     ->limit(5)
                     ->get(),

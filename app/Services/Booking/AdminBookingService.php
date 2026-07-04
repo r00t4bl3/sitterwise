@@ -41,6 +41,7 @@ use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -416,6 +417,14 @@ class AdminBookingService implements BookingServiceInterface
 
         if ($booking->caregiver_id) {
             event(new BookingAccepted($booking));
+        }
+
+        // "Create & Notify" — send the admin straight to the new booking with the
+        // Notify Caregivers panel open, so they don't have to find it again (#324).
+        if ($request->boolean('notify_after')) {
+            return redirect()
+                ->route('bookings.show', ['booking' => $booking->ulid, 'notify' => 1])
+                ->with('success', 'Booking created successfully.');
         }
 
         return redirect()->back()->with('success', 'Booking created successfully.');
@@ -982,7 +991,9 @@ class AdminBookingService implements BookingServiceInterface
             $locationType = $validated['location_type'] ?? null;
 
             $label = match ($locationType) {
-                'hotel' => Hotel::where('id', $validated['hotel_id'])->value('name'),
+                'hotel' => ! empty($validated['hotel_id'])
+                    ? Hotel::where('id', $validated['hotel_id'])->value('name')
+                    : ($validated['hotel_name'] ?? 'Hotel'),
                 default => $locationType,
             };
 
@@ -1136,13 +1147,35 @@ class AdminBookingService implements BookingServiceInterface
             return redirect()->back()->with('error', 'Cannot notify caregivers for a booking with status '.$booking->status.'.');
         }
 
-        NotifyCaregiversJob::dispatch($booking, $validated['caregiver_ids']);
+        $targets = $this->notifiableGroupBookings($booking, $notifiableStatuses);
 
-        if ($booking->status === BookingStatus::Received->value) {
-            $booking->updateQuietly(['status' => BookingStatus::Pending->value]);
-        }
+        NotifyCaregiversJob::dispatch($booking, $validated['caregiver_ids'], $targets->pluck('id')->all());
+
+        $targets
+            ->where('status', BookingStatus::Received->value)
+            ->each(fn (Booking $target) => $target->updateQuietly(['status' => BookingStatus::Pending->value]));
 
         return redirect()->back()->with('success', 'Notifications queued.');
+    }
+
+    /**
+     * Sibling booking dates in the same group that are eligible to be notified.
+     * A booking without a group notifies only itself. Dates already Confirmed,
+     * Completed, Paid, or Cancelled are left untouched so caregivers are not
+     * invited to dates that are already assigned or closed.
+     *
+     * @param  string[]  $notifiableStatuses
+     * @return Collection<int, Booking>
+     */
+    private function notifiableGroupBookings(Booking $booking, array $notifiableStatuses): Collection
+    {
+        if (! $booking->booking_group_id) {
+            return collect([$booking]);
+        }
+
+        return Booking::where('booking_group_id', $booking->booking_group_id)
+            ->whereIn('status', $notifiableStatuses)
+            ->get();
     }
 
     public function recommendedCaregivers(Request $request)

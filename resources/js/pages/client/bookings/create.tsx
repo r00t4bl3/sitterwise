@@ -22,9 +22,11 @@ import AppLayout from '@/layouts/app-layout';
 import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
 import {
     autoSetEndDateTime,
-    formatDateTimeLocal,
+    formatUtcStringFromPt,
+    todayInPT,
     validateMinimumDuration,
 } from '@/lib/datetime';
+import { serviceRequiresChild } from '@/lib/service-types';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -183,17 +185,26 @@ export default function ClientBookingCreate() {
         discovery_sources: Array<{ value: string; label: string }>;
     };
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-
-    const defaultEnd = new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000);
+    // Default to tomorrow 9:00 AM - 1:00 PM on the PT wall-clock. The Date is
+    // built so its local components equal the PT date/time; formatUtcStringFromPt
+    // reads those as PT, keeping the default correct in any browser timezone.
+    const [ptYear, ptMonth, ptDay] = todayInPT().split('-').map(Number);
+    const tomorrow = new Date(ptYear, ptMonth - 1, ptDay + 1, 9, 0, 0, 0);
+    const defaultEnd = new Date(
+        tomorrow.getFullYear(),
+        tomorrow.getMonth(),
+        tomorrow.getDate(),
+        13,
+        0,
+        0,
+        0,
+    );
 
     const initialChildren: Child[] = children.map(convertChildToEditable);
     const initialPets: Pet[] = pets.map(convertPetToEditable);
 
-    const defaultStartStr = formatDateTimeLocal(tomorrow);
-    const defaultEndStr = formatDateTimeLocal(defaultEnd);
+    const defaultStartStr = formatUtcStringFromPt(tomorrow);
+    const defaultEndStr = formatUtcStringFromPt(defaultEnd);
 
     const form = useForm({
         service_type: '',
@@ -331,13 +342,27 @@ export default function ClientBookingCreate() {
 
     const handleAddDate = () => {
         const nextDate = new Date(
-            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+            tomorrow.getFullYear(),
+            tomorrow.getMonth(),
+            tomorrow.getDate() + dates.length,
+            9,
+            0,
+            0,
+            0,
         );
-        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const endDate = new Date(
+            nextDate.getFullYear(),
+            nextDate.getMonth(),
+            nextDate.getDate(),
+            13,
+            0,
+            0,
+            0,
+        );
         const newEntry: DateEntry = {
             id: generateDateId(),
-            start_datetime: formatDateTimeLocal(nextDate),
-            end_datetime: formatDateTimeLocal(endDate),
+            start_datetime: formatUtcStringFromPt(nextDate),
+            end_datetime: formatUtcStringFromPt(endDate),
         };
         const updated = [...dates, newEntry];
         setDates(updated);
@@ -860,11 +885,14 @@ export default function ClientBookingCreate() {
                                         </div>
                                     )}
                                 </div>
-                                {!hasChildren && (
-                                    <p className="mt-2 text-sm text-destructive">
-                                        At least one child is required.
-                                    </p>
-                                )}
+                                {!hasChildren &&
+                                    serviceRequiresChild(
+                                        form.data.service_type,
+                                    ) && (
+                                        <p className="mt-2 text-sm text-destructive">
+                                            At least one child is required.
+                                        </p>
+                                    )}
                             </div>
 
                             <div>

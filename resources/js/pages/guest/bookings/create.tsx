@@ -26,10 +26,12 @@ import GuestLayout from '@/layouts/guest-layout';
 import { calculateAge, getChildBirthYearOptions } from '@/lib/age';
 import {
     autoSetEndDateTime,
-    formatDateTimeLocal,
+    formatUtcStringFromPt,
+    todayInPT,
     validateMinimumDuration,
 } from '@/lib/datetime';
 import { validatePhone } from '@/lib/phone';
+import { serviceRequiresChild } from '@/lib/service-types';
 
 interface NewChild {
     tempId: string;
@@ -150,7 +152,10 @@ function validateForm(
         }
     }
 
-    if (!formData.new_children?.length) {
+    if (
+        serviceRequiresChild(formData.service_type) &&
+        !formData.new_children?.length
+    ) {
         errors.new_children = 'Please add at least one child.';
     }
 
@@ -229,13 +234,22 @@ export default function GuestBookingCreate() {
 
     const [isFormSubmitting, setIsFormSubmitting] = useState(false);
     const [emailExists, setEmailExists] = useState(false);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-
-    const defaultEnd = new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000);
-    const defaultStartStr = formatDateTimeLocal(tomorrow);
-    const defaultEndStr = formatDateTimeLocal(defaultEnd);
+    // Default to tomorrow 9:00 AM - 1:00 PM on the PT wall-clock. The Date is
+    // built so its local components equal the PT date/time; formatUtcStringFromPt
+    // reads those as PT, keeping the default correct in any browser timezone.
+    const [ptYear, ptMonth, ptDay] = todayInPT().split('-').map(Number);
+    const tomorrow = new Date(ptYear, ptMonth - 1, ptDay + 1, 9, 0, 0, 0);
+    const defaultEnd = new Date(
+        tomorrow.getFullYear(),
+        tomorrow.getMonth(),
+        tomorrow.getDate(),
+        13,
+        0,
+        0,
+        0,
+    );
+    const defaultStartStr = formatUtcStringFromPt(tomorrow);
+    const defaultEndStr = formatUtcStringFromPt(defaultEnd);
 
     const form = useForm({
         client_first_name: '',
@@ -332,13 +346,27 @@ export default function GuestBookingCreate() {
 
     const handleAddDate = () => {
         const nextDate = new Date(
-            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+            tomorrow.getFullYear(),
+            tomorrow.getMonth(),
+            tomorrow.getDate() + dates.length,
+            9,
+            0,
+            0,
+            0,
         );
-        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const endDate = new Date(
+            nextDate.getFullYear(),
+            nextDate.getMonth(),
+            nextDate.getDate(),
+            13,
+            0,
+            0,
+            0,
+        );
         const newEntry: DateEntry = {
             id: generateId(),
-            start_datetime: formatDateTimeLocal(nextDate),
-            end_datetime: formatDateTimeLocal(endDate),
+            start_datetime: formatUtcStringFromPt(nextDate),
+            end_datetime: formatUtcStringFromPt(endDate),
         };
         const updated = [...dates, newEntry];
         setDates(updated);

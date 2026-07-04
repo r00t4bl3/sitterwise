@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplyCaregiverSessionLifetime;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsCaregiver;
 use App\Http\Middleware\EnsureUserIsClient;
@@ -23,7 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: [
+            'appearance',
+            'sidebar_state',
+            ApplyCaregiverSessionLifetime::MARKER,
+        ]);
+
+        // Runs before StartSession so it can raise session.lifetime for
+        // caregivers (long, rolling session) before the session is read.
+        $middleware->web(prepend: [
+            ApplyCaregiverSessionLifetime::class,
+        ]);
 
         $middleware->validateCsrfTokens(except: [
             'webhooks/stripe',

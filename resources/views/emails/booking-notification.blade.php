@@ -62,6 +62,29 @@
             text-align: center;
             margin: 24px 0;
         }
+        .dates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .dates-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .dates-table td {
+            padding: 10px 12px;
+            color: #1a1a1a;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .dates-table tr:last-child td {
+            border-bottom: none;
+        }
         .cta-button:hover {
             background: #2563eb;
         }
@@ -103,6 +126,35 @@
             <span class="value">{{ $booking->client_phone ?? $booking->client->user?->phone }}</span>
         </div>
         @endif
+        @php
+            $group = $booking->bookingGroup;
+            $isMultiDay = $group && ($group->bookings_count ?? $group->bookings()->count()) > 1;
+        @endphp
+
+        @if($isMultiDay)
+        <div class="detail-row">
+            <span class="label">Dates</span>
+            <span class="value">{{ $group->bookings->count() }} dates</span>
+        </div>
+        <div style="padding: 8px 0;">
+            <table class="dates-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($group->bookings->sortBy('start_datetime') as $b)
+                    <tr>
+                        <td>{{ $b->start_datetime->setTimezone('America/Los_Angeles')->format('l, F j, Y') }}</td>
+                        <td>{{ $b->start_datetime->setTimezone('America/Los_Angeles')->format('g:i A') }} – {{ $b->end_datetime->setTimezone('America/Los_Angeles')->format('g:i A') }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
         <div class="detail-row">
             <span class="label">Start Time</span>
             <span class="value">{{ $booking->start_datetime->setTimezone('America/Los_Angeles')->format('M j, Y g:i A') }}</span>
@@ -111,6 +163,7 @@
             <span class="label">End Time</span>
             <span class="value">{{ $booking->end_datetime->setTimezone('America/Los_Angeles')->format('M j, Y g:i A') }}</span>
         </div>
+        @endif
         @if($booking->address_line1)
         <div class="detail-row">
             <span class="label">Location</span>

@@ -245,27 +245,60 @@ export const formatDisplayDateTimeRangeInPT = (
     return `${startShort}, ${startTime} - ${endShort}, ${endTime}`;
 };
 
+const parseUtc = (value: string): Date =>
+    new Date(value && value.endsWith('Z') ? value : value + 'Z');
+
+const formatUtcMinuteString = (date: Date): string => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}Z`;
+};
+
 /**
  * Auto-set end datetime to minimum 4 hours after start
  */
 export const autoSetEndDateTime = (startDatetime: string): string => {
-    const d = new Date(
-        startDatetime.endsWith('Z') ? startDatetime : startDatetime + 'Z',
-    );
+    const d = parseUtc(startDatetime);
 
     if (isNaN(d.getTime())) {
         return '';
     }
 
-    const end = new Date(d.getTime() + 4 * 60 * 60 * 1000);
+    return formatUtcMinuteString(new Date(d.getTime() + 4 * 60 * 60 * 1000));
+};
 
-    const year = end.getUTCFullYear();
-    const month = String(end.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(end.getUTCDate()).padStart(2, '0');
-    const hours = String(end.getUTCHours()).padStart(2, '0');
-    const minutes = String(end.getUTCMinutes()).padStart(2, '0');
+/**
+ * When the start datetime moves, shift the end by the same delta so the booking's
+ * duration (and therefore its end time-of-day) is preserved. This keeps a
+ * date-only change from clobbering the time-of-day. Falls back to the 4-hour
+ * default only when the existing end is missing/invalid or not after the old
+ * start.
+ */
+export const shiftEndPreservingDuration = (
+    oldStart: string,
+    oldEnd: string,
+    newStart: string,
+): string => {
+    const oldStartDate = parseUtc(oldStart);
+    const oldEndDate = parseUtc(oldEnd);
+    const newStartDate = parseUtc(newStart);
 
-    return `${year}-${month}-${day}T${hours}:${minutes}Z`;
+    if (
+        isNaN(oldStartDate.getTime()) ||
+        isNaN(oldEndDate.getTime()) ||
+        isNaN(newStartDate.getTime()) ||
+        oldEndDate.getTime() <= oldStartDate.getTime()
+    ) {
+        return autoSetEndDateTime(newStart);
+    }
+
+    const duration = oldEndDate.getTime() - oldStartDate.getTime();
+
+    return formatUtcMinuteString(new Date(newStartDate.getTime() + duration));
 };
 
 /**

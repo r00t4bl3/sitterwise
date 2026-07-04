@@ -30,7 +30,9 @@ import {
 } from '@/components/ui/tooltip';
 import {
     autoSetEndDateTime,
-    formatDateTimeLocal,
+    formatUtcStringFromPt,
+    shiftEndPreservingDuration,
+    todayInPT,
     validateMinimumDuration,
 } from '@/lib/datetime';
 
@@ -87,7 +89,7 @@ interface BookingDetailsSectionProps {
     }>;
     selectedCaregiverName: string;
     handleCaregiverSearch: (query: string) => void;
-    handleSubmit: () => void;
+    handleSubmit: (notifyAfter?: boolean) => void;
     handleDelete: () => void;
     setIsSheetOpen: (open: boolean) => void;
 }
@@ -111,22 +113,32 @@ export function BookingDetailsSection({
     const endDatetime = form.data.end_datetime;
     const datetimeError = validateMinimumDuration(startDatetime, endDatetime);
 
+    // Build a Date whose local components represent PT wall-clock tomorrow at
+    // 9:00 AM. formatUtcStringFromPt reads those local components as PT, so the
+    // default matches the DateTimePicker/backend UTC convention regardless of
+    // the admin's browser timezone.
     const tomorrow = useMemo(() => {
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        d.setHours(9, 0, 0, 0);
+        const [y, m, d] = todayInPT().split('-').map(Number);
 
-        return d;
+        return new Date(y, m - 1, d + 1, 9, 0, 0, 0);
     }, []);
 
     const defaultStartStr = useMemo(
-        () => formatDateTimeLocal(tomorrow),
+        () => formatUtcStringFromPt(tomorrow),
         [tomorrow],
     );
     const defaultEndStr = useMemo(
         () =>
-            formatDateTimeLocal(
-                new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000),
+            formatUtcStringFromPt(
+                new Date(
+                    tomorrow.getFullYear(),
+                    tomorrow.getMonth(),
+                    tomorrow.getDate(),
+                    13,
+                    0,
+                    0,
+                    0,
+                ),
             ),
         [tomorrow],
     );
@@ -170,14 +182,30 @@ export function BookingDetailsSection({
     };
 
     const handleAddDate = () => {
+        // Advance by whole days on the PT wall-clock (keeps 9:00 AM - 1:00 PM PT
+        // for each added date regardless of the admin's browser timezone).
         const nextDate = new Date(
-            tomorrow.getTime() + dates.length * 24 * 60 * 60 * 1000,
+            tomorrow.getFullYear(),
+            tomorrow.getMonth(),
+            tomorrow.getDate() + dates.length,
+            9,
+            0,
+            0,
+            0,
         );
-        const endDate = new Date(nextDate.getTime() + 4 * 60 * 60 * 1000);
+        const endDate = new Date(
+            nextDate.getFullYear(),
+            nextDate.getMonth(),
+            nextDate.getDate(),
+            13,
+            0,
+            0,
+            0,
+        );
         const newEntry: DateEntry = {
             id: generateDateId(),
-            start_datetime: formatDateTimeLocal(nextDate),
-            end_datetime: formatDateTimeLocal(endDate),
+            start_datetime: formatUtcStringFromPt(nextDate),
+            end_datetime: formatUtcStringFromPt(endDate),
         };
         const updated = [...dates, newEntry];
         setDates(updated);
@@ -382,7 +410,6 @@ export function BookingDetailsSection({
                                         </Label>
                                         <DateTimePicker
                                             value={dateEntry.start_datetime}
-                                            minDate={new Date()}
                                             onChange={(datetime) => {
                                                 if (datetime) {
                                                     handleUpdateDate(
@@ -414,7 +441,6 @@ export function BookingDetailsSection({
                                         <DateTimePicker
                                             value={dateEntry.end_datetime}
                                             startTime={dateEntry.start_datetime}
-                                            minDate={new Date()}
                                             onChange={(datetime) => {
                                                 if (datetime) {
                                                     handleUpdateDate(
@@ -459,25 +485,28 @@ export function BookingDetailsSection({
                             </Label>
                             <DateTimePicker
                                 value={startDatetime}
-                                minDate={
-                                    sheetMode !== 'edit'
-                                        ? new Date()
-                                        : undefined
-                                }
                                 onChange={(datetime) => {
-                                    form.setData('start_datetime', datetime);
-
-                                    if (datetime) {
-                                        const newEnd =
-                                            autoSetEndDateTime(datetime);
-                                        form.setData('end_datetime', newEnd);
-                                        form.setData('dates', [
-                                            {
-                                                start_datetime: datetime,
-                                                end_datetime: newEnd,
-                                            },
-                                        ]);
+                                    if (!datetime) {
+                                        form.setData(
+                                            'start_datetime',
+                                            datetime,
+                                        );
+                                        return;
                                     }
+
+                                    const newEnd = shiftEndPreservingDuration(
+                                        startDatetime,
+                                        endDatetime,
+                                        datetime,
+                                    );
+                                    form.setData('start_datetime', datetime);
+                                    form.setData('end_datetime', newEnd);
+                                    form.setData('dates', [
+                                        {
+                                            start_datetime: datetime,
+                                            end_datetime: newEnd,
+                                        },
+                                    ]);
                                 }}
                             />
                             {form.errors.start_datetime && (
@@ -500,11 +529,6 @@ export function BookingDetailsSection({
                             <DateTimePicker
                                 value={endDatetime}
                                 startTime={startDatetime}
-                                minDate={
-                                    sheetMode !== 'edit'
-                                        ? new Date()
-                                        : undefined
-                                }
                                 onChange={(datetime) => {
                                     form.setData('end_datetime', datetime);
                                     form.setData('dates', [
@@ -752,7 +776,7 @@ export function BookingDetailsSection({
 
                 <div className="flex gap-2 pt-4">
                     <Button
-                        onClick={handleSubmit}
+                        onClick={() => handleSubmit()}
                         disabled={form.processing}
                         className="flex-1"
                     >
@@ -776,6 +800,18 @@ export function BookingDetailsSection({
                         </Button>
                     )}
                 </div>
+
+                {sheetMode !== 'edit' && (
+                    <Button
+                        onClick={() => handleSubmit(true)}
+                        disabled={form.processing}
+                        variant="secondary"
+                        className="mt-2 w-full"
+                    >
+                        {form.processing && <Spinner className="size-4" />}
+                        Create &amp; Notify Caregivers
+                    </Button>
+                )}
 
                 <Button
                     onClick={() => setIsSheetOpen(false)}

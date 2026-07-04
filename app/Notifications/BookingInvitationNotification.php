@@ -118,18 +118,28 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
             .' '.($this->booking->client?->last_name ?? $this->booking->client_last_name);
 
         $city = $this->booking->bookingGroup?->address_city;
-
-        $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
-        $end = $this->booking->end_datetime->copy()->setTimezone('America/Los_Angeles');
-
-        $startFormatted = $start->format('n/j/y g:ia');
-        $endFormatted = $end->format('g:ia');
-
         $location = $city ? " in {$city}" : '';
+
+        $group = $this->booking->bookingGroup;
+        $isMultiDay = $group && ($group->bookings_count ?? $group->bookings()->count()) > 1;
+
+        if ($isMultiDay) {
+            $bookings = $group->bookings()->orderBy('start_datetime')->get(['start_datetime']);
+            $tz = 'America/Los_Angeles';
+            $firstDay = $bookings->first()->start_datetime->copy()->setTimezone($tz);
+            $lastDay = $bookings->last()->start_datetime->copy()->setTimezone($tz);
+
+            $body = "{$clientName}{$location}: multi-day job, {$firstDay->format('n/j')}–{$lastDay->format('n/j')}";
+        } else {
+            $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
+            $end = $this->booking->end_datetime->copy()->setTimezone('America/Los_Angeles');
+
+            $body = "{$clientName}{$location}: {$start->format('n/j/y g:ia')}–{$end->format('g:ia')}";
+        }
 
         return (new WebPushMessage)
             ->title("New {$this->booking->service_type_label} job available")
-            ->body("{$clientName}{$location}: {$startFormatted}-{$endFormatted}")
+            ->body($body)
             ->icon('/icon-192.png')
             ->badge('/icon-72.png')
             ->data(['url' => '/caregiver/jobs'])

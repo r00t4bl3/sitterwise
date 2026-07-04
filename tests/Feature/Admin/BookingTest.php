@@ -3,6 +3,7 @@
 use App\Enums\AssignmentResolution;
 use App\Enums\CaregiverStatus;
 use App\Events\BookingGroupSplit;
+use App\Events\BookingInvitationSent;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
@@ -194,6 +195,99 @@ describe('Booking - Admin', function () {
         ]);
     });
 
+    test('create and notify redirects to the new booking with the notify panel flag', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+            'status' => 'received',
+            'payment_status' => 'pending',
+            'notify_after' => true,
+        ]);
+
+        $booking = Booking::latest('id')->first();
+
+        $response->assertRedirect(route('bookings.show', ['booking' => $booking->ulid, 'notify' => 1]));
+    });
+
+    test('admin can create a booking with a custom (unlisted) hotel name and a manual address', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_name' => 'The Unlisted Inn',
+            'address_line1' => '500 Seaside Blvd',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'hotel_id' => null,
+            'hotel_name' => 'The Unlisted Inn',
+            'address_line1' => '500 Seaside Blvd',
+        ]);
+    });
+
+    test('admin custom hotel booking still requires an address', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'hotel_name' => 'The Unlisted Inn',
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertSessionHasErrors('address_line1');
+    });
+
+    test('admin hotel booking requires a hotel id or name', function () {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->addDays(1)->setHour(14)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->toISOString(),
+            'address_line1' => '500 Seaside Blvd',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'total_amount' => 100,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertSessionHasErrors('hotel_name');
+    });
+
     test('admin can create a petsitter booking without children', function () {
         $this->actingAs($this->user);
 
@@ -214,6 +308,36 @@ describe('Booking - Admin', function () {
         ]);
 
         $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+        ]);
+    });
+
+    test('admin can create a back-dated booking for work already performed', function () {
+        $this->actingAs($this->user);
+        $caregiver = Caregiver::factory()->create();
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'petsitter',
+            'location_type' => 'hotel',
+            'start_datetime' => now()->subDays(3)->setHour(14)->toISOString(),
+            'end_datetime' => now()->subDays(3)->setHour(18)->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'caregiver_id' => $caregiver->id,
+            'total_amount' => 100,
+            'status' => 'completed',
+            'payment_status' => 'pending',
+            'address_line1' => '123 Hotel Way',
+            'address_city' => 'Los Angeles',
+            'address_state' => 'CA',
+            'address_zip' => '90001',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('booking_groups', [
             'client_id' => $this->client->id,
@@ -549,6 +673,19 @@ describe('Booking - Admin', function () {
         $this->assertModelMissing($booking);
     });
 
+    test('booking show json returns the cancelled status for the edit sheet badge', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+        ]))->create(['status' => 'cancelled']);
+
+        $response = $this->getJson(route('bookings.show', $booking));
+
+        $response->assertSuccessful();
+        $response->assertJsonPath('status', 'cancelled');
+    });
+
     test('admin can search hotels', function () {
         $this->actingAs($this->user);
 
@@ -812,6 +949,85 @@ describe('Booking - Admin', function () {
         ]);
 
         $response->assertSessionHas('error');
+    });
+
+    test('notify propagates status and notifications to all received dates in a group', function () {
+        $this->actingAs($this->user);
+
+        $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
+        [$dateOne, $dateTwo] = Booking::factory()->count(2)->create([
+            'booking_group_id' => $group->id,
+            'status' => 'received',
+        ]);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $dateOne->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        expect($dateOne->refresh()->status)->toBe('pending');
+        expect($dateTwo->refresh()->status)->toBe('pending');
+
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id' => $dateOne->id,
+            'caregiver_id' => $caregiver->id,
+        ]);
+        $this->assertDatabaseHas('booking_caregiver_notifications', [
+            'booking_id' => $dateTwo->id,
+            'caregiver_id' => $caregiver->id,
+        ]);
+    });
+
+    test('notify sends a single invitation per caregiver for a multi-day group', function () {
+        Event::fake([BookingInvitationSent::class]);
+        $this->actingAs($this->user);
+
+        $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
+        $dates = Booking::factory()->count(3)->create([
+            'booking_group_id' => $group->id,
+            'status' => 'received',
+        ]);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $dates->first()->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        Event::assertDispatchedTimes(BookingInvitationSent::class, 1);
+    });
+
+    test('notify leaves confirmed and cancelled sibling dates untouched', function () {
+        $this->actingAs($this->user);
+
+        $group = BookingGroup::factory()->create(['client_id' => $this->client->id]);
+        $received = Booking::factory()->create([
+            'booking_group_id' => $group->id,
+            'status' => 'received',
+        ]);
+        $confirmed = Booking::factory()->create([
+            'booking_group_id' => $group->id,
+            'status' => 'confirmed',
+        ]);
+        $cancelled = Booking::factory()->create([
+            'booking_group_id' => $group->id,
+            'status' => 'cancelled',
+        ]);
+        $caregiver = Caregiver::factory()->create();
+
+        $this->post(route('bookings.notify', $received->id), [
+            'caregiver_ids' => [$caregiver->id],
+        ]);
+
+        expect($received->refresh()->status)->toBe('pending');
+        expect($confirmed->refresh()->status)->toBe('confirmed');
+        expect($cancelled->refresh()->status)->toBe('cancelled');
+
+        $this->assertDatabaseMissing('booking_caregiver_notifications', [
+            'booking_id' => $confirmed->id,
+        ]);
+        $this->assertDatabaseMissing('booking_caregiver_notifications', [
+            'booking_id' => $cancelled->id,
+        ]);
     });
 
     test('admin can create a booking with new children and save to profile', function () {
@@ -1410,7 +1626,8 @@ describe('Booking - Admin', function () {
 
     // ---- Date validation tests for create vs update ----
 
-    test('admin cannot create a booking with a past start datetime', function () {
+    test('admin can create a booking with a past start datetime', function () {
+        // Back-dated jobs (work already performed) must be enterable and billable.
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
@@ -1433,7 +1650,8 @@ describe('Booking - Admin', function () {
             'address_zip' => '90001',
         ]);
 
-        $response->assertSessionHasErrors('start_datetime');
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
     });
 
     test('admin cannot create a booking with a past end datetime', function () {

@@ -138,10 +138,16 @@ export function BookingSheet({
                     className="w-full overflow-y-auto sm:max-w-2xl"
                 >
                     <SheetHeader>
-                        <SheetTitle>
+                        <SheetTitle className="flex items-center gap-2">
                             {sheetMode === 'edit' && 'Edit Booking'}
                             {sheetMode === 'duplicate' && 'Duplicate Booking'}
                             {sheetMode === 'create' && 'Create Booking'}
+                            {sheetMode === 'edit' && editingBooking?.status && (
+                                <StatusBadge
+                                    status={editingBooking.status}
+                                    bookingStatuses={booking_statuses}
+                                />
+                            )}
                         </SheetTitle>
                         <SheetDescription>
                             {sheetMode === 'edit' &&

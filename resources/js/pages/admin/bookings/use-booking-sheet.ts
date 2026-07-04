@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { formatDateTimeLocal } from '@/lib/datetime';
+import { formatUtcStringFromPt, todayInPT } from '@/lib/datetime';
 import type { Booking } from './types';
 
 export interface UseBookingSheetProps {
@@ -55,6 +55,7 @@ interface FormData {
     end_datetime: string;
     dates: Array<{ start_datetime: string; end_datetime: string }>;
     hotel_id: number | null;
+    hotel_name: string | null;
     address_id: number | null;
     caregiver_id: number | null;
     caregiver_notes: string;
@@ -191,6 +192,7 @@ export function useBookingSheet({
         end_datetime: '',
         dates: [],
         hotel_id: null,
+        hotel_name: '',
         address_id: null,
         caregiver_id: null,
         caregiver_notes: '',
@@ -613,34 +615,37 @@ export function useBookingSheet({
         setEditingBooking(null);
         setSheetMode('create');
 
+        // Build the default start/end as PT wall-clock (9:00 AM - 1:00 PM) so it
+        // matches the DateTimePicker/backend UTC convention. formatUtcStringFromPt
+        // reads the Date's local components as PT, so this stays correct no matter
+        // what timezone the admin's browser is in.
         let defaultStart: Date;
+        let defaultEnd: Date;
 
         if (date) {
-            defaultStart = new Date(`${date}T09:00`);
+            const [dy, dm, dd] = date.split('-').map(Number);
+            defaultStart = new Date(dy, dm - 1, dd, 9, 0, 0, 0);
+            defaultEnd = new Date(dy, dm - 1, dd, 13, 0, 0, 0);
         } else {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(9, 0, 0, 0);
-            defaultStart = tomorrow;
+            const [y, m, d] = todayInPT().split('-').map(Number);
+            defaultStart = new Date(y, m - 1, d + 1, 9, 0, 0, 0);
+            defaultEnd = new Date(y, m - 1, d + 1, 13, 0, 0, 0);
         }
-
-        const defaultEnd = new Date(
-            defaultStart.getTime() + 4 * 60 * 60 * 1000,
-        );
 
         form.setData({
             client_id: null,
             service_type: 'babysitter',
             location_type: 'private_home',
-            start_datetime: formatDateTimeLocal(defaultStart),
-            end_datetime: formatDateTimeLocal(defaultEnd),
+            start_datetime: formatUtcStringFromPt(defaultStart),
+            end_datetime: formatUtcStringFromPt(defaultEnd),
             dates: [
                 {
-                    start_datetime: formatDateTimeLocal(defaultStart),
-                    end_datetime: formatDateTimeLocal(defaultEnd),
+                    start_datetime: formatUtcStringFromPt(defaultStart),
+                    end_datetime: formatUtcStringFromPt(defaultEnd),
                 },
             ],
             hotel_id: null,
+            hotel_name: '',
             address_id: null,
             caregiver_id: null,
             caregiver_notes: '',
@@ -805,6 +810,7 @@ export function useBookingSheet({
                     },
                 ],
                 hotel_id: fullBooking.hotel_id,
+                hotel_name: fullBooking.hotel_name || '',
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
                 caregiver_notes: fullBooking.caregiver_notes || '',
@@ -990,6 +996,7 @@ export function useBookingSheet({
                     },
                 ],
                 hotel_id: fullBooking.hotel_id,
+                hotel_name: fullBooking.hotel_name || '',
                 address_id: fullBooking.address_id,
                 caregiver_id: null,
                 caregiver_notes: '',
@@ -1096,7 +1103,7 @@ export function useBookingSheet({
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = (notifyAfter = false) => {
         const start = form.data.start_datetime;
         const end = form.data.end_datetime;
 
@@ -1133,6 +1140,7 @@ export function useBookingSheet({
                 notes: p.notes || '',
             })),
             save_children_pets_to_profile: saveChildrenPetsToProfile,
+            notify_after: notifyAfter,
         }));
 
         if (sheetMode === 'edit') {

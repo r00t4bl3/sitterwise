@@ -8,6 +8,7 @@ import {
     History,
     MapPin,
     MapPinCheckInside,
+    X,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -228,13 +229,31 @@ export function NotifyCaregiversSheet({
                         </div>
                     </div>
 
-                    <input
-                        type="text"
-                        value={searchInput}
-                        onChange={handleSearchInput}
-                        placeholder="Search by name..."
-                        className="w-full rounded-md border border-border px-3 py-1.5 text-xs outline-none focus:border-primary"
-                    />
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={handleSearchInput}
+                            placeholder="Search by name..."
+                            className="w-full rounded-md border border-border px-3 py-1.5 pr-8 text-xs outline-none focus:border-primary"
+                        />
+                        {searchInput && (
+                            <button
+                                type="button"
+                                aria-label="Clear search"
+                                onClick={() => {
+                                    setSearchInput('');
+                                    if (debounceRef.current) {
+                                        clearTimeout(debounceRef.current);
+                                    }
+                                    onSearchChange?.('', ageFilter);
+                                }}
+                                className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {(() => {

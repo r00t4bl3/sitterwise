@@ -91,6 +91,9 @@ class GuestBookingService
 
     public function validateOnly(Request $request)
     {
+        $serviceType = ServiceType::tryFrom((string) $request->input('service_type'));
+        $childRequired = ! $serviceType || $serviceType->requiresChild();
+
         $validated = $request->validate([
             'client_first_name' => 'required|string|max:255',
             'client_last_name' => 'required|string|max:255',
@@ -120,7 +123,7 @@ class GuestBookingService
             'special_needs_notes' => 'nullable|string',
             'how_did_you_hear' => 'required|string|max:255',
             'sms_consent' => 'required|boolean',
-            'new_children' => 'required|array|min:1',
+            'new_children' => $childRequired ? 'required|array|min:1' : 'nullable|array',
             'new_children.*.name' => 'required|string|max:255',
             'new_children.*.gender' => 'nullable|in:male,female',
             'new_children.*.birth_month' => 'nullable|string',

@@ -19,16 +19,39 @@ class NotifyCaregiversJob implements ShouldQueue
 
     public $backoff = 10;
 
+    /**
+     * @param  int[]|null  $bookingIds  All booking dates in the group to record notifications for.
+     *                                  Defaults to just the primary booking. The invitation itself is
+     *                                  still sent once per caregiver — the primary booking's message
+     *                                  already conveys the full multi-day trip.
+     */
     public function __construct(
         public Booking $booking,
         public array $caregiverIds,
+        public ?array $bookingIds = null,
     ) {}
 
     public function handle(): void
     {
         $now = now();
 
-        $existing = BookingCaregiverNotification::where('booking_id', $this->booking->id)
+        if (empty($this->caregiverIds)) {
+            return;
+        }
+
+        $bookingIds = ! empty($this->bookingIds) ? $this->bookingIds : [$this->booking->id];
+
+        foreach ($bookingIds as $bookingId) {
+            $this->recordNotifications((int) $bookingId, $now);
+        }
+
+        Caregiver::whereIn('id', $this->caregiverIds)->get()
+            ->each(fn (Caregiver $caregiver) => event(new BookingInvitationSent($this->booking, $caregiver)));
+    }
+
+    private function recordNotifications(int $bookingId, \DateTimeInterface $now): void
+    {
+        $existing = BookingCaregiverNotification::where('booking_id', $bookingId)
             ->whereIn('caregiver_id', $this->caregiverIds)
             ->pluck('caregiver_id')
             ->toArray();
@@ -38,7 +61,7 @@ class NotifyCaregiversJob implements ShouldQueue
 
         if (! empty($newIds)) {
             BookingCaregiverNotification::insert(array_map(fn (int $id): array => [
-                'booking_id' => $this->booking->id,
+                'booking_id' => $bookingId,
                 'caregiver_id' => $id,
                 'notified_at' => $now,
                 'created_at' => $now,
@@ -47,7 +70,7 @@ class NotifyCaregiversJob implements ShouldQueue
         }
 
         if (! empty($existingIds)) {
-            BookingCaregiverNotification::where('booking_id', $this->booking->id)
+            BookingCaregiverNotification::where('booking_id', $bookingId)
                 ->whereIn('caregiver_id', $existingIds)
                 ->update([
                     'notified_at' => $now,
@@ -56,14 +79,5 @@ class NotifyCaregiversJob implements ShouldQueue
                     'updated_at' => $now,
                 ]);
         }
-
-        $allIds = array_merge($newIds, $existingIds);
-
-        if (empty($allIds)) {
-            return;
-        }
-
-        Caregiver::whereIn('id', $allIds)->get()
-            ->each(fn (Caregiver $caregiver) => event(new BookingInvitationSent($this->booking, $caregiver)));
     }
 }

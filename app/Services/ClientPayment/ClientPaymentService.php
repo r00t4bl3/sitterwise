@@ -237,7 +237,13 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
         $this->ensureStripeCustomer($client);
 
-        $existingCount = ClientPaymentMethod::where('client_id', $client->id)->count();
+        // Make the newly added method the default whenever the client has no
+        // default yet — not only when it's their first card. Otherwise a client
+        // whose methods were synced/imported without a default (or lost it) still
+        // can't be charged, since billing requires a default payment method.
+        $hasDefault = ClientPaymentMethod::where('client_id', $client->id)
+            ->where('is_default', true)
+            ->exists();
 
         $paymentMethod = ClientPaymentMethod::create([
             'client_id' => $client->id,
@@ -248,7 +254,7 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             'exp_month' => $data['exp_month'],
             'exp_year' => $data['exp_year'],
             'status' => 'active',
-            'is_default' => $existingCount === 0,
+            'is_default' => ! $hasDefault,
             'metadata' => $data['metadata'] ?? [],
         ]);
 

@@ -26,6 +26,37 @@ it('can list quick links', function () {
     );
 });
 
+it('caregiver dashboard receives only caregiver-visible quick links', function () {
+    $caregiver = User::factory()->create([
+        'role' => 'caregiver',
+        'email_verified_at' => now(),
+    ]);
+
+    QuickLink::factory()->create([
+        'title' => 'Caregiver FAQ',
+        'is_active' => true,
+        'visible_for_roles' => ['admin', 'super_admin', 'caregiver'],
+    ]);
+    QuickLink::factory()->create([
+        'title' => 'Admin Only Tool',
+        'is_active' => true,
+        'visible_for_roles' => ['admin', 'super_admin'],
+    ]);
+    QuickLink::factory()->create([
+        'title' => 'Inactive Caregiver Link',
+        'is_active' => false,
+        'visible_for_roles' => ['caregiver'],
+    ]);
+
+    $response = $this->actingAs($caregiver)->get(route('dashboard'));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page
+        ->has('quickLinks', 1)
+        ->where('quickLinks.0.title', 'Caregiver FAQ')
+    );
+});
+
 it('can create a quick link', function () {
     $this->withoutExceptionHandling();
     $data = [

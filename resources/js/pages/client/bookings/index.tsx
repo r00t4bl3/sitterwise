@@ -129,8 +129,8 @@ export default function ClientBookingsIndex() {
                                                     bookingStatuses
                                                 }
                                             />
-                                            {booking.booking_group
-                                                ?.bookings_count > 1 && (
+                                            {(booking.booking_group
+                                                ?.bookings_count ?? 0) > 1 && (
                                                 <Badge
                                                     variant="outline"
                                                     className="text-xs"
@@ -138,7 +138,7 @@ export default function ClientBookingsIndex() {
                                                     Multi-Day (
                                                     {
                                                         booking.booking_group
-                                                            .bookings_count
+                                                            ?.bookings_count
                                                     }
                                                     )
                                                 </Badge>
