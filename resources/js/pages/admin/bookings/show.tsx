@@ -1,4 +1,4 @@
-import { Link, Head, useForm } from '@inertiajs/react';
+import { Link, Head, useForm, usePage } from '@inertiajs/react';
 import {
     Calendar,
     Copy,
@@ -461,10 +461,13 @@ export default function BookingDetail({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [notifySheetOpen, replaceSheetOpen]);
 
-    // "Create & Notify" lands here with ?notify=1 — open the Notify panel once,
-    // then strip the flag so a refresh doesn't reopen it.
+    // "Create & Notify" / "Unassign & Re-notify" land here with ?notify=1 — open
+    // the Notify panel, then strip the flag so a refresh doesn't reopen it.
+    // Keyed to the Inertia `url` (not just mount) so it also fires when we're
+    // redirected here from an in-app action that reuses this same component.
+    const { url } = usePage();
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(url.split('?')[1] ?? '');
 
         if (params.get('notify') === '1') {
             setNotifySheetOpen(true);
@@ -476,7 +479,7 @@ export default function BookingDetail({
                 window.location.pathname + (query ? `?${query}` : ''),
             );
         }
-    }, []);
+    }, [url]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
