@@ -2,38 +2,33 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ApplicantFinalReminderMail extends Mailable implements ShouldQueue
+class ApplicantFinalReminderMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $email,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Last chance — finish your Sitterwise application',
-        );
+        return 'd-33fa38edec7f4b2cb39b78d2ab652c9f';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.final-reminder',
-        );
+        return [
+            'apply_url' => url('/caregiver/apply'),
+        ];
     }
 
-    public function attachments(): array
+    protected function subjectLine(): string
     {
-        return [];
+        return 'Last chance — finish your Sitterwise application';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.final-reminder';
     }
 }

@@ -119,4 +119,17 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Team BCC Address
+    |--------------------------------------------------------------------------
+    |
+    | When set, SendGridDynamicMail emails are BCC'd to this address so the team
+    | keeps a copy of everything that goes out. Left null (off) until SendGrid
+    | sender auth for the new from-address and the recipient cleanup are ready.
+    |
+    */
+
+    'team_bcc' => env('MAIL_TEAM_BCC'),
+
 ];

@@ -175,6 +175,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('applications/{application}', [ApplicationController::class, 'show'])->name('applications.show');
         Route::post('applications/{application}/references/{referenceRequest}/resend', [ApplicationController::class, 'resendReference'])->name('applications.references.resend');
         Route::patch('applications/{application}/references/{referenceRequest}', [ApplicationController::class, 'updateReference'])->name('applications.references.update');
+        Route::delete('applications/{application}/references/{referenceRequest}', [ApplicationController::class, 'destroyReference'])->name('applications.references.destroy');
         Route::post('applications/{application}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
         Route::post('applications/{application}/schedule-interview', [ApplicationController::class, 'scheduleInterview'])->name('applications.schedule-interview');
         Route::post('applications/{application}/background-check', [ApplicationController::class, 'startBackgroundCheck'])->name('applications.background-check');

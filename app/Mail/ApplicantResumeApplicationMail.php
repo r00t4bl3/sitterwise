@@ -2,38 +2,33 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ApplicantResumeApplicationMail extends Mailable implements ShouldQueue
+class ApplicantResumeApplicationMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $email,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Come back to your Sitterwise application',
-        );
+        return 'd-4cf619b4ce1e4b62b1508de56f6a1069';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.resume-application',
-        );
+        return [
+            'apply_url' => url('/caregiver/apply'),
+        ];
     }
 
-    public function attachments(): array
+    protected function subjectLine(): string
     {
-        return [];
+        return 'Come back to your Sitterwise application';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.resume-application';
     }
 }

@@ -142,27 +142,38 @@ class StoreCaregiverApplicationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $sponsorEmail = $this->input('sponsor.email');
-            $applicantEmail = session('verified_email');
+            // Normalize before comparing so case/whitespace variants of the same
+            // address (e.g. "John@x.com " vs "john@x.com") are treated as one.
+            $normalize = fn ($email) => strtolower(trim((string) $email));
+
+            $sponsorEmail = $normalize($this->input('sponsor.email'));
+            $applicantEmail = $normalize(session('verified_email'));
 
             if ($sponsorEmail && $sponsorEmail === $applicantEmail) {
                 $validator->errors()->add('sponsor.email', 'Sponsor email cannot match your email address.');
             }
 
             $references = $this->input('references', []);
-            $emails = array_column($references, 'email');
-            $uniqueEmails = array_unique($emails);
-
-            if (count($emails) !== count($uniqueEmails)) {
-                $validator->errors()->add('references', 'Reference emails must be unique.');
-            }
+            $seenEmails = [];
 
             foreach ($references as $index => $reference) {
-                if (isset($reference['email']) && $reference['email'] === $applicantEmail) {
+                $email = $normalize($reference['email'] ?? '');
+
+                if ($email === '') {
+                    continue;
+                }
+
+                if (in_array($email, $seenEmails, true)) {
+                    $validator->errors()->add("references.{$index}.email", 'This reference email is already listed. Each reference must have a unique email.');
+                } else {
+                    $seenEmails[] = $email;
+                }
+
+                if ($applicantEmail && $email === $applicantEmail) {
                     $validator->errors()->add("references.{$index}.email", 'Reference email cannot match your email address.');
                 }
 
-                if (isset($reference['email']) && $sponsorEmail && $reference['email'] === $sponsorEmail) {
+                if ($sponsorEmail && $email === $sponsorEmail) {
                     $validator->errors()->add("references.{$index}.email", 'This person is already listed as your sponsor and will receive a reference request.');
                 }
             }

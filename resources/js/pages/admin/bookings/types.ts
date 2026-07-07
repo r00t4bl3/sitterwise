@@ -84,6 +84,7 @@ export interface BookingGroup {
     admin_notes: string | null;
     corporate_id: string | null;
     requires_payment: boolean;
+    payment_form: string | null;
     special_considerations: string[] | null;
     bookings_count?: number;
     sibling_bookings?: Array<{

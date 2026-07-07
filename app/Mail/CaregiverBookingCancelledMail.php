@@ -3,57 +3,41 @@
 namespace App\Mail;
 
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class CaregiverBookingCancelledMail extends Mailable implements ShouldQueue
+class CaregiverBookingCancelledMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SendGrid, SerializesModels;
-
     public function __construct(
         public Booking $booking,
         public string $reason,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $data = $this->booking->toEmailData();
+        return 'd-286f15d2045541babef403f5fde86cef';
+    }
 
+    protected function templateData(): array
+    {
         $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
 
-        $data['service_time_pretty'] = $start->format('g:i A');
-        $data['caregiver_first_name'] = $this->booking->caregiver?->first_name ?? 'Sitter';
-        $data['cancellation_reason'] = $this->reason;
+        $data = [
+            'booking_id' => $this->booking->id,
+            'caregiver_first_name' => $this->booking->caregiver?->first_name ?? 'Sitter',
+            'service_type' => $this->booking->service_type_label,
+            'start_date' => $start->format('l, F j, Y'),
+            'start_time' => $start->format('g:i A'),
+        ];
 
-        $this->sendgrid([
-            'personalizations' => [
-                [
-                    'dynamic_template_data' => $data,
-                ],
-            ],
-            'template_id' => 'd-2a539fde38bb46788fc96baf7fb6366b',
-        ]);
+        if ($this->reason !== '') {
+            $data['reason'] = $this->reason;
+        }
 
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Job #'.$this->booking->id.' Has Been Cancelled',
-        );
+        return $data;
     }
 
-    public function content(): Content
+    protected function subjectLine(): string
     {
-        return new Content(
-            htmlString: ' ',
-        );
-    }
-
-    public function attachments(): array
-    {
-        return [];
+        return 'Job #'.$this->booking->id.' Has Been Cancelled';
     }
 }

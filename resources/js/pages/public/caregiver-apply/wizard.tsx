@@ -610,6 +610,48 @@ export default function Wizard({
                     hasError = true;
                 }
             });
+
+            // Mirror the backend: reference emails must be unique and cannot
+            // match the sponsor or the applicant (compared case-insensitively).
+            const normalizeEmail = (email: string) =>
+                email.trim().toLowerCase();
+            const sponsorEmail = normalizeEmail(data.sponsor.email || '');
+            const applicantEmail = normalizeEmail(data.personal.email || '');
+            const seenEmails = new Set<string>();
+
+            data.references.forEach((ref, index) => {
+                const email = normalizeEmail(ref.email || '');
+
+                if (!email) {
+                    return;
+                }
+
+                if (seenEmails.has(email)) {
+                    form.setError(
+                        `references.${index}.email`,
+                        'This reference email is already listed. Each reference must have a unique email.',
+                    );
+                    hasError = true;
+                } else {
+                    seenEmails.add(email);
+                }
+
+                if (applicantEmail && email === applicantEmail) {
+                    form.setError(
+                        `references.${index}.email`,
+                        'Reference email cannot match your email address.',
+                    );
+                    hasError = true;
+                }
+
+                if (sponsorEmail && email === sponsorEmail) {
+                    form.setError(
+                        `references.${index}.email`,
+                        'This person is already listed as your sponsor and will receive a reference request.',
+                    );
+                    hasError = true;
+                }
+            });
         }
 
         if (step === 6) {

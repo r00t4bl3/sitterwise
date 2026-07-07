@@ -3,49 +3,42 @@
 namespace App\Mail;
 
 use App\Models\BookingGroup;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Password;
-use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class ClientGroupBookingCreatedMail extends Mailable
+class ClientGroupBookingCreatedMail extends SendGridDynamicMail
 {
-    use Queueable, SendGrid, SerializesModels;
-
     public function __construct(public BookingGroup $bookingGroup) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $data = $this->bookingGroup->toEmailData();
+        return 'd-9304fcd2ccf046e6913979cdfbb7a6c5';
+    }
 
+    protected function templateData(): array
+    {
+        $emailData = $this->bookingGroup->toEmailData();
+
+        $data = [
+            'client_first_name' => $this->bookingGroup->client_first_name,
+            'booking_number' => $this->bookingGroup->bookings->first()?->ulid,
+            'service_type' => $emailData['service_name'],
+            'location' => $emailData['location'],
+            'bookings' => $emailData['dates'],
+        ];
+
+        // Guest submissions carry a password-setup link so the client can claim
+        // their new account from the email.
         $user = $this->bookingGroup->client?->user;
         if ($user && $this->bookingGroup->submission_type === 'guest') {
             $token = Password::broker()->createToken($user);
             $data['password_setup_url'] = url('/reset-password/'.$token.'?email='.urlencode($user->email));
         }
 
-        $this->sendgrid([
-            'personalizations' => [
-                [
-                    'dynamic_template_data' => $data,
-                ],
-            ],
-            'template_id' => 'd-53f1d52866924c3096bd0d7deae965e6',
-        ]);
-
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Group Booking Request Received',
-        );
+        return $data;
     }
 
-    public function content(): Content
+    protected function subjectLine(): string
     {
-        return new Content(
-            htmlString: ' ',
-        );
+        return 'Group Booking Request Received';
     }
 }

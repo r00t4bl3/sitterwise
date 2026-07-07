@@ -22,6 +22,7 @@ import { formatPhoneDisplay } from '@/lib/phone';
 interface Booking {
     id: number;
     ulid: string;
+    corporate_id: string | null;
     service_type: string;
     client_name: string;
     client_phone: string | null;
@@ -143,6 +144,11 @@ export default function JobDetail({ booking }: PageProps) {
                             View job details
                         </p>
                     </div>
+                    {booking.corporate_id && (
+                        <span className="ml-auto inline-flex items-center gap-1 rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground">
+                            Corporate Job #: {booking.corporate_id}
+                        </span>
+                    )}
                 </div>
 
                 <div className="rounded-lg border border-border bg-card p-6">

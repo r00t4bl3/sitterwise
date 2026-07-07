@@ -571,7 +571,48 @@ describe('Caregiver Application - Validation Rules', function () {
 
         $response = $this->post('/caregiver/apply/submit', $data);
 
-        $response->assertSessionHasErrors('references');
+        $response->assertSessionHasErrors('references.1.email');
+    });
+
+    it('rejects duplicate reference emails that differ only by case or whitespace', function () {
+        Session::put('verified_email', 'case-dup-refs@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('case-dup-refs@example.com');
+        // Same address as reference 0, but upper-cased and padded — the old
+        // case-sensitive check let this through and created a duplicate row.
+        $data['references'][1]['email'] = '  '.strtoupper($data['references'][0]['email']).' ';
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.1.email');
+        expect(ReferenceRequest::count())->toBe(0);
+    });
+
+    it('rejects a reference email that matches the sponsor case-insensitively', function () {
+        Session::put('verified_email', 'ref-matches-sponsor@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('ref-matches-sponsor@example.com');
+        $data['references'][0]['email'] = strtoupper($data['sponsor']['email']);
+
+        $response = $this->post('/caregiver/apply/submit', $data);
+
+        $response->assertSessionHasErrors('references.0.email');
+    });
+
+    it('stores reference and sponsor emails normalized to lowercase and trimmed', function () {
+        Session::put('verified_email', 'normalize-write@example.com');
+        Session::put('verified_at', now());
+
+        $data = caregiverApplicationGetValidApplicationData('normalize-write@example.com');
+        $data['references'][0]['email'] = '  Mixed.Case@Example.com  ';
+        $data['sponsor']['email'] = 'Sponsor.CAPS@Example.com';
+
+        $this->post('/caregiver/apply/submit', $data);
+
+        expect(ReferenceRequest::where('reference_email', 'mixed.case@example.com')->exists())->toBeTrue();
+        expect(ReferenceRequest::where('reference_email', 'sponsor.caps@example.com')->exists())->toBeTrue();
     });
 
     it('validates reference email cannot match applicant email', function () {

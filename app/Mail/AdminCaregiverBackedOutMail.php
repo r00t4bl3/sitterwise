@@ -2,17 +2,10 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class AdminCaregiverBackedOutMail extends Mailable implements ShouldQueue
+class AdminCaregiverBackedOutMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $caregiverName,
         public int $caregiverId,
@@ -20,18 +13,33 @@ class AdminCaregiverBackedOutMail extends Mailable implements ShouldQueue
         public string $reason,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: "Caregiver {$this->caregiverName} has backed out of job #{$this->bookingId}",
-        );
+        return 'd-44ad02d6c50343709900263b8d1c3b28';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.admin-caregiver-backed-out',
-        );
+        return [
+            'booking_id' => $this->bookingId,
+            'caregiver_name' => $this->caregiverName,
+            'reason' => $this->reason,
+            'jobs_url' => url('/caregivers/'.$this->caregiverId.'/jobs'),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return "Caregiver {$this->caregiverName} has backed out of job #{$this->bookingId}";
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.admin-caregiver-backed-out';
+    }
+
+    protected function shouldBccTeam(): bool
+    {
+        return false;
     }
 }

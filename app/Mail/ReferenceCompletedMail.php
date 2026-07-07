@@ -3,33 +3,41 @@
 namespace App\Mail;
 
 use App\Models\ReferenceRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ReferenceCompletedMail extends Mailable
+class ReferenceCompletedMail extends SendGridDynamicMail
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public ReferenceRequest $reference,
         public string $applicantName,
         public ?string $reviewUrl = null,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            subject: "Reference Completed — {$this->reference->reference_name} for {$this->applicantName}",
-        );
+        return 'd-622707caa2b54456a6921f032fb1af3e';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.reference-completed',
-        );
+        return [
+            'applicant_name' => $this->applicantName,
+            'reference_name' => $this->reference->reference_name,
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return "Reference Completed — {$this->reference->reference_name} for {$this->applicantName}";
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.reference-completed';
+    }
+
+    protected function shouldBccTeam(): bool
+    {
+        // Admin-facing: addressed to the team directly, so no team BCC.
+        return false;
     }
 }

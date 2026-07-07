@@ -300,6 +300,59 @@ describe('Booking - Caregiver', function () {
 
     });
 
+    test('past-dated booking not shown in available list', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->forClient($client)->create([
+            'status' => 'received',
+            'start_datetime' => now()->subDays(1)->setHour(9),
+            'end_datetime' => now()->subDays(1)->setHour(13),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+            'claimed' => false,
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->get('/bookings');
+
+        $response->assertSuccessful();
+        $response->inertiaProps('bookings', function ($bookings) {
+            expect($bookings)->toBeArray()->toHaveCount(0);
+        });
+    });
+
+    test('still-upcoming booking is shown in available list', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->forClient($client)->create([
+            'status' => 'received',
+            'start_datetime' => now()->addDays(1)->setHour(9),
+            'end_datetime' => now()->addDays(1)->setHour(13),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+            'claimed' => false,
+        ]);
+
+        $this->actingAs($caregiver->user);
+
+        $response = $this->get('/bookings');
+
+        $response->assertSuccessful();
+        $response->inertiaProps('bookings', function ($bookings) use ($booking) {
+            expect($bookings)->toBeArray()->toHaveCount(1);
+            expect($bookings[0]['id'])->toBe($booking->id);
+        });
+    });
+
     test('cannot confirm another caregiver reservation', function () {
         $caregiver1 = Caregiver::factory()->create();
         $caregiver2 = Caregiver::factory()->create();

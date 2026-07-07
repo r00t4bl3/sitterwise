@@ -2,41 +2,43 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class CaregiverOnHoldCheckinMail extends Mailable implements ShouldQueue
+class CaregiverOnHoldCheckinMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $caregiverName,
         public int $daysOnHold,
         public string $tier,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $subject = match ($this->tier) {
+        return 'd-4de573218a71436d849f2c67a6d9e6e7';
+    }
+
+    protected function templateData(): array
+    {
+        return [
+            'caregiver_name' => $this->caregiverName,
+            'days_on_hold' => $this->daysOnHold,
+            'is_final' => $this->tier === 'final',
+            'is_reminder' => $this->tier === 'reminder',
+            'pause_settings_url' => url('/settings/caregiver/pause'),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return match ($this->tier) {
             'final' => 'Action needed: Your Sitterwise account will be archived soon',
             'reminder' => "It's been {$this->daysOnHold} days — ready to come back?",
             default => 'Haven\'t seen you in a while — checking in!',
         };
-
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: $subject,
-        );
     }
 
-    public function content(): Content
+    protected function bladeView(): ?string
     {
-        return new Content(
-            view: 'emails.caregiver-on-hold-checkin',
-        );
+        return 'emails.caregiver-on-hold-checkin';
     }
 }

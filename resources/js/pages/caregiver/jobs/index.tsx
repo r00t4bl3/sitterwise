@@ -62,6 +62,7 @@ interface BookingStatus {
 interface Booking {
     id: number;
     ulid: string;
+    corporate_id: string | null;
     assignment_id: number | null;
     assignment_resolution: string | null;
     service_type: string;
@@ -514,6 +515,12 @@ export default function CaregiverJobsIndex() {
                                             <div className="text-sm text-foreground">
                                                 {job.client_name || '—'}
                                             </div>
+                                            {job.corporate_id && (
+                                                <div className="mt-0.5 text-xs font-medium text-foreground">
+                                                    Corporate Job #:{' '}
+                                                    {job.corporate_id}
+                                                </div>
+                                            )}
                                             <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
                                                 {job.location_type ===
                                                 'hotel' ? (

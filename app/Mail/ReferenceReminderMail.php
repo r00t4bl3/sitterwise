@@ -2,35 +2,37 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ReferenceReminderMail extends Mailable implements ShouldQueue
+class ReferenceReminderMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $referenceName,
         public string $applicantName,
         public string $token,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: "Reminder: Reference request for {$this->applicantName}",
-        );
+        return 'd-0ca264e3ff9140f5be97765b372f6846';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.reference-reminder',
-        );
+        return [
+            'reference_name' => $this->referenceName,
+            'applicant_name' => $this->applicantName,
+            'reference_url' => route('references.show', $this->token),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return "Reminder: Reference request for {$this->applicantName}";
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.reference-reminder';
     }
 }

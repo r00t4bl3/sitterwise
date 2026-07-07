@@ -772,6 +772,9 @@ export default function Bookings() {
                                                     )}
                                                     {booking.booking_group
                                                         ?.requires_payment &&
+                                                        booking.booking_group
+                                                            ?.payment_form ===
+                                                            'Stripe' &&
                                                         booking.payment_status !==
                                                             'paid' &&
                                                         !clients_with_payment_capability.includes(
@@ -999,6 +1002,10 @@ export default function Bookings() {
                                                                     {booking
                                                                         .booking_group
                                                                         ?.requires_payment &&
+                                                                        booking
+                                                                            .booking_group
+                                                                            ?.payment_form ===
+                                                                            'Stripe' &&
                                                                         booking.payment_status !==
                                                                             'paid' &&
                                                                         !clients_with_payment_capability.includes(

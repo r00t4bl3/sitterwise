@@ -341,6 +341,7 @@ export default function ApplicationShow() {
         interview,
     } = usePage<Props>().props;
     const [resending, setResending] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState<number | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [togglingItem, setTogglingItem] = useState<number | null>(null);
     const [declineNote, setDeclineNote] = useState('');
@@ -398,6 +399,26 @@ export default function ApplicationShow() {
                     {
                         preserveScroll: true,
                         onFinish: () => setResending(null),
+                    },
+                );
+            },
+        });
+    }
+
+    function handleDelete(refId: number) {
+        setConfirmDialog({
+            open: true,
+            title: 'Delete Reference',
+            message:
+                'Permanently remove this reference request? This cannot be undone. Use this to clear a duplicate.',
+            onConfirm: () => {
+                setConfirmDialog((prev) => ({ ...prev, open: false }));
+                setDeleting(refId);
+                router.delete(
+                    `/applications/${application.id}/references/${refId}`,
+                    {
+                        preserveScroll: true,
+                        onFinish: () => setDeleting(null),
                     },
                 );
             },
@@ -1607,6 +1628,21 @@ export default function ApplicationShow() {
                                                                 : 'Resend'}
                                                         </Button>
                                                     )}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            handleDelete(ref.id)
+                                                        }
+                                                        disabled={
+                                                            deleting === ref.id
+                                                        }
+                                                    >
+                                                        {deleting === ref.id
+                                                            ? 'Deleting...'
+                                                            : 'Delete'}
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>

@@ -33,7 +33,7 @@ class JobController extends Controller
             abort(403, 'Caregiver profile not found');
         }
 
-        $query = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating', 'assignments'])
+        $query = Booking::with(['client.user', 'hotel', 'address', 'caregiver', 'client', 'clientRating', 'caregiverRating', 'assignments', 'bookingGroup'])
             ->where('caregiver_id', $caregiver->id)
             ->whereIn('status', [BookingStatus::Confirmed->value, BookingStatus::Completed->value, BookingStatus::Paid->value]);
 
@@ -141,6 +141,10 @@ class JobController extends Controller
             'booking' => [
                 'id' => $booking->id,
                 'ulid' => $booking->ulid,
+                // The Care.com "Corporate Job #" (null for non-corporate bookings).
+                // Surfaced so caregivers copy this number onto the mileage form
+                // instead of our internal job id (#307-adjacent request).
+                'corporate_id' => $booking->corporate_id,
                 'service_type' => ServiceType::tryFrom($booking->service_type)?->label() ?? $booking->service_type,
                 'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
                 'client_phone' => $booking->client_phone ?? $booking->client->user?->phone,

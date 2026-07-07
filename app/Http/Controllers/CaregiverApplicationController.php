@@ -21,6 +21,7 @@ use App\Notifications\AdminNewApplicationNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -164,6 +165,10 @@ class CaregiverApplicationController extends Controller
             } else {
                 unset($validated['trustline_upload']);
             }
+
+            // Persist the whole application atomically: a failure partway through
+            // (e.g. a duplicate reference) must not leave a half-written applicant.
+            DB::beginTransaction();
 
             // Create User
             $user = User::create([
@@ -357,16 +362,17 @@ class CaregiverApplicationController extends Controller
             // Send reference request emails and persist records
             foreach ($validated['references'] as $reference) {
                 $token = Str::random(32);
+                $referenceEmail = strtolower(trim($reference['email']));
                 ReferenceRequest::create([
                     'token' => $token,
                     'caregiver_id' => $caregiver->id,
                     'reference_name' => $reference['first_name'].' '.$reference['last_name'],
-                    'reference_email' => $reference['email'],
+                    'reference_email' => $referenceEmail,
                     'relationship' => $reference['relationship'],
                     'years_known' => $reference['years_known'],
                     'is_sponsor' => false,
                 ]);
-                Mail::to($reference['email'])->queue(new ReferenceRequestMail(
+                Mail::to($referenceEmail)->queue(new ReferenceRequestMail(
                     $reference['first_name'].' '.$reference['last_name'],
                     $applicantName,
                     $token,
@@ -375,16 +381,17 @@ class CaregiverApplicationController extends Controller
 
             // Send reference request to sponsor
             $sponsorToken = Str::random(32);
+            $sponsorEmail = strtolower(trim($validated['sponsor']['email']));
             ReferenceRequest::create([
                 'token' => $sponsorToken,
                 'caregiver_id' => $caregiver->id,
                 'reference_name' => $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
-                'reference_email' => $validated['sponsor']['email'],
+                'reference_email' => $sponsorEmail,
                 'relationship' => $validated['sponsor']['relationship'] ?? null,
                 'years_known' => null,
                 'is_sponsor' => true,
             ]);
-            Mail::to($validated['sponsor']['email'])->queue(new ReferenceRequestMail(
+            Mail::to($sponsorEmail)->queue(new ReferenceRequestMail(
                 $validated['sponsor']['first_name'].' '.$validated['sponsor']['last_name'],
                 $applicantName,
                 $sponsorToken,
@@ -392,6 +399,8 @@ class CaregiverApplicationController extends Controller
 
             // Clear incomplete application tracking
             IncompleteApplication::where('email', $email)->delete();
+
+            DB::commit();
 
             // Clear session
             Session::forget(['verified_email', 'verified_at']);
@@ -404,6 +413,10 @@ class CaregiverApplicationController extends Controller
 
             return redirect()->route('caregiver.apply.thank-you');
         } catch (\Throwable $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+
             Log::channel('submission')->error('Application submission failed', [
                 'email' => $email,
                 'error' => $e->getMessage(),
@@ -533,10 +546,11 @@ class CaregiverApplicationController extends Controller
         ]);
 
         $newToken = Str::random(32);
+        $newEmail = strtolower(trim($validated['reference_email']));
 
         $referenceRequest->update([
             'reference_name' => $validated['reference_name'],
-            'reference_email' => $validated['reference_email'],
+            'reference_email' => $newEmail,
             'relationship' => $validated['relationship'] ?? $referenceRequest->relationship,
             'token' => $newToken,
             'submitted_at' => null,
@@ -551,7 +565,7 @@ class CaregiverApplicationController extends Controller
             'additional_comments' => null,
         ]);
 
-        Mail::to($validated['reference_email'])->queue(new ReferenceRequestMail(
+        Mail::to($newEmail)->queue(new ReferenceRequestMail(
             $validated['reference_name'],
             $caregiver->first_name.' '.$caregiver->last_name,
             $newToken,

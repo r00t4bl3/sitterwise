@@ -2,38 +2,37 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ApplicantPendingReferencesMail extends Mailable implements ShouldQueue
+class ApplicantPendingReferencesMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $applicantName,
         public int $daysSinceSubmission,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $subject = $this->daysSinceSubmission >= 7
-            ? 'Still waiting on your references — Sitterwise'
-            : 'Your Sitterwise references are still pending';
-
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: $subject,
-        );
+        return 'd-eaa36d01d9e948849e15e2afadb8b71d';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.applicant-pending-references',
-        );
+        return [
+            'applicant_name' => $this->applicantName,
+            'over_one_week' => $this->daysSinceSubmission >= 7,
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return $this->daysSinceSubmission >= 7
+            ? 'Still waiting on your references — Sitterwise'
+            : 'Your Sitterwise references are still pending';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.applicant-pending-references';
     }
 }

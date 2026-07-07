@@ -2,34 +2,36 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class CaregiverArchiveWarningMail extends Mailable implements ShouldQueue
+class CaregiverArchiveWarningMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $caregiverName,
         public int $daysOnHold,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Your Sitterwise account will be archived in 14 days',
-        );
+        return 'd-6a7ef80cc2b74e978c38d6c1ea897846';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.caregiver-archive-warning',
-        );
+        return [
+            'caregiver_name' => $this->caregiverName,
+            'days_on_hold' => $this->daysOnHold,
+            'pause_settings_url' => url('/settings/caregiver/pause'),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return 'Your Sitterwise account will be archived in 14 days';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.caregiver-archive-warning';
     }
 }

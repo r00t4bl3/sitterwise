@@ -222,6 +222,17 @@ class ApplicationController extends Controller
         return back()->with('success', 'Reference updated successfully.');
     }
 
+    public function destroyReference(CaregiverApplication $application, ReferenceRequest $referenceRequest)
+    {
+        if ($referenceRequest->caregiver_id !== $application->caregiver_id) {
+            abort(404);
+        }
+
+        $referenceRequest->delete();
+
+        return back()->with('success', 'Reference removed.');
+    }
+
     public function approve(CaregiverApplication $application, ApplicationActionRequest $request)
     {
         $caregiver = $application->caregiver;

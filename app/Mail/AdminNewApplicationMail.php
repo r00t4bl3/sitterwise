@@ -2,34 +2,40 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-
-class AdminNewApplicationMail extends Mailable
+class AdminNewApplicationMail extends SendGridDynamicMail
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $applicantName,
         public string $applicantEmail,
         public int $applicationId,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: "New Caregiver Application — {$this->applicantName}",
-        );
+        return 'd-15f3364a4b4f493a9caa6e7031d96685';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.admin-new-application',
-        );
+        return [
+            'applicant_name' => $this->applicantName,
+            'applicant_email' => $this->applicantEmail,
+            'application_url' => route('applications.show', $this->applicationId),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return "New Caregiver Application — {$this->applicantName}";
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.admin-new-application';
+    }
+
+    protected function shouldBccTeam(): bool
+    {
+        return false;
     }
 }

@@ -132,6 +132,61 @@ describe('Job show — admin access', function () {
     });
 });
 
+describe('Job show — Corporate (Care.com) Job #', function () {
+    test('an assigned caregiver sees the Corporate Job # for a Care.com booking', function () {
+        $booking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+            'corporate_id' => 'CARE-12345',
+        ]))->create([
+            'status' => 'confirmed',
+            'caregiver_id' => $this->caregiver->id,
+        ]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.show', $booking))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('caregiver/jobs/show')
+                ->where('booking.corporate_id', 'CARE-12345')
+            );
+    });
+
+    test('a non-corporate booking exposes a null Corporate Job # (nothing shown)', function () {
+        $booking = Booking::factory()->forClient($this->client)->create([
+            'status' => 'confirmed',
+            'caregiver_id' => $this->caregiver->id,
+        ]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.show', $booking))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('booking.corporate_id', null)
+            );
+    });
+
+    test('the My Jobs list carries the Corporate Job # for a Care.com booking', function () {
+        Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+            'corporate_id' => 'CARE-99999',
+        ]))->create([
+            'status' => 'completed',
+            'caregiver_id' => $this->caregiver->id,
+        ]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('caregiver/jobs/index')
+                ->where('jobs.data.0.corporate_id', 'CARE-99999')
+            );
+    });
+});
+
 describe('Job show — claimed by another caregiver (PII-free)', function () {
     test('invited caregiver sees the filled page, not the client PII, when another caregiver claimed the job', function () {
         $otherCaregiver = Caregiver::factory()->create();

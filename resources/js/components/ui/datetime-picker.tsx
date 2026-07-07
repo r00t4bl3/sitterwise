@@ -85,8 +85,30 @@ export function DateTimePicker({
         disabled
       })
     }
+
+    // Preserve an off-grid time (e.g. a 2:37 PM checkout) so the Select still
+    // displays it instead of falling back to the blank "Time" placeholder.
+    if (time && !options.some((o) => o.value === time)) {
+      const [h, m] = time.split(':').map(Number)
+      if (!isNaN(h) && !isNaN(m)) {
+        const hours12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+        const ampm = h < 12 ? 'AM' : 'PM'
+        const label = `${hours12}:${String(m).padStart(2, '0')} ${ampm}`
+
+        let disabled = false
+        if (startDate && date) {
+          const optionDate = new Date(date)
+          optionDate.setHours(h, m, 0, 0)
+          disabled = optionDate.getTime() - startDate.getTime() < MIN_DURATION_MS
+        }
+
+        options.push({ value: time, label: disabled ? `${label} (min 4h)` : label, disabled })
+        options.sort((a, b) => a.value.localeCompare(b.value))
+      }
+    }
+
     return options
-  }, [startTime, date])
+  }, [startTime, date, time])
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {

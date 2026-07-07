@@ -4,57 +4,59 @@ namespace App\Mail;
 
 use App\Models\Booking;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class AdminBookingCancelledMail extends Mailable implements ShouldQueue
+class AdminBookingCancelledMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SendGrid, SerializesModels;
-
     public function __construct(
         public Booking $booking,
         public string $reason,
         public User $cancelledBy,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $data = $this->booking->toEmailData();
+        return 'd-71b39db4e170449fba2de7234e8d5961';
+    }
 
+    protected function templateData(): array
+    {
+        $group = $this->booking->bookingGroup;
         $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
 
-        $data['service_time_pretty'] = $start->format('g:i A');
-        $data['cancellation_reason'] = $this->reason;
-
-        $this->sendgrid([
-            'personalizations' => [
-                [
-                    'dynamic_template_data' => $data,
-                ],
-            ],
-            'template_id' => 'd-97bbdd77080441da98575c65f9bd1901',
-        ]);
-
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Booking #'.$this->booking->id.' Has Been Cancelled',
+        $clientName = trim(
+            ($this->booking->client?->first_name ?? $group?->client_first_name).' '.
+            ($this->booking->client?->last_name ?? $group?->client_last_name)
         );
+
+        $data = [
+            'booking_id' => $this->booking->id,
+            'cancelled_by' => $this->cancelledBy->name,
+            'client_name' => $clientName ?: 'N/A',
+            'service_type' => $this->booking->service_type_label,
+            'start_date' => $start->format('l, F j, Y'),
+            'start_time' => $start->format('g:i A'),
+            'booking_url' => url('/bookings/'.$this->booking->id),
+        ];
+
+        if ($this->booking->caregiver) {
+            $data['caregiver_name'] = $this->booking->caregiver->first_name.' '.$this->booking->caregiver->last_name;
+        }
+
+        if ($this->reason !== '') {
+            $data['reason'] = $this->reason;
+        }
+
+        return $data;
     }
 
-    public function content(): Content
+    protected function subjectLine(): string
     {
-        return new Content(
-            htmlString: ' ',
-        );
+        return 'Booking #'.$this->booking->id.' Has Been Cancelled';
     }
 
-    public function attachments(): array
+    protected function shouldBccTeam(): bool
     {
-        return [];
+        return false;
     }
 }

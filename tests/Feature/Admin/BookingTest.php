@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
+use Database\Seeders\PricingRulesTableSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -751,6 +752,41 @@ describe('Booking - Admin', function () {
         $response->assertSee('location_types');
         $response->assertSee('booking_statuses');
         $response->assertSee('payment_statuses');
+    });
+
+    test('bookings index exposes payment_form so invoiced jobs can suppress the no-payment icon', function () {
+        $this->seed(PricingRulesTableSeeder::class);
+        $this->actingAs($this->user);
+
+        $stripeBooking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+        ]))->create([
+            'start_datetime' => now()->setHour(9),
+            'end_datetime' => now()->setHour(13),
+            'status' => 'received',
+        ]);
+
+        $invoicedBooking = Booking::factory()->withBookingGroup(fn ($g) => $g->state([
+            'client_id' => $this->client->id,
+            'service_type' => 'corporate_invoiced',
+        ]))->create([
+            'start_datetime' => now()->setHour(9),
+            'end_datetime' => now()->setHour(13),
+            'status' => 'received',
+        ]);
+
+        $this->get(route('bookings.index'))
+            ->assertSuccessful()
+            ->assertInertia(function (AssertableInertia $page) use ($stripeBooking, $invoicedBooking) {
+                $bookings = collect(data_get($page->toArray(), 'props.bookings'));
+
+                $stripe = $bookings->firstWhere('id', $stripeBooking->id);
+                $invoiced = $bookings->firstWhere('id', $invoicedBooking->id);
+
+                expect($stripe['booking_group']['payment_form'])->toBe('Stripe');
+                expect($invoiced['booking_group']['payment_form'])->toBe('OnPay (Payroll)');
+            });
     });
 
     test('booking creation captures client snapshot data', function () {

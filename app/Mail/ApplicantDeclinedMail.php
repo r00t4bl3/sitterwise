@@ -2,34 +2,39 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ApplicantDeclinedMail extends Mailable implements ShouldQueue
+class ApplicantDeclinedMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $applicantName,
         public ?string $reason = null,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Update on your Sitterwise application',
-        );
+        return 'd-fbfcb36f2d69474eb764f82ad1dac84b';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.application-declined',
-        );
+        $data = ['applicant_name' => $this->applicantName];
+
+        // Optional field: omit the key entirely so the template's {{#if}} hides it.
+        if ($this->reason !== null && $this->reason !== '') {
+            $data['reason'] = $this->reason;
+        }
+
+        return $data;
+    }
+
+    protected function subjectLine(): string
+    {
+        return 'Update on your Sitterwise application';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.application-declined';
     }
 }

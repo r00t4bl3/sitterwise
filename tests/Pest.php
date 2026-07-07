@@ -1,6 +1,14 @@
 <?php
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\Mail;
+use Sichikawa\LaravelSendgridDriver\Transport\SendgridTransport;
 use Tests\TestCase;
 
 /*
@@ -47,7 +55,28 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Send a mailable through the real SendGrid transport (with a mocked HTTP
+ * client) and return the JSON payload that would be POSTed to the SendGrid API.
+ * Used to assert branded-template migrations without hitting SendGrid.
+ *
+ * @return array<string, mixed>
+ */
+function captureSendGridPayload(Mailable $mailable, string $to = 'recipient@example.com'): array
 {
-    // ..
+    config(['mail.default' => 'sendgrid']);
+
+    $history = [];
+    $stack = HandlerStack::create(new MockHandler([
+        new Response(202, ['X-Message-Id' => 'test-message-id']),
+    ]));
+    $stack->push(Middleware::history($history));
+    $client = new Client(['handler' => $stack]);
+
+    Mail::extend('sendgrid', fn () => new SendgridTransport($client, 'fake-api-key'));
+    app('mail.manager')->purge('sendgrid');
+
+    Mail::to($to)->sendNow($mailable);
+
+    return json_decode((string) $history[0]['request']->getBody(), true);
 }

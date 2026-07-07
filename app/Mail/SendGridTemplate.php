@@ -13,38 +13,25 @@ use Sichikawa\LaravelSendgridDriver\SendGrid;
 
 class SendGridTemplate extends Mailable
 {
-    // Note: This file is reserved for template testing functions. It is not intended for production use.
+    // Dual-mode proof-of-concept for the SendGrid migration (#21). Setting BOTH a
+    // Blade content() body AND a sendgrid() dynamic template lets the SAME mailable
+    // render locally/in tests and send the branded template in production:
+    //   - The SendGrid trait's sendgrid() is a NO-OP unless config('mail.default')
+    //     === 'sendgrid', so on array/log/smtp (local + tests) the Blade body below
+    //     renders and can be previewed/asserted.
+    //   - In production (mail.default = sendgrid) the template is embedded and
+    //     SendGrid renders it, ignoring the message body.
     use Queueable, SendGrid, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(public Booking $booking) {}
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
-
-        $dynamic_template_data = $this->booking->toEmailData();
-
         $this->sendgrid([
             'personalizations' => [
-                [
-                    // 'dynamic_template_data' => $this->booking->toEmailData(),
-                    'dynamic_template_data' => [
-                        'service_date_pretty' => 'Fri, Jun 5, 2026',
-                        'service_time_pretty' => '9:00 AM - 5:00 PM',
-                        'caregiver_first_name' => 'Jon',
-                        'client_name' => 'Sansa Stark',
-                        'service_name' => 'Childcare',
-                        'cancellation_reason' => 'Winter is here.',
-                    ],
-                ],
+                ['dynamic_template_data' => $this->booking->toEmailData()],
             ],
             'template_id' => 'd-2a539fde38bb46788fc96baf7fb6366b',
-            // d-53f1d52866924c3096bd0d7deae965e6
         ]);
 
         return new Envelope(
@@ -53,19 +40,18 @@ class SendGridTemplate extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
-            htmlString: ' ', // Setting a space as the content for SendGrid dynamic templates
+            view: 'emails.sendgrid-poc',
+            with: [
+                'marker' => 'BLADE_BODY_RENDERED',
+                'bookingId' => $this->booking->id,
+            ],
         );
     }
 
     /**
-     * Get the attachments for the message.
-     *
      * @return array<int, Attachment>
      */
     public function attachments(): array

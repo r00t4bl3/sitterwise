@@ -268,3 +268,54 @@ describe('Admin reference update', function () {
         'rating_overall_recommendation too high' => ['rating_overall_recommendation', 6],
     ]);
 });
+
+describe('Admin reference delete', function () {
+    it('deletes a reference and removes the row', function () {
+        actingAs($this->admin)
+            ->delete("/applications/{$this->application->id}/references/{$this->reference->id}")
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('reference_requests', ['id' => $this->reference->id]);
+    });
+
+    it('can delete a duplicate even after it was completed', function () {
+        $this->reference->update(['submitted_at' => now()]);
+
+        actingAs($this->admin)
+            ->delete("/applications/{$this->application->id}/references/{$this->reference->id}")
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('reference_requests', ['id' => $this->reference->id]);
+    });
+
+    it('returns 404 when the reference belongs to another application', function () {
+        $otherUser = User::factory()->create(['role' => 'caregiver']);
+        $otherCaregiver = Caregiver::create([
+            'user_id' => $otherUser->id,
+            'status' => CaregiverStatus::Applicant->value,
+            'first_name' => 'Other',
+            'last_name' => 'Applicant',
+            'slug' => 'other-applicant-'.Str::random(6),
+            'phone' => '555-9999',
+            'date_of_birth' => '1990-01-01',
+        ]);
+        $otherApplication = CaregiverApplication::create([
+            'caregiver_id' => $otherCaregiver->id,
+            'data' => ['personal' => ['first_name' => 'Other', 'last_name' => 'Applicant']],
+            'submitted_at' => now(),
+        ]);
+
+        actingAs($this->admin)
+            ->delete("/applications/{$otherApplication->id}/references/{$this->reference->id}")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('reference_requests', ['id' => $this->reference->id]);
+    });
+
+    it('requires authentication', function () {
+        $this->delete("/applications/{$this->application->id}/references/{$this->reference->id}")
+            ->assertRedirect('/login');
+
+        $this->assertDatabaseHas('reference_requests', ['id' => $this->reference->id]);
+    });
+});

@@ -41,7 +41,8 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             ->with(['booking.bookingGroup.bookings', 'booking.client', 'booking.client.user'])
             ->where('claimed', false)
             ->whereHas('booking', function ($query) {
-                $query->where('status', '!=', 'confirmed');
+                $query->where('status', '!=', 'confirmed')
+                    ->where('end_datetime', '>', now());
             })
             ->paginate(5)
             ->through(function ($notification) {

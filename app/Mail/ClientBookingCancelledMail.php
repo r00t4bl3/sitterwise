@@ -3,55 +3,42 @@
 namespace App\Mail;
 
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Sichikawa\LaravelSendgridDriver\SendGrid;
 
-class ClientBookingCancelledMail extends Mailable implements ShouldQueue
+class ClientBookingCancelledMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SendGrid, SerializesModels;
-
     public function __construct(
         public Booking $booking,
         public string $reason,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        $data = $this->booking->toEmailData();
+        return 'd-965c67b476c54002b0912d87f5805303';
+    }
 
+    protected function templateData(): array
+    {
         $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
+        $firstName = $this->booking->client?->first_name ?? $this->booking->bookingGroup?->client_first_name;
 
-        $data['service_time_pretty'] = $start->format('g:i A');
+        $data = [
+            'booking_id' => $this->booking->id,
+            'client_first_name' => $firstName ?: 'Valued Client',
+            'service_type' => $this->booking->service_type_label,
+            'start_date' => $start->format('l, F j, Y'),
+            'start_time' => $start->format('g:i A'),
+        ];
 
-        $this->sendgrid([
-            'personalizations' => [
-                [
-                    'dynamic_template_data' => $data,
-                ],
-            ],
-            'template_id' => 'd-34a42e715fa541e484c9c17030cdebbe',
-        ]);
+        if ($this->reason !== '') {
+            $data['reason'] = $this->reason;
+        }
 
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Your Booking Has Been Cancelled',
-        );
+        return $data;
     }
 
-    public function content(): Content
+    protected function subjectLine(): string
     {
-        return new Content(
-            htmlString: ' ',
-        );
-    }
-
-    public function attachments(): array
-    {
-        return [];
+        return 'Your Booking Has Been Cancelled';
     }
 }

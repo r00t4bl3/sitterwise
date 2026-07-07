@@ -3,44 +3,56 @@
 namespace App\Mail;
 
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class BookingReviewReminderMail extends Mailable
+class BookingReviewReminderMail extends SendGridDynamicMail
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public Booking $booking,
         public string $reviewUrl,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'How was your Sitterwise experience? Share your review!',
-        );
+        return 'd-ed4e08ffb28648f4aee1485389653810';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        $caregiverName = $this->booking->caregiver
+        return [
+            'caregiver_name' => $this->caregiverName(),
+            'service_date' => $this->serviceDate(),
+            'review_url' => $this->reviewUrl,
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return 'How was your Sitterwise experience? Share your review!';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.review-reminder';
+    }
+
+    protected function bladeData(): array
+    {
+        return [
+            'caregiverName' => $this->caregiverName(),
+            'date' => $this->serviceDate(),
+            'reviewUrl' => $this->reviewUrl,
+        ];
+    }
+
+    private function caregiverName(): string
+    {
+        return $this->booking->caregiver
             ? $this->booking->caregiver->first_name.' '.$this->booking->caregiver->last_name
             : 'your sitter';
+    }
 
-        $date = $this->booking->end_datetime->setTimezone('America/Los_Angeles')->format('l, F j, Y');
-
-        return new Content(
-            view: 'emails.review-reminder',
-            with: [
-                'caregiverName' => $caregiverName,
-                'date' => $date,
-                'reviewUrl' => $this->reviewUrl,
-            ],
-        );
+    private function serviceDate(): string
+    {
+        return $this->booking->end_datetime->copy()->setTimezone('America/Los_Angeles')->format('l, F j, Y');
     }
 }

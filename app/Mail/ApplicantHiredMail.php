@@ -2,34 +2,35 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 
-class ApplicantHiredMail extends Mailable implements ShouldQueue
+class ApplicantHiredMail extends SendGridDynamicMail implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $applicantName,
         public string $statusUrl,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: "You're hired! Complete your onboarding at Sitterwise",
-        );
+        return 'd-4ff3875d2aab4fd293662eabb8aa6e77';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.application-hired',
-        );
+        return [
+            'applicant_name' => $this->applicantName,
+            'status_url' => $this->statusUrl,
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return "You're hired! Complete your onboarding at Sitterwise";
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.application-hired';
     }
 }

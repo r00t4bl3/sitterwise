@@ -2,36 +2,40 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-
-class ApplicantConfirmationMail extends Mailable
+class ApplicantConfirmationMail extends SendGridDynamicMail
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public string $applicantName,
         public string $statusToken,
     ) {}
 
-    public function envelope(): Envelope
+    protected function templateId(): string
     {
-        return new Envelope(
-            from: config('mail.from.address', 'admin@sitterwise.io'),
-            subject: 'Your Sitterwise Application Has Been Received',
-        );
+        return 'd-46445a000ef24dc690dc7eda3f438f1e';
     }
 
-    public function content(): Content
+    protected function templateData(): array
     {
-        return new Content(
-            view: 'emails.applicant-confirmation',
-            with: [
-                'statusUrl' => url('/caregiver/apply/status/'.$this->statusToken),
-            ],
-        );
+        return [
+            'applicant_name' => $this->applicantName,
+            'status_url' => url('/caregiver/apply/status/'.$this->statusToken),
+        ];
+    }
+
+    protected function subjectLine(): string
+    {
+        return 'Your Sitterwise Application Has Been Received';
+    }
+
+    protected function bladeView(): ?string
+    {
+        return 'emails.applicant-confirmation';
+    }
+
+    protected function bladeData(): array
+    {
+        return [
+            'statusUrl' => url('/caregiver/apply/status/'.$this->statusToken),
+        ];
     }
 }
