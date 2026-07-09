@@ -57,6 +57,17 @@ describe('LifesaverService rules', function () {
         expect($this->service->isLifesaver($booking))->toBeTrue();
     });
 
+    test('a backfilled booking created after its start is not short-notice', function () {
+        // Import/backfill: created now, but the job already happened months ago.
+        // The signed lead time is large-negative and must NOT read as short notice.
+        $booking = lifesaverBooking($this->client, [
+            'start_datetime' => now()->subMonths(2),
+            'end_datetime' => now()->subMonths(2)->addHours(4),
+        ]);
+
+        expect($this->service->isLifesaver($booking))->toBeFalse();
+    });
+
     test('rule 1: unclaimed past the threshold makes it a Lifesaver', function () {
         // hours_unclaimed = 10; first notified 11h ago, still unassigned/open.
         $booking = lifesaverBooking($this->client);
@@ -125,6 +136,21 @@ describe('wasLifesaverRescue (for badges)', function () {
         ]);
 
         expect($this->service->wasLifesaverRescue($booking))->toBeTrue();
+    });
+
+    test('false for a backfilled job whose start predates its creation', function () {
+        // The exact production case: historical jobs imported on one day with a
+        // start_datetime months earlier must not retroactively count as rescues.
+        $caregiver = Caregiver::factory()->create();
+        $booking = lifesaverBooking($this->client, [
+            'status' => 'completed',
+            'caregiver_id' => $caregiver->id,
+            'confirmed_at' => now(),
+            'start_datetime' => now()->subMonths(2),
+            'end_datetime' => now()->subMonths(2)->addHours(4),
+        ]);
+
+        expect($this->service->wasLifesaverRescue($booking))->toBeFalse();
     });
 
     test('false when confirmed promptly', function () {

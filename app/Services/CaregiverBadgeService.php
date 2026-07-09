@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Enums\BookingStatus;
+use App\Enums\CaregiverStatus;
 use App\Models\Booking;
 use App\Models\Caregiver;
+use App\Support\BusinessTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -47,7 +49,10 @@ class CaregiverBadgeService
         $daytimeCount = $this->countByTimeWindow($completedBookings, 8, 16);
         $infantCount = $this->countWithChildrenUnder2($completedBookings);
 
-        $tenureYears = $caregiver->created_at->diffInYears(now());
+        $memberSince = $this->getMemberSince($caregiver);
+        $tenureYears = $memberSince->diffInYears(now());
+
+        $onboardingComplete = $this->hasCompletedOnboarding($caregiver);
 
         return [
             // Getting Started
@@ -57,10 +62,10 @@ class CaregiverBadgeService
                 group: 'Getting Started',
                 tier: 'teal',
                 variant: 'checklist',
-                earned: $caregiver->onboarding_completed ?? false,
+                earned: $onboardingComplete,
                 earnedDate: null,
                 criteria: 'Complete the onboarding checklist and training quiz',
-                progress: $caregiver->onboarding_completed ? null : 'In progress',
+                progress: $onboardingComplete ? null : 'In progress',
             ),
 
             // Jobs Completed
@@ -255,7 +260,7 @@ class CaregiverBadgeService
                 tier: 'teal',
                 variant: 'cake',
                 earned: $tenureYears >= 1,
-                earnedDate: $tenureYears >= 1 ? $this->formatDate($caregiver->created_at->addYear()) : null,
+                earnedDate: $tenureYears >= 1 ? $this->formatDate($memberSince->addYear()) : null,
                 criteria: '1 year with Sitterwise',
                 progress: null,
             ),
@@ -266,7 +271,7 @@ class CaregiverBadgeService
                 tier: 'navy',
                 variant: 'cake',
                 earned: $tenureYears >= 3,
-                earnedDate: $tenureYears >= 3 ? $this->formatDate($caregiver->created_at->addYears(3)) : null,
+                earnedDate: $tenureYears >= 3 ? $this->formatDate($memberSince->addYears(3)) : null,
                 criteria: '3 years with Sitterwise',
                 progress: null,
             ),
@@ -277,11 +282,47 @@ class CaregiverBadgeService
                 tier: 'navy',
                 variant: 'cake',
                 earned: $tenureYears >= 5,
-                earnedDate: $tenureYears >= 5 ? $this->formatDate($caregiver->created_at->addYears(5)) : null,
+                earnedDate: $tenureYears >= 5 ? $this->formatDate($memberSince->addYears(5)) : null,
                 criteria: '5 years with Sitterwise',
                 progress: null,
             ),
         ];
+    }
+
+    /**
+     * Whether the caregiver has finished onboarding, for the "Ready, Set, Sit"
+     * badge. Active caregivers were onboarded (migrated accounts predate the
+     * checklist), otherwise every onboarding checklist item must be completed.
+     */
+    private function hasCompletedOnboarding(Caregiver $caregiver): bool
+    {
+        if ($caregiver->status === CaregiverStatus::Active) {
+            return true;
+        }
+
+        return $caregiver->onboardingChecklistItems()->exists()
+            && $caregiver->onboardingChecklistItems()->whereNull('completed_at')->doesntExist();
+    }
+
+    /**
+     * The caregiver's true start with Sitterwise, for tenure badges.
+     *
+     * Migrated accounts carry an import date in `created_at`, so tenure is
+     * anchored on the earliest of `created_at` and their first booking — the
+     * same real job history the "First Day" badge relies on.
+     */
+    private function getMemberSince(Caregiver $caregiver): CarbonImmutable
+    {
+        $created = $caregiver->created_at;
+        $earliestBooking = $caregiver->bookings()->min('start_datetime');
+
+        if ($earliestBooking === null) {
+            return $created;
+        }
+
+        $earliest = CarbonImmutable::parse($earliestBooking);
+
+        return $earliest->lessThan($created) ? $earliest : $created;
     }
 
     /**
@@ -333,10 +374,16 @@ class CaregiverBadgeService
     private function countByTimeWindow(Collection $bookings, int $startHour, int $endHour): int
     {
         return $bookings->filter(function (Booking $booking) use ($startHour, $endHour) {
-            $start = $booking->start_datetime;
-            $end = $booking->end_datetime;
+            // start/end are stored in UTC; the window is expressed in local
+            // (business) time, so compare against the Pacific wall-clock hour.
+            $start = $booking->start_datetime?->setTimezone(BusinessTime::TZ);
+            $end = $booking->end_datetime?->setTimezone(BusinessTime::TZ);
 
-            return $start?->hour >= $startHour && $end?->hour <= $endHour;
+            if ($start === null || $end === null) {
+                return false;
+            }
+
+            return $start->hour >= $startHour && $end->hour <= $endHour;
         })->count();
     }
 
@@ -360,11 +407,10 @@ class CaregiverBadgeService
                     continue;
                 }
 
-                $age = CarbonImmutable::now()->diffInYears(
-                    CarbonImmutable::createFromDate((int) $birthYear, (int) ($birthMonth ?? 1), 1),
-                );
+                $birthdate = CarbonImmutable::createFromDate((int) $birthYear, (int) ($birthMonth ?? 1), 1);
+                $age = $birthdate->diffInYears(CarbonImmutable::now());
 
-                if ($age < 2) {
+                if ($age >= 0 && $age < 2) {
                     return true;
                 }
             }

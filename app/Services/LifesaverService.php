@@ -62,7 +62,9 @@ class LifesaverService
             return false;
         }
 
-        return $booking->created_at->diffInHours($booking->start_datetime, false) < $this->shortNoticeHours();
+        $leadHours = $booking->created_at->diffInHours($booking->start_datetime, false);
+
+        return $leadHours >= 0 && $leadHours < $this->shortNoticeHours();
     }
 
     private function isUnclaimedTooLong(Booking $booking): bool
