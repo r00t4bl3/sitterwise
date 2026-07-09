@@ -150,6 +150,7 @@ class BookingGroup extends Model
         $serviceLabel = ServiceType::tryFrom($this->service_type)?->label() ?? $this->service_type;
 
         return [
+            'corporate_id' => $this->corporate_id,
             'client_first_name' => $this->client_first_name,
             'client_name' => $clientName,
             'client_email' => $this->client_email,

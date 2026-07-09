@@ -225,6 +225,7 @@ class Booking extends Model
             'last_charge_attempt_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'checkout_at' => 'datetime',
+            'lifesaver_override' => 'boolean',
             'total_amount' => 'decimal:2',
             'caregiver_amount' => 'decimal:2',
             'reimbursement' => 'decimal:2',
@@ -517,6 +518,7 @@ class Booking extends Model
         return [
             'booking_id' => $this->id,
             'job_id' => $this->id,
+            'corporate_id' => $group->corporate_id,
             'ulid' => $this->ulid,
             'client_first_name' => $group->client?->first_name ?? $group->client_first_name,
             'client_name' => $clientName,
