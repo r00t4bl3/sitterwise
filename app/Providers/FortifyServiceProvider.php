@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Enums\DiscoverySource;
+use App\Mail\PasswordResetMail;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -32,6 +34,27 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configurePasswordResetEmail();
+    }
+
+    /**
+     * Route the password-reset notification through our branded SendGrid
+     * template (falling back to the Blade view in local/test), instead of
+     * Laravel's default markdown notification.
+     */
+    private function configurePasswordResetEmail(): void
+    {
+        ResetPassword::toMailUsing(function ($notifiable, string $token) {
+            $resetUrl = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            $firstName = Str::before((string) ($notifiable->name ?? ''), ' ') ?: 'there';
+
+            return (new PasswordResetMail($firstName, $resetUrl))
+                ->to($notifiable->getEmailForPasswordReset());
+        });
     }
 
     /**
