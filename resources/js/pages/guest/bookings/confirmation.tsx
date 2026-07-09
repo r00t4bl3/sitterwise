@@ -1,5 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 import GuestLayout from '@/layouts/guest-layout';
+import { trackEvent } from '@/lib/analytics';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
 
 interface SiblingBooking {
@@ -37,6 +39,19 @@ export default function GuestBookingConfirmation() {
         booking: BookingData;
         passwordSetupUrl: string | null;
     };
+
+    // Conversion: a guest reached the booking confirmation. Fire GA4's
+    // recommended `generate_lead` (mark as a conversion in GA4) plus a custom
+    // `booking_complete`. Once per confirmation view.
+    const groupSize = booking.booking_group?.bookings_count ?? 1;
+    useEffect(() => {
+        trackEvent('booking_complete', {
+            booking_id: booking.ulid,
+            service_type: booking.service_type,
+            group_size: groupSize,
+        });
+        trackEvent('generate_lead', { currency: 'USD' });
+    }, [booking.ulid, booking.service_type, groupSize]);
 
     const hasSiblings =
         booking.booking_group && booking.booking_group.bookings_count > 1;

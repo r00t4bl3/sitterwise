@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Google Analytics 4 (Sitterwise Website). Production only; public
+         visitors only unless GA4_PUBLIC_ONLY is disabled. --}}
+    @php($gaMeasurementId = config('services.google_analytics.measurement_id'))
+    @if (app()->isProduction() && $gaMeasurementId && (! config('services.google_analytics.public_only') || auth()->guest()))
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaMeasurementId }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', '{{ $gaMeasurementId }}');
+        </script>
+    @endif
+
     {{-- Inline script to detect system dark mode preference and apply it immediately --}}
     <script>
         (function() {

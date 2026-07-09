@@ -63,4 +63,14 @@ return [
         'api_url' => env('AI_PARSER_API_URL', 'https://openrouter.ai/api/v1/chat/completions'),
     ],
 
+    // GA4 (property "Sitterwise Website"). Loaded only in production; override
+    // the id per environment with GA4_MEASUREMENT_ID. When public_only is true
+    // (default) the tag loads only for unauthenticated visitors (the public
+    // booking funnel), keeping staff-portal traffic out of the property. Set
+    // GA4_PUBLIC_ONLY=false to track the whole app.
+    'google_analytics' => [
+        'measurement_id' => env('GA4_MEASUREMENT_ID', 'G-YYT81PNEB4'),
+        'public_only' => env('GA4_PUBLIC_ONLY', true),
+    ],
+
 ];
