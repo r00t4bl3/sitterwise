@@ -685,26 +685,38 @@ class AdminBookingService implements BookingServiceInterface
     {
         $validated = $request->validated();
 
-        // Create new client address if private_home and new address provided
+        // Resolve which client this booking's group will belong to after this
+        // save. The edit sheet can re-point the whole group to a different
+        // client, so everything below must consistently use the target client,
+        // never a mix of old and new (see the Kirwan/Sarma cross-contamination
+        // incident, Jul 2026).
+        $currentClientId = $booking->client_id !== null ? (int) $booking->client_id : null;
+        $targetClientId = ! empty($validated['client_id'])
+            ? (int) $validated['client_id']
+            : $currentClientId;
+        $clientChanged = $currentClientId !== null
+            && $targetClientId !== null
+            && $targetClientId !== $currentClientId;
+
+        // Create new client address if private_home and new address provided.
+        // Skipped when the client is being changed: the form still carries the
+        // PREVIOUS family's address, which must not be saved into the new
+        // client's address book. The booking group keeps its raw address
+        // fields either way.
         $addressId = $validated['address_id'] ?? null;
         if (
             ($validated['location_type'] ?? null) === 'private_home' &&
             empty($addressId) &&
-            ! empty($validated['address_line1'])
+            ! empty($validated['address_line1']) &&
+            $targetClientId &&
+            ! $clientChanged
         ) {
-            $clientAddress = ClientAddress::create([
-                'client_id' => $booking->client_id,
-                'line1' => $validated['address_line1'],
-                'line2' => $validated['address_line2'] ?? null,
-                'city' => $validated['address_city'],
-                'state' => $validated['address_state'],
-                'zip' => $validated['address_zip'],
-            ]);
-            $addressId = $clientAddress->id;
+            $addressId = $this->firstOrCreateClientAddress($targetClientId, $validated)->id;
         }
 
-        // Update client snapshot data
-        $client = Client::with(['children', 'pets', 'user'])->find($booking->client_id);
+        // Snapshot data always comes from the target client so the group's
+        // denormalized client fields can never diverge from its client_id.
+        $client = Client::with(['children', 'pets', 'user'])->find($targetClientId);
 
         $isGroupBooking = ($validated['service_type'] ?? $booking->service_type) === 'group_childcare_invoiced';
         $hasChildrenNotes = ! empty($validated['children_notes']);
@@ -721,9 +733,9 @@ class AdminBookingService implements BookingServiceInterface
                     if (! empty($childData['name'])) {
                         $childrenSnapshot[] = [
                             'name' => $childData['name'],
-                            'gender' => $childData['gender'] ?? null,
-                            'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                            'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                            'gender' => ! empty($childData['gender']) ? $childData['gender'] : null,
+                            'birth_month' => ! empty($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                            'birth_year' => ! empty($childData['birth_year']) ? (int) $childData['birth_year'] : null,
                         ];
                     }
                 }
@@ -754,12 +766,16 @@ class AdminBookingService implements BookingServiceInterface
             $petsSnapshot = $booking->pets ?? [];
         }
 
-        // Sync to client profile when checkbox is checked
-        if (! $isGroupBooking && ($validated['save_children_pets_to_profile'] ?? false) && $booking->client_id) {
+        // Sync to client profile when checkbox is checked. Skipped when the
+        // client is being changed in the same save: the form's children/pets
+        // were auto-filled from the NEWLY selected client's profile, so
+        // "syncing" would copy one family's data onto another family's
+        // profile and delete the original children.
+        if (! $isGroupBooking && ($validated['save_children_pets_to_profile'] ?? false) && $targetClientId && ! $clientChanged) {
             // Use childrenSnapshot (which may be existing or new)
-            $this->syncClientChildren($booking->client_id, $childrenSnapshot);
-            $this->syncClientPets($booking->client_id, $petsSnapshot);
-            $this->saveClientAddress($booking->client_id, $validated);
+            $this->syncClientChildren($targetClientId, $childrenSnapshot);
+            $this->syncClientPets($targetClientId, $petsSnapshot);
+            $this->saveClientAddress($targetClientId, $validated);
         }
 
         $groupOnlyFields = [
@@ -856,34 +872,49 @@ class AdminBookingService implements BookingServiceInterface
     {
         $existingChildren = ClientChild::where('client_id', $clientId)->get();
 
-        // Build lookup keys for existing children: "name|birth_year"
-        $existingKeys = $existingChildren->mapWithKeys(function ($child) {
-            return [$child->name.'|'.$child->birth_year => $child];
-        });
-
         // Track which existing children are still in snapshot
         $keptChildIds = [];
 
         foreach ($childrenSnapshot as $snapshotChild) {
-            $key = ($snapshotChild['name'] ?? '').'|'.($snapshotChild['birth_year'] ?? '');
+            $name = trim($snapshotChild['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
 
-            if (isset($existingKeys[$key])) {
-                // Update existing child
-                $existingKeys[$key]->update([
-                    'name' => $snapshotChild['name'],
-                    'gender' => $snapshotChild['gender'] ?? null,
-                    'birth_month' => $snapshotChild['birth_month'] ?? null,
-                    'birth_year' => $snapshotChild['birth_year'] ?? null,
+            $birthMonth = $snapshotChild['birth_month'] ?? null;
+            $birthYear = $snapshotChild['birth_year'] ?? null;
+
+            // Prefer an exact name + birth-year match, then fall back to a
+            // name-only match so a snapshot without birth data UPDATES the
+            // existing child instead of deleting it and recreating a stripped
+            // copy (which is how profiles were losing ages and genders).
+            $child = $existingChildren->first(
+                fn ($c) => ! in_array($c->id, $keptChildIds, true) && $c->name === $name && $birthYear !== null && $c->birth_year === $birthYear
+            ) ?? $existingChildren->first(
+                fn ($c) => ! in_array($c->id, $keptChildIds, true) && $c->name === $name
+            );
+
+            // The model stores a single birth_date column; birth_month/year
+            // are computed accessors. Writing birth_month/birth_year here
+            // used to be silently discarded - compose the real column.
+            $birthDate = $birthYear !== null
+                ? Carbon::createFromDate($birthYear, $birthMonth ?: 1, 1)->format('Y-m-d')
+                : null;
+
+            if ($child) {
+                // Never blank out known profile data with missing form values.
+                $child->update([
+                    'gender' => $snapshotChild['gender'] ?? $child->gender,
+                    'birth_date' => $birthDate ?? $child->birth_date?->format('Y-m-d'),
                 ]);
-                $keptChildIds[] = $existingKeys[$key]->id;
+                $keptChildIds[] = $child->id;
             } else {
                 // Insert new child
                 $newChild = ClientChild::create([
                     'client_id' => $clientId,
-                    'name' => $snapshotChild['name'],
+                    'name' => $name,
                     'gender' => $snapshotChild['gender'] ?? null,
-                    'birth_month' => $snapshotChild['birth_month'] ?? null,
-                    'birth_year' => $snapshotChild['birth_year'] ?? null,
+                    'birth_date' => $birthDate,
                 ]);
                 $keptChildIds[] = $newChild->id;
             }
@@ -994,35 +1025,58 @@ class AdminBookingService implements BookingServiceInterface
             return;
         }
 
-        $exists = ClientAddress::where('client_id', $clientId)
-            ->where('line1', $validated['address_line1'])
-            ->where('line2', $validated['address_line2'] ?? null)
-            ->where('city', $validated['address_city'] ?? '')
-            ->where('state', $validated['address_state'] ?? '')
-            ->where('zip', $validated['address_zip'] ?? '')
-            ->exists();
+        $this->firstOrCreateClientAddress($clientId, $validated);
+    }
 
-        if (! $exists) {
-            $locationType = $validated['location_type'] ?? null;
+    /**
+     * Find a matching client address or create one. Matching normalizes
+     * whitespace and treats an empty line2 the same as null so repeated saves
+     * of the same address can't stack up duplicate rows on the profile.
+     */
+    protected function firstOrCreateClientAddress(int $clientId, array $validated): ClientAddress
+    {
+        $line1 = trim((string) $validated['address_line1']);
+        $line2 = trim((string) ($validated['address_line2'] ?? ''));
+        $line2 = $line2 === '' ? null : $line2;
+        $city = trim((string) ($validated['address_city'] ?? ''));
+        $state = trim((string) ($validated['address_state'] ?? ''));
+        $zip = trim((string) ($validated['address_zip'] ?? ''));
 
-            $label = match ($locationType) {
-                'hotel' => ! empty($validated['hotel_id'])
-                    ? Hotel::where('id', $validated['hotel_id'])->value('name')
-                    : ($validated['hotel_name'] ?? 'Hotel'),
-                default => $locationType,
-            };
+        $existing = ClientAddress::where('client_id', $clientId)
+            ->where('line1', $line1)
+            ->where('zip', $zip)
+            ->where(function ($query) use ($line2) {
+                if ($line2 === null) {
+                    $query->whereNull('line2')->orWhere('line2', '');
+                } else {
+                    $query->where('line2', $line2);
+                }
+            })
+            ->first();
 
-            ClientAddress::create([
-                'client_id' => $clientId,
-                'label' => $label,
-                'line1' => $validated['address_line1'],
-                'line2' => $validated['address_line2'] ?? null,
-                'city' => $validated['address_city'] ?? '',
-                'state' => $validated['address_state'] ?? '',
-                'zip' => $validated['address_zip'] ?? '',
-                'location_type' => $locationType,
-            ]);
+        if ($existing) {
+            return $existing;
         }
+
+        $locationType = $validated['location_type'] ?? null;
+
+        $label = match ($locationType) {
+            'hotel' => ! empty($validated['hotel_id'])
+                ? Hotel::where('id', $validated['hotel_id'])->value('name')
+                : ($validated['hotel_name'] ?? 'Hotel'),
+            default => $locationType,
+        };
+
+        return ClientAddress::create([
+            'client_id' => $clientId,
+            'label' => $label,
+            'line1' => $line1,
+            'line2' => $line2,
+            'city' => $city,
+            'state' => $state,
+            'zip' => $zip,
+            'location_type' => $locationType,
+        ]);
     }
 
     public function cancel(Request $request, Booking $booking)

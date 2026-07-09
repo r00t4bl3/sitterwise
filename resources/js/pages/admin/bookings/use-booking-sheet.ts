@@ -532,6 +532,28 @@ export function useBookingSheet({
     };
 
     const handleClientChange = async (clientId: number | null) => {
+        // Re-pointing an existing booking to a different client moves EVERY
+        // booking in its group and swaps the family details in the form.
+        // Require explicit confirmation and never auto-sync the (new) family
+        // data back to a profile as part of the same edit.
+        const originalClientId = editingBooking?.booking_group?.client_id ?? null;
+        if (
+            sheetMode === 'edit' &&
+            clientId !== null &&
+            originalClientId !== null &&
+            clientId !== originalClientId
+        ) {
+            const groupCount =
+                editingBooking?.booking_group?.bookings_count ?? 1;
+            const confirmed = window.confirm(
+                `Change this booking's client?\n\nThis will move ${groupCount > 1 ? `ALL ${groupCount} bookings in this group` : 'this booking'} to the selected client, and the children/pets/address fields below will be replaced with the new client's profile data.`,
+            );
+            if (!confirmed) {
+                return;
+            }
+            form.setData('save_children_pets_to_profile', false);
+        }
+
         form.setData((prev) => ({
             ...prev,
             client_id: clientId,
