@@ -29,6 +29,7 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuickLinkController;
 use App\Http\Controllers\ReferenceController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SpecialtyTypeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
@@ -149,6 +150,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
         Route::post('bookings/{booking}/replace-caregiver', [BookingController::class, 'replaceCaregiver'])->name('bookings.replace-caregiver');
         Route::post('bookings/{booking}/reopen', [BookingController::class, 'reopen'])->name('bookings.reopen');
+        Route::post('bookings/{booking}/lifesaver', [BookingController::class, 'toggleLifesaver'])->name('bookings.lifesaver');
         Route::post('bookings/{booking}/notify', [BookingController::class, 'notify'])->name('bookings.notify');
         Route::post('bookings/groups/{bookingGroup}/split', [BookingController::class, 'splitGroup'])->name('bookings.groups.split');
         Route::get('clients/search-suggestions', [ClientController::class, 'searchSuggestions'])->name('clients.searchSuggestions');
@@ -220,6 +222,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+        // Application settings (DB-backed, web-editable)
+        Route::get('app-settings', [SettingsController::class, 'index'])->name('app-settings.index');
+        Route::put('app-settings', [SettingsController::class, 'update'])->name('app-settings.update');
     });
 
     // Route::middleware('super_admin')->group(function () {

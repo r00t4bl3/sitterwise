@@ -9,6 +9,7 @@ use App\Enums\SitterPreference;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\Client;
+use App\Support\Settings;
 use Illuminate\Support\Collection;
 
 class CaregiverRecommendationService
@@ -73,7 +74,7 @@ class CaregiverRecommendationService
             return collect();
         }
 
-        $bufferMinutes = (int) config('caregiver.buffer_minutes');
+        $bufferMinutes = (int) Settings::get('caregiver.buffer_minutes', config('caregiver.buffer_minutes', 60));
 
         $bookingDatesForBuffer = [];
         if (! empty($dateRanges)) {

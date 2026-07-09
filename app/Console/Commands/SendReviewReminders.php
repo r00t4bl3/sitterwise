@@ -6,6 +6,7 @@ use App\Channels\SmsChannel;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Notifications\BookingReviewReminderNotification;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -21,13 +22,18 @@ class SendReviewReminders extends Command
         $emailSent = 0;
         $smsSent = 0;
 
-        // Email window: 2–26 hours after booking completion. The command runs
-        // every few hours, so the "already sent" timestamp stops a booking from
-        // being reminded again on every run within the window.
+        $emailMin = (int) Settings::get('bookings.review_email_min_hours', 2);
+        $emailMax = (int) Settings::get('bookings.review_email_max_hours', 26);
+        $smsMin = (int) Settings::get('bookings.review_sms_min_hours', 48);
+        $smsMax = (int) Settings::get('bookings.review_sms_max_hours', 72);
+
+        // Email window: [min, max] hours after booking completion. The command
+        // runs every few hours, so the "already sent" timestamp stops a booking
+        // from being reminded again on every run within the window.
         $emailCandidates = Booking::whereIn('status', $completedStatuses)
             ->whereNull('review_reminder_email_sent_at')
-            ->where('end_datetime', '>=', now()->subHours(26))
-            ->where('end_datetime', '<', now()->subHours(2))
+            ->where('end_datetime', '>=', now()->subHours($emailMax))
+            ->where('end_datetime', '<', now()->subHours($emailMin))
             ->whereDoesntHave('ratings', function ($q) {
                 $q->where('ratable_type', Caregiver::class);
             })
@@ -45,11 +51,11 @@ class SendReviewReminders extends Command
             $emailSent++;
         }
 
-        // SMS window: 48–72 hours after booking completion.
+        // SMS window: [min, max] hours after booking completion.
         $smsCandidates = Booking::whereIn('status', $completedStatuses)
             ->whereNull('review_reminder_sms_sent_at')
-            ->where('end_datetime', '>=', now()->subHours(72))
-            ->where('end_datetime', '<', now()->subHours(48))
+            ->where('end_datetime', '>=', now()->subHours($smsMax))
+            ->where('end_datetime', '<', now()->subHours($smsMin))
             ->whereDoesntHave('ratings', function ($q) {
                 $q->where('ratable_type', Caregiver::class);
             })

@@ -1,5 +1,18 @@
 # Caregiver Dashboard Gamification — Implementation Plan
 
+> **Implementation status (Lifesaver, #173).** The Lifesaver feature is built:
+> `LifesaverService` (rules from the editable settings store: `lifesaver.hours_unclaimed`,
+> `lifesaver.short_notice_hours`), a `lifesaver_override` column + admin toggle on the
+> booking detail page, the caregiver "Lifesaver" ribbon on Available Bookings, and the 3
+> Lifesaver badges (via `getLifesaverCount()`). Badges are also now visible on the admin
+> caregiver page (Trophy Case tab).
+>
+> **TODO — deferred:** the **+$15 Lifesaver bonus** (`lifesaver.bonus`, already seeded) is
+> NOT yet wired into caregiver payout. When implemented, add it to the payout at
+> checkout/settlement for jobs where `LifesaverService::wasLifesaverRescue()` is true.
+> Also still open: full Trophy Case grid on the `/milestones` page (currently stats-only)
+> and the "Badge Earned" celebratory moment (Phase 3).
+
 ## Overview
 
 Augment the existing caregiver dashboard with gamification elements based on the designs in `caregiver-gamification.html` and `new-caregiver-dashboard.html`. No new database tables, routes, or controllers. All badge states are computed live on page load from existing data.

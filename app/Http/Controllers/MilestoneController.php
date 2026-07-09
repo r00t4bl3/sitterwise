@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CaregiverInternalRating;
+use App\Support\Settings;
 use Inertia\Inertia;
 
 class MilestoneController extends Controller
@@ -99,8 +100,8 @@ class MilestoneController extends Controller
                 'jobStreak' => $streak,
                 'trustlineCertified' => $trustlineCert !== null,
                 'trustlineProgress' => $completedJobCount,
-                'trustlineThreshold' => config('trustline.jobs_threshold'),
-                'trustlineReward' => config('trustline.reward_amount'),
+                'trustlineThreshold' => Settings::get('trustline.jobs_threshold', config('trustline.jobs_threshold', 10)),
+                'trustlineReward' => Settings::get('trustline.reward_amount', config('trustline.reward_amount', 140)),
             ],
             'engagement' => [
                 'jobsOffered' => $totalOffered,

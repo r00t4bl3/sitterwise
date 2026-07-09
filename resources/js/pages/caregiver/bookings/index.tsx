@@ -38,6 +38,7 @@ interface SiblingDate {
 interface Booking {
     id: number;
     ulid: string;
+    is_lifesaver: boolean;
     booking_group_id: number | null;
     group_size: number;
     client_name: string;
@@ -231,6 +232,11 @@ export default function CaregiverBookings() {
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="space-y-3">
+                                                {booking.is_lifesaver && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                                        🛟 Lifesaver
+                                                    </span>
+                                                )}
                                                 <div className="flex items-center gap-2">
                                                     <User className="h-4 w-4 text-muted-foreground" />
                                                     <span className="font-medium text-foreground">
@@ -284,6 +290,11 @@ export default function CaregiverBookings() {
                                                 <span className="font-medium text-foreground">
                                                     {first.client_name}
                                                 </span>
+                                                {first.is_lifesaver && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                                        🛟 Lifesaver
+                                                    </span>
+                                                )}
                                             </div>
                                             <span className="rounded-[3px] bg-logo-teal/10 px-2 py-0.5 text-xs font-medium text-logo-teal">
                                                 {first.group_size} dates

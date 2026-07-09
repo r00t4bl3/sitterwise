@@ -312,7 +312,11 @@ class CaregiverBadgeService
 
     private function getLifesaverCount(Caregiver $caregiver): int
     {
-        return 0;
+        $lifesaver = app(LifesaverService::class);
+
+        return $this->getCompletedBookings($caregiver)
+            ->filter(fn (Booking $booking) => $lifesaver->wasLifesaverRescue($booking))
+            ->count();
     }
 
     /**

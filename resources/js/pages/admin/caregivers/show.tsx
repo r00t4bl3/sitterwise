@@ -1,6 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Award,
     Check,
     CheckCircle,
     ChevronDown,
@@ -241,6 +242,16 @@ interface ActivePause {
     pause_reason: string | null;
 }
 
+interface Badge {
+    slug: string;
+    name: string;
+    group: string;
+    tier: string;
+    earned: boolean;
+    earned_date: string | null;
+    criteria: string;
+}
+
 interface Props {
     [key: string]: unknown;
     caregiver: Caregiver;
@@ -248,6 +259,7 @@ interface Props {
     activePause?: ActivePause | null;
     reviews?: Review[];
     jobHistory?: JobAssignment[];
+    badges?: Badge[];
 }
 
 function StatusBadge({ status }: { status: Status }) {
@@ -343,13 +355,14 @@ const TABS = [
     { key: 'application', label: 'Application', icon: FileText },
     { key: 'references', label: 'References', icon: Users },
     { key: 'reviews', label: 'Reviews', icon: Star },
+    { key: 'trophy_case', label: 'Trophy Case', icon: Award },
     { key: 'internal_rating', label: 'Internal Rating', icon: ClipboardCheck },
     { key: 'job_history', label: 'Job History', icon: Briefcase },
     { key: 'notes', label: 'Notes', icon: MessageSquare },
 ] as const;
 
 export default function CaregiverShow() {
-    const { caregiver, statuses, activePause, reviews, jobHistory } =
+    const { caregiver, statuses, activePause, reviews, jobHistory, badges } =
         usePage<Props>().props;
     const [activeTab, setActiveTab] = useState<string>('summary');
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
@@ -1343,6 +1356,70 @@ export default function CaregiverShow() {
                                     <p className="text-sm text-muted-foreground">
                                         No reference requests
                                     </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Trophy Case tab */}
+                        {activeTab === 'trophy_case' && (
+                            <div className="border border-border bg-card p-6">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h2 className="font-serif text-lg font-semibold text-foreground">
+                                        Trophy Case
+                                    </h2>
+                                    {badges !== undefined && (
+                                        <span className="text-sm text-muted-foreground">
+                                            {
+                                                badges.filter((b) => b.earned)
+                                                    .length
+                                            }{' '}
+                                            / {badges.length} earned
+                                        </span>
+                                    )}
+                                </div>
+
+                                {badges === undefined ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        Loading badges…
+                                    </p>
+                                ) : (
+                                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                        {badges.map((badge) => (
+                                            <div
+                                                key={badge.slug}
+                                                className={`flex items-start gap-3 rounded-lg border p-3 ${
+                                                    badge.earned
+                                                        ? 'border-border bg-background'
+                                                        : 'border-dashed border-border opacity-50'
+                                                }`}
+                                            >
+                                                <Award
+                                                    className={`mt-0.5 h-5 w-5 shrink-0 ${
+                                                        badge.earned
+                                                            ? 'text-primary'
+                                                            : 'text-muted-foreground'
+                                                    }`}
+                                                />
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-foreground">
+                                                        {badge.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {badge.criteria}
+                                                    </p>
+                                                    {badge.earned &&
+                                                        badge.earned_date && (
+                                                            <p className="mt-0.5 text-xs text-primary">
+                                                                Earned{' '}
+                                                                {
+                                                                    badge.earned_date
+                                                                }
+                                                            </p>
+                                                        )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         )}

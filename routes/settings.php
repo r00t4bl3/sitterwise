@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\AvailabilityPreferencesController;
 use App\Http\Controllers\Settings\CaregiverPauseController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\PushTestController;
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
     Route::inertia('settings/push-notifications', 'settings/push-notifications')
         ->name('push-notifications.edit');
+
+    Route::get('settings/caregiver/availability', [AvailabilityPreferencesController::class, 'show'])->name('settings.caregiver.availability');
+    Route::put('settings/caregiver/availability', [AvailabilityPreferencesController::class, 'update'])->name('settings.caregiver.availability.update');
 
     Route::get('settings/caregiver/pause', [CaregiverPauseController::class, 'show'])->name('settings.caregiver.pause');
     Route::post('settings/caregiver/pause', [CaregiverPauseController::class, 'pause'])->name('settings.caregiver.pause.store');

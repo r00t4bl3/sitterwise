@@ -60,6 +60,13 @@ class BookingController extends Controller
         return $this->service->reopen($request, $booking);
     }
 
+    public function toggleLifesaver(Request $request, Booking $booking)
+    {
+        abort_unless($request->user()->isAdmin() || $request->user()->isSuperAdmin(), 403);
+
+        return app(AdminBookingService::class)->toggleLifesaver($request, $booking);
+    }
+
     public function destroy(Booking $booking)
     {
         return $this->service->destroy($booking);

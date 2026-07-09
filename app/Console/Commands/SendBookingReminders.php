@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Events\BookingReminderTriggered;
 use App\Models\Booking;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -16,8 +17,11 @@ class SendBookingReminders extends Command
     {
         $sent = 0;
 
+        // Reminder is sent in the final 1-hour window ending at the lead time.
+        $leadHours = (int) Settings::get('bookings.reminder_hours_before', 24);
+
         $bookings = Booking::where('status', 'confirmed')
-            ->whereBetween('start_datetime', [now()->addHours(23), now()->addHours(24)])
+            ->whereBetween('start_datetime', [now()->addHours($leadHours - 1), now()->addHours($leadHours)])
             ->get();
 
         foreach ($bookings as $booking) {

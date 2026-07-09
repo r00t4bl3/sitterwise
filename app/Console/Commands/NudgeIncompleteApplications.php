@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Mail\ApplicantFinalReminderMail;
 use App\Mail\ApplicantResumeApplicationMail;
 use App\Models\IncompleteApplication;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -34,10 +35,11 @@ class NudgeIncompleteApplications extends Command
             $this->info("Resume nudge sent to: {$incomplete->email}");
         }
 
-        // 7-day nudge: send final reminder to second-time nudges
+        // Final nudge: second-time nudges past the final-nudge window.
+        $finalNudgeDays = (int) Settings::get('applications.final_nudge_days', 7);
         $finalCandidates = IncompleteApplication::whereNull('archived_at')
             ->where('nudge_count', 1)
-            ->where('last_activity_at', '<', now()->subDays(7))
+            ->where('last_activity_at', '<', now()->subDays($finalNudgeDays))
             ->get();
 
         foreach ($finalCandidates as $incomplete) {

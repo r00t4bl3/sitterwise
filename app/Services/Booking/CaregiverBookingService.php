@@ -13,6 +13,8 @@ use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
+use App\Services\LifesaverService;
+use App\Support\Settings;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,6 +67,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
                 return [
                     'id' => $booking->id,
                     'ulid' => $booking->ulid,
+                    'is_lifesaver' => app(LifesaverService::class)->isLifesaver($booking),
                     'booking_group_id' => $group?->id,
                     'group_size' => $group ? $group->bookings->count() : 1,
                     'client_name' => $booking->client->first_name.' '.$booking->client->last_name,
@@ -238,7 +241,7 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             $notification->update(['viewed_at' => now()]);
         }
 
-        $expiresIn = 60;
+        $expiresIn = (int) Settings::get('bookings.reservation_hold_seconds', 60);
         $expiresAt = now()->addSeconds($expiresIn);
 
         return $this->withSiblingLock($booking, function ($bookings) use ($caregiver, $expiresIn, $expiresAt) {

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Booking;
 use App\Services\Billing\JobBillingService;
+use App\Support\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -34,7 +35,7 @@ class RetryJobCharge implements ShouldQueue
             return;
         }
 
-        if ($this->booking->charge_attempt_count >= 4) {
+        if ($this->booking->charge_attempt_count >= (int) Settings::get('billing.max_charge_attempts', 4)) {
             Log::warning('Max retry attempts reached, not retrying', [
                 'booking_id' => $this->booking->id,
                 'attempts' => $this->booking->charge_attempt_count,

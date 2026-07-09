@@ -4,10 +4,12 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Models\Booking;
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
 use App\Models\PricingRule;
+use App\Models\User;
 use App\Services\Billing\TipChargeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -126,6 +128,30 @@ describe('Tip Charge Service', function () {
         $result = $tipService->charge($booking, 5, 'pm_provided_method');
 
         expect($result)->toHaveKey('success');
+    });
+
+    test('tip description names the caregiver, not the job number', function () {
+        $booking = tipBooking();
+        $user = User::factory()->create(['role' => 'caregiver']);
+        $caregiver = Caregiver::create([
+            'user_id' => $user->id,
+            'first_name' => 'Carla',
+            'last_name' => 'Sitter',
+            'phone' => '+16195551212',
+            'status' => 'active',
+        ]);
+        $booking->update(['caregiver_id' => $caregiver->id]);
+
+        expect((new TipChargeService)->tipDescription($booking->fresh()))
+            ->toBe('Tip for Carla Sitter');
+    });
+
+    test('tip description falls back to the job number when no caregiver assigned', function () {
+        $booking = tipBooking();
+        $booking->update(['caregiver_id' => null]);
+
+        expect((new TipChargeService)->tipDescription($booking->fresh()))
+            ->toBe("Booking #{$booking->id} - Tip for Caregiver");
     });
 
     test('falls back to default payment method when no provided id', function () {

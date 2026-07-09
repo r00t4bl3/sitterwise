@@ -20,6 +20,17 @@ class TipChargeService
         $this->stripe = new StripeClient(config('services.stripe.secret'));
     }
 
+    /**
+     * The Stripe charge description for a tip. Names the caregiver (for easy
+     * payroll reconciliation) rather than exposing our internal job number.
+     */
+    public function tipDescription(Booking $booking): string
+    {
+        return $booking->caregiver
+            ? "Tip for {$booking->caregiver->full_name}"
+            : "Booking #{$booking->id} - Tip for Caregiver";
+    }
+
     public function charge(Booking $booking, float $tipAmount, ?string $paymentMethodId = null): array
     {
         $existingPending = ClientPayment::where('booking_id', $booking->id)
@@ -115,9 +126,10 @@ class TipChargeService
                 'payment_method' => $paymentMethod->provider_method_id,
                 'off_session' => true,
                 'confirm' => true,
-                'description' => "Booking #{$booking->id} - Tip for Caregiver",
+                'description' => $this->tipDescription($booking),
                 'metadata' => [
                     'booking_id' => $booking->id,
+                    'caregiver_name' => $booking->caregiver?->full_name,
                     'type' => 'tip',
                 ],
             ]);

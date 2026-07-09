@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Settings;
 use Illuminate\Database\Eloquent\Model;
 
 class IncompleteApplication extends Model
@@ -26,7 +27,7 @@ class IncompleteApplication extends Model
     public function scopeNeedsNudge($query)
     {
         return $query->whereNull('archived_at')
-            ->where('last_activity_at', '<', now()->subHours(48))
+            ->where('last_activity_at', '<', now()->subHours((int) Settings::get('applications.needs_nudge_hours', 48)))
             ->where(function ($q) {
                 $q->whereNull('nudged_at')
                     ->orWhere('nudged_at', '<', now()->subDay());
@@ -36,11 +37,11 @@ class IncompleteApplication extends Model
     public function scopeStale($query)
     {
         return $query->whereNull('archived_at')
-            ->where('last_activity_at', '<', now()->subDays(14));
+            ->where('last_activity_at', '<', now()->subDays((int) Settings::get('applications.stale_days', 14)));
     }
 
     public function scopeExpired($query)
     {
-        return $query->where('last_activity_at', '<', now()->subDays(90));
+        return $query->where('last_activity_at', '<', now()->subDays((int) Settings::get('applications.expired_days', 90)));
     }
 }

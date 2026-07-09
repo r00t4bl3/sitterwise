@@ -8,6 +8,7 @@ use App\Mail\ReferenceFinalReminderMail;
 use App\Mail\ReferenceReminderMail;
 use App\Models\Caregiver;
 use App\Models\ReferenceRequest;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -26,11 +27,17 @@ class NudgePendingReferences extends Command
         $applicantPrompted = 0;
         $applicantStalled = 0;
 
+        $firstReminderDays = (int) Settings::get('references.first_reminder_days', 2);
+        $finalReminderDays = (int) Settings::get('references.final_reminder_days', 5);
+        $applicantPromptDays = (int) Settings::get('references.applicant_prompt_days', 3);
+        $applicantReminderDays = (int) Settings::get('references.applicant_reminder_days', 7);
+        $applicantStaleDays = (int) Settings::get('references.applicant_stale_days', 14);
+
         if ($runReference) {
-            // Day 2 first reminder: pending references aged 2-5 days
+            // First reminder: pending references between the first and final windows.
             $firstReminderCandidates = ReferenceRequest::pending()
-                ->where('created_at', '<', now()->subDays(2))
-                ->where('created_at', '>=', now()->subDays(5))
+                ->where('created_at', '<', now()->subDays($firstReminderDays))
+                ->where('created_at', '>=', now()->subDays($finalReminderDays))
                 ->get();
 
             foreach ($firstReminderCandidates as $reference) {
@@ -44,9 +51,9 @@ class NudgePendingReferences extends Command
                 $referenceSent++;
             }
 
-            // Day 5 final reminder: pending references aged 5+ days
+            // Final reminder: pending references past the final window.
             $finalReminderCandidates = ReferenceRequest::pending()
-                ->where('created_at', '<', now()->subDays(5))
+                ->where('created_at', '<', now()->subDays($finalReminderDays))
                 ->get();
 
             foreach ($finalReminderCandidates as $reference) {
@@ -80,10 +87,10 @@ class NudgePendingReferences extends Command
 
                 $daysSinceSubmission = $application->submitted_at->diffInDays(now());
 
-                if ($daysSinceSubmission >= 14) {
+                if ($daysSinceSubmission >= $applicantStaleDays) {
                     $caregiver->update(['status' => CaregiverStatus::Inactive]);
                     $applicantStalled++;
-                } elseif ($daysSinceSubmission >= 7) {
+                } elseif ($daysSinceSubmission >= $applicantReminderDays) {
                     Mail::to($caregiver->user->email)->queue(
                         new ApplicantPendingReferencesMail(
                             $caregiver->first_name.' '.$caregiver->last_name,
@@ -91,7 +98,7 @@ class NudgePendingReferences extends Command
                         ),
                     );
                     $applicantPrompted++;
-                } elseif ($daysSinceSubmission >= 3) {
+                } elseif ($daysSinceSubmission >= $applicantPromptDays) {
                     Mail::to($caregiver->user->email)->queue(
                         new ApplicantPendingReferencesMail(
                             $caregiver->first_name.' '.$caregiver->last_name,

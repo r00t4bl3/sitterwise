@@ -28,6 +28,11 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Availability Preferences',
+        href: '/settings/caregiver/availability',
+        icon: null,
+    },
+    {
         title: 'Pause Account',
         href: pauseRoute(),
         icon: null,
@@ -41,7 +46,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     const visibleItems = sidebarNavItems.filter((item) => {
-        if (item.title === 'Pause Account') {
+        if (
+            item.title === 'Pause Account' ||
+            item.title === 'Availability Preferences'
+        ) {
             return auth.user?.role === 'caregiver';
         }
 

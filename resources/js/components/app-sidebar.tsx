@@ -10,6 +10,7 @@ import {
     ListChecks,
     MapPin,
     MessageCircle,
+    Settings,
     Shield,
     Star,
     User,
@@ -164,6 +165,11 @@ const superAdminNavItems: NavItem[] = [
         title: 'Talking Points',
         href: '/talking-points',
         icon: ListChecks,
+    },
+    {
+        title: 'Settings',
+        href: '/app-settings',
+        icon: Settings,
     },
 ];
 

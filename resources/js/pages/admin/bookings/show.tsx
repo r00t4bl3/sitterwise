@@ -17,7 +17,7 @@ import {
     Split,
     UserPlus,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,8 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
+    is_lifesaver: boolean;
+    lifesaver_override: boolean | null;
     charge_to_client: number | null;
     paid_to_caregiver: number | null;
     sitterwise_cut: number | null;
@@ -228,6 +230,11 @@ export default function BookingDetail({
         discovery_sources,
     });
 
+    // "Latest ref" for the (non-memoized) openEditSheet so the ?edit=1 effect can
+    // call it without adding an unstable dependency.
+    const openEditSheetRef = useRef(sheet.openEditSheet);
+    openEditSheetRef.current = sheet.openEditSheet;
+
     const [caregiverSuggestions, setCaregiverSuggestions] = useState<
         Array<{
             id: number;
@@ -260,6 +267,20 @@ export default function BookingDetail({
             onSuccess: () => setReopenDialogOpen(false),
         });
     };
+
+    const lifesaverForm = useForm<{ lifesaver_override: boolean | null }>({
+        lifesaver_override: null,
+    });
+
+    const postLifesaver = (value: boolean | null) => {
+        lifesaverForm.transform(() => ({ lifesaver_override: value }));
+        lifesaverForm.post(`/bookings/${booking.ulid}/lifesaver`, {
+            preserveScroll: true,
+        });
+    };
+
+    const submitLifesaver = () => postLifesaver(!booking.is_lifesaver);
+    const resetLifesaver = () => postLifesaver(null);
 
     const activeSiblingCount = booking.booking_group
         ? booking.booking_group.sibling_bookings.filter(
@@ -468,10 +489,30 @@ export default function BookingDetail({
     const { url } = usePage();
     useEffect(() => {
         const params = new URLSearchParams(url.split('?')[1] ?? '');
+        let changed = false;
 
         if (params.get('notify') === '1') {
             setNotifySheetOpen(true);
             params.delete('notify');
+            changed = true;
+        }
+
+        // Landed here from a client's booking history "Edit" link — open the
+        // edit sheet straight away (skipped for cancelled bookings).
+        if (params.get('edit') === '1') {
+            if (booking.status !== 'cancelled') {
+                openEditSheetRef.current(
+                    booking as unknown as Parameters<
+                        typeof openEditSheetRef.current
+                    >[0],
+                );
+            }
+
+            params.delete('edit');
+            changed = true;
+        }
+
+        if (changed) {
             const query = params.toString();
             window.history.replaceState(
                 {},
@@ -479,7 +520,7 @@ export default function BookingDetail({
                 window.location.pathname + (query ? `?${query}` : ''),
             );
         }
-    }, [url]);
+    }, [url, booking]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -544,6 +585,35 @@ export default function BookingDetail({
                                                 )
                                             </Badge>
                                         )}
+                                    {booking.is_lifesaver && (
+                                        <Badge className="bg-rose-500 text-xs text-white hover:bg-rose-500">
+                                            🛟 Lifesaver
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={submitLifesaver}
+                                        disabled={lifesaverForm.processing}
+                                        className="h-7 text-xs"
+                                    >
+                                        {booking.is_lifesaver
+                                            ? 'Remove Lifesaver flag'
+                                            : 'Flag as Lifesaver'}
+                                    </Button>
+                                    {booking.lifesaver_override !== null && (
+                                        <button
+                                            type="button"
+                                            onClick={resetLifesaver}
+                                            disabled={lifesaverForm.processing}
+                                            className="text-xs text-muted-foreground underline hover:text-foreground"
+                                        >
+                                            Reset to automatic
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-2">

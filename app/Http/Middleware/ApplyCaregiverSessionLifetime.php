@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Settings;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,16 +26,24 @@ class ApplyCaregiverSessionLifetime
 {
     public const MARKER = 'sw_long_session';
 
-    /** 30 days, in minutes. Rolling — reset by any request the caregiver makes. */
-    private const LIFETIME_MINUTES = 30 * 24 * 60;
+    /**
+     * The rolling caregiver session length, in minutes. Driven by the editable
+     * setting caregiver.session_lifetime_days (default 30 days).
+     */
+    private function lifetimeMinutes(): int
+    {
+        return (int) Settings::get('caregiver.session_lifetime_days', 30) * 24 * 60;
+    }
 
     /**
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $lifetimeMinutes = $this->lifetimeMinutes();
+
         if ($request->cookies->has(self::MARKER)) {
-            config(['session.lifetime' => self::LIFETIME_MINUTES]);
+            config(['session.lifetime' => $lifetimeMinutes]);
         }
 
         $response = $next($request);
@@ -43,7 +52,7 @@ class ApplyCaregiverSessionLifetime
 
         if ($user && $user->role === 'caregiver') {
             $response->headers->setCookie(
-                cookie(self::MARKER, '1', self::LIFETIME_MINUTES)
+                cookie(self::MARKER, '1', $lifetimeMinutes)
             );
         } elseif ($request->cookies->has(self::MARKER)) {
             $response->headers->setCookie(cookie()->forget(self::MARKER));

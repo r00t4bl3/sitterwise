@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Mail\CaregiverOnHoldCheckinMail;
 use App\Models\CaregiverPause;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -15,8 +16,12 @@ class CheckInOnHoldCaregivers extends Command
 {
     public function handle()
     {
+        $startDays = (int) Settings::get('caregiver.checkin_start_days', 30);
+        $reminderDays = (int) Settings::get('caregiver.checkin_reminder_days', 45);
+        $finalDays = (int) Settings::get('caregiver.checkin_final_days', 60);
+
         $activePauses = CaregiverPause::active()
-            ->where('paused_at', '<=', now()->subDays(30))
+            ->where('paused_at', '<=', now()->subDays($startDays))
             ->get();
 
         $sent = 0;
@@ -25,8 +30,8 @@ class CheckInOnHoldCaregivers extends Command
             $daysOnHold = $pause->paused_at->diffInDays(now());
 
             $tier = match (true) {
-                $daysOnHold >= 60 => 'final',
-                $daysOnHold >= 45 => 'reminder',
+                $daysOnHold >= $finalDays => 'final',
+                $daysOnHold >= $reminderDays => 'reminder',
                 default => 'checkin',
             };
 

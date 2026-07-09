@@ -38,6 +38,7 @@ use App\Services\CaregiverPayout\CaregiverPayoutService;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use App\Services\CaregiverRecommendation\LocationMatcher;
+use App\Services\LifesaverService;
 use App\Support\BusinessTime;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
@@ -648,6 +649,8 @@ class AdminBookingService implements BookingServiceInterface
                 'start_datetime' => $booking->start_datetime,
                 'end_datetime' => $booking->end_datetime,
                 'status' => $booking->status,
+                'lifesaver_override' => $booking->lifesaver_override,
+                'is_lifesaver' => app(LifesaverService::class)->isLifesaver($booking),
                 'special_considerations' => collect($booking->special_considerations)
                     ->map(fn ($sc) => SpecialConsideration::tryFrom($sc)?->label() ?? $sc)
                     ->toArray(),
@@ -1150,6 +1153,18 @@ class AdminBookingService implements BookingServiceInterface
      * the active assignment, clear the caregiver, reset status to Received, then
      * land on the booking with the Notify panel open so the admin can re-invite.
      */
+    public function toggleLifesaver(Request $request, Booking $booking): RedirectResponse
+    {
+        $validated = $request->validate([
+            'lifesaver_override' => ['nullable', 'boolean'],
+        ]);
+
+        // null resets to automatic (rules 1 & 2); true/false is a manual override.
+        $booking->update(['lifesaver_override' => $validated['lifesaver_override'] ?? null]);
+
+        return redirect()->back()->with('success', 'Lifesaver flag updated.');
+    }
+
     public function reopen(Request $request, Booking $booking)
     {
         $finalized = [BookingStatus::Completed->value, BookingStatus::Paid->value, BookingStatus::Cancelled->value];

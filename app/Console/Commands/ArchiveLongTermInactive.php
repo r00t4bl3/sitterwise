@@ -7,6 +7,7 @@ use App\Mail\CaregiverArchiveWarningMail;
 use App\Models\CaregiverPause;
 use App\Models\User;
 use App\Notifications\AdminCaregiverArchivedNotification;
+use App\Support\Settings;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -19,9 +20,9 @@ class ArchiveLongTermInactive extends Command
 {
     public function handle()
     {
-        // 14-day warning: 166-179 days on hold
-        $warningThreshold = now()->subDays(166);
-        $archiveThreshold = now()->subDays(180);
+        // Warning window: [archive_warning_days, archive_days) on hold.
+        $warningThreshold = now()->subDays((int) Settings::get('caregiver.archive_warning_days', 166));
+        $archiveThreshold = now()->subDays((int) Settings::get('caregiver.archive_days', 180));
 
         $warningCandidates = CaregiverPause::active()
             ->where('paused_at', '<=', $warningThreshold)
