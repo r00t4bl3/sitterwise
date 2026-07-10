@@ -301,7 +301,11 @@ export default function Bookings() {
                         (h) => h.id === booking.booking_group?.hotel_id,
                     );
 
-                    return h?.name?.toLowerCase() || '';
+                    return (
+                        h?.name ??
+                        booking.booking_group?.hotel_name ??
+                        ''
+                    ).toLowerCase();
                 })();
 
                 return (
@@ -968,7 +972,9 @@ export default function Bookings() {
                                                           )
                                                         : null;
                                                     const location = isHotel
-                                                        ? hotel?.name
+                                                        ? (hotel?.name ??
+                                                          booking.booking_group
+                                                              ?.hotel_name)
                                                         : booking.booking_group
                                                               ?.address_line1;
                                                     const addressQuery =

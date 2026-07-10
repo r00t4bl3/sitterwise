@@ -3,6 +3,7 @@
 namespace App\Services\Booking;
 
 use App\Services\Booking\Contracts\BookingServiceInterface;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Auth;
 
 class BookingServiceFactory
@@ -12,9 +13,10 @@ class BookingServiceFactory
         $user = Auth::user();
 
         if (! $user) {
-            dd('No authenticated user found.'); // Debugging line
-
-            return app(AdminBookingService::class);
+            // Booking routes are auth-gated, so this only happens if the factory
+            // is reached unauthenticated — send them to log in rather than
+            // silently resolving an admin service.
+            throw new AuthenticationException;
         }
 
         return match ($user->role) {

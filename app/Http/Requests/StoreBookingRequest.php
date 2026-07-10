@@ -135,7 +135,11 @@ class StoreBookingRequest extends FormRequest
             'sitter_preferences' => ['nullable', 'array'],
             'other_adults_present' => ['nullable', 'string'],
             'emergency_instructions' => ['nullable', 'string'],
-            'hotel_id' => ['required_if:location_type,hotel', 'nullable', 'exists:hotels,id'],
+            // A hotel booking needs a hotel_id OR a free-text hotel_name; the
+            // after() hook enforces that either is present, so hotel_id itself is
+            // not required (supports unlisted hotels).
+            'hotel_id' => ['nullable', 'exists:hotels,id'],
+            'hotel_name' => ['nullable', 'string', 'max:255'],
             'address_id' => ['nullable', 'exists:client_addresses,id'],
             'rental_platform' => ['required_if:location_type,vacation_rental', 'nullable', 'string'],
             'special_needs_notes' => ['nullable', 'string'],

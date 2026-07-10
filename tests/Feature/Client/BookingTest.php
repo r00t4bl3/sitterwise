@@ -29,6 +29,107 @@ describe('Booking - Client', function () {
         $response->assertInertia(fn ($page) => $page->component('client/bookings/create'));
     });
 
+    test('client can create a hotel booking with an unlisted hotel', function () {
+        $child = ClientChild::factory()->for($this->client)->create();
+
+        $start = now()->addDays(2)->setHour(9)->setMinute(0);
+        $end = now()->addDays(2)->setHour(15)->setMinute(0);
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => $start,
+            'end_datetime' => $end,
+            // Unlisted hotel: no hotel_id, a free-text name + manual address.
+            'hotel_id' => null,
+            'hotel_name' => 'Seaside Unlisted Inn',
+            'address_line1' => '742 Ocean Blvd',
+            'address_line2' => '',
+            'address_city' => 'Coronado',
+            'address_state' => 'CA',
+            'address_zip' => '92118',
+            'new_children' => [
+                [
+                    'name' => $child->name,
+                    'gender' => $child->gender,
+                    'birth_month' => $child->birth_month,
+                    'birth_year' => $child->birth_year,
+                ],
+            ],
+            'save_children_pets_to_profile' => false,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'location_type' => 'hotel',
+            'hotel_id' => null,
+            'hotel_name' => 'Seaside Unlisted Inn',
+            'address_line1' => '742 Ocean Blvd',
+            'address_city' => 'Coronado',
+        ]);
+
+        // The booking accessor surfaces the free-text hotel name for editing.
+        $booking = Booking::whereHas(
+            'bookingGroup',
+            fn ($q) => $q->where('client_id', $this->client->id),
+        )->first();
+
+        expect($booking->hotel_name)->toBe('Seaside Unlisted Inn')
+            ->and($booking->hotel_id)->toBeNull();
+    });
+
+    test('the admin edit fetch exposes the unlisted hotel name', function () {
+        $child = ClientChild::factory()->for($this->client)->create();
+        $start = now()->addDays(2)->setHour(9)->setMinute(0);
+        $end = now()->addDays(2)->setHour(15)->setMinute(0);
+
+        $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => $start,
+            'end_datetime' => $end,
+            'hotel_id' => null,
+            'hotel_name' => 'Seaside Unlisted Inn',
+            'address_line1' => '742 Ocean Blvd',
+            'address_city' => 'Coronado',
+            'address_state' => 'CA',
+            'address_zip' => '92118',
+            'new_children' => [
+                [
+                    'name' => $child->name,
+                    'gender' => $child->gender,
+                    'birth_month' => $child->birth_month,
+                    'birth_year' => $child->birth_year,
+                ],
+            ],
+            'save_children_pets_to_profile' => false,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ])->assertSessionHasNoErrors();
+
+        $booking = Booking::whereHas(
+            'bookingGroup',
+            fn ($q) => $q->where('client_id', $this->client->id),
+        )->firstOrFail();
+
+        // The admin edit sheet fetches /bookings/{id} as JSON; that payload must
+        // carry the free-text hotel name, or the sheet opens blank for it.
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->getJson(route('bookings.show', $booking->id))
+            ->assertOk()
+            ->assertJsonPath('hotel_name', 'Seaside Unlisted Inn')
+            ->assertJsonPath('hotel_id', null);
+    });
+
     test('client can create a booking with all details', function () {
         $clientAddress = ClientAddress::factory()->for($this->client)->create();
         $hotel = Hotel::factory()->create();

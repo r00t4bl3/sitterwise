@@ -182,7 +182,22 @@ export function PersonalInfoSection({
 
     const [notifySheetOpen, setNotifySheetOpen] = useState(false);
 
-    const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
+    // A booking with a free-text hotel name but no listed hotel is a custom
+    // (unlisted) hotel — open the sheet in unlisted mode so the name shows.
+    const derivedUnlistedHotel =
+        !!editingBooking?.hotel_name && !editingBooking?.hotel_id;
+    const [showUnlistedHotel, setShowUnlistedHotel] =
+        useState(derivedUnlistedHotel);
+    const [trackedHotelBookingId, setTrackedHotelBookingId] = useState(
+        editingBooking?.id ?? null,
+    );
+
+    // Re-derive when a different booking is loaded into the sheet (reset during
+    // render — not an effect — so it never fights the user's own toggle).
+    if (trackedHotelBookingId !== (editingBooking?.id ?? null)) {
+        setTrackedHotelBookingId(editingBooking?.id ?? null);
+        setShowUnlistedHotel(derivedUnlistedHotel);
+    }
 
     // Legacy/imported bookings can store children/pets as a string or with null
     // entries; guard so the summary never throws and blanks the whole sheet.

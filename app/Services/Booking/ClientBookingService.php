@@ -251,6 +251,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'notes' => $pet->notes,
             ])->toArray(),
             'hotel_id' => $request->hotel_id,
+            'hotel_name' => $request->hotel_name,
             'rental_platform' => $request->rental_platform,
             'caregiver_notes' => $request->caregiver_notes,
             'notes_to_sitterwise' => $request->notes_to_sitterwise,

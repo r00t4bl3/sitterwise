@@ -99,7 +99,7 @@ class AdminBookingService implements BookingServiceInterface
             'id', 'ulid', 'booking_group_id', 'caregiver_id',
             'start_datetime', 'end_datetime', 'status', 'payment_status',
         ])->with([
-            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes,requires_payment,payment_form',
+            'bookingGroup:id,service_type,location_type,client_id,client_first_name,client_last_name,hotel_id,hotel_name,address_line1,address_line2,address_city,address_state,address_zip,children,pets,children_notes,requires_payment,payment_form',
             'caregiver:id,first_name,last_name',
         ]);
 

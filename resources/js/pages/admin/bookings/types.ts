@@ -138,6 +138,8 @@ export interface Booking {
     total_amount: number;
     payment_status: string;
     caregiver_id: number | null;
+    hotel_id: number | null;
+    hotel_name: string | null;
     service_type_label?: string;
     attributeDefinitions?: Array<{
         pivot: {
