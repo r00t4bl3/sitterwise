@@ -422,6 +422,13 @@ class CaregiverController extends Controller
             $caregiver->update(['status' => $validated['status']]);
         }
 
+        // Mirror the caregiver self-resume flow: activating a caregiver must
+        // resolve any lingering pause, otherwise it stays "active" and the nightly
+        // archiver re-inactivates them 180 days on.
+        if ($caregiver->status === CaregiverStatus::Active) {
+            $caregiver->activePause?->update(['resumed_at' => now()]);
+        }
+
         return redirect()->route('caregivers.show', $caregiver->id)
             ->with('success', 'Caregiver updated successfully');
     }

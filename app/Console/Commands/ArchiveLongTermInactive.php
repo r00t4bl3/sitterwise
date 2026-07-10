@@ -34,6 +34,16 @@ class ArchiveLongTermInactive extends Command
         foreach ($warningCandidates as $pause) {
             $caregiver = $pause->caregiver;
 
+            // A caregiver reactivated outside the resume flow (e.g. an admin
+            // status change) can be left with a dangling active pause. The
+            // archive pipeline is "N days ON HOLD", so never warn/archive someone
+            // no longer on hold — just close out the stale pause.
+            if ($caregiver->status !== CaregiverStatus::OnHold) {
+                $pause->update(['resumed_at' => now()]);
+
+                continue;
+            }
+
             Mail::to($caregiver->user->email)->queue(
                 new CaregiverArchiveWarningMail(
                     caregiverName: $caregiver->first_name,
@@ -54,6 +64,16 @@ class ArchiveLongTermInactive extends Command
 
         foreach ($archiveCandidates as $pause) {
             $caregiver = $pause->caregiver;
+
+            // Only archive caregivers who are genuinely still on hold. One who was
+            // reactivated (admin status change) without resolving their pause must
+            // not be flipped back to Inactive — close the stale pause and skip.
+            if ($caregiver->status !== CaregiverStatus::OnHold) {
+                $pause->update(['resumed_at' => now()]);
+
+                continue;
+            }
+
             $caregiver->update(['status' => CaregiverStatus::Inactive]);
             $pause->update(['resumed_at' => now()]);
 

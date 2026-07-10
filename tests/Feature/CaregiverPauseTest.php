@@ -160,6 +160,39 @@ describe('commands', function () {
 
         expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Inactive);
     });
+
+    it('does not re-inactivate a reactivated caregiver with a dangling pause, and clears the stale pause', function () {
+        // Admin set her Active without resolving the old pause (not via the
+        // Resume flow), leaving a 185-day-old active pause behind.
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::Active]);
+
+        $pause = CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(185),
+        ]);
+
+        artisan('app:archive-long-term-inactive')->assertSuccessful();
+
+        expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Active)
+            ->and($pause->fresh()->resumed_at)->not->toBeNull();
+    });
+
+    it('does not send an archive warning to a reactivated caregiver', function () {
+        Mail::fake();
+
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::Active]);
+
+        $pause = CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(170),
+        ]);
+
+        artisan('app:archive-long-term-inactive')->assertSuccessful();
+
+        Mail::assertNotQueued(CaregiverArchiveWarningMail::class);
+        expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Active)
+            ->and($pause->fresh()->resumed_at)->not->toBeNull();
+    });
 });
 
 describe('admin resume', function () {
@@ -207,5 +240,41 @@ describe('admin resume', function () {
         actingAs($user)
             ->post(route('caregivers.resume', $caregiver->id))
             ->assertForbidden();
+    });
+});
+
+describe('admin status change resolves pauses', function () {
+    it('resolves an active pause when an admin sets the caregiver to Active via the status update', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::OnHold]);
+
+        $pause = CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(30),
+        ]);
+
+        actingAs($admin)
+            ->put(route('caregivers.update', $caregiver->id), ['status' => CaregiverStatus::Active->value])
+            ->assertRedirect();
+
+        expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Active)
+            ->and($pause->fresh()->resumed_at)->not->toBeNull();
+    });
+
+    it('leaves an active pause untouched when an admin sets a non-Active status', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $caregiver = makeCaregiver(['status' => CaregiverStatus::OnHold]);
+
+        $pause = CaregiverPause::create([
+            'caregiver_id' => $caregiver->id,
+            'paused_at' => now()->subDays(30),
+        ]);
+
+        actingAs($admin)
+            ->put(route('caregivers.update', $caregiver->id), ['status' => CaregiverStatus::Inactive->value])
+            ->assertRedirect();
+
+        expect($caregiver->fresh()->status)->toBe(CaregiverStatus::Inactive)
+            ->and($pause->fresh()->resumed_at)->toBeNull();
     });
 });
