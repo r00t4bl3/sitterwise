@@ -228,7 +228,7 @@ class CaregiverController extends Controller
                     }
                 })
                     ->orWhereHas('hotel', fn ($q) => $q->where('name', 'like', '%'.implode(' ', $terms).'%'))
-                    ->orWhere('location_type', 'like', '%'.implode(' ', $terms).'%');
+                    ->orWhereHas('bookingGroup', fn ($q) => $q->where('location_type', 'like', '%'.implode(' ', $terms).'%'));
             });
         }
 

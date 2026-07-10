@@ -42,4 +42,4 @@ Schedule::command('app:send-booking-reminders')->hourly();
 Schedule::command('app:send-payment-sms-reminders')->hourly();
 
 // Clean up stale push subscriptions
-Schedule::command('webpush:clean')->daily();
+Schedule::command('app:clean-push-subscriptions')->daily();

@@ -122,6 +122,24 @@ describe('Caregiver Job History', function () {
         );
     });
 
+    test('job history can be filtered by location type', function () {
+        $booking = Booking::factory()->forClient(Client::factory()->create())->create([
+            'caregiver_id' => $this->caregiver->id,
+        ]);
+        Booking::factory()->forClient(Client::factory()->create())->create([
+            'caregiver_id' => $this->caregiver->id,
+        ]);
+
+        $this->actingAs($this->admin);
+
+        $response = $this->get(route('caregivers.jobHistory', [$this->caregiver, 'search' => 'private']));
+
+        $response->assertSuccessful();
+        $response->assertInertia(fn ($page) => $page
+            ->has('bookings.data', 2)
+        );
+    });
+
     test('job history paginates results', function () {
         Booking::factory()->count(25)->create(['caregiver_id' => $this->caregiver->id]);
 

@@ -451,6 +451,9 @@ export default function CaregiverJobsIndex() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    ID
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Date
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -492,6 +495,9 @@ export default function CaregiverJobsIndex() {
                                         key={job.id}
                                         className="border-b border-border transition hover:bg-blush"
                                     >
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                            {job.id}
+                                        </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                             {formatDisplayDateTimeInPT(
                                                 job.start_datetime,

@@ -358,6 +358,9 @@ export default function JobHistory() {
                         <thead>
                             <tr className="bg-table-header">
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                    ID
+                                </th>
+                                <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Date
                                 </th>
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
@@ -399,6 +402,9 @@ export default function JobHistory() {
                                         key={booking.id}
                                         className="border-b border-border transition hover:bg-blush"
                                     >
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                            {booking.id}
+                                        </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
                                             {formatDisplayDateTimeInPT(
                                                 booking.start_datetime,
