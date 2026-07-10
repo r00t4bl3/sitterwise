@@ -8,6 +8,11 @@ class CaregiverBookingInvitationMail extends SendGridDynamicMail
 {
     public function __construct(public Booking $booking) {}
 
+    protected function shouldBccTeam(): bool
+    {
+        return false;
+    }
+
     protected function templateId(): string
     {
         return 'd-aac404a830334ae884098a75cb32caca';

@@ -11,6 +11,11 @@ class BookingReviewReminderMail extends SendGridDynamicMail
         public string $reviewUrl,
     ) {}
 
+    protected function shouldBccTeam(): bool
+    {
+        return false;
+    }
+
     protected function templateId(): string
     {
         return 'd-ed4e08ffb28648f4aee1485389653810';

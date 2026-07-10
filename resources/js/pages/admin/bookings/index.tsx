@@ -215,8 +215,6 @@ export default function Bookings() {
         );
     }, [isTableView]);
 
-    const tableBodyRef = useRef<HTMLTableSectionElement>(null);
-
     useEffect(() => {
         const handleScroll = () => {
             setShowScrollTop(window.scrollY > 300);
@@ -226,32 +224,6 @@ export default function Bookings() {
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-
-    useEffect(() => {
-        if (!isTableView) {
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            if (!tableBodyRef.current) {
-                return;
-            }
-
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-            const todayRow = tableBodyRef.current.querySelector(
-                `tr[data-date="${todayStr}"]`,
-            ) as HTMLElement | null;
-
-            const targetRow =
-                todayRow ??
-                (tableBodyRef.current.querySelector(
-                    'tr[data-date]',
-                ) as HTMLElement | null);
-
-            targetRow?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-    }, [isTableView]);
 
     const days = getDaysInMonth(currentYear, currentMonth);
     const monthNames = [
@@ -405,6 +377,102 @@ export default function Bookings() {
             );
         });
     }, [filteredBookings, currentMonth, currentYear]);
+
+    // Table view: open with today at the top and past days hidden (Bubble-style).
+    // Past filtering only applies when the displayed month is the current one —
+    // navigating to any other month shows every day.
+    const [showPastJobs, setShowPastJobs] = useState(false);
+
+    const todayIso = todayInPT();
+    const isCurrentMonth =
+        currentYear === Number(todayIso.slice(0, 4)) &&
+        currentMonth === Number(todayIso.slice(5, 7));
+
+    const sortedMonthBookings = useMemo(() => {
+        return [...currentMonthBookings].sort((a, b) => {
+            const ae = new Date(
+                a.start_datetime.replace(/\.\d+Z$/, 'Z'),
+            ).getTime();
+            const be = new Date(
+                b.start_datetime.replace(/\.\d+Z$/, 'Z'),
+            ).getTime();
+
+            return (ae || 0) - (be || 0);
+        });
+    }, [currentMonthBookings]);
+
+    const pastBookingsCount = useMemo(() => {
+        if (!isCurrentMonth) {
+            return 0;
+        }
+
+        return sortedMonthBookings.filter((b) => {
+            const d = getPTDate(b.start_datetime);
+
+            return d ? format(d, 'yyyy-MM-dd') < todayIso : false;
+        }).length;
+    }, [sortedMonthBookings, isCurrentMonth, todayIso]);
+
+    const visibleTableBookings = useMemo(() => {
+        if (showPastJobs || !isCurrentMonth) {
+            return sortedMonthBookings;
+        }
+
+        return sortedMonthBookings.filter((b) => {
+            const d = getPTDate(b.start_datetime);
+
+            return d ? format(d, 'yyyy-MM-dd') >= todayIso : true;
+        });
+    }, [sortedMonthBookings, showPastJobs, isCurrentMonth, todayIso]);
+
+    // Progressive rendering: the data is all in memory, but painting every row of
+    // a busy month is slow — render a chunk and grow it as a sentinel below the
+    // table scrolls into view.
+    const TABLE_CHUNK_SIZE = 40;
+    const [renderLimit, setRenderLimit] = useState(TABLE_CHUNK_SIZE);
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+    // Any change to the visible set (month, filters, show-past toggle) restarts
+    // the window at the top. React's supported "reset state when a value changes"
+    // pattern — adjust during render rather than in an effect.
+    const [trackedList, setTrackedList] = useState(visibleTableBookings);
+
+    if (trackedList !== visibleTableBookings) {
+        setTrackedList(visibleTableBookings);
+        setRenderLimit(TABLE_CHUNK_SIZE);
+    }
+
+    const renderedTableBookings = useMemo(
+        () => visibleTableBookings.slice(0, renderLimit),
+        [visibleTableBookings, renderLimit],
+    );
+
+    const hasMoreRows = renderLimit < visibleTableBookings.length;
+
+    useEffect(() => {
+        if (!isTableView || !hasMoreRows) {
+            return;
+        }
+
+        const sentinel = loadMoreRef.current;
+
+        if (!sentinel) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    setRenderLimit((limit) => limit + TABLE_CHUNK_SIZE);
+                }
+            },
+            { rootMargin: '600px' },
+        );
+
+        observer.observe(sentinel);
+
+        return () => observer.disconnect();
+    }, [isTableView, hasMoreRows, renderLimit]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -824,354 +892,364 @@ export default function Bookings() {
                             })}
                         </div>
                     ) : (
-                        <div className="-mx-4 -mb-4 overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-table-header">
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Date
-                                        </th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Client Name
-                                        </th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Time
-                                        </th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Location
-                                        </th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Caregiver Name
-                                        </th>
-                                        <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody
-                                    className="bg-background"
-                                    ref={tableBodyRef}
-                                >
-                                    {currentMonthBookings.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan={7}
-                                                className="px-4 py-8 text-center text-sm text-muted-foreground italic"
-                                            >
-                                                No bookings found for this
-                                                month.
-                                            </td>
+                        <div>
+                            {isCurrentMonth && pastBookingsCount > 0 && (
+                                <div className="mb-2 flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPastJobs((v) => !v)
+                                        }
+                                        className="text-xs font-medium text-ring hover:text-foreground"
+                                    >
+                                        {showPastJobs
+                                            ? 'Hide past jobs'
+                                            : `Show past jobs (${pastBookingsCount})`}
+                                    </button>
+                                </div>
+                            )}
+                            <div className="-mx-4 -mb-4 overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-table-header">
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Date
+                                            </th>
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Client Name
+                                            </th>
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Time
+                                            </th>
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Location
+                                            </th>
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Caregiver Name
+                                            </th>
+                                            <th className="px-4 py-3 text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Status
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
+                                                Actions
+                                            </th>
                                         </tr>
-                                    ) : (
-                                        [...currentMonthBookings]
-                                            .sort((a, b) => {
-                                                const ae = new Date(
-                                                    a.start_datetime.replace(
-                                                        /\.\d+Z$/,
-                                                        'Z',
-                                                    ),
-                                                ).getTime();
-                                                const be = new Date(
-                                                    b.start_datetime.replace(
-                                                        /\.\d+Z$/,
-                                                        'Z',
-                                                    ),
-                                                ).getTime();
+                                    </thead>
+                                    <tbody className="bg-background">
+                                        {visibleTableBookings.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={7}
+                                                    className="px-4 py-8 text-center text-sm text-muted-foreground italic"
+                                                >
+                                                    {currentMonthBookings.length ===
+                                                    0
+                                                        ? 'No bookings found for this month.'
+                                                        : 'No upcoming bookings this month.'}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            renderedTableBookings.map(
+                                                (booking) => {
+                                                    const statusKey =
+                                                        booking.status?.toLowerCase() ||
+                                                        'received';
+                                                    const isHotel =
+                                                        booking.booking_group
+                                                            ?.location_type ===
+                                                        'hotel';
+                                                    const hotel = isHotel
+                                                        ? hotels.find(
+                                                              (h) =>
+                                                                  h.id ===
+                                                                  booking
+                                                                      .booking_group
+                                                                      ?.hotel_id,
+                                                          )
+                                                        : null;
+                                                    const location = isHotel
+                                                        ? hotel?.name
+                                                        : booking.booking_group
+                                                              ?.address_line1;
+                                                    const addressQuery =
+                                                        isHotel && hotel
+                                                            ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
+                                                            : `${booking.booking_group?.address_line1 || ''} ${booking.booking_group?.address_line2 || ''} ${booking.booking_group?.address_city || ''} ${booking.booking_group?.address_state || ''} ${booking.booking_group?.address_zip || ''}`.trim();
+                                                    const mapsUrl = addressQuery
+                                                        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
+                                                        : null;
+                                                    const parsedDate =
+                                                        getPTDate(
+                                                            booking.start_datetime,
+                                                        );
+                                                    const rowIso = parsedDate
+                                                        ? format(
+                                                              parsedDate,
+                                                              'yyyy-MM-dd',
+                                                          )
+                                                        : '';
+                                                    const rowDate = parsedDate
+                                                        ? format(
+                                                              parsedDate,
+                                                              'MMM d, yyyy',
+                                                          )
+                                                        : '';
 
-                                                return (ae || 0) - (be || 0);
-                                            })
-                                            .map((booking) => {
-                                                const statusKey =
-                                                    booking.status?.toLowerCase() ||
-                                                    'received';
-                                                const isHotel =
-                                                    booking.booking_group
-                                                        ?.location_type ===
-                                                    'hotel';
-                                                const hotel = isHotel
-                                                    ? hotels.find(
-                                                          (h) =>
-                                                              h.id ===
-                                                              booking
-                                                                  .booking_group
-                                                                  ?.hotel_id,
-                                                      )
-                                                    : null;
-                                                const location = isHotel
-                                                    ? hotel?.name
-                                                    : booking.booking_group
-                                                          ?.address_line1;
-                                                const addressQuery =
-                                                    isHotel && hotel
-                                                        ? `${hotel.line1 || ''} ${hotel.line2 || ''} ${hotel.city || ''} ${hotel.state || ''} ${hotel.zip || ''}`.trim()
-                                                        : `${booking.booking_group?.address_line1 || ''} ${booking.booking_group?.address_line2 || ''} ${booking.booking_group?.address_city || ''} ${booking.booking_group?.address_state || ''} ${booking.booking_group?.address_zip || ''}`.trim();
-                                                const mapsUrl = addressQuery
-                                                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery)}`
-                                                    : null;
-                                                const parsedDate = getPTDate(
-                                                    booking.start_datetime,
-                                                );
-                                                const rowIso = parsedDate
-                                                    ? format(
-                                                          parsedDate,
-                                                          'yyyy-MM-dd',
-                                                      )
-                                                    : '';
-                                                const rowDate = parsedDate
-                                                    ? format(
-                                                          parsedDate,
-                                                          'MMM d, yyyy',
-                                                      )
-                                                    : '';
-
-                                                return (
-                                                    <tr
-                                                        key={booking.id}
-                                                        data-date={rowIso}
-                                                        onClick={() =>
-                                                            router.visit(
-                                                                `/bookings/${booking.ulid}`,
-                                                            )
-                                                        }
-                                                        className="cursor-pointer border-b border-border transition hover:bg-blush"
-                                                    >
-                                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                                            {rowDate}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm font-medium text-ring">
-                                                            <div className="flex items-center justify-between">
-                                                                <Link
-                                                                    href={`/clients/${booking.booking_group?.client_id}`}
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.stopPropagation()
-                                                                    }
-                                                                    className="hover:underline"
-                                                                >
-                                                                    {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
-                                                                        clients?.find(
-                                                                            (
-                                                                                c,
-                                                                            ) =>
-                                                                                c.id ===
-                                                                                booking
-                                                                                    .booking_group
-                                                                                    ?.client_id,
-                                                                        )
-                                                                            ?.name ||
-                                                                        'Unknown Client'}
-                                                                </Link>
-                                                                <div className="flex items-center gap-1">
-                                                                    {booking
-                                                                        .booking_group
-                                                                        ?.service_type ===
-                                                                        'corporate_invoiced' && (
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger
-                                                                                asChild
-                                                                            >
-                                                                                <Building className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>
-                                                                                Corporate
-                                                                                (Invoiced)
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                    {(booking
-                                                                        .booking_group
-                                                                        ?.bookings_count ??
-                                                                        0) >
-                                                                        1 && (
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger
-                                                                                asChild
-                                                                            >
-                                                                                <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>
-                                                                                Multi-date
-                                                                                booking
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    )}
-                                                                    {booking
-                                                                        .booking_group
-                                                                        ?.requires_payment &&
-                                                                        booking
+                                                    return (
+                                                        <tr
+                                                            key={booking.id}
+                                                            data-date={rowIso}
+                                                            onClick={() =>
+                                                                router.visit(
+                                                                    `/bookings/${booking.ulid}`,
+                                                                )
+                                                            }
+                                                            className="cursor-pointer border-b border-border transition hover:bg-blush"
+                                                        >
+                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                                                {rowDate}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm font-medium text-ring">
+                                                                <div className="flex items-center justify-between">
+                                                                    <Link
+                                                                        href={`/clients/${booking.booking_group?.client_id}`}
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        className="hover:underline"
+                                                                    >
+                                                                        {`${booking.booking_group?.client_first_name || ''} ${booking.booking_group?.client_last_name || ''}`.trim() ||
+                                                                            clients?.find(
+                                                                                (
+                                                                                    c,
+                                                                                ) =>
+                                                                                    c.id ===
+                                                                                    booking
+                                                                                        .booking_group
+                                                                                        ?.client_id,
+                                                                            )
+                                                                                ?.name ||
+                                                                            'Unknown Client'}
+                                                                    </Link>
+                                                                    <div className="flex items-center gap-1">
+                                                                        {booking
                                                                             .booking_group
-                                                                            ?.payment_form ===
-                                                                            'Stripe' &&
-                                                                        booking.payment_status !==
-                                                                            'paid' &&
-                                                                        !clients_with_payment_capability.includes(
-                                                                            booking
-                                                                                .booking_group
-                                                                                ?.client_id,
-                                                                        ) && (
+                                                                            ?.service_type ===
+                                                                            'corporate_invoiced' && (
                                                                             <Tooltip>
                                                                                 <TooltipTrigger
                                                                                     asChild
                                                                                 >
-                                                                                    <TriangleAlert className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                                                                                    <Building className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
                                                                                 </TooltipTrigger>
                                                                                 <TooltipContent>
-                                                                                    No
-                                                                                    payment
-                                                                                    method
-                                                                                    on
-                                                                                    file
+                                                                                    Corporate
+                                                                                    (Invoiced)
                                                                                 </TooltipContent>
                                                                             </Tooltip>
                                                                         )}
+                                                                        {(booking
+                                                                            .booking_group
+                                                                            ?.bookings_count ??
+                                                                            0) >
+                                                                            1 && (
+                                                                            <Tooltip>
+                                                                                <TooltipTrigger
+                                                                                    asChild
+                                                                                >
+                                                                                    <Layers className="h-3.5 w-3.5 text-[#2F6B52] dark:text-[#6BC4A0]" />
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent>
+                                                                                    Multi-date
+                                                                                    booking
+                                                                                </TooltipContent>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                        {booking
+                                                                            .booking_group
+                                                                            ?.requires_payment &&
+                                                                            booking
+                                                                                .booking_group
+                                                                                ?.payment_form ===
+                                                                                'Stripe' &&
+                                                                            booking.payment_status !==
+                                                                                'paid' &&
+                                                                            !clients_with_payment_capability.includes(
+                                                                                booking
+                                                                                    .booking_group
+                                                                                    ?.client_id,
+                                                                            ) && (
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger
+                                                                                        asChild
+                                                                                    >
+                                                                                        <TriangleAlert className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent>
+                                                                                        No
+                                                                                        payment
+                                                                                        method
+                                                                                        on
+                                                                                        file
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-                                                            {formatDisplayTimeInPT(
-                                                                booking.start_datetime,
-                                                            )}{' '}
-                                                            -{' '}
-                                                            {formatDisplayTimeInPT(
-                                                                booking.end_datetime,
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm text-foreground">
-                                                            {mapsUrl ? (
-                                                                <a
-                                                                    href={
-                                                                        mapsUrl
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
+                                                                {formatDisplayTimeInPT(
+                                                                    booking.start_datetime,
+                                                                )}{' '}
+                                                                -{' '}
+                                                                {formatDisplayTimeInPT(
+                                                                    booking.end_datetime,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm text-foreground">
+                                                                {mapsUrl ? (
+                                                                    <a
+                                                                        href={
+                                                                            mapsUrl
+                                                                        }
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        className="text-ring hover:underline"
+                                                                        title={
+                                                                            addressQuery
+                                                                        }
+                                                                    >
+                                                                        {location ||
+                                                                            '—'}
+                                                                    </a>
+                                                                ) : (
+                                                                    <div
+                                                                        className="max-w-[200px] truncate"
+                                                                        title={
+                                                                            location ||
+                                                                            ''
+                                                                        }
+                                                                    >
+                                                                        {location ||
+                                                                            '—'}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm">
+                                                                {booking.caregiver ? (
+                                                                    <Link
+                                                                        href={`/caregivers/${booking.caregiver.id}`}
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        className="font-medium text-ring hover:underline"
+                                                                    >
+                                                                        {
+                                                                            booking
+                                                                                .caregiver
+                                                                                .first_name
+                                                                        }{' '}
+                                                                        {
+                                                                            booking
+                                                                                .caregiver
+                                                                                .last_name
+                                                                        }
+                                                                    </Link>
+                                                                ) : (
+                                                                    <span className="text-muted-foreground italic">
+                                                                        Unassigned
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <StatusBadge
+                                                                    status={
+                                                                        statusKey
                                                                     }
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.stopPropagation()
+                                                                    bookingStatuses={
+                                                                        booking_statuses
                                                                     }
-                                                                    className="text-ring hover:underline"
-                                                                    title={
-                                                                        addressQuery
-                                                                    }
-                                                                >
-                                                                    {location ||
-                                                                        '—'}
-                                                                </a>
-                                                            ) : (
-                                                                <div
-                                                                    className="max-w-[200px] truncate"
-                                                                    title={
-                                                                        location ||
-                                                                        ''
-                                                                    }
-                                                                >
-                                                                    {location ||
-                                                                        '—'}
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <div className="flex justify-end gap-2">
+                                                                    {/* eslint-disable-next-line no-constant-binary-expression */}
+                                                                    {false &&
+                                                                        (statusKey ===
+                                                                            'completed' ||
+                                                                            statusKey ===
+                                                                                'pending') &&
+                                                                        booking.payment_status !==
+                                                                            'paid' && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                                                onClick={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    e.stopPropagation();
+                                                                                    window.location.href =
+                                                                                        '/admin/bookings/charge?booking_id=' +
+                                                                                        booking.id;
+                                                                                }}
+                                                                                title="Charge"
+                                                                            >
+                                                                                <CreditCard className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    <Button
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.stopPropagation();
+                                                                            sheet.openDuplicateSheet(
+                                                                                booking as unknown as FullBooking,
+                                                                            );
+                                                                        }}
+                                                                        variant="outline"
+                                                                    >
+                                                                        Duplicate
+                                                                    </Button>
+                                                                    <Button
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.stopPropagation();
+                                                                            sheet.openEditSheet(
+                                                                                booking as unknown as FullBooking,
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        Edit
+                                                                    </Button>
                                                                 </div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm">
-                                                            {booking.caregiver ? (
-                                                                <Link
-                                                                    href={`/caregivers/${booking.caregiver.id}`}
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        e.stopPropagation()
-                                                                    }
-                                                                    className="font-medium text-ring hover:underline"
-                                                                >
-                                                                    {
-                                                                        booking
-                                                                            .caregiver
-                                                                            .first_name
-                                                                    }{' '}
-                                                                    {
-                                                                        booking
-                                                                            .caregiver
-                                                                            .last_name
-                                                                    }
-                                                                </Link>
-                                                            ) : (
-                                                                <span className="text-muted-foreground italic">
-                                                                    Unassigned
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <StatusBadge
-                                                                status={
-                                                                    statusKey
-                                                                }
-                                                                bookingStatuses={
-                                                                    booking_statuses
-                                                                }
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right">
-                                                            <div className="flex justify-end gap-2">
-                                                                {/* eslint-disable-next-line no-constant-binary-expression */}
-                                                                {false &&
-                                                                    (statusKey ===
-                                                                        'completed' ||
-                                                                        statusKey ===
-                                                                            'pending') &&
-                                                                    booking.payment_status !==
-                                                                        'paid' && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) => {
-                                                                                e.stopPropagation();
-                                                                                window.location.href =
-                                                                                    '/admin/bookings/charge?booking_id=' +
-                                                                                    booking.id;
-                                                                            }}
-                                                                            title="Charge"
-                                                                        >
-                                                                            <CreditCard className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
-                                                                <Button
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) => {
-                                                                        e.stopPropagation();
-                                                                        sheet.openDuplicateSheet(
-                                                                            booking as unknown as FullBooking,
-                                                                        );
-                                                                    }}
-                                                                    variant="outline"
-                                                                >
-                                                                    Duplicate
-                                                                </Button>
-                                                                <Button
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) => {
-                                                                        e.stopPropagation();
-                                                                        sheet.openEditSheet(
-                                                                            booking as unknown as FullBooking,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    Edit
-                                                                </Button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                    )}
-                                </tbody>
-                            </table>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                },
+                                            )
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {hasMoreRows && (
+                                <div
+                                    ref={loadMoreRef}
+                                    className="py-4 text-center text-xs text-muted-foreground"
+                                >
+                                    Loading more…
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
