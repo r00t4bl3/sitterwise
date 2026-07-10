@@ -180,9 +180,19 @@ class Client extends Model
         return ! empty($this->special_needs_notes);
     }
 
-    public function routeNotificationForDatabase(): string
+    /**
+     * Clients hold no email column of their own — it lives on the linked User.
+     * Without this, the mail channel resolves to null and client emails (e.g.
+     * payment-failure notices) silently never send.
+     *
+     * NOTE: do NOT add a routeNotificationForDatabase() returning a string
+     * here — the database channel expects Notifiable's default
+     * notifications() relation and calls ->create() on it, so a string route
+     * 500s the first database notification sent to a Client.
+     */
+    public function routeNotificationForMail(): ?string
     {
-        return 'client-notifications-'.$this->id;
+        return $this->user?->email;
     }
 
     public function hasPaymentMethod(): bool

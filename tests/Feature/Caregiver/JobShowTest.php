@@ -214,3 +214,29 @@ describe('Job show — claimed by another caregiver (PII-free)', function () {
             ->assertDontSee($this->client->first_name);
     });
 });
+
+describe('Job index — early checkout availability', function () {
+    test('an in-progress job (started, not yet ended) is listed with the fields needed to check out early', function () {
+        // Underway: started an hour ago, still scheduled to end in an hour. The
+        // Checkout button now gates on the job having started (not on the planned
+        // end passing), so this job must ship start_datetime + a null resolution.
+        Booking::factory()->forClient($this->client)->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => 'confirmed',
+            'start_datetime' => now()->subHour(),
+            'end_datetime' => now()->addHour(),
+        ]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('caregiver/jobs/index')
+                ->has('jobs.data', 1)
+                ->where('jobs.data.0.status', 'confirmed')
+                ->where('jobs.data.0.assignment_resolution', null)
+                ->has('jobs.data.0.start_datetime')
+            );
+    });
+});

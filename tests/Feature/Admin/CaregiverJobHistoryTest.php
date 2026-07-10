@@ -152,6 +152,68 @@ describe('Caregiver Job History', function () {
         );
     });
 
+    test('backed-out jobs remain visible in job history with their resolution', function () {
+        $booking = Booking::factory()->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => 'confirmed',
+        ]);
+        $assignment = $booking->assignments()->firstOrFail();
+
+        // Caregiver backs out: this nulls bookings.caregiver_id but keeps the
+        // assignment row (resolution = backed_out). The job must still appear.
+        $this->actingAs($this->caregiver->user)
+            ->post(route('assignments.back-out', $assignment), ['reason' => 'Family emergency'])
+            ->assertRedirect();
+
+        expect($booking->fresh()->caregiver_id)->toBeNull();
+
+        $this->actingAs($this->admin);
+        $response = $this->get(route('caregivers.jobHistory', $this->caregiver));
+
+        $response->assertSuccessful();
+        $response->assertInertia(fn ($page) => $page
+            ->has('bookings.data', 1)
+            ->where('bookings.data.0.assignment_resolution', 'backed_out')
+            ->where('bookings.data.0.assignment_id', $assignment->id)
+        );
+    });
+
+    test('a job another caregiver backed out of does not leak into this caregiver history', function () {
+        $other = Caregiver::factory()->create();
+        $booking = Booking::factory()->create([
+            'caregiver_id' => $other->id,
+            'status' => 'confirmed',
+        ]);
+        $assignment = $booking->assignments()->firstOrFail();
+
+        $this->actingAs($other->user)
+            ->post(route('assignments.back-out', $assignment), ['reason' => 'Scheduling conflict']);
+
+        // The broadened (assignment-based) query must still be caregiver-scoped:
+        // this caregiver has no jobs, so the other caregiver's back-out must not show.
+        $this->actingAs($this->admin);
+        $this->get(route('caregivers.jobHistory', $this->caregiver))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page->has('bookings.data', 0));
+    });
+
+    test('a backed-out job can be excused now that it is visible', function () {
+        $booking = Booking::factory()->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => 'confirmed',
+        ]);
+        $assignment = $booking->assignments()->firstOrFail();
+
+        $this->actingAs($this->caregiver->user)
+            ->post(route('assignments.back-out', $assignment), ['reason' => 'Sick']);
+
+        $this->actingAs($this->admin)
+            ->post(route('assignments.excuse', $assignment), ['note' => 'Approved leave'])
+            ->assertRedirect();
+
+        expect($assignment->fresh()->resolution)->toBe('backed_out_excused');
+    });
+
     test('job history passes correct caregiver info to inertia', function () {
         $this->actingAs($this->admin);
 

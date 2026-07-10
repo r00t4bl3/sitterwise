@@ -685,7 +685,8 @@ export default function CaregiverJobsIndex() {
 
                                             {job.status.toLowerCase() ===
                                                 'confirmed' &&
-                                                new Date(job.end_datetime) <
+                                                !job.assignment_resolution &&
+                                                new Date(job.start_datetime) <=
                                                     new Date() && (
                                                     <Button
                                                         size="sm"

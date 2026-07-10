@@ -3,9 +3,11 @@
 namespace App\Notifications;
 
 use App\Mail\AdminPaymentFailedMail;
+use App\Mail\ClientPaymentRequiredMail;
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
 use Illuminate\Notifications\Notification;
 
 class PaymentFailedNotification extends Notification implements ShouldQueue
@@ -24,9 +26,15 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
         return ['database', 'mail'];
     }
 
-    public function toMail(object $notifiable): AdminPaymentFailedMail
+    public function toMail(object $notifiable): Mailable
     {
         $address = $notifiable->routeNotificationFor('mail', $this);
+
+        // The client gets the branded, client-facing "please update your payment
+        // method" email; only the team gets the internal admin failure notice.
+        if ($this->recipientType === 'client') {
+            return (new ClientPaymentRequiredMail($this->booking))->to($address);
+        }
 
         return (new AdminPaymentFailedMail(
             $this->booking,

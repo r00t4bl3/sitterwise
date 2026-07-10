@@ -202,7 +202,14 @@ class CaregiverController extends Controller
     public function jobHistory(Request $request, Caregiver $caregiver)
     {
         $query = Booking::with(['client.user', 'hotel', 'assignments'])
-            ->where('caregiver_id', $caregiver->id);
+            ->where(function ($q) use ($caregiver) {
+                // Include jobs the caregiver is currently assigned to AND jobs they
+                // backed out of / were replaced on: backing out nulls
+                // bookings.caregiver_id, but the caregiver_assignments row (with its
+                // resolution) is retained, so match on either.
+                $q->where('caregiver_id', $caregiver->id)
+                    ->orWhereHas('assignments', fn ($aq) => $aq->where('caregiver_id', $caregiver->id));
+            });
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -229,19 +236,26 @@ class CaregiverController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        $bookings->getCollection()->transform(fn ($booking) => [
-            ...$booking->toArray(),
-            'assignment_id' => $booking->assignments->first()?->id,
-            'assignment_resolution' => $booking->assignments->first()?->resolution,
-            'assignment_resolution_label' => $booking->assignments->first()?->resolution
-                ? AssignmentResolution::tryFrom($booking->assignments->first()->resolution)?->label()
-                : null,
-            'assignment_resolution_color' => $booking->assignments->first()?->resolution
-                ? AssignmentResolution::tryFrom($booking->assignments->first()->resolution)?->color()
-                : null,
-            'assignment_note' => $booking->assignments->first()?->resolution_note,
-            'late_arrival' => $booking->assignments->first()?->late_arrival_flag ?? false,
-        ]);
+        $bookings->getCollection()->transform(function ($booking) use ($caregiver) {
+            // A job may carry several assignment rows after reassignment; surface
+            // the one belonging to THIS caregiver so their own resolution shows.
+            $assignment = $booking->assignments->firstWhere('caregiver_id', $caregiver->id)
+                ?? $booking->assignments->first();
+
+            return [
+                ...$booking->toArray(),
+                'assignment_id' => $assignment?->id,
+                'assignment_resolution' => $assignment?->resolution,
+                'assignment_resolution_label' => $assignment?->resolution
+                    ? AssignmentResolution::tryFrom($assignment->resolution)?->label()
+                    : null,
+                'assignment_resolution_color' => $assignment?->resolution
+                    ? AssignmentResolution::tryFrom($assignment->resolution)?->color()
+                    : null,
+                'assignment_note' => $assignment?->resolution_note,
+                'late_arrival' => $assignment?->late_arrival_flag ?? false,
+            ];
+        });
 
         $bookingStatuses = array_map(
             fn ($case) => [

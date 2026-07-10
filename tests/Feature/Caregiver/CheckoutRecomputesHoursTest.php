@@ -95,3 +95,33 @@ it('still records correct hours when the caregiver edits the times at checkout',
     $booking->refresh();
     expect((float) $booking->total_working_hour)->toBe(5.0);
 });
+
+it('rejects a checkout whose end time is at or before the start time', function () {
+    $booking = Booking::factory()
+        ->forClient($this->client)
+        ->withBookingGroup(fn ($g) => $g->state(['service_type' => 'babysitter']))
+        ->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => BookingStatus::Confirmed,
+            'start_datetime' => '2026-05-28T09:00:00Z',
+            'end_datetime' => '2026-05-28T17:00:00Z',
+            'pricing_rule_id' => PricingRule::first()?->id,
+        ]);
+
+    $booking->assignments()->firstOrCreate([
+        'caregiver_id' => $this->caregiver->id,
+        'assigned_at' => now(),
+    ]);
+
+    // An end that is not after the start is invalid — the job must not complete.
+    $this->actingAs($this->caregiver->user)
+        ->post(route('jobs.checkout', $booking), [
+            'start_datetime' => '2026-05-28T09:00:00Z',
+            'end_datetime' => '2026-05-28T09:00:00Z',
+        ])
+        ->assertSessionHasErrors('end_datetime');
+
+    $booking->refresh();
+    expect($booking->status)->toBe(BookingStatus::Confirmed->value)
+        ->and($booking->checkout_at)->toBeNull();
+});

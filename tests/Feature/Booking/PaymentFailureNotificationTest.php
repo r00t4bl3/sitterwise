@@ -3,6 +3,8 @@
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
+use App\Mail\AdminPaymentFailedMail;
+use App\Mail\ClientPaymentRequiredMail;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\PricingRule;
@@ -86,6 +88,31 @@ describe('Payment Failure Notifications', function () {
                 && $payload['error'] === 'Expired'
                 && str_contains($payload['message'], 'update your payment method');
         });
+    });
+
+    test('client mail is a client-facing mailable addressed to the user email', function () {
+        [$client, $user, $booking] = failedBooking();
+
+        // Clients have no email column; before the fix the mail channel resolved
+        // to null and the client email silently never sent.
+        expect($client->routeNotificationForMail())->toBe($user->email);
+
+        $notification = new PaymentFailedNotification($booking, 1, 'Card declined', 'client');
+        $mail = $notification->toMail($client);
+
+        expect($mail)->toBeInstanceOf(ClientPaymentRequiredMail::class)
+            ->and($mail->to)->toContain(['name' => null, 'address' => $user->email]);
+    });
+
+    test('admin mail uses the internal admin failed-payment mailable', function () {
+        [$client, $user, $booking] = failedBooking();
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $notification = new PaymentFailedNotification($booking, 2, 'Card declined', 'admin');
+        $mail = $notification->toMail($admin);
+
+        expect($mail)->toBeInstanceOf(AdminPaymentFailedMail::class)
+            ->and($mail->to)->toContain(['name' => null, 'address' => $admin->email]);
     });
 
     test('admin notification payload contains client name and booking info', function () {
