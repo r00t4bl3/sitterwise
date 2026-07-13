@@ -27,6 +27,7 @@ class CaregiverBookingInvitationMail extends SendGridDynamicMail
         $data = [
             'client_first_name' => $this->booking->client?->first_name ?? $group?->client_first_name,
             'client_last_name' => $this->booking->client?->last_name ?? $group?->client_last_name,
+            'date' => $start->format('l, F j, Y'),
             'start_datetime' => $start->format('M j, Y g:i A'),
             'end_datetime' => $end->format('M j, Y g:i A'),
             'job_url' => route('jobs.short', $this->booking),

@@ -35,6 +35,13 @@ class PricingRuleController extends Controller
     {
         $validated = $request->validated();
 
+        if (($validated['service_type'] ?? '') === 'comped') {
+            $validated['charge_to_client'] = 0;
+            $validated['sitterwise_cut'] = 0;
+        } else {
+            $validated['charge_to_client'] = ($validated['paid_to_caregiver'] ?? 0) + ($validated['sitterwise_cut'] ?? 0);
+        }
+
         PricingRule::create($validated);
 
         return redirect()->route('pricing-rules.index')
@@ -44,6 +51,13 @@ class PricingRuleController extends Controller
     public function update(UpdatePricingRuleRequest $request, PricingRule $pricingRule)
     {
         $validated = $request->validated();
+
+        if (($validated['service_type'] ?? '') === 'comped') {
+            $validated['charge_to_client'] = 0;
+            $validated['sitterwise_cut'] = 0;
+        } else {
+            $validated['charge_to_client'] = ($validated['paid_to_caregiver'] ?? 0) + ($validated['sitterwise_cut'] ?? 0);
+        }
 
         $pricingRule->update($validated);
 

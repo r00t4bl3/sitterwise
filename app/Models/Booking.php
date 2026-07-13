@@ -491,6 +491,8 @@ class Booking extends Model
     {
         $group = $this->bookingGroup;
 
+        $groupBookings = $group->bookings->sortBy('start_datetime')->values();
+
         $start = $this->start_datetime instanceof Carbon
             ? $this->start_datetime->copy()->setTimezone('America/Los_Angeles')
             : Carbon::parse($this->start_datetime)->setTimezone('America/Los_Angeles');
@@ -534,14 +536,12 @@ class Booking extends Model
             'end_time' => $end->format('g:i A'),
             'service_time' => $start->format('g:i A'),
             'service_time_range' => $start->format('g:i A').' - '.$end->format('g:i A'),
-            'dates' => [
-                [
-                    'date' => $start->format('l, F j, Y'),
-                    'start_time' => $start->format('g:i A'),
-                    'end_time' => $end->format('g:i A'),
-                ],
-            ],
-            'is_multi_day' => false,
+            'dates' => $groupBookings->map(fn ($booking) => [
+                'date' => $booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('l, F j, Y'),
+                'start_time' => $booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('g:i A'),
+                'end_time' => $booking->end_datetime->copy()->setTimezone('America/Los_Angeles')->format('g:i A'),
+            ])->toArray(),
+            'is_multi_day' => $groupBookings->count() > 1,
             'kids_count' => $childrenCount.' '.Str::plural('child', $childrenCount),
             'children_summary' => $childrenSummary ?: 'None',
             'location' => $group->location_type === 'hotel'

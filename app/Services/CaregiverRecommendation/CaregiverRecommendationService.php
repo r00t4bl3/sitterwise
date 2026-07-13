@@ -25,6 +25,19 @@ class CaregiverRecommendationService
         'recent_work_6mo' => 1,
     ];
 
+    /**
+     * Map each age-group specialty name to the granular match-icon key the
+     * frontend renders (one distinct icon per specialty the caregiver has).
+     *
+     * @var array<string, string>
+     */
+    protected const SPECIALTY_ICON_KEYS = [
+        'Babies' => 'specialty_babies',
+        'Toddlers' => 'specialty_toddlers',
+        'Preschool' => 'specialty_preschool',
+        'School Age' => 'specialty_school_age',
+    ];
+
     public function __construct(
         protected LocationMatcher $locationMatcher,
     ) {}
@@ -205,8 +218,9 @@ class CaregiverRecommendationService
     ): array {
         $previousWork = $previousWorkCaregiverIds->contains($caregiver->id);
         $available = $this->hasAvailabilityForBooking($caregiver, $dateRanges, $existingBookings, $bufferMinutes);
-        $specialty = $this->matchesServiceType($caregiver, $serviceType, $sitterPreferences)
-            || $this->matchesSitterPreferences($caregiver, $sitterPreferences);
+        $matchedSpecialties = $this->matchedServiceSpecialties($caregiver, $serviceType, $sitterPreferences);
+        $specialNeeds = $this->matchesSpecialNeeds($caregiver, $serviceType, $sitterPreferences);
+        $specialty = ! empty($matchedSpecialties) || $specialNeeds;
         $preferredLocation = $this->hasPreferredLocation($caregiver, $bookingLocationId);
         $willingLocation = $this->hasWillingLocation($caregiver, $bookingLocationId);
         $recentWork3mo = $recentWork3moIds->contains($caregiver->id);
@@ -217,6 +231,8 @@ class CaregiverRecommendationService
             'previousWork',
             'available',
             'specialty',
+            'matchedSpecialties',
+            'specialNeeds',
             'preferredLocation',
             'willingLocation',
             'recentWork3mo',
@@ -282,8 +298,14 @@ class CaregiverRecommendationService
             $icons[] = 'available';
         }
 
-        if ($attrs['specialty']) {
-            $icons[] = 'specialty';
+        foreach ($attrs['matchedSpecialties'] as $specialtyName) {
+            if (isset(static::SPECIALTY_ICON_KEYS[$specialtyName])) {
+                $icons[] = static::SPECIALTY_ICON_KEYS[$specialtyName];
+            }
+        }
+
+        if ($attrs['specialNeeds']) {
+            $icons[] = 'special_needs';
         }
 
         if ($attrs['preferredLocation']) {
@@ -468,9 +490,16 @@ class CaregiverRecommendationService
     }
 
     /**
-     * Check if caregiver's age-group specialties match the service type or baby_specialist preference.
+     * Resolve the age-group specialties the caregiver actually has that are
+     * relevant to the service type (or the baby_specialist preference).
+     *
+     * Returns the intersection of the caregiver's specialties with the expected
+     * set, so the caller can render one icon per matched specialty rather than a
+     * single generic badge.
+     *
+     * @return list<string>
      */
-    protected function matchesServiceType(Caregiver $caregiver, ?string $serviceType, array $sitterPreferences = []): bool
+    protected function matchedServiceSpecialties(Caregiver $caregiver, ?string $serviceType, array $sitterPreferences = []): array
     {
         $specialtyMap = [
             ServiceType::Babysitter->value => ['Babies', 'Toddlers', 'Preschool', 'School Age'],
@@ -483,37 +512,31 @@ class CaregiverRecommendationService
             $expectedSpecialties[] = 'Babies';
         }
 
-        if (! empty($expectedSpecialties)) {
-            return $caregiver->specialtyTypes->pluck('name')
-                ->intersect(array_unique($expectedSpecialties))
-                ->isNotEmpty();
+        if (empty($expectedSpecialties)) {
+            return [];
         }
 
-        if ($serviceType === ServiceType::CompanionCare->value) {
-            return $caregiver->attributes
-                ->firstWhere('slug', 'special_needs')?->pivot->value === 'true';
-        }
-
-        return false;
+        return $caregiver->specialtyTypes->pluck('name')
+            ->intersect(array_unique($expectedSpecialties))
+            ->values()
+            ->all();
     }
 
     /**
-     * Check if caregiver's EAV attributes match sitter preferences.
+     * Check if the caregiver matches a special-needs requirement, either from the
+     * companion-care service type or the special_needs_care sitter preference.
      */
-    protected function matchesSitterPreferences(Caregiver $caregiver, array $sitterPreferences): bool
+    protected function matchesSpecialNeeds(Caregiver $caregiver, ?string $serviceType, array $sitterPreferences = []): bool
     {
-        $preferenceAttributeMap = [
-            SitterPreference::SpecialNeedsCare->value => 'special_needs',
-        ];
+        $hasSpecialNeedsAttribute = fn (): bool => $caregiver->attributes
+            ->firstWhere('slug', 'special_needs')?->pivot->value === 'true';
 
-        foreach ($sitterPreferences as $preference) {
-            $attributeSlug = $preferenceAttributeMap[$preference] ?? null;
-            if ($attributeSlug) {
-                $attribute = $caregiver->attributes->firstWhere('slug', $attributeSlug);
-                if ($attribute && $attribute->pivot->value === 'true') {
-                    return true;
-                }
-            }
+        if ($serviceType === ServiceType::CompanionCare->value && $hasSpecialNeedsAttribute()) {
+            return true;
+        }
+
+        if (in_array(SitterPreference::SpecialNeedsCare->value, $sitterPreferences, true) && $hasSpecialNeedsAttribute()) {
+            return true;
         }
 
         return false;

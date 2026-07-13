@@ -37,7 +37,6 @@ class UpdatePricingRuleRequest extends FormRequest
                 'required_if:is_for_pets,false',
             ],
             'is_for_pets' => ['required', 'boolean'],
-            'charge_to_client' => ['required', 'numeric', 'min:0'],
             'charge_to_client_notes' => ['nullable', 'string'],
             'paid_to_caregiver' => ['required', 'numeric', 'min:0'],
             'payment_form' => [

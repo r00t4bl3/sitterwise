@@ -35,10 +35,9 @@ class StorePricingRuleRequest extends FormRequest
                 'integer',
                 'min:1',
                 'required_if:is_for_pets,false',
-                'prohibits:is_for_pets', // Ensure number_of_children is null if is_for_pets is true
+                'prohibited_if:is_for_pets,true', // Ensure number_of_children is null if is_for_pets is true
             ],
             'is_for_pets' => ['required', 'boolean'],
-            'charge_to_client' => ['required', 'numeric', 'min:0'],
             'charge_to_client_notes' => ['nullable', 'string'],
             'paid_to_caregiver' => ['required', 'numeric', 'min:0'],
             'payment_form' => [

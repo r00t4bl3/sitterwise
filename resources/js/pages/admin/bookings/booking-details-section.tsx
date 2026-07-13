@@ -1,12 +1,16 @@
 import {
     Baby,
+    Backpack,
+    Blocks,
     Briefcase,
     CalendarCheck,
     ChevronDown,
     ChevronUp,
+    HeartHandshake,
     History,
     MapPin,
     MapPinCheckInside,
+    Palette,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -577,7 +581,11 @@ export function BookingDetailsSection({
                                 {
                                     previous_work: History,
                                     available: CalendarCheck,
-                                    specialty: Baby,
+                                    specialty_babies: Baby,
+                                    specialty_toddlers: Blocks,
+                                    specialty_preschool: Palette,
+                                    specialty_school_age: Backpack,
+                                    special_needs: HeartHandshake,
                                     location_preferred: MapPinCheckInside,
                                     location_willing: MapPin,
                                     recent_work: Briefcase,
@@ -587,7 +595,13 @@ export function BookingDetailsSection({
                                 previous_work:
                                     'Previously worked with this family',
                                 available: 'Available for booking dates',
-                                specialty: 'Specializes in this age group',
+                                specialty_babies: 'Specializes in babies',
+                                specialty_toddlers: 'Specializes in toddlers',
+                                specialty_preschool:
+                                    'Specializes in preschoolers',
+                                specialty_school_age:
+                                    'Specializes in school-age kids',
+                                special_needs: 'Special-needs experience',
                                 location_preferred: 'Based in booking area',
                                 location_willing:
                                     'Willing to travel to booking area',

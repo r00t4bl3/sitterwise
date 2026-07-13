@@ -91,6 +91,7 @@ describe('Booking emails → branded SendGrid templates', function () {
         expect($data)->toMatchArray([
             'client_first_name' => 'Jane',
             'client_last_name' => 'Doe',
+            'date' => la($booking)['start_date'],
             'start_datetime' => la($booking)['start_datetime'],
             'job_url' => route('jobs.short', $booking),
             'address_line1' => '123 Main St',

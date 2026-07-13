@@ -47,6 +47,13 @@ php artisan import:bubble-photos
 php artisan app:backfill-assignments
 ```
 
+- [ ] **Reset stale completed assignments** — the backfill (and Bubble import) mark every non-cancelled booking's assignment as `completed`, which wrongly includes still-active `confirmed` jobs and hides the caregiver Checkout button. This clears that resolution back to null so caregivers can check out (dry-run first, then `--apply`; idempotent, safe to re-run)
+
+```bash
+php artisan bookings:reset-stale-completed-assignments
+php artisan bookings:reset-stale-completed-assignments --apply
+```
+
 - [ ] **Clear dummy phone numbers**
 
 ```bash
@@ -293,6 +300,7 @@ stdout_logfile=/path/to/storage/logs/worker.log
 | `import:bubble-photos` | **15–45 min** | ~1,451 sequential HTTP downloads + image processing |
 | `app:migrate-applicants-data` | **< 1 min** | Tiny dataset (~2 applicants) |
 | `app:backfill-assignments` | **< 1 min** | Lightweight `firstOrCreate` loop |
+| `bookings:reset-stale-completed-assignments` | **< 1 min** | Clears stale `completed` resolution on active confirmed bookings (~90 rows), idempotent |
 | `app:clear-dummy-phones` | **< 10 sec** | String matching on ~6K rows |
 | `clients:set-resident-type` | **~1 min** | 943 client updates from CSV |
 | `caregivers:import-trustline` | **< 30 sec** | 178 name matches |

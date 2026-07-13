@@ -69,7 +69,7 @@ class PricingRulesTableSeeder extends Seeder
             'charge_to_client_notes' => 'typically, but could can change based on the job . . . this is invoiced, so we take care of this at the end of the month and send a bill to the client',
             'paid_to_caregiver' => 23.00,
             'payment_form' => 'OnPay (Payroll)',
-            'sitterwise_cut' => 0.00, // Implied from image
+            'sitterwise_cut' => 13.00,
         ]);
 
         // Corporate (Invoiced)
@@ -82,7 +82,7 @@ class PricingRulesTableSeeder extends Seeder
                 'charge_to_client_notes' => 'typically, but could can change based on the job . . . this is invoiced, so we take care of this at the end of the month and send a bill to the client',
                 'paid_to_caregiver' => 23.00,
                 'payment_form' => 'OnPay (Payroll)',
-                'sitterwise_cut' => 0.00, // Implied from image
+                'sitterwise_cut' => 13.00,
             ]);
         }
 

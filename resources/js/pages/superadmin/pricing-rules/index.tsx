@@ -91,6 +91,10 @@ export default function PricingRulesIndex() {
     const serviceTypeOptions = serviceTypes;
     const paymentFormOptions = ['Stripe', 'OnPay (Payroll)'];
 
+    const autoChargeToClient = form.data.service_type === 'comped'
+        ? 0
+        : ((form.data.paid_to_caregiver ?? 0) + (form.data.sitterwise_cut ?? 0));
+
     const openCreateSheet = () => {
         setEditingId(null);
         form.setData({
@@ -188,7 +192,20 @@ export default function PricingRulesIndex() {
                             Manage pricing rules for different services
                         </p>
                     </div>
-                    <Button onClick={openCreateSheet}>Add Pricing Rule</Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() =>
+                                (window.location.href =
+                                    '/pricing-rules/simulator')
+                            }
+                        >
+                            Simulator
+                        </Button>
+                        <Button onClick={openCreateSheet}>
+                            Add Pricing Rule
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto border border-border bg-card">
@@ -299,9 +316,13 @@ export default function PricingRulesIndex() {
                                 </Label>
                                 <Select
                                     value={form.data.service_type}
-                                    onValueChange={(value) =>
-                                        form.setData('service_type', value)
-                                    }
+                                    onValueChange={(value) => {
+                                        form.setData('service_type', value);
+
+                                        if (value === 'comped') {
+                                            form.setData('sitterwise_cut', 0);
+                                        }
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a service type" />
@@ -381,22 +402,12 @@ export default function PricingRulesIndex() {
                                     id="charge_to_client"
                                     type="number"
                                     step="0.01"
-                                    min="0"
-                                    value={form.data.charge_to_client ?? ''}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'charge_to_client',
-                                            e.target.value === ''
-                                                ? null
-                                                : parseFloat(e.target.value),
-                                        )
-                                    }
+                                    value={autoChargeToClient.toFixed(2)}
+                                    disabled
                                 />
-                                {form.errors.charge_to_client && (
-                                    <p className="text-sm text-red-600">
-                                        {form.errors.charge_to_client}
-                                    </p>
-                                )}
+                                <p className="text-xs text-muted-foreground">
+                                    Auto-calculated from caregiver pay + sitterwise cut
+                                </p>
                             </div>
 
                             <div className="space-y-2">

@@ -150,7 +150,7 @@ describe('Recommendation Service - Caregiver', function () {
         $result = $recommended->firstWhere('id', $caregiver->id);
         expect($result['score'])->toBe(11100)
             ->and($result['matchIcons'])->toContain('available')
-            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('specialty_babies')
             ->and($result['matchIcons'])->toContain('location_preferred');
     });
 
@@ -210,7 +210,7 @@ describe('Recommendation Service - Caregiver', function () {
         $result = $recommended->firstWhere('id', $caregiver->id);
         expect($result['score'])->toBe(11010)
             ->and($result['matchIcons'])->toContain('available')
-            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('specialty_babies')
             ->and($result['matchIcons'])->toContain('location_willing');
     });
 
@@ -284,7 +284,7 @@ describe('Recommendation Service - Caregiver', function () {
         $result = $recommended->firstWhere('id', $caregiver->id);
         expect($result['score'])->toBe(11001)
             ->and($result['matchIcons'])->toContain('available')
-            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('specialty_babies')
             ->and($result['matchIcons'])->toContain('recent_work');
     });
 
@@ -417,7 +417,33 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['matchIcons'])->toContain('specialty');
+        expect($result['matchIcons'])->toContain('specialty_babies');
+    });
+
+    test('a caregiver with only toddler and preschool specialties shows those icons, not the baby icon', function () {
+        $client = Client::factory()->create(['sitter_preferences' => []]);
+        $caregiver = makeActiveCaregiver(['rating' => 4.0]);
+
+        $toddlers = SpecialtyType::where('name', 'Toddlers')->first();
+        $preschool = SpecialtyType::where('name', 'Preschool')->first();
+        $caregiver->specialtyTypes()->sync([$toddlers->id, $preschool->id]);
+
+        $startDate = now()->addDays(5)->setHour(9)->setMinute(0);
+        $endDate = (clone $startDate)->addHours(4);
+
+        $booking = Booking::factory()->forClient($client)->create([
+            'start_datetime' => $startDate,
+            'end_datetime' => $endDate,
+            'caregiver_id' => null,
+        ]);
+        $booking->bookingGroup->update(['service_type' => ServiceType::Babysitter->value]);
+
+        $recommended = $this->service->getRecommendedCaregivers($client, $booking);
+
+        $result = $recommended->firstWhere('id', $caregiver->id);
+        expect($result['matchIcons'])->toContain('specialty_toddlers')
+            ->and($result['matchIcons'])->toContain('specialty_preschool')
+            ->and($result['matchIcons'])->not->toContain('specialty_babies');
     });
 
     test('special_needs_care preference matches EAV special_needs attribute', function () {
@@ -432,7 +458,7 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['matchIcons'])->toContain('specialty');
+        expect($result['matchIcons'])->toContain('special_needs');
     });
 
     test('special_needs_care preference does not match without special_needs attribute', function () {
@@ -445,7 +471,7 @@ describe('Recommendation Service - Caregiver', function () {
         $recommended = $this->service->getRecommendedCaregivers($client);
 
         $result = $recommended->firstWhere('id', $caregiver->id);
-        expect($result['matchIcons'])->not->toContain('specialty');
+        expect($result['matchIcons'])->not->toContain('special_needs');
     });
 
     test('favorited caregiver gets favorited icon', function () {
@@ -577,7 +603,7 @@ describe('Recommendation Service - Caregiver', function () {
         expect($result['score'])->toBe(111100)
             ->and($result['matchIcons'])->toContain('favorited')
             ->and($result['matchIcons'])->toContain('available')
-            ->and($result['matchIcons'])->toContain('specialty')
+            ->and($result['matchIcons'])->toContain('specialty_babies')
             ->and($result['matchIcons'])->toContain('location_preferred');
     });
 
