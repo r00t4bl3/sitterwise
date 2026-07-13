@@ -62,12 +62,19 @@ class JobController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        $bookings->getCollection()->transform(fn ($booking) => [
-            ...$booking->toArray(),
-            'assignment_id' => $booking->assignments->first()?->id,
-            'assignment_resolution' => $booking->assignments->first()?->resolution,
-            'client_name' => $booking->client?->full_name,
-        ]);
+        $bookings->getCollection()->transform(function ($booking) {
+            // Surface THIS caregiver's own assignment (the list is already scoped
+            // to caregiver_id), never a prior/reassigned caregiver's row — that
+            // stale resolution would otherwise hide the checkout button.
+            $assignment = $booking->assignments->firstWhere('caregiver_id', $booking->caregiver_id);
+
+            return [
+                ...$booking->toArray(),
+                'assignment_id' => $assignment?->id,
+                'assignment_resolution' => $assignment?->resolution,
+                'client_name' => $booking->client?->full_name,
+            ];
+        });
 
         $bookingStatuses = array_map(
             fn ($case) => [
@@ -220,10 +227,15 @@ class JobController extends Controller
             'status' => BookingStatus::Completed->value,
         ]);
 
+        // firstOrCreate (not first) so a caregiver whose assignment row was never
+        // created (e.g. accepted an invite before that flow recorded assignments)
+        // still gets their completion recorded instead of a silent no-op.
         $booking->assignments()
-            ->where('caregiver_id', $booking->caregiver_id)
-            ->first()
-            ?->resolve(AssignmentResolution::Completed);
+            ->firstOrCreate(
+                ['caregiver_id' => $booking->caregiver_id],
+                ['assigned_at' => now()],
+            )
+            ->resolve(AssignmentResolution::Completed);
 
         return back()->with('success', 'Job updated successfully');
     }

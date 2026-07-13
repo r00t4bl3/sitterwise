@@ -21,6 +21,8 @@ interface DateTimePickerProps {
     error?: string
     startTime?: string  // For disabling invalid time options
     minDate?: Date  // Earliest selectable date
+    enforceMinimum?: boolean  // Enforce the minimum duration from startTime (default true). Relax at checkout / admin time-adjust where true elapsed time can be shorter; billing floors server-side.
+    minDurationHours?: number  // The enforced minimum duration in hours (default 4). Pass the super-admin `booking_minimum_hours` setting so the picker tracks it.
 }
 
 export function DateTimePicker({
@@ -29,7 +31,9 @@ export function DateTimePicker({
     placeholder = "Pick date and time",
     error,
     startTime,
-    minDate}: DateTimePickerProps) {
+    minDate,
+    enforceMinimum = true,
+    minDurationHours = 4}: DateTimePickerProps) {
     const parsePT = React.useCallback((dateStr: string | null | undefined): Date | null => {
         if (!dateStr) return null
         const s = dateStr.replace(/\.(\d{3})\d*Z$/, '.$1Z')
@@ -56,7 +60,7 @@ export function DateTimePicker({
     const startDate = startTime ? parsePT(startTime) : null
     const minDateConstraint = startDate ? { before: startDate } : minDate ? { before: minDate } : undefined
 
-    const MIN_DURATION_MS = 4 * 60 * 60 * 1000
+    const MIN_DURATION_MS = minDurationHours * 60 * 60 * 1000
 
     const timeOptions = React.useMemo(() => {
     const options = []
@@ -72,7 +76,7 @@ export function DateTimePicker({
       const label = `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`
 
       let disabled = false
-      if (startDate && date) {
+      if (enforceMinimum && startDate && date) {
         const optionDate = new Date(date)
         optionDate.setHours(hours24, minutes, 0, 0)
         const diffMs = optionDate.getTime() - startDate.getTime()
@@ -81,7 +85,7 @@ export function DateTimePicker({
 
       options.push({
         value: timeValue,
-        label: disabled ? `${label} (min 4h)` : label,
+        label: disabled ? `${label} (min ${minDurationHours}h)` : label,
         disabled
       })
     }
@@ -96,19 +100,19 @@ export function DateTimePicker({
         const label = `${hours12}:${String(m).padStart(2, '0')} ${ampm}`
 
         let disabled = false
-        if (startDate && date) {
+        if (enforceMinimum && startDate && date) {
           const optionDate = new Date(date)
           optionDate.setHours(h, m, 0, 0)
           disabled = optionDate.getTime() - startDate.getTime() < MIN_DURATION_MS
         }
 
-        options.push({ value: time, label: disabled ? `${label} (min 4h)` : label, disabled })
+        options.push({ value: time, label: disabled ? `${label} (min ${minDurationHours}h)` : label, disabled })
         options.sort((a, b) => a.value.localeCompare(b.value))
       }
     }
 
     return options
-  }, [startTime, date, time])
+  }, [startTime, date, time, enforceMinimum, minDurationHours])
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -123,6 +127,7 @@ export function DateTimePicker({
 
     // Enforce minimum 4-hour duration from startTime
     React.useEffect(() => {
+        if (!enforceMinimum) return
         if (!startDate || isNaN(startDate.getTime()) || !value || !onChange) return
 
         const current = parsePT(value)
@@ -131,13 +136,13 @@ export function DateTimePicker({
         const diffMs = current.getTime() - startDate.getTime()
         const diffHours = diffMs / (1000 * 60 * 60)
 
-        if (diffHours < 4) {
-            const minDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000)
+        if (diffHours < minDurationHours) {
+            const minDate = new Date(startDate.getTime() + minDurationHours * 60 * 60 * 1000)
             setDate(minDate)
             setTime(format(minDate, "HH:mm"))
             onChange(formatUtcStringFromPt(minDate))
         }
-    }, [value, startTime])
+    }, [value, startTime, enforceMinimum, minDurationHours])
 
     const handleDateSelect = (selectedDate: Date | undefined) => {
         setDate(selectedDate)

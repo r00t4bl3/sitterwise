@@ -225,4 +225,52 @@ describe('Booking client switch (Kirwan/Sarma regression)', function () {
                 ->count(),
         )->toBe(1);
     });
+
+    describe('Update path child birthday handling', function () {
+        test('year-only new child through update defaults birth_month to current month', function () {
+            $client = Client::factory()->create();
+            $booking = Booking::factory()->forClient($client)->create();
+            $currentMonth = now()->month;
+
+            $this->actingAs($this->admin)->patch(
+                route('bookings.update', $booking),
+                clientSwitchPayload($booking, [
+                    'save_children_pets_to_profile' => true,
+                    'new_children' => [
+                        ['name' => 'YearOnly New', 'gender' => 'male', 'birth_month' => '', 'birth_year' => '2020'],
+                    ],
+                ]),
+            )->assertRedirect();
+
+            $saved = ClientChild::where('client_id', $client->id)
+                ->where('name', 'YearOnly New')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_year)->toBe(2020);
+            expect($saved->birth_month)->toBe($currentMonth);
+        });
+
+        test('month-only new child through update sets birth_date to null', function () {
+            $client = Client::factory()->create();
+            $booking = Booking::factory()->forClient($client)->create();
+
+            $this->actingAs($this->admin)->patch(
+                route('bookings.update', $booking),
+                clientSwitchPayload($booking, [
+                    'save_children_pets_to_profile' => true,
+                    'new_children' => [
+                        ['name' => 'MonthOnly New', 'gender' => 'female', 'birth_month' => '6', 'birth_year' => ''],
+                    ],
+                ]),
+            )->assertRedirect();
+
+            $saved = ClientChild::where('client_id', $client->id)
+                ->where('name', 'MonthOnly New')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->toBeNull();
+        });
+    });
 });

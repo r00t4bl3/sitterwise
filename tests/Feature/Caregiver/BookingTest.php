@@ -208,6 +208,55 @@ describe('Booking - Caregiver', function () {
         $response->assertSessionHas('error');
     });
 
+    test('confirming a reservation creates a pending (unresolved) assignment row', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->forClient($client)->create([
+            'status' => 'reserved',
+            'caregiver_id' => null,
+            'reserved_by' => $caregiver->id,
+            'reservation_expires_at' => now()->addMinute(),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+        $this->post(route('bookings.confirm', $booking))->assertRedirect(route('jobs.index'));
+
+        $assignment = $booking->assignments()->where('caregiver_id', $caregiver->id)->first();
+        expect($assignment)->not->toBeNull()
+            ->and($assignment->resolution)->toBeNull()
+            ->and($assignment->assigned_at)->not->toBeNull()
+            // idempotent: exactly one row for this caregiver
+            ->and($booking->assignments()->where('caregiver_id', $caregiver->id)->count())->toBe(1);
+    });
+
+    test('an expired reservation neither confirms nor creates an assignment row', function () {
+        $caregiver = Caregiver::factory()->create();
+        $client = Client::factory()->create();
+        $booking = Booking::factory()->forClient($client)->create([
+            'status' => 'reserved',
+            'caregiver_id' => null,
+            'reserved_by' => $caregiver->id,
+            'reservation_expires_at' => now()->subMinute(),
+        ]);
+
+        BookingCaregiverNotification::create([
+            'booking_id' => $booking->id,
+            'caregiver_id' => $caregiver->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->actingAs($caregiver->user);
+        $this->post(route('bookings.confirm', $booking))->assertSessionHas('error');
+
+        expect($booking->assignments()->where('caregiver_id', $caregiver->id)->exists())->toBeFalse();
+    });
+
     test('caregiver can release reservation', function () {
         $booking = Booking::factory()->forClient($this->client)->create([
             'status' => 'reserved',

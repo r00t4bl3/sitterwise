@@ -11,6 +11,7 @@ use App\Events\JobReleased;
 use App\Events\JobReserved;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
+use App\Models\CaregiverAssignment;
 use App\Services\Booking\Contracts\BookingServiceInterface;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Services\LifesaverService;
@@ -302,6 +303,17 @@ class CaregiverBookingService implements BookingServiceInterface, HasMiddleware
             BookingCaregiverNotification::whereIn('booking_id', $siblingIds)
                 ->where('caregiver_id', $caregiver->id)
                 ->update(['claimed' => true, 'responded_at' => now()]);
+
+            // The bulk caregiver_id update above uses the query builder, so the
+            // Booking saved-hook that normally creates the caregiver's assignment
+            // row never fires. Create it here (unresolved = "Pending") so the job
+            // appears in the caregiver's assignment history and exposes checkout.
+            foreach ($siblingIds as $id) {
+                CaregiverAssignment::updateOrCreate(
+                    ['booking_id' => $id, 'caregiver_id' => $caregiver->id],
+                    ['assigned_at' => now(), 'resolution' => null, 'resolution_at' => null, 'resolution_note' => null],
+                );
+            }
 
             foreach ($siblingIds as $id) {
                 broadcast(new JobConfirmed($id, $caregiver->id))->toOthers();

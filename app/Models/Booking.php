@@ -10,6 +10,7 @@ use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
 use App\Support\BusinessTime;
+use App\Support\Settings;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,13 @@ use Illuminate\Support\Str;
 class Booking extends Model
 {
     use HasFactory, HasGroupFields, Phone, SoftDeletes;
+
+    /**
+     * Fallback minimum billable hours used when the `bookings.minimum_hours`
+     * setting row is absent (e.g. a pre-seed install). The authoritative value
+     * is the super-admin setting.
+     */
+    private const MINIMUM_BILLABLE_HOURS = 4;
 
     protected static function boot(): void
     {
@@ -116,9 +124,18 @@ class Booking extends Model
             return;
         }
 
-        $this->charge_to_client = round($this->charge_to_client_hourly * $this->total_working_hour, 2);
-        $this->paid_to_caregiver = round($this->paid_to_caregiver_hourly * $this->total_working_hour, 2);
-        $this->sitterwise_cut = round($this->sitterwise_cut_hourly * $this->total_working_hour, 2);
+        // Bill (and pay) a 4-hour minimum even when the actual worked time is
+        // shorter — checkout now allows sub-4h true times, but the engagement is
+        // still charged at the 4h floor. total_working_hour keeps the true elapsed
+        // time; only the money is floored. No-op for the ≥4h case.
+        $minimumHours = (float) Settings::get('bookings.minimum_hours', self::MINIMUM_BILLABLE_HOURS);
+        $billableHours = $this->total_working_hour > 0
+            ? max((float) $this->total_working_hour, $minimumHours)
+            : (float) $this->total_working_hour;
+
+        $this->charge_to_client = round($this->charge_to_client_hourly * $billableHours, 2);
+        $this->paid_to_caregiver = round($this->paid_to_caregiver_hourly * $billableHours, 2);
+        $this->sitterwise_cut = round($this->sitterwise_cut_hourly * $billableHours, 2);
 
         $reimbursement = (float) ($this->getAttribute('reimbursement') ?? 0);
         $bonus = (float) ($this->getAttribute('bonus') ?? 0);

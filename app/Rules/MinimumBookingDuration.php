@@ -2,6 +2,7 @@
 
 namespace App\Rules;
 
+use App\Support\Settings;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
@@ -31,10 +32,11 @@ class MinimumBookingDuration implements DataAwareRule, ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        $minHours = (int) Settings::get('bookings.minimum_hours', 4);
         $endDateTime = Carbon::parse($value);
         $startDateTime = Carbon::parse($this->data['start_datetime'] ?? null);
-        if ($startDateTime->diffInHours($endDateTime) < 4) {
-            $fail('The booking must be at least 4 hours long.');
+        if ($startDateTime->diffInHours($endDateTime) < $minHours) {
+            $fail("The booking must be at least {$minHours} hours long.");
         }
     }
 }

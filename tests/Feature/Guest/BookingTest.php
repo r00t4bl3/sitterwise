@@ -75,17 +75,145 @@ it('guest can create a booking at a hotel', function () {
         'address_zip' => $hotel->zip,
         'new_children' => [
             [
-                'tempId' => 'child123',
-                'name' => 'Baby',
-                'gender' => 'female',
-                'birth_month' => '1',
-                'birth_year' => '2025',
+                'tempId' => 'child1',
+                'name' => 'Test',
+                'gender' => 'male',
+                'birth_month' => '6',
+                'birth_year' => '2023',
             ],
         ],
         'new_pets' => [],
     ]);
 
     $response->assertRedirect();
+});
+
+describe('Guest child birthday handling', function () {
+    test('year-only child stores raw birth_month/year in session', function () {
+        $startDate = now()->addDays(2);
+        $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+        $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+
+        $response = $this->post(route('guest.bookings.store'), [
+            'client_first_name' => 'Year',
+            'client_last_name' => 'Only',
+            'client_email' => 'year.only@example.com',
+            'client_phone' => '+15550000001',
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDatetime->toISOString(),
+            'end_datetime' => $endDatetime->toISOString(),
+            'address_line1' => '123 Year St',
+            'address_line2' => '',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'sms_consent' => true,
+            'new_children' => [
+                [
+                    'tempId' => 'y1',
+                    'name' => 'Yearly',
+                    'gender' => 'male',
+                    'birth_month' => '',
+                    'birth_year' => '2020',
+                ],
+            ],
+            'new_pets' => [],
+        ]);
+
+        $response->assertRedirect();
+
+        $pending = session('guest_booking_pending');
+        $childData = collect($pending['new_children'])->firstWhere('name', 'Yearly');
+
+        expect($childData['birth_month'])->toBeNull();
+        expect($childData['birth_year'])->toBe('2020');
+    });
+
+    test('empty month and year are stored as-is in session', function () {
+        $startDate = now()->addDays(2);
+        $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+        $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+
+        $response = $this->post(route('guest.bookings.store'), [
+            'client_first_name' => 'No',
+            'client_last_name' => 'Birth',
+            'client_email' => 'no.birth@example.com',
+            'client_phone' => '+15550000002',
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDatetime->toISOString(),
+            'end_datetime' => $endDatetime->toISOString(),
+            'address_line1' => '456 Empty St',
+            'address_line2' => '',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'sms_consent' => true,
+            'new_children' => [
+                [
+                    'tempId' => 'n1',
+                    'name' => 'NoBirth',
+                    'gender' => 'female',
+                    'birth_month' => '',
+                    'birth_year' => '',
+                ],
+            ],
+            'new_pets' => [],
+        ]);
+
+        $response->assertRedirect();
+
+        $pending = session('guest_booking_pending');
+        $childData = collect($pending['new_children'])->firstWhere('name', 'NoBirth');
+
+        expect($childData['birth_month'])->toBeNull();
+        expect($childData['birth_year'])->toBeNull();
+    });
+
+    test('month only is stored as-is in session', function () {
+        $startDate = now()->addDays(2);
+        $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+        $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+
+        $response = $this->post(route('guest.bookings.store'), [
+            'client_first_name' => 'Month',
+            'client_last_name' => 'Only',
+            'client_email' => 'month.only@example.com',
+            'client_phone' => '+15550000003',
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => $startDatetime->toISOString(),
+            'end_datetime' => $endDatetime->toISOString(),
+            'address_line1' => '789 Month St',
+            'address_line2' => '',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'sms_consent' => true,
+            'new_children' => [
+                [
+                    'tempId' => 'm1',
+                    'name' => 'MonthOnly',
+                    'gender' => 'male',
+                    'birth_month' => '6',
+                    'birth_year' => '',
+                ],
+            ],
+            'new_pets' => [],
+        ]);
+
+        $response->assertRedirect();
+
+        $pending = session('guest_booking_pending');
+        $childData = collect($pending['new_children'])->firstWhere('name', 'MonthOnly');
+
+        expect($childData['birth_month'])->toBe('6');
+        expect($childData['birth_year'])->toBeNull();
+    });
 });
 
 it('guest can create a booking for vacation rental', function () {

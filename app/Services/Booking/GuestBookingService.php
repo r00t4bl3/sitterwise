@@ -18,6 +18,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
+use App\Support\Settings;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,7 +136,8 @@ class GuestBookingService
             'new_pets.*.notes' => 'nullable|string',
         ]);
 
-        // Validate each date has minimum 4-hour duration
+        // Validate each date has the minimum booking duration (super-admin configurable)
+        $minHours = (int) Settings::get('bookings.minimum_hours', 4);
         $datesToValidate = $validated['dates'] ?? [
             ['start_datetime' => $validated['start_datetime'], 'end_datetime' => $validated['end_datetime']],
         ];
@@ -144,10 +146,10 @@ class GuestBookingService
             $startDate = new \DateTime($dateEntry['start_datetime']);
             $endDate = new \DateTime($dateEntry['end_datetime']);
             $diffHours = $startDate->diff($endDate)->h + ($startDate->diff($endDate)->days * 24);
-            if ($diffHours < 4) {
+            if ($diffHours < $minHours) {
                 $field = count($datesToValidate) > 1 ? "dates.{$i}.end_datetime" : 'end_datetime';
 
-                return back()->withErrors([$field => 'Booking must be at least 4 hours long.'])->withInput();
+                return back()->withErrors([$field => "Booking must be at least {$minHours} hours long."])->withInput();
             }
         }
 
@@ -264,8 +266,12 @@ class GuestBookingService
                     'gender' => $child['gender'] ?? null,
                     'birth_month' => ! empty($child['birth_month']) ? (int) $child['birth_month'] : null,
                     'birth_year' => ! empty($child['birth_year']) ? (int) $child['birth_year'] : null,
-                    'birth_date' => ! empty($child['birth_month']) && ! empty($child['birth_year'])
-                        ? Carbon::createFromDate((int) $child['birth_year'], (int) $child['birth_month'], 1)->format('Y-m-d')
+                    'birth_date' => ! empty($child['birth_year'])
+                        ? Carbon::createFromDate(
+                            (int) $child['birth_year'],
+                            (int) ($child['birth_month'] ?? 0) ?: now()->month,
+                            1
+                        )->format('Y-m-d')
                         : null,
                 ], $pendingData['new_children'] ?? []),
                 'pets' => array_map(fn ($pet) => [
@@ -301,8 +307,12 @@ class GuestBookingService
                         'client_id' => $client->id,
                         'name' => $childData['name'] ?? null,
                         'gender' => $childData['gender'] ?? null,
-                        'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
-                            ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                        'birth_date' => ! empty($childData['birth_year'])
+                            ? Carbon::createFromDate(
+                                (int) $childData['birth_year'],
+                                (int) ($childData['birth_month'] ?? 0) ?: now()->month,
+                                1
+                            )->format('Y-m-d')
                             : null,
                     ]);
                 }

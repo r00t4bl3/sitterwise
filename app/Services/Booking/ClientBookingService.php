@@ -182,8 +182,12 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'client_id' => $client->id,
                     'name' => $childData['name'] ?? null,
                     'gender' => $childData['gender'] ?? null,
-                    'birth_date' => ! empty($childData['birth_month']) && ! empty($childData['birth_year'])
-                        ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                    'birth_date' => ! empty($childData['birth_year'])
+                        ? Carbon::createFromDate(
+                            (int) $childData['birth_year'],
+                            (int) ($childData['birth_month'] ?? 0) ?: now()->month,
+                            1
+                        )->format('Y-m-d')
                         : null,
                 ]);
             }

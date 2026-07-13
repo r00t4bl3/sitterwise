@@ -695,4 +695,165 @@ describe('DateTime Picker Local Time Handling', function () {
         expect($retrieved->start_datetime->format('Y-m-d H:i'))->toBe($startDate->format('Y-m-d H:i'));
         expect($retrieved->end_datetime->format('Y-m-d H:i'))->toBe($endDate->format('Y-m-d H:i'));
     });
+
+    describe('Child year-only birthday', function () {
+        test('new child with year but no month defaults birth_month to current month', function () {
+            $currentMonth = now()->month;
+            $startDate = now()->addDays(2);
+            $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+            $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+            $sitterPreference = fake()->randomElement(array_column(SitterPreference::cases(), 'value'));
+            $clientAddress = ClientAddress::factory()->for($this->client)->create();
+
+            $response = $this->post(route('bookings.store'), [
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => $startDatetime,
+                'end_datetime' => $endDatetime,
+                'address_id' => $clientAddress->id,
+                'address_line1' => $clientAddress->line1,
+                'address_city' => $clientAddress->city,
+                'address_state' => $clientAddress->state,
+                'address_zip' => $clientAddress->zip,
+                'caregiver_notes' => '',
+                'notes_to_sitterwise' => '',
+                'sitter_preferences' => [$sitterPreference],
+                'other_adults_present' => '',
+                'emergency_instructions' => '',
+                'special_needs_notes' => '',
+                'how_did_you_hear' => 'google',
+                'save_children_pets_to_profile' => true,
+                'new_children' => [
+                    [
+                        'name' => 'YearOnly Solo',
+                        'gender' => 'female',
+                        'birth_month' => '',
+                        'birth_year' => '2020',
+                    ],
+                ],
+                'new_pets' => [],
+                'deleted_child_ids' => [],
+                'deleted_pet_ids' => [],
+                'client_id' => $this->client->id,
+                'status' => 'received',
+                'payment_status' => 'pending',
+            ]);
+
+            $response->assertSessionHasNoErrors();
+            $response->assertRedirect(route('bookings.index'));
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'YearOnly Solo')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->not->toBeNull();
+            expect($saved->birth_year)->toBe(2020);
+            expect($saved->birth_month)->toBe($currentMonth);
+        });
+
+        test('new child with empty month and year sets birth_date to null', function () {
+            $startDate = now()->addDays(2);
+            $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+            $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+            $sitterPreference = fake()->randomElement(array_column(SitterPreference::cases(), 'value'));
+            $clientAddress = ClientAddress::factory()->for($this->client)->create();
+
+            $response = $this->post(route('bookings.store'), [
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => $startDatetime,
+                'end_datetime' => $endDatetime,
+                'address_id' => $clientAddress->id,
+                'address_line1' => $clientAddress->line1,
+                'address_city' => $clientAddress->city,
+                'address_state' => $clientAddress->state,
+                'address_zip' => $clientAddress->zip,
+                'caregiver_notes' => '',
+                'notes_to_sitterwise' => '',
+                'sitter_preferences' => [$sitterPreference],
+                'other_adults_present' => '',
+                'emergency_instructions' => '',
+                'special_needs_notes' => '',
+                'how_did_you_hear' => 'google',
+                'save_children_pets_to_profile' => true,
+                'new_children' => [
+                    [
+                        'name' => 'NoBirth Solo',
+                        'gender' => 'male',
+                        'birth_month' => '',
+                        'birth_year' => '',
+                    ],
+                ],
+                'new_pets' => [],
+                'deleted_child_ids' => [],
+                'deleted_pet_ids' => [],
+                'client_id' => $this->client->id,
+                'status' => 'received',
+                'payment_status' => 'pending',
+            ]);
+
+            $response->assertSessionHasNoErrors();
+            $response->assertRedirect(route('bookings.index'));
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'NoBirth Solo')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->toBeNull();
+        });
+
+        test('new child with month but no year sets birth_date to null', function () {
+            $startDate = now()->addDays(2);
+            $startDatetime = $startDate->copy()->setHour(9)->setMinute(0);
+            $endDatetime = $startDate->copy()->setHour(15)->setMinute(0);
+            $sitterPreference = fake()->randomElement(array_column(SitterPreference::cases(), 'value'));
+            $clientAddress = ClientAddress::factory()->for($this->client)->create();
+
+            $response = $this->post(route('bookings.store'), [
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => $startDatetime,
+                'end_datetime' => $endDatetime,
+                'address_id' => $clientAddress->id,
+                'address_line1' => $clientAddress->line1,
+                'address_city' => $clientAddress->city,
+                'address_state' => $clientAddress->state,
+                'address_zip' => $clientAddress->zip,
+                'caregiver_notes' => '',
+                'notes_to_sitterwise' => '',
+                'sitter_preferences' => [$sitterPreference],
+                'other_adults_present' => '',
+                'emergency_instructions' => '',
+                'special_needs_notes' => '',
+                'how_did_you_hear' => 'google',
+                'save_children_pets_to_profile' => true,
+                'new_children' => [
+                    [
+                        'name' => 'MonthOnly Solo',
+                        'gender' => 'female',
+                        'birth_month' => '6',
+                        'birth_year' => '',
+                    ],
+                ],
+                'new_pets' => [],
+                'deleted_child_ids' => [],
+                'deleted_pet_ids' => [],
+                'client_id' => $this->client->id,
+                'status' => 'received',
+                'payment_status' => 'pending',
+            ]);
+
+            $response->assertSessionHasNoErrors();
+            $response->assertRedirect(route('bookings.index'));
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'MonthOnly Solo')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->toBeNull();
+        });
+    });
 });

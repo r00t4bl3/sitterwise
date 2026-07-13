@@ -40,6 +40,7 @@ use App\Services\CaregiverRecommendation\CaregiverRecommendationService;
 use App\Services\CaregiverRecommendation\LocationMatcher;
 use App\Services\LifesaverService;
 use App\Support\BusinessTime;
+use App\Support\Settings;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -238,13 +239,14 @@ class AdminBookingService implements BookingServiceInterface
     {
         $validated = $request->validated();
 
-        // Validate minimum 4-hour duration
+        // Validate minimum booking duration (super-admin configurable)
+        $minHours = (int) Settings::get('bookings.minimum_hours', 4);
         $start = new \DateTime($validated['start_datetime']);
         $end = new \DateTime($validated['end_datetime']);
         $diffHours = $start->diff($end)->h + ($start->diff($end)->days * 24);
-        if ($diffHours < 4) {
+        if ($diffHours < $minHours) {
             throw ValidationException::withMessages([
-                'end_datetime' => 'Booking must be at least 4 hours long.',
+                'end_datetime' => "Booking must be at least {$minHours} hours long.",
             ]);
         }
 
@@ -317,8 +319,8 @@ class AdminBookingService implements BookingServiceInterface
                     $childrenSnapshot[] = [
                         'name' => $childData['name'],
                         'gender' => $childData['gender'] ?? null,
-                        'birth_month' => isset($childData['birth_month']) ? (int) $childData['birth_month'] : null,
-                        'birth_year' => isset($childData['birth_year']) ? (int) $childData['birth_year'] : null,
+                        'birth_month' => ! empty($childData['birth_month']) ? (int) $childData['birth_month'] : null,
+                        'birth_year' => ! empty($childData['birth_year']) ? (int) $childData['birth_year'] : null,
                     ];
                 }
             }
@@ -898,7 +900,7 @@ class AdminBookingService implements BookingServiceInterface
             // are computed accessors. Writing birth_month/birth_year here
             // used to be silently discarded - compose the real column.
             $birthDate = $birthYear !== null
-                ? Carbon::createFromDate($birthYear, $birthMonth ?: 1, 1)->format('Y-m-d')
+                ? Carbon::createFromDate($birthYear, $birthMonth ?: now()->month, 1)->format('Y-m-d')
                 : null;
 
             if ($child) {
@@ -987,8 +989,12 @@ class AdminBookingService implements BookingServiceInterface
                 ],
                 [
                     'gender' => $childData['gender'] ?? null,
-                    'birth_date' => isset($childData['birth_month']) && isset($childData['birth_year'])
-                        ? Carbon::createFromDate((int) $childData['birth_year'], (int) $childData['birth_month'], 1)->format('Y-m-d')
+                    'birth_date' => ! empty($childData['birth_year'])
+                        ? Carbon::createFromDate(
+                            (int) $childData['birth_year'],
+                            (int) ($childData['birth_month'] ?? 0) ?: now()->month,
+                            1
+                        )->format('Y-m-d')
                         : null,
                 ]
             );

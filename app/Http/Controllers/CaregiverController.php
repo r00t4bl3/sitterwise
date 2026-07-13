@@ -239,8 +239,10 @@ class CaregiverController extends Controller
         $bookings->getCollection()->transform(function ($booking) use ($caregiver) {
             // A job may carry several assignment rows after reassignment; surface
             // the one belonging to THIS caregiver so their own resolution shows.
-            $assignment = $booking->assignments->firstWhere('caregiver_id', $caregiver->id)
-                ?? $booking->assignments->first();
+            // Do NOT fall back to another caregiver's row — a missing own row is an
+            // ongoing ("Pending") job and must not borrow a prior caregiver's
+            // resolution (e.g. showing "Reassigned" for a job they still hold).
+            $assignment = $booking->assignments->firstWhere('caregiver_id', $caregiver->id);
 
             return [
                 ...$booking->toArray(),

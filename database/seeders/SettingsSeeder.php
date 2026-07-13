@@ -283,6 +283,15 @@ class SettingsSeeder extends Seeder
                 'sort_order' => 6,
             ],
             [
+                'key' => 'bookings.minimum_hours',
+                'value' => '4',
+                'type' => 'int',
+                'group' => 'bookings',
+                'label' => 'Minimum booking hours',
+                'description' => 'Minimum billable/bookable hours. Bookings must be at least this long, and jobs are billed and paid for at least this many hours even if the actual worked time is shorter.',
+                'sort_order' => 7,
+            ],
+            [
                 'key' => 'billing.max_charge_attempts',
                 'value' => '4',
                 'type' => 'int',

@@ -196,6 +196,33 @@ describe('Caregiver Job History', function () {
         );
     });
 
+    test('an ongoing job with no own assignment row shows as Pending, not a prior caregiver resolution', function () {
+        // The job was handed to this caregiver via a path that left no assignment
+        // row; the only row belongs to the reassigned prior caregiver. History must
+        // show the ongoing job as Pending (null), not borrow "Reassigned".
+        $priorCaregiver = Caregiver::factory()->create();
+        $booking = Booking::factory()->create([
+            'caregiver_id' => null,
+            'status' => 'confirmed',
+        ]);
+        $booking->assignments()->create([
+            'caregiver_id' => $priorCaregiver->id,
+            'assigned_at' => now()->subDay(),
+            'resolution' => 'reassigned',
+            'resolution_at' => now()->subDay(),
+        ]);
+        $booking->updateQuietly(['caregiver_id' => $this->caregiver->id]);
+
+        $this->actingAs($this->admin);
+        $this->get(route('caregivers.jobHistory', $this->caregiver))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page
+                ->has('bookings.data', 1)
+                ->where('bookings.data.0.assignment_resolution', null)
+                ->where('bookings.data.0.assignment_resolution_label', null)
+            );
+    });
+
     test('a job another caregiver backed out of does not leak into this caregiver history', function () {
         $other = Caregiver::factory()->create();
         $booking = Booking::factory()->create([

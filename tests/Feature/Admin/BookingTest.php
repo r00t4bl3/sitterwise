@@ -2295,4 +2295,105 @@ describe('Booking - Admin', function () {
         });
 
     });
+
+    describe('Child year-only birthday', function () {
+        test('new child with year but no month defaults birth_month to current month', function () {
+            $this->actingAs($this->user);
+            $currentMonth = now()->month;
+
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => now()->addDays(1)->setHour(9)->toISOString(),
+                'end_datetime' => now()->addDays(1)->setHour(13)->toISOString(),
+                'total_amount' => 100,
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'new_children' => [
+                    ['name' => 'YearOnly Kid', 'gender' => 'male', 'birth_month' => '', 'birth_year' => '2020'],
+                ],
+                'save_children_pets_to_profile' => true,
+                'address_line1' => '123 Test St',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'YearOnly Kid')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->not->toBeNull();
+            expect($saved->birth_year)->toBe(2020);
+            expect($saved->birth_month)->toBe($currentMonth);
+        });
+
+        test('new child with empty month and year sets birth_date to null', function () {
+            $this->actingAs($this->user);
+
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => now()->addDays(1)->setHour(9)->toISOString(),
+                'end_datetime' => now()->addDays(1)->setHour(13)->toISOString(),
+                'total_amount' => 100,
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'new_children' => [
+                    ['name' => 'NoBirth Kid', 'gender' => 'male', 'birth_month' => '', 'birth_year' => ''],
+                ],
+                'save_children_pets_to_profile' => true,
+                'address_line1' => '123 Test St',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'NoBirth Kid')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->toBeNull();
+        });
+
+        test('new child with month but no year sets birth_date to null', function () {
+            $this->actingAs($this->user);
+
+            $response = $this->post(route('bookings.store'), [
+                'client_id' => $this->client->id,
+                'service_type' => 'babysitter',
+                'location_type' => 'private_home',
+                'start_datetime' => now()->addDays(1)->setHour(9)->toISOString(),
+                'end_datetime' => now()->addDays(1)->setHour(13)->toISOString(),
+                'total_amount' => 100,
+                'status' => 'received',
+                'payment_status' => 'pending',
+                'new_children' => [
+                    ['name' => 'MonthOnly Kid', 'gender' => 'female', 'birth_month' => '6', 'birth_year' => ''],
+                ],
+                'save_children_pets_to_profile' => true,
+                'address_line1' => '123 Test St',
+                'address_city' => 'San Diego',
+                'address_state' => 'CA',
+                'address_zip' => '92101',
+            ]);
+
+            $response->assertRedirect();
+
+            $saved = ClientChild::where('client_id', $this->client->id)
+                ->where('name', 'MonthOnly Kid')
+                ->first();
+
+            expect($saved)->not->toBeNull();
+            expect($saved->birth_date)->toBeNull();
+        });
+    });
 });

@@ -252,9 +252,14 @@ export default function ClientBookingCreate() {
     const [hotelSearch, setHotelSearch] = useState('');
     const [showUnlistedHotel, setShowUnlistedHotel] = useState(false);
 
+    const bookingMinimumHours = Number(
+        usePage().props.booking_minimum_hours ?? 4,
+    );
+
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
         form.data.end_datetime,
+        bookingMinimumHours,
     );
 
     const hotelSuggestions = hotels
@@ -390,7 +395,7 @@ export default function ClientBookingCreate() {
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime' && id === dates[0]?.id) {
-                next.end_datetime = autoSetEndDateTime(value);
+                next.end_datetime = autoSetEndDateTime(value, bookingMinimumHours);
             }
 
             return next;
@@ -1400,6 +1405,9 @@ export default function ClientBookingCreate() {
                                                     }
                                                     startTime={
                                                         dateEntry.start_datetime
+                                                    }
+                                                    minDurationHours={
+                                                        bookingMinimumHours
                                                     }
                                                     onChange={(value) => {
                                                         if (value) {

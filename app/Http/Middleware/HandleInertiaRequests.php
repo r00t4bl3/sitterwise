@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\CaregiverStatus;
+use App\Support\Settings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,6 +49,7 @@ class HandleInertiaRequests extends Middleware
             'push_subscribed' => $request->user()?->pushSubscriptions()->count() > 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'caregiverStatuses' => CaregiverStatus::toArray(),
+            'booking_minimum_hours' => (int) Settings::get('bookings.minimum_hours', 4),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

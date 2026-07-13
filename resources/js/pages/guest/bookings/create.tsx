@@ -310,9 +310,14 @@ export default function GuestBookingCreate() {
         Record<string, string>
     >({});
 
+    const bookingMinimumHours = Number(
+        usePage().props.booking_minimum_hours ?? 4,
+    );
+
     const datetimeError = validateMinimumDuration(
         form.data.start_datetime,
         form.data.end_datetime,
+        bookingMinimumHours,
     );
 
     const today = new Date();
@@ -392,7 +397,7 @@ export default function GuestBookingCreate() {
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime') {
-                next.end_datetime = autoSetEndDateTime(value);
+                next.end_datetime = autoSetEndDateTime(value, bookingMinimumHours);
             }
 
             return next;
@@ -1235,6 +1240,9 @@ export default function GuestBookingCreate() {
                                                     }
                                                     startTime={
                                                         dateEntry.start_datetime
+                                                    }
+                                                    minDurationHours={
+                                                        bookingMinimumHours
                                                     }
                                                     onChange={(value) => {
                                                         if (value) {

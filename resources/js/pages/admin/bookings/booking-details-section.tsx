@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import {
     Baby,
     Backpack,
@@ -115,7 +116,14 @@ export function BookingDetailsSection({
     const [isOpen, setIsOpen] = useState(true);
     const startDatetime = form.data.start_datetime;
     const endDatetime = form.data.end_datetime;
-    const datetimeError = validateMinimumDuration(startDatetime, endDatetime);
+    const bookingMinimumHours = Number(
+        usePage().props.booking_minimum_hours ?? 4,
+    );
+    const datetimeError = validateMinimumDuration(
+        startDatetime,
+        endDatetime,
+        bookingMinimumHours,
+    );
 
     // Build a Date whose local components represent PT wall-clock tomorrow at
     // 9:00 AM. formatUtcStringFromPt reads those local components as PT, so the
@@ -238,11 +246,15 @@ export function BookingDetailsSection({
                 const newStart = new Date(value);
                 const currentEnd = new Date(d.end_datetime);
                 const minEnd = new Date(
-                    newStart.getTime() + 4 * 60 * 60 * 1000,
+                    newStart.getTime() +
+                        bookingMinimumHours * 60 * 60 * 1000,
                 );
 
                 if (isNaN(currentEnd.getTime()) || currentEnd <= minEnd) {
-                    next.end_datetime = autoSetEndDateTime(value);
+                    next.end_datetime = autoSetEndDateTime(
+                        value,
+                        bookingMinimumHours,
+                    );
                 }
             }
 
@@ -269,7 +281,8 @@ export function BookingDetailsSection({
                     id: generateDateId(),
                     start_datetime: formStart,
                     end_datetime:
-                        form.data.end_datetime || autoSetEndDateTime(formStart),
+                        form.data.end_datetime ||
+                        autoSetEndDateTime(formStart, bookingMinimumHours),
                 },
             ];
             setDates(initial);
@@ -445,6 +458,7 @@ export function BookingDetailsSection({
                                         <DateTimePicker
                                             value={dateEntry.end_datetime}
                                             startTime={dateEntry.start_datetime}
+                                            minDurationHours={bookingMinimumHours}
                                             onChange={(datetime) => {
                                                 if (datetime) {
                                                     handleUpdateDate(
@@ -502,6 +516,7 @@ export function BookingDetailsSection({
                                         startDatetime,
                                         endDatetime,
                                         datetime,
+                                        bookingMinimumHours,
                                     );
                                     form.setData('start_datetime', datetime);
                                     form.setData('end_datetime', newEnd);
@@ -533,6 +548,12 @@ export function BookingDetailsSection({
                             <DateTimePicker
                                 value={endDatetime}
                                 startTime={startDatetime}
+                                // Relax the 4h minimum when editing an existing booking
+                                // (admin adjusting to a true shorter time; billing floors
+                                // at 4h server-side). Duplicating creates a NEW booking, so
+                                // it keeps the 4h rule like creation.
+                                enforceMinimum={sheetMode !== 'edit'}
+                                minDurationHours={bookingMinimumHours}
                                 onChange={(datetime) => {
                                     form.setData('end_datetime', datetime);
                                     form.setData('dates', [

@@ -843,6 +843,7 @@ export default function CaregiverJobsIndex() {
                                             }
                                             onChange={handleEndDateTimeChange}
                                             placeholder="Select end date and time"
+                                            enforceMinimum={false}
                                         />
                                     </div>
 
@@ -860,8 +861,8 @@ export default function CaregiverJobsIndex() {
                                             readOnly
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            Minimum 4 hours. Calculated from
-                                            start and end time.
+                                            Calculated from start and end time.
+                                            Billed at a 4-hour minimum.
                                         </p>
                                     </div>
 

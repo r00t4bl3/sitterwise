@@ -259,16 +259,20 @@ const formatUtcMinuteString = (date: Date): string => {
 };
 
 /**
- * Auto-set end datetime to minimum 4 hours after start
+ * Auto-set end datetime to the minimum booking duration after start.
+ * minHours defaults to 4; pass the super-admin `booking_minimum_hours` setting.
  */
-export const autoSetEndDateTime = (startDatetime: string): string => {
+export const autoSetEndDateTime = (
+    startDatetime: string,
+    minHours = 4,
+): string => {
     const d = parseUtc(startDatetime);
 
     if (isNaN(d.getTime())) {
         return '';
     }
 
-    return formatUtcMinuteString(new Date(d.getTime() + 4 * 60 * 60 * 1000));
+    return formatUtcMinuteString(new Date(d.getTime() + minHours * 60 * 60 * 1000));
 };
 
 /**
@@ -282,6 +286,7 @@ export const shiftEndPreservingDuration = (
     oldStart: string,
     oldEnd: string,
     newStart: string,
+    minHours = 4,
 ): string => {
     const oldStartDate = parseUtc(oldStart);
     const oldEndDate = parseUtc(oldEnd);
@@ -293,7 +298,7 @@ export const shiftEndPreservingDuration = (
         isNaN(newStartDate.getTime()) ||
         oldEndDate.getTime() <= oldStartDate.getTime()
     ) {
-        return autoSetEndDateTime(newStart);
+        return autoSetEndDateTime(newStart, minHours);
     }
 
     const duration = oldEndDate.getTime() - oldStartDate.getTime();
@@ -302,11 +307,13 @@ export const shiftEndPreservingDuration = (
 };
 
 /**
- * Validate minimum 4-hour duration
+ * Validate the minimum booking duration.
+ * minHours defaults to 4; pass the super-admin `booking_minimum_hours` setting.
  */
 export const validateMinimumDuration = (
     startDatetime: string,
     endDatetime: string,
+    minHours = 4,
 ): string | null => {
     if (!startDatetime || !endDatetime) {
         return null;
@@ -326,8 +333,8 @@ export const validateMinimumDuration = (
     const diffMs = endDate.getTime() - startDate.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
 
-    if (diffHours < 4) {
-        return 'The booking must be at least 4 hours long.';
+    if (diffHours < minHours) {
+        return `The booking must be at least ${minHours} hours long.`;
     }
 
     return null;

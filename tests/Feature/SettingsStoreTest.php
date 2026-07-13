@@ -18,6 +18,30 @@ describe('Settings store', function () {
         expect(Settings::get('missing.key', 'fallback'))->toBe('fallback');
     });
 
+    test('the minimum booking hours setting seeds as an int defaulting to 4', function () {
+        expect(Settings::get('bookings.minimum_hours'))->toBe(4);
+    });
+
+    test('update accepts an integer for the minimum booking hours setting', function () {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+
+        $this->actingAs($superAdmin)
+            ->put('/app-settings', ['settings' => ['bookings.minimum_hours' => 3]])
+            ->assertSessionHasNoErrors();
+
+        expect(Settings::get('bookings.minimum_hours'))->toBe(3);
+    });
+
+    test('update rejects a non-integer for the minimum booking hours setting', function () {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+
+        $this->actingAs($superAdmin)
+            ->put('/app-settings', ['settings' => ['bookings.minimum_hours' => 'abc']])
+            ->assertSessionHasErrors('settings.bookings.minimum_hours');
+
+        expect(Settings::get('bookings.minimum_hours'))->toBe(4);
+    });
+
     test('tier-1 config-migrated settings are seeded from config', function () {
         expect(Settings::get('trustline.jobs_threshold'))->toBe((int) config('trustline.jobs_threshold'));
         expect(Settings::get('trustline.reward_amount'))->toBe((int) config('trustline.reward_amount'));

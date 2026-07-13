@@ -274,30 +274,9 @@ export default function TransactionsIndex() {
             return;
         }
 
-        // Enforce minimum 4 hours from start_datetime
-        let validatedCheckout = checkoutStr;
-
-        if (selectedBooking.start_datetime && checkoutStr) {
-            const startDate = parseFromUtc(selectedBooking.start_datetime);
-            const checkoutDate = parseFromUtc(checkoutStr);
-
-            if (startDate && checkoutDate) {
-                const diffMs = checkoutDate.getTime() - startDate.getTime();
-                const diffHours = diffMs / (1000 * 60 * 60);
-
-                if (diffHours < 4) {
-                    const startFromUtc = parseFromUtc(
-                        selectedBooking.start_datetime,
-                    );
-                    const minCheckout = startFromUtc
-                        ? new Date(startFromUtc.getTime() + 4 * 60 * 60 * 1000)
-                        : null;
-                    validatedCheckout = minCheckout
-                        ? minCheckout.toISOString().slice(0, 16)
-                        : checkoutStr;
-                }
-            }
-        }
+        // Sub-4h checkout times are allowed here (admin adjusting to the true
+        // shorter time); billing floors at 4h server-side.
+        const validatedCheckout = checkoutStr;
 
         setLocalValues((prev) => ({
             ...prev,
@@ -657,6 +636,7 @@ export default function TransactionsIndex() {
                                     onChange={handleCheckoutAtChange}
                                     placeholder="Set checkout time"
                                     startTime={selectedBooking?.start_datetime}
+                                    enforceMinimum={false}
                                 />
                             </div>
                         </div>

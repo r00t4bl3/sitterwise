@@ -14,6 +14,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             caregiverStatuses: CaregiverStatusOption[];
+            booking_minimum_hours: number;
             [key: string]: unknown;
         };
     }

@@ -239,4 +239,60 @@ describe('Job index — early checkout availability', function () {
                 ->has('jobs.data.0.start_datetime')
             );
     });
+
+    test('a job whose only assignment row belongs to a reassigned prior caregiver still shows the current caregiver a null resolution', function () {
+        // Reproduces #85: the job was handed to the current caregiver via a path
+        // that left no assignment row for them; the only row belongs to the prior
+        // (reassigned) caregiver. The list must not borrow that stale resolution,
+        // or the checkout button (gated on !assignment_resolution) stays hidden.
+        $priorCaregiver = Caregiver::factory()->create();
+
+        $booking = Booking::factory()->forClient($this->client)->create([
+            'caregiver_id' => null,
+            'status' => 'confirmed',
+            'start_datetime' => now()->subHour(),
+            'end_datetime' => now()->addHour(),
+        ]);
+
+        $booking->assignments()->create([
+            'caregiver_id' => $priorCaregiver->id,
+            'assigned_at' => now()->subDay(),
+            'resolution' => 'reassigned',
+            'resolution_at' => now()->subDay(),
+        ]);
+        // updateQuietly bypasses the saved-hook, mirroring the raw-update accept
+        // path that never creates the new caregiver's row.
+        $booking->updateQuietly(['caregiver_id' => $this->caregiver->id]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('jobs.data', 1)
+                ->where('jobs.data.0.assignment_resolution', null)
+                ->where('jobs.data.0.assignment_id', null)
+            );
+    });
+
+    test('the current caregiver\'s own resolved assignment is still surfaced', function () {
+        // Negative path: scoping must not blank out a genuine own-resolution.
+        $booking = Booking::factory()->forClient($this->client)->create([
+            'caregiver_id' => $this->caregiver->id,
+            'status' => 'completed',
+            'start_datetime' => now()->subHours(3),
+            'end_datetime' => now()->subHour(),
+            'checkout_at' => now()->subHour(),
+        ]);
+        $booking->assignments()->where('caregiver_id', $this->caregiver->id)->first()
+            ->update(['resolution' => 'completed', 'resolution_at' => now()->subHour()]);
+
+        $this->actingAs($this->caregiver->user);
+
+        $this->get(route('jobs.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('jobs.data.0.assignment_resolution', 'completed')
+            );
+    });
 });
