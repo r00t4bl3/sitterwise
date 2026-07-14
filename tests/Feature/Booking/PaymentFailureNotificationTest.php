@@ -4,7 +4,7 @@ use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
 use App\Mail\AdminPaymentFailedMail;
-use App\Mail\ClientPaymentRequiredMail;
+use App\Mail\ClientPaymentFailedMail;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\PricingRule;
@@ -100,7 +100,7 @@ describe('Payment Failure Notifications', function () {
         $notification = new PaymentFailedNotification($booking, 1, 'Card declined', 'client');
         $mail = $notification->toMail($client);
 
-        expect($mail)->toBeInstanceOf(ClientPaymentRequiredMail::class)
+        expect($mail)->toBeInstanceOf(ClientPaymentFailedMail::class)
             ->and($mail->to)->toContain(['name' => null, 'address' => $user->email]);
     });
 

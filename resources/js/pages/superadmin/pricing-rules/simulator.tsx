@@ -445,9 +445,17 @@ export default function PricingSimulator() {
                                 <table className="w-full min-w-[600px]">
                                     <thead>
                                         <tr className="bg-table-header">
-                                            <th className="px-3 py-2 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            <th className="px-3 py-2 text-left text-[11px] font-semibold tracking-wider text-white uppercase" rowSpan={2}>
                                                 Service Type
                                             </th>
+                                            <th className="px-3 py-2 text-center text-[11px] font-semibold tracking-wider text-white uppercase" colSpan={11}>
+                                                Children
+                                            </th>
+                                            <th className="px-3 py-2 text-center text-[11px] font-semibold tracking-wider text-white uppercase" rowSpan={2}>
+                                                Pets
+                                            </th>
+                                        </tr>
+                                        <tr className="bg-table-header">
                                             {childrenRange.map((n) => (
                                                 <th
                                                     key={n}
@@ -456,9 +464,6 @@ export default function PricingSimulator() {
                                                     {n === 0 ? 'None' : n}
                                                 </th>
                                             ))}
-                                            <th className="px-3 py-2 text-center text-[11px] font-semibold tracking-wider text-white uppercase">
-                                                Pets
-                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>

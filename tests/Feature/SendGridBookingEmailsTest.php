@@ -8,6 +8,7 @@ use App\Mail\CaregiverBookingCancelledMail;
 use App\Mail\CaregiverBookingInvitationMail;
 use App\Mail\ClientBookingCancelledMail;
 use App\Mail\ClientGroupBookingCreatedMail;
+use App\Mail\ClientPaymentFailedMail;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Caregiver;
@@ -216,6 +217,34 @@ describe('Booking emails → branded SendGrid templates', function () {
         ]);
         expect($payload['personalizations'][0])->not->toHaveKey('bcc');
     });
+
+    test('client payment failed — client-facing data, decline reason, no team BCC', function () {
+        config(['mail.team_bcc' => 'hello@sitterwise.com']);
+        $booking = bookingsBatchBooking();
+        $booking->total_amount = 189;
+        $payload = captureSendGridPayload(new ClientPaymentFailedMail($booking, 'Your card was declined (insufficient funds).'));
+        $data = $payload['personalizations'][0]['dynamic_template_data'];
+
+        expect($payload['template_id'])->toBe('d-7b4a3691a5f44f3392415ed14143cdd5');
+        expect($data)->toMatchArray([
+            'client_first_name' => 'Jane',
+            'service_type' => 'Babysitter',
+            'service_date' => $booking->start_datetime->copy()->setTimezone('America/Los_Angeles')->format('l, F j, Y'),
+            'total_amount' => '189.00',
+            'update_payment_url' => route('payments.index'),
+            'decline_reason' => 'Your card was declined (insufficient funds).',
+            'booking_id' => (string) $booking->id,
+        ]);
+        expect($payload['personalizations'][0])->not->toHaveKey('bcc');
+    });
+
+    test('client payment failed — decline reason omitted when error is blank', function () {
+        $booking = bookingsBatchBooking();
+        $payload = captureSendGridPayload(new ClientPaymentFailedMail($booking, ''));
+        $data = $payload['personalizations'][0]['dynamic_template_data'];
+
+        expect($data)->not->toHaveKey('decline_reason');
+    });
 });
 
 describe('Booking emails still render their Blade body locally', function () {
@@ -227,8 +256,9 @@ describe('Booking emails still render their Blade body locally', function () {
             'admin-group' => new AdminGroupBookingCreatedMail(bookingsBatchGroup()),
             'review' => new BookingReviewReminderMail(bookingsBatchBooking(), 'https://sitterwise.test/review'),
             'payment-failed' => new AdminPaymentFailedMail(bookingsBatchBooking(), 2, 'Card declined'),
+            'client-payment-failed' => new ClientPaymentFailedMail(bookingsBatchBooking(), 'Your card was declined.'),
         };
 
         expect($mailable->render())->toBeString()->not->toBe('')->toContain('<');
-    })->with(['invitation', 'admin-group', 'review', 'payment-failed']);
+    })->with(['invitation', 'admin-group', 'review', 'payment-failed', 'client-payment-failed']);
 });
