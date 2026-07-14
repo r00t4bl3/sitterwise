@@ -165,49 +165,106 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
     {
         $client = $request->user()->client;
 
-        // Handle deleted children
-        if (! empty($request->deleted_child_ids)) {
-            ClientChild::where('client_id', $client->id)->whereIn('id', $request->deleted_child_ids)->delete();
-        }
+        // Only touch the client's profile (children/pets) when they opted in via
+        // the "update my profile" checkbox. When it is unchecked, the profile is
+        // left entirely untouched — no creates, updates, or deletes — and the
+        // booking simply snapshots the client's current profile below.
+        if ($request->save_children_pets_to_profile) {
+            if (! empty($request->deleted_child_ids)) {
+                ClientChild::where('client_id', $client->id)->whereIn('id', $request->deleted_child_ids)->delete();
+            }
 
-        // Handle deleted pets
-        if (! empty($request->deleted_pet_ids)) {
-            ClientPet::where('client_id', $client->id)->whereIn('id', $request->deleted_pet_ids)->delete();
-        }
+            if (! empty($request->deleted_pet_ids)) {
+                ClientPet::where('client_id', $client->id)->whereIn('id', $request->deleted_pet_ids)->delete();
+            }
 
-        // Handle new children
-        if (! empty($request->new_children) && $request->save_children_pets_to_profile) {
-            foreach ($request->new_children as $childData) {
-                ClientChild::create([
-                    'client_id' => $client->id,
-                    'name' => $childData['name'] ?? null,
-                    'gender' => $childData['gender'] ?? null,
-                    'birth_date' => ! empty($childData['birth_year'])
+            // Upsert children: the form re-submits the client's EXISTING profile
+            // children (with their real positive id) alongside any new ones (temp
+            // negative id / no id). Update the matched existing rows and only
+            // create genuinely new ones — otherwise every booking duplicates the
+            // roster.
+            if (! empty($request->new_children)) {
+                foreach ($request->new_children as $childData) {
+                    $birthDate = ! empty($childData['birth_year'])
                         ? Carbon::createFromDate(
                             (int) $childData['birth_year'],
                             (int) ($childData['birth_month'] ?? 0) ?: now()->month,
                             1
                         )->format('Y-m-d')
-                        : null,
-                ]);
+                        : null;
+
+                    if (! empty($childData['id']) && $childData['id'] > 0) {
+                        ClientChild::where('client_id', $client->id)
+                            ->where('id', $childData['id'])
+                            ->update([
+                                'name' => $childData['name'] ?? null,
+                                'gender' => $childData['gender'] ?? null,
+                                'birth_date' => $birthDate,
+                            ]);
+                    } else {
+                        ClientChild::create([
+                            'client_id' => $client->id,
+                            'name' => $childData['name'] ?? null,
+                            'gender' => $childData['gender'] ?? null,
+                            'birth_date' => $birthDate,
+                        ]);
+                    }
+                }
+            }
+
+            // Upsert pets — same existing-vs-new handling as children.
+            if (! empty($request->new_pets)) {
+                foreach ($request->new_pets as $petData) {
+                    if (! empty($petData['id']) && $petData['id'] > 0) {
+                        ClientPet::where('client_id', $client->id)
+                            ->where('id', $petData['id'])
+                            ->update([
+                                'name' => $petData['name'] ?? null,
+                                'type' => $petData['type'] ?? null,
+                                'breed' => $petData['breed'] ?? null,
+                                'notes' => $petData['notes'] ?? null,
+                            ]);
+                    } else {
+                        ClientPet::create([
+                            'client_id' => $client->id,
+                            'name' => $petData['name'] ?? null,
+                            'type' => $petData['type'] ?? null,
+                            'breed' => $petData['breed'] ?? null,
+                            'notes' => $petData['notes'] ?? null,
+                        ]);
+                    }
+                }
             }
         }
 
-        // Handle new pets
-        if (! empty($request->new_pets) && $request->save_children_pets_to_profile) {
-            foreach ($request->new_pets as $petData) {
-                ClientPet::create([
-                    'client_id' => $client->id,
-                    'name' => $petData['name'] ?? null,
-                    'type' => $petData['type'] ?? null,
-                    'breed' => $petData['breed'] ?? null,
-                    'notes' => $petData['notes'] ?? null,
-                ]);
-            }
-        }
+        // Ensure the client's user is loaded for the email snapshot below.
+        $client->loadMissing('user');
 
-        // Refresh client data to include updated children and pets for snapshot
-        $client->load(['children', 'pets', 'user']);
+        // Snapshot children/pets from the SUBMITTED form list (mirrors
+        // AdminBookingService::store), NOT the profile roster — so per-booking
+        // edits (a removed or one-off child) are reflected on the booking
+        // regardless of whether the client chose to persist them to their profile.
+        $childrenSnapshot = collect($request->new_children ?? [])
+            ->filter(fn ($child) => ! empty($child['name']))
+            ->map(fn ($child) => [
+                'name' => $child['name'],
+                'gender' => $child['gender'] ?? null,
+                'birth_month' => ! empty($child['birth_month']) ? (int) $child['birth_month'] : null,
+                'birth_year' => ! empty($child['birth_year']) ? (int) $child['birth_year'] : null,
+            ])
+            ->values()
+            ->all();
+
+        $petsSnapshot = collect($request->new_pets ?? [])
+            ->filter(fn ($pet) => ! empty($pet['name']))
+            ->map(fn ($pet) => [
+                'name' => $pet['name'],
+                'type' => $pet['type'] ?? null,
+                'breed' => $pet['breed'] ?? null,
+                'notes' => $pet['notes'] ?? null,
+            ])
+            ->values()
+            ->all();
 
         // Create new client address if private_home and new address provided
         $addressId = $request->address_id;
@@ -242,18 +299,8 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
             'client_last_name' => $client->last_name,
             'client_phone' => $client->phone,
             'client_email' => $client->user?->email,
-            'children' => $client->children->map(fn ($child) => [
-                'name' => $child->name,
-                'gender' => $child->gender,
-                'birth_month' => $child->birth_month,
-                'birth_year' => $child->birth_year,
-            ])->toArray(),
-            'pets' => $client->pets->map(fn ($pet) => [
-                'name' => $pet->name,
-                'type' => $pet->type,
-                'breed' => $pet->breed,
-                'notes' => $pet->notes,
-            ])->toArray(),
+            'children' => $childrenSnapshot,
+            'pets' => $petsSnapshot,
             'hotel_id' => $request->hotel_id,
             'hotel_name' => $request->hotel_name,
             'rental_platform' => $request->rental_platform,

@@ -7,6 +7,7 @@ use App\Enums\CaregiverStatus;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Support\BusinessTime;
+use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -40,6 +41,8 @@ class CaregiverBadgeService
             ->where('certification_type_id', self::TRUSTLINE_CERTIFICATION_TYPE_ID)
             ->wherePivot('verified_at', '!=', null)
             ->exists();
+
+        $trustlineThreshold = (int) Settings::get('trustline.jobs_threshold', 10);
 
         $lifesaverCount = $this->getLifesaverCount($caregiver);
         // Note: lifesaver date tracking requires an explicit lifesaver flag on bookings
@@ -86,10 +89,10 @@ class CaregiverBadgeService
                 group: 'Jobs Completed',
                 tier: 'teal',
                 variant: 'shield',
-                earned: $completedCount >= 10,
-                earnedDate: $completedCount >= 10 ? $this->formatDate($completedBookingsByDate->get(9)?->end_datetime) : null,
-                criteria: '10 jobs — TrustLine reimbursement unlocked',
-                progress: $completedCount >= 10 ? null : "{$completedCount} of 10",
+                earned: $completedCount >= $trustlineThreshold,
+                earnedDate: $completedCount >= $trustlineThreshold ? $this->formatDate($completedBookingsByDate->get($trustlineThreshold - 1)?->end_datetime) : null,
+                criteria: "{$trustlineThreshold} jobs — TrustLine reimbursement unlocked",
+                progress: $completedCount >= $trustlineThreshold ? null : "{$completedCount} of {$trustlineThreshold}",
             ),
             $this->makeBadge(
                 slug: 'twenty-five-club',

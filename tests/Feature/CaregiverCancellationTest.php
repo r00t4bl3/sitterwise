@@ -65,7 +65,8 @@ describe('caregiver back-out', function () {
         expect($assignment->resolution_note)->toBe('Feeling unwell');
         expect($assignment->resolution_at)->not->toBeNull();
         expect($assignment->booking->caregiver_id)->toBeNull();
-        expect($assignment->booking->status)->toBe(BookingStatus::Confirmed->value);
+        // Backing out returns the job to the pool.
+        expect($assignment->booking->status)->toBe(BookingStatus::Received->value);
     });
 
     it('sends notification to admins on back-out', function () {

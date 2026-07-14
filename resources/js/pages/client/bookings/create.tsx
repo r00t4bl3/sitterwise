@@ -233,6 +233,8 @@ export default function ClientBookingCreate() {
         special_needs_notes: '',
         how_did_you_hear: '',
         save_children_pets_to_profile: true,
+        deleted_child_ids: [] as number[],
+        deleted_pet_ids: [] as number[],
     });
 
     const [dates, setDates] = useState<DateEntry[]>([
@@ -281,6 +283,15 @@ export default function ClientBookingCreate() {
     };
 
     const handleRemoveChild = (id: number | string) => {
+        // Existing profile children have a real positive id — record them for
+        // deletion so they're removed from the profile (and thus the booking's
+        // children snapshot). New (temp negative id) entries are just dropped.
+        if (typeof id === 'number' && id > 0) {
+            form.setData('deleted_child_ids', [
+                ...form.data.deleted_child_ids,
+                id,
+            ]);
+        }
         form.setData(
             'new_children',
             form.data.new_children.filter((c) => c.id !== id),
@@ -310,6 +321,12 @@ export default function ClientBookingCreate() {
     };
 
     const handleRemovePet = (id: number | string) => {
+        if (typeof id === 'number' && id > 0) {
+            form.setData('deleted_pet_ids', [
+                ...form.data.deleted_pet_ids,
+                id,
+            ]);
+        }
         form.setData(
             'new_pets',
             form.data.new_pets.filter((p) => p.id !== id),

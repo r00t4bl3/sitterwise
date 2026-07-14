@@ -1803,7 +1803,10 @@ describe('Booking - Admin', function () {
         $response->assertSessionHasErrors('end_datetime');
     });
 
-    test('admin cannot update a booking with less than 4 hours duration', function () {
+    test('admin can update a booking to less than the minimum duration (adjust-to-earlier; billing floors server-side)', function () {
+        // The admin Edit picker now allows sub-minimum ends so admins can adjust a
+        // job to its true shorter time; the server must accept it (the minimum-
+        // duration rule stays on creation only). Billing floors via the model hook.
         $this->actingAs($this->user);
         $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
 
@@ -1831,7 +1834,7 @@ describe('Booking - Admin', function () {
             'payment_status' => 'paid',
         ]);
 
-        $response->assertSessionHasErrors('end_datetime');
+        $response->assertSessionDoesntHaveErrors('end_datetime');
     });
 
     it('can create a group childcare booking with children notes', function () {

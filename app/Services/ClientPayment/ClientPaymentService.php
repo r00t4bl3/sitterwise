@@ -24,9 +24,9 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
     protected ?Client $client = null;
 
-    public function __construct()
+    public function __construct(?StripeClient $stripe = null)
     {
-        $this->stripe = new StripeClient(config('services.stripe.secret'));
+        $this->stripe = $stripe ?? new StripeClient(config('services.stripe.secret'));
     }
 
     public function setClient(Client $client): self
@@ -237,26 +237,35 @@ class ClientPaymentService implements ClientPaymentServiceInterface
 
         $this->ensureStripeCustomer($client);
 
-        // Make the newly added method the default whenever the client has no
-        // default yet — not only when it's their first card. Otherwise a client
-        // whose methods were synced/imported without a default (or lost it) still
-        // can't be charged, since billing requires a default payment method.
-        $hasDefault = ClientPaymentMethod::where('client_id', $client->id)
+        // The Stripe SetupIntent attaches the card to the customer, which fires a
+        // `payment_method.attached` webhook that also stores the row — so this row
+        // may already exist by the time the client returns here (or on a repeat
+        // submit). Upsert on the unique provider_method_id instead of a blind
+        // create to avoid a 1062 duplicate-key crash.
+        $existing = ClientPaymentMethod::where('provider_method_id', $data['payment_method_id'])->first();
+
+        // Make this the default whenever the client has no default yet (not only
+        // for a first card — a client whose methods were synced/imported without a
+        // default still can't be charged). Never demote an already-default row.
+        $clientHasDefault = ClientPaymentMethod::where('client_id', $client->id)
             ->where('is_default', true)
             ->exists();
+        $makeDefault = ($existing && $existing->is_default) || ! $clientHasDefault;
 
-        $paymentMethod = ClientPaymentMethod::create([
-            'client_id' => $client->id,
-            'provider' => 'stripe',
-            'provider_method_id' => $data['payment_method_id'],
-            'brand' => $data['brand'],
-            'last4' => $data['last4'],
-            'exp_month' => $data['exp_month'],
-            'exp_year' => $data['exp_year'],
-            'status' => 'active',
-            'is_default' => ! $hasDefault,
-            'metadata' => $data['metadata'] ?? [],
-        ]);
+        $paymentMethod = ClientPaymentMethod::updateOrCreate(
+            ['provider_method_id' => $data['payment_method_id']],
+            [
+                'client_id' => $client->id,
+                'provider' => 'stripe',
+                'brand' => $data['brand'],
+                'last4' => $data['last4'],
+                'exp_month' => $data['exp_month'],
+                'exp_year' => $data['exp_year'],
+                'status' => 'active',
+                'is_default' => $makeDefault,
+                'metadata' => $data['metadata'] ?? [],
+            ]
+        );
 
         $this->stripe->paymentMethods->attach($data['payment_method_id'], [
             'customer' => $client->stripe_customer_id,

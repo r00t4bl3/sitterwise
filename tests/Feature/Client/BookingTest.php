@@ -179,8 +179,17 @@ describe('Booking - Client', function () {
             'special_needs_notes' => 'Allergic to peanuts.',
             'how_did_you_hear' => 'google',
             'save_children_pets_to_profile' => true,
-            'new_children' => [$newChild],
-            'new_pets' => [$newPet],
+            // The form re-submits the full roster (existing profile entries with
+            // their ids) plus any new ones — this is what the frontend sends.
+            'new_children' => [
+                ['id' => $child1->id, 'name' => $child1->name, 'gender' => $child1->gender, 'birth_month' => $child1->birth_month, 'birth_year' => $child1->birth_year],
+                ['id' => $child2->id, 'name' => $child2->name, 'gender' => $child2->gender, 'birth_month' => $child2->birth_month, 'birth_year' => $child2->birth_year],
+                $newChild,
+            ],
+            'new_pets' => [
+                ['id' => $pet1->id, 'name' => $pet1->name, 'type' => $pet1->type, 'breed' => $pet1->breed, 'notes' => $pet1->notes],
+                $newPet,
+            ],
             'deleted_child_ids' => [],
             'deleted_pet_ids' => [],
             'client_id' => $this->client->id,
@@ -386,8 +395,8 @@ describe('Booking - Client', function () {
             'emergency_instructions' => '',
             'special_needs_notes' => '',
             'how_did_you_hear' => 'google',
-            'save_children_pets_to_profile' => false,
-            'new_children' => [['name' => $childToKeep->name, 'gender' => $childToKeep->gender, 'birth_month' => $childToKeep->birth_month, 'birth_year' => $childToKeep->birth_year]],
+            'save_children_pets_to_profile' => true,
+            'new_children' => [['id' => $childToKeep->id, 'name' => $childToKeep->name, 'gender' => $childToKeep->gender, 'birth_month' => $childToKeep->birth_month, 'birth_year' => $childToKeep->birth_year]],
             'new_pets' => [],
             'deleted_child_ids' => [$childToDelete->id],
             'deleted_pet_ids' => [],
@@ -427,9 +436,9 @@ describe('Booking - Client', function () {
             'emergency_instructions' => '',
             'special_needs_notes' => '',
             'how_did_you_hear' => 'google',
-            'save_children_pets_to_profile' => false,
-            'new_children' => [['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year]],
-            'new_pets' => [],
+            'save_children_pets_to_profile' => true,
+            'new_children' => [['id' => $child->id, 'name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year]],
+            'new_pets' => [['id' => $petToKeep->id, 'name' => $petToKeep->name, 'type' => $petToKeep->type, 'breed' => $petToKeep->breed, 'notes' => $petToKeep->notes]],
             'deleted_child_ids' => [],
             'deleted_pet_ids' => [$petToDelete->id],
             'client_id' => $this->client->id,
@@ -445,6 +454,266 @@ describe('Booking - Client', function () {
         $booking = Booking::whereHas('bookingGroup', fn ($q) => $q->where('client_id', $this->client->id))->first();
         expect($booking->pets)->toHaveCount(1);
         expect($booking->pets[0]['name'])->toBe($petToKeep->name);
+    });
+
+    test('existing children are not duplicated when save_children_pets_to_profile is true', function () {
+        $child1 = ClientChild::factory()->for($this->client)->create(['name' => 'Alice']);
+        $child2 = ClientChild::factory()->for($this->client)->create(['name' => 'Bob']);
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [
+                ['id' => $child1->id, 'name' => 'Alice', 'gender' => 'female', 'birth_month' => '3', 'birth_year' => '2020'],
+                ['id' => $child2->id, 'name' => 'Bob', 'gender' => 'male', 'birth_month' => '6', 'birth_year' => '2021'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(2);
+    });
+
+    test('children are not duplicated after multiple bookings (idempotency)', function () {
+        $child = ClientChild::factory()->for($this->client)->create(['name' => 'Charlie']);
+
+        $payload = fn (int $day) => [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays($day)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays($day)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [
+                ['id' => $child->id, 'name' => 'Charlie', 'gender' => 'male', 'birth_month' => '1', 'birth_year' => '2020'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ];
+
+        $this->post(route('bookings.store'), $payload(1))->assertSessionHasNoErrors();
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(1);
+
+        $this->post(route('bookings.store'), $payload(2))->assertSessionHasNoErrors();
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(1);
+    });
+
+    test('existing child data is updated when submitted with id', function () {
+        $child = ClientChild::factory()->for($this->client)->create(['name' => 'Original', 'gender' => 'male']);
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [
+                ['id' => $child->id, 'name' => 'Updated Name', 'gender' => 'female', 'birth_month' => '6', 'birth_year' => '2021'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(1);
+        $child->refresh();
+        expect($child->name)->toBe('Updated Name')
+            ->and($child->gender)->toBe('female');
+    });
+
+    test('existing pets are not duplicated when save_children_pets_to_profile is true', function () {
+        $pet1 = ClientPet::factory()->for($this->client)->create(['name' => 'Max']);
+        $pet2 = ClientPet::factory()->for($this->client)->create(['name' => 'Bella']);
+        $child = ClientChild::factory()->for($this->client)->create();
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [['id' => $child->id, 'name' => $child->name, 'gender' => $child->gender, 'birth_month' => (string) ($child->birth_month ?? 1), 'birth_year' => (string) ($child->birth_year ?? 2020)]],
+            'new_pets' => [
+                ['id' => $pet1->id, 'name' => 'Max', 'type' => 'dog', 'breed' => 'Lab', 'notes' => ''],
+                ['id' => $pet2->id, 'name' => 'Bella', 'type' => 'cat', 'breed' => 'Siamese', 'notes' => ''],
+            ],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        expect(ClientPet::where('client_id', $this->client->id)->count())->toBe(2);
+    });
+
+    test('mixed existing and new children are handled correctly', function () {
+        $existing = ClientChild::factory()->for($this->client)->create(['name' => 'Existing']);
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [
+                ['id' => $existing->id, 'name' => 'Existing', 'gender' => 'female', 'birth_month' => '3', 'birth_year' => '2020'],
+                ['name' => 'New Kid', 'gender' => 'male', 'birth_month' => '6', 'birth_year' => '2022'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(2);
+        $booking = Booking::latest('id')->first();
+        expect($booking->children)->toHaveCount(2);
+    });
+
+    test('delete existing child with save_children_pets_to_profile true', function () {
+        $childToDelete = ClientChild::factory()->for($this->client)->create();
+        $childToKeep = ClientChild::factory()->for($this->client)->create();
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(14)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => true,
+            'new_children' => [['id' => $childToKeep->id, 'name' => $childToKeep->name, 'gender' => $childToKeep->gender, 'birth_month' => (string) ($childToKeep->birth_month ?? 1), 'birth_year' => (string) ($childToKeep->birth_year ?? 2020)]],
+            'new_pets' => [],
+            'deleted_child_ids' => [$childToDelete->id],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSoftDeleted('client_children', ['id' => $childToDelete->id]);
+        $this->assertDatabaseHas('client_children', ['id' => $childToKeep->id]);
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(1);
+    });
+
+    test('profile is left untouched (no deletion) when save_children_pets_to_profile is false', function () {
+        $childToDelete = ClientChild::factory()->for($this->client)->create();
+        $childToKeep = ClientChild::factory()->for($this->client)->create();
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(14)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(18)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [['name' => $childToKeep->name, 'gender' => $childToKeep->gender, 'birth_month' => (string) ($childToKeep->birth_month ?? 1), 'birth_year' => (string) ($childToKeep->birth_year ?? 2020)]],
+            'new_pets' => [],
+            'deleted_child_ids' => [$childToDelete->id],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        // With the checkbox off, NOTHING is written to the profile — the removed
+        // child is NOT deleted, and both remain.
+        $this->assertNotSoftDeleted('client_children', ['id' => $childToDelete->id]);
+        $this->assertDatabaseHas('client_children', ['id' => $childToKeep->id]);
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(2);
+    });
+
+    test('booking reflects a one-off child from the form without saving it to the profile', function () {
+        $existing = ClientChild::factory()->for($this->client)->create(['name' => 'Existing']);
+
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [
+                ['id' => $existing->id, 'name' => 'Existing', 'gender' => 'female', 'birth_month' => '3', 'birth_year' => '2020'],
+                ['name' => 'One-off Guest', 'gender' => 'male', 'birth_month' => '6', 'birth_year' => '2022'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        // The booking's snapshot reflects the submitted list (both children)…
+        $booking = Booking::latest('id')->first();
+        expect($booking->children)->toHaveCount(2)
+            ->and(collect($booking->children)->pluck('name'))->toContain('One-off Guest');
+
+        // …but the profile is untouched — the one-off child was NOT created.
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(1);
+    });
+
+    test('booking excludes a child removed on the form without deleting it from the profile', function () {
+        $keep = ClientChild::factory()->for($this->client)->create(['name' => 'Keep']);
+        $removed = ClientChild::factory()->for($this->client)->create(['name' => 'Removed']);
+
+        // The form omits "Removed" from new_children, checkbox OFF.
+        $this->post(route('bookings.store'), [
+            'service_type' => 'babysitter',
+            'location_type' => 'private_home',
+            'start_datetime' => now()->addDays(1)->setHour(9)->setMinute(0)->toISOString(),
+            'end_datetime' => now()->addDays(1)->setHour(13)->setMinute(0)->toISOString(),
+            'address_line1' => '123 Test St',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92101',
+            'how_did_you_hear' => 'google',
+            'save_children_pets_to_profile' => false,
+            'new_children' => [
+                ['id' => $keep->id, 'name' => 'Keep', 'gender' => 'female', 'birth_month' => '3', 'birth_year' => '2020'],
+            ],
+            'new_pets' => [],
+            'deleted_child_ids' => [$removed->id],
+            'deleted_pet_ids' => [],
+        ])->assertSessionHasNoErrors();
+
+        // The booking has only the kept child…
+        $booking = Booking::latest('id')->first();
+        expect($booking->children)->toHaveCount(1)
+            ->and($booking->children[0]['name'])->toBe('Keep');
+
+        // …and the profile still has BOTH (nothing deleted with the checkbox off).
+        expect(ClientChild::where('client_id', $this->client->id)->count())->toBe(2);
+        $this->assertNotSoftDeleted('client_children', ['id' => $removed->id]);
     });
 });
 

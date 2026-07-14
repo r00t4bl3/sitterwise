@@ -499,16 +499,26 @@ class GuestBookingService
         try {
             $pm = $stripe->paymentMethods->retrieve($paymentMethodId);
 
-            $client->paymentMethods()->create([
-                'provider' => 'stripe',
-                'provider_method_id' => $pm->id,
-                'brand' => $pm->card->brand,
-                'last4' => $pm->card->last4,
-                'exp_month' => $pm->card->exp_month,
-                'exp_year' => $pm->card->exp_year,
-                'status' => 'active',
-                'is_default' => $client->paymentMethods()->count() === 0,
-            ]);
+            // Upsert on the unique provider_method_id: the attach below fires a
+            // payment_method.attached webhook that also stores the row, so a blind
+            // create would risk a duplicate-key error. Never demote an existing
+            // default; make this the default only when the client has none.
+            $existing = $client->paymentMethods()->where('provider_method_id', $pm->id)->first();
+            $makeDefault = ($existing && $existing->is_default)
+                || $client->paymentMethods()->where('is_default', true)->doesntExist();
+
+            $client->paymentMethods()->updateOrCreate(
+                ['provider_method_id' => $pm->id],
+                [
+                    'provider' => 'stripe',
+                    'brand' => $pm->card->brand,
+                    'last4' => $pm->card->last4,
+                    'exp_month' => $pm->card->exp_month,
+                    'exp_year' => $pm->card->exp_year,
+                    'status' => 'active',
+                    'is_default' => $makeDefault,
+                ]
+            );
 
             if (! $client->stripe_customer_id || str_starts_with($client->stripe_customer_id, 'pm_')) {
                 $stripeCustomer = $stripe->customers->create([

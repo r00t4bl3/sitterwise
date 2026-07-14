@@ -12,6 +12,9 @@ use Illuminate\Support\Carbon;
  * business timezone and convert it back to UTC (`->utc()`) before it hits the
  * query — otherwise the boundary lands on UTC midnight and is off by up to a
  * day (e.g. after ~5pm Pacific, `now()->startOfDay()` is already tomorrow).
+ *
+ * See docs/datetime-and-dst.md for the full UTC-storage / PT-display /
+ * true-elapsed-duration rationale and the DST edge cases.
  */
 class BusinessTime
 {

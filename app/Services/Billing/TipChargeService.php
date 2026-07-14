@@ -187,19 +187,26 @@ class TipChargeService
 
             Log::info('createPaymentMethodFromStripe: Attached to customer');
 
-            Log::info('createPaymentMethodFromStripe: About to create ClientPaymentMethod');
+            Log::info('createPaymentMethodFromStripe: About to store ClientPaymentMethod');
 
-            $paymentMethod = ClientPaymentMethod::create([
-                'client_id' => $client->id,
-                'provider_method_id' => $paymentMethodId,
-                'provider' => 'stripe',
-                'brand' => $stripePaymentMethod->card?->brand ?? 'unknown',
-                'last4' => $stripePaymentMethod->card?->last4 ?? '****',
-                'exp_month' => $stripePaymentMethod->card?->exp_month ?? 1,
-                'exp_year' => $stripePaymentMethod->card?->exp_year ?? 2025,
-                'is_default' => false,
-                'status' => 'active',
-            ]);
+            // The attach above fires a payment_method.attached webhook that also
+            // stores the row; upsert on the unique provider_method_id so a blind
+            // create can't hit a duplicate-key error. Preserve an existing default.
+            $existing = ClientPaymentMethod::where('provider_method_id', $paymentMethodId)->first();
+
+            $paymentMethod = ClientPaymentMethod::updateOrCreate(
+                ['provider_method_id' => $paymentMethodId],
+                [
+                    'client_id' => $client->id,
+                    'provider' => 'stripe',
+                    'brand' => $stripePaymentMethod->card?->brand ?? 'unknown',
+                    'last4' => $stripePaymentMethod->card?->last4 ?? '****',
+                    'exp_month' => $stripePaymentMethod->card?->exp_month ?? 1,
+                    'exp_year' => $stripePaymentMethod->card?->exp_year ?? 2025,
+                    'is_default' => $existing?->is_default ?? false,
+                    'status' => 'active',
+                ]
+            );
 
             Log::info('createPaymentMethodFromStripe: Created ClientPaymentMethod', ['id' => $paymentMethod->id]);
 

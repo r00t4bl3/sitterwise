@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssignmentResolution;
+use App\Enums\BookingStatus;
 use App\Models\CaregiverAssignment;
 use App\Models\User;
 use App\Notifications\AdminCaregiverBackedOutNotification;
@@ -33,7 +34,12 @@ class AssignmentController extends Controller
         DB::transaction(function () use ($assignment, $validated) {
             $assignment->resolve(AssignmentResolution::BackedOut, $validated['reason']);
 
-            $assignment->booking->update(['caregiver_id' => null]);
+            // Return the job to the pool: clear the caregiver and reset the status
+            // to Received so it can be re-notified/re-assigned (mirrors reopen()).
+            $assignment->booking->update([
+                'caregiver_id' => null,
+                'status' => BookingStatus::Received->value,
+            ]);
         });
 
         $admins = User::where('role', 'admin')->get();

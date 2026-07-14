@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Rules\MinimumBookingDuration;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -56,7 +55,11 @@ class UpdateBookingRequest extends FormRequest
             'service_type' => ['required', 'string'],
             'location_type' => ['required', 'string'],
             'start_datetime' => ['required', 'date'],
-            'end_datetime' => ['required', 'date', 'after:start_datetime', new MinimumBookingDuration],
+            // No MinimumBookingDuration here: admins may adjust a booking's times to
+            // earlier/shorter than the minimum (e.g. a job that ran short). Billing
+            // still floors at the minimum via Booking::calculateTotalAmount(). The
+            // minimum-duration rule remains on creation (StoreBookingRequest).
+            'end_datetime' => ['required', 'date', 'after:start_datetime'],
             'hotel_id' => ['nullable', 'exists:hotels,id'],
             'hotel_name' => ['nullable', 'string', 'max:255'],
             'address_id' => ['nullable', 'exists:client_addresses,id'],

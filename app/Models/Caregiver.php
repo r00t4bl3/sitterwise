@@ -255,6 +255,11 @@ class Caregiver extends Model
         return $this->hasOne(CaregiverApplication::class);
     }
 
+    public function trustlineReimbursement(): HasOne
+    {
+        return $this->hasOne(TrustlineReimbursement::class);
+    }
+
     public function caregiverPauses(): HasMany
     {
         return $this->hasMany(CaregiverPause::class);
