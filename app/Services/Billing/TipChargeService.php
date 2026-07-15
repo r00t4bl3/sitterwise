@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Models\Booking;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Notifications\CaregiverTipReceivedNotification;
 use App\Services\CaregiverPayout\CaregiverPayoutService;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
@@ -15,9 +16,9 @@ class TipChargeService
 {
     protected StripeClient $stripe;
 
-    public function __construct()
+    public function __construct(?StripeClient $stripe = null)
     {
-        $this->stripe = new StripeClient(config('services.stripe.secret'));
+        $this->stripe = $stripe ?? new StripeClient(config('services.stripe.secret'));
     }
 
     /**
@@ -42,6 +43,23 @@ class TipChargeService
             return [
                 'success' => false,
                 'message' => 'A tip payment is already pending for this booking',
+            ];
+        }
+
+        // A booking can only be tipped once. Editing a review re-submits the
+        // (pre-filled) tip, so without this guard a succeeded tip would be
+        // charged again. Treat an already-succeeded tip as a no-op success so
+        // the review edit completes cleanly rather than surfacing a failure.
+        $existingSucceeded = ClientPayment::where('booking_id', $booking->id)
+            ->where('status', 'succeeded')
+            ->whereJsonContains('metadata->type', 'tip')
+            ->exists();
+
+        if ($existingSucceeded) {
+            return [
+                'success' => true,
+                'skipped' => true,
+                'message' => 'Tip already processed for this booking',
             ];
         }
 
@@ -141,6 +159,13 @@ class TipChargeService
                 'provider_payment_id' => $paymentIntent->id,
                 'paid_at' => now(),
             ]);
+
+            // Let the caregiver know a tip landed — otherwise they only see it by
+            // passively opening their Jobs pages. In-app (database) only.
+            $caregiverUser = $booking->caregiver?->user;
+            if ($caregiverUser) {
+                $caregiverUser->notify(new CaregiverTipReceivedNotification($booking, $tipAmount));
+            }
 
             if (config('services.stripe.enable_caregiver_transfers')) {
                 try {

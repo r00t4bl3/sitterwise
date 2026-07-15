@@ -12,6 +12,7 @@ use App\Models\PricingRule;
 use App\Models\User;
 use App\Services\Billing\TipChargeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Stripe\StripeClient;
 
 uses(RefreshDatabase::class);
 
@@ -173,5 +174,46 @@ describe('Tip Charge Service', function () {
         $result = $tipService->charge($booking, 25);
 
         expect($result)->toHaveKey('success');
+    });
+
+    test('does not charge again when a tip already succeeded (idempotent)', function () {
+        $booking = tipBooking();
+
+        $paymentMethod = ClientPaymentMethod::create([
+            'client_id' => $booking->client_id,
+            'provider_method_id' => 'pm_prior_tip',
+            'provider' => 'stripe',
+            'brand' => 'visa',
+            'last4' => '4242',
+            'exp_month' => 12,
+            'exp_year' => 2030,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        ClientPayment::create([
+            'booking_id' => $booking->id,
+            'client_id' => $booking->client_id,
+            'payment_method_id' => $paymentMethod->id,
+            'amount' => 10,
+            'currency' => 'usd',
+            'status' => 'succeeded',
+            'provider' => 'stripe',
+            'metadata' => ['type' => 'tip', 'booking_id' => $booking->id],
+        ]);
+
+        // A bare Stripe mock with no expectations: if charge() tried to create a
+        // PaymentIntent this test would fail, proving the guard short-circuits
+        // before any charge.
+        $stripe = Mockery::mock(StripeClient::class);
+
+        $result = (new TipChargeService($stripe))->charge($booking, 10, 'pm_prior_tip');
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['skipped'] ?? false)->toBeTrue();
+
+        expect(ClientPayment::where('booking_id', $booking->id)
+            ->whereJsonContains('metadata->type', 'tip')
+            ->count())->toBe(1);
     });
 });

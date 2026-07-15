@@ -7,6 +7,8 @@ use App\Models\BookingRating;
 use App\Models\Caregiver;
 use App\Models\CertificationType;
 use App\Models\Client;
+use App\Models\ClientPayment;
+use App\Models\ClientPaymentMethod;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use App\Models\User;
@@ -199,6 +201,61 @@ test('existing review data is prepopulated', function () {
         ->where('booking.existing_comment', 'Original comment')
         ->where('booking.existing_tip', '10.00')
     );
+});
+
+test('editing a review does not re-charge an already-succeeded tip', function () {
+    BookingRating::create([
+        'booking_id' => $this->completedBooking->id,
+        'rater_id' => $this->clientUser->id,
+        'ratable_id' => $this->caregiver->id,
+        'ratable_type' => Caregiver::class,
+        'rating' => 4,
+        'comment' => 'Good, and tipped',
+    ]);
+
+    $this->completedBooking->update(['tip' => 10.00]);
+
+    $paymentMethod = ClientPaymentMethod::create([
+        'client_id' => $this->client->id,
+        'provider_method_id' => 'pm_prior_tip',
+        'provider' => 'stripe',
+        'brand' => 'visa',
+        'last4' => '4242',
+        'exp_month' => 12,
+        'exp_year' => 2030,
+        'is_default' => true,
+        'status' => 'active',
+    ]);
+
+    ClientPayment::create([
+        'booking_id' => $this->completedBooking->id,
+        'client_id' => $this->client->id,
+        'payment_method_id' => $paymentMethod->id,
+        'amount' => 10,
+        'currency' => 'usd',
+        'status' => 'succeeded',
+        'provider' => 'stripe',
+        'metadata' => ['type' => 'tip', 'booking_id' => $this->completedBooking->id],
+    ]);
+
+    // Simulate a raw edit re-submit that still carries the tip. The succeeded-tip
+    // guard short-circuits before Stripe, so this is safe against the real service.
+    $response = $this->actingAs($this->clientUser)->post(route('reviews.store', $this->completedBooking), [
+        'rating' => 5,
+        'comment' => 'Edited after tipping',
+        'tip' => '10',
+        'payment_method_id' => 'pm_prior_tip',
+    ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('success');
+    $response->assertSessionMissing('error');
+
+    expect(BookingRating::where('booking_id', $this->completedBooking->id)->count())->toBe(1);
+    expect((float) BookingRating::first()->rating)->toBe(5.0);
+    expect(ClientPayment::where('booking_id', $this->completedBooking->id)
+        ->whereJsonContains('metadata->type', 'tip')
+        ->count())->toBe(1);
 });
 
 // ========== GUEST/NON-LOGGED-IN CLIENT TESTS ==========

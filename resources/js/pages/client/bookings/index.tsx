@@ -27,6 +27,7 @@ interface Booking {
     start_datetime: string;
     end_datetime: string;
     status: string;
+    has_review: boolean;
     booking_group: {
         id: number;
         bookings_count: number;
@@ -146,13 +147,30 @@ export default function ClientBookingsIndex() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <Link
-                                            href={`/bookings/${booking.ulid}`}
-                                        >
-                                            <Button size="sm">
-                                                View Details
-                                            </Button>
-                                        </Link>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {(booking.status === 'completed' ||
+                                                booking.status === 'paid') && (
+                                                <Link
+                                                    href={`/reviews/${booking.ulid}`}
+                                                >
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        {booking.has_review
+                                                            ? 'Edit Review'
+                                                            : 'Leave a Review'}
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                            <Link
+                                                href={`/bookings/${booking.ulid}`}
+                                            >
+                                                <Button size="sm">
+                                                    View Details
+                                                </Button>
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

@@ -50,7 +50,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
         $client = $request->user()->client;
 
         $bookings = $client->bookings()
-            ->with(['caregiver.user'])
+            ->with(['caregiver.user', 'caregiverRating'])
             ->with(['bookingGroup' => fn ($q) => $q->withCount('bookings')])
             ->orderBy('start_datetime', 'desc')
             ->paginate(10)
@@ -65,6 +65,7 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                     'start_datetime' => $booking->start_datetime,
                     'end_datetime' => $booking->end_datetime,
                     'status' => $booking->status,
+                    'has_review' => $booking->caregiver_rating !== null,
                     'booking_group' => $group ? [
                         'id' => $group->id,
                         'bookings_count' => $group->bookings_count,

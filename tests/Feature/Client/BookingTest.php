@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\BookingStatus;
 use App\Enums\SitterPreference;
 use App\Enums\SpecialConsideration;
 use App\Models\Booking;
+use App\Models\BookingRating;
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\ClientAddress;
 use App\Models\ClientChild;
@@ -27,6 +30,39 @@ describe('Booking - Client', function () {
         $response = $this->get(route('bookings.create'));
         $response->assertSuccessful();
         $response->assertInertia(fn ($page) => $page->component('client/bookings/create'));
+    });
+
+    test('bookings index flags which completed bookings already have a review', function () {
+        // Newer start_datetime sorts first (index desc), so ordering is deterministic.
+        $reviewed = Booking::factory()->forClient($this->client)->create([
+            'status' => BookingStatus::Completed->value,
+            'start_datetime' => now()->subDay(),
+            'end_datetime' => now()->subDay()->addHours(3),
+        ]);
+        $notReviewed = Booking::factory()->forClient($this->client)->create([
+            'status' => BookingStatus::Completed->value,
+            'start_datetime' => now()->subDays(2),
+            'end_datetime' => now()->subDays(2)->addHours(3),
+        ]);
+
+        BookingRating::create([
+            'booking_id' => $reviewed->id,
+            'rater_id' => $this->user->id,
+            'ratable_type' => Caregiver::class,
+            'ratable_id' => 1,
+            'rating' => 5,
+            'comment' => 'Great sitter',
+        ]);
+
+        $this->get(route('bookings.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page
+                ->component('client/bookings/index')
+                ->where('bookings.data.0.id', $reviewed->id)
+                ->where('bookings.data.0.has_review', true)
+                ->where('bookings.data.1.id', $notReviewed->id)
+                ->where('bookings.data.1.has_review', false)
+            );
     });
 
     test('client can create a hotel booking with an unlisted hotel', function () {

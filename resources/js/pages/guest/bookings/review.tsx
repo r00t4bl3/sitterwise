@@ -30,10 +30,15 @@ export default function GuestReviewBooking({ booking }: PageProps) {
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
     const [paymentError, setPaymentError] = useState<string | null>(null);
 
+    // A booking is tipped at most once. On an edit visit (a tip already exists)
+    // the tip is shown read-only and never re-sent; the backend also guards
+    // against re-charging an already-succeeded tip.
+    const alreadyTipped = Number(booking.existing_tip) > 0;
+
     const form = useForm({
         rating: booking.existing_rating || 0,
         comment: booking.existing_comment || '',
-        tip: booking.existing_tip || '',
+        tip: alreadyTipped ? '' : booking.existing_tip || '',
         payment_method_id: '',
     });
 
@@ -116,38 +121,51 @@ export default function GuestReviewBooking({ booking }: PageProps) {
                         )}
                     </div>
 
-                    <div>
-                        <Label className="text-sm font-medium text-foreground">
-                            Tip Caregiver (Optional)
-                        </Label>
-                        <div className="relative mt-2">
-                            <span className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
-                                $
-                            </span>
-                            <Input
-                                type="number"
-                                value={form.data.tip}
-                                onChange={(e) => {
-                                    form.setData('tip', e.target.value);
-                                    setPaymentMethodId(null);
-                                    setPaymentError(null);
-                                }}
-                                placeholder="0.00"
-                                min="0"
-                                step="0.01"
-                                className="pl-8"
-                            />
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            Tip will be charged immediately. 100% of tips go
-                            directly to the sitter.
-                        </p>
-                        {form.errors.tip && (
-                            <p className="mt-1 text-sm text-destructive">
-                                {form.errors.tip}
+                    {alreadyTipped ? (
+                        <div>
+                            <Label className="text-sm font-medium text-foreground">
+                                Tip
+                            </Label>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                You already tipped $
+                                {Number(booking.existing_tip).toFixed(2)}.
+                                Editing your review won't charge again.
                             </p>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <Label className="text-sm font-medium text-foreground">
+                                Tip Caregiver (Optional)
+                            </Label>
+                            <div className="relative mt-2">
+                                <span className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+                                    $
+                                </span>
+                                <Input
+                                    type="number"
+                                    value={form.data.tip}
+                                    onChange={(e) => {
+                                        form.setData('tip', e.target.value);
+                                        setPaymentMethodId(null);
+                                        setPaymentError(null);
+                                    }}
+                                    placeholder="0.00"
+                                    min="0"
+                                    step="0.01"
+                                    className="pl-8"
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Tip will be charged immediately. 100% of tips go
+                                directly to the sitter.
+                            </p>
+                            {form.errors.tip && (
+                                <p className="mt-1 text-sm text-destructive">
+                                    {form.errors.tip}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {hasTip && (
                         <div>

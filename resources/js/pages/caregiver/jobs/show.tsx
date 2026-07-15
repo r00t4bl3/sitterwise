@@ -1,4 +1,4 @@
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, useForm } from '@inertiajs/react';
 import {
     Calendar,
     MapPin,
@@ -13,7 +13,11 @@ import {
     PartyPopper,
     Star,
 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
+import { RatingInput } from '@/components/rating-input';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { calculateAge } from '@/lib/age';
 import { formatDisplayDateInPT, formatDisplayTimeInPT } from '@/lib/datetime';
@@ -124,6 +128,39 @@ export default function JobDetail({ booking }: PageProps) {
     const storedTotal = Number(booking.paid_to_caregiver_total);
     const isConsistent =
         Number(computedTotal.toFixed(1)) === Number(storedTotal.toFixed(1));
+
+    // A caregiver can only review a family once the job is done. Mirrors the
+    // Completed/Paid gate enforced by JobController::rate.
+    const canReview =
+        booking.status === 'completed' || booking.status === 'paid';
+    const [isEditingReview, setIsEditingReview] = useState(false);
+
+    // `client_rating` is the rating whose subject is the client — i.e. the
+    // review authored BY this caregiver. Pre-fill so an existing review edits
+    // in place (the rate endpoint updateOrCreates).
+    const reviewForm = useForm({
+        rating: booking.client_rating?.rating ?? 0,
+        comment: booking.client_rating?.comment ?? '',
+        type: 'caregiver_to_client',
+    });
+
+    function startEditingReview() {
+        reviewForm.setData({
+            rating: booking.client_rating?.rating ?? 0,
+            comment: booking.client_rating?.comment ?? '',
+            type: 'caregiver_to_client',
+        });
+        reviewForm.clearErrors();
+        setIsEditingReview(true);
+    }
+
+    function submitReview(e: React.FormEvent) {
+        e.preventDefault();
+        reviewForm.post(`/jobs/${booking.id}/rate`, {
+            preserveScroll: true,
+            onSuccess: () => setIsEditingReview(false),
+        });
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -477,10 +514,31 @@ export default function JobDetail({ booking }: PageProps) {
                             </h2>
                             <div className="space-y-4">
                                 <div className="rounded-lg border border-border bg-card p-4">
-                                    <h3 className="mb-2 text-sm font-medium text-foreground">
-                                        Review from Caregiver
-                                    </h3>
-                                    {booking.client_rating ? (
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <h3 className="text-sm font-medium text-foreground">
+                                            Your review of the family
+                                        </h3>
+                                        {canReview &&
+                                            booking.client_rating &&
+                                            !isEditingReview && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={startEditingReview}
+                                                >
+                                                    Edit
+                                                </Button>
+                                            )}
+                                    </div>
+
+                                    {!canReview ? (
+                                        <p className="text-sm text-muted-foreground italic">
+                                            You can review this family once the
+                                            job is completed.
+                                        </p>
+                                    ) : booking.client_rating &&
+                                      !isEditingReview ? (
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-1">
                                                 {[1, 2, 3, 4, 5].map((star) => (
@@ -517,15 +575,75 @@ export default function JobDetail({ booking }: PageProps) {
                                             )}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-muted-foreground italic">
-                                            No review from caregiver yet.
-                                        </p>
+                                        <form
+                                            onSubmit={submitReview}
+                                            className="flex flex-col gap-3"
+                                        >
+                                            <RatingInput
+                                                value={reviewForm.data.rating}
+                                                onChange={(val) =>
+                                                    reviewForm.setData(
+                                                        'rating',
+                                                        val ?? 0,
+                                                    )
+                                                }
+                                                size="md"
+                                                error={reviewForm.errors.rating}
+                                            />
+                                            <Textarea
+                                                value={reviewForm.data.comment}
+                                                onChange={(e) =>
+                                                    reviewForm.setData(
+                                                        'comment',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="How was your experience with this family? (optional)"
+                                            />
+                                            {reviewForm.errors.comment && (
+                                                <p className="text-sm text-destructive">
+                                                    {reviewForm.errors.comment}
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    type="submit"
+                                                    size="sm"
+                                                    disabled={
+                                                        reviewForm.processing ||
+                                                        !reviewForm.data.rating
+                                                    }
+                                                >
+                                                    {reviewForm.processing && (
+                                                        <Spinner className="size-4" />
+                                                    )}
+                                                    {booking.client_rating
+                                                        ? 'Update review'
+                                                        : 'Submit review'}
+                                                </Button>
+                                                {isEditingReview && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setIsEditingReview(
+                                                                false,
+                                                            );
+                                                            reviewForm.clearErrors();
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </form>
                                     )}
                                 </div>
 
                                 <div className="rounded-lg border border-border bg-card p-4">
                                     <h3 className="mb-2 text-sm font-medium text-foreground">
-                                        Feedback from Client
+                                        The family's review of you
                                     </h3>
                                     {booking.caregiver_rating ? (
                                         <div className="flex flex-col gap-2">
@@ -567,7 +685,7 @@ export default function JobDetail({ booking }: PageProps) {
                                         </div>
                                     ) : (
                                         <p className="text-sm text-muted-foreground italic">
-                                            No feedback from client yet.
+                                            The family hasn't left a review yet.
                                         </p>
                                     )}
                                 </div>

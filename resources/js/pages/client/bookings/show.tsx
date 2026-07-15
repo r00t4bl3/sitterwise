@@ -675,6 +675,16 @@ export default function BookingDetail({
                                 </Link>
                             </Button>
                         )}
+                    {(booking.status === 'completed' ||
+                        booking.status === 'paid') &&
+                        booking.caregiver_rating && (
+                            <Button variant="outline" asChild>
+                                <Link href={`/reviews/${booking.ulid}`}>
+                                    <Star className="mr-2 h-4 w-4" />
+                                    Edit Review
+                                </Link>
+                            </Button>
+                        )}
                     <Button variant="secondary" asChild>
                         <Link href="/bookings">Back to Bookings</Link>
                     </Button>
