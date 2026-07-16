@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhooks;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\CaregiverPayout;
 use App\Models\Client;
@@ -135,6 +136,7 @@ class StripeWebhookHandler
         ]);
 
         $booking->update([
+            'status' => BookingStatus::Paid->value,
             'payment_status' => 'charged',
             'stripe_payment_intent_id' => $paymentIntent->id,
             'actual_amount' => $paymentIntent->amount / 100,

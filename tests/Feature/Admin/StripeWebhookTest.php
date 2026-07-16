@@ -68,6 +68,7 @@ describe('Stripe Webhook', function () {
 
         $booking->refresh();
         expect($booking->payment_status)->toBe('charged');
+        expect($booking->status)->toBe('paid');
         expect($booking->stripe_payment_intent_id)->toBe($paymentIntentId);
         expect((float) $booking->actual_amount)->toBe(100.0);
     });
@@ -101,6 +102,10 @@ describe('Stripe Webhook', function () {
         $payment = ClientPayment::where('booking_id', $booking->id)->first();
         expect($payment->status)->toBe('succeeded');
         expect($payment->provider_payment_id)->toBe($paymentIntentId);
+
+        $booking->refresh();
+        expect($booking->status)->toBe('paid');
+        expect($booking->payment_status)->toBe('charged');
     });
 
     test('payment_intent.failed increments charge_attempt_count and sets failed status', function () {
