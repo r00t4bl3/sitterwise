@@ -460,6 +460,45 @@ describe('Stripe Webhook', function () {
         expect($method->status)->toBe('inactive');
     });
 
+    test('transfer.created marks CaregiverPayout as processing', function () {
+        $user = User::factory()->create(['role' => 'caregiver']);
+        $caregiver = Caregiver::create([
+            'user_id' => $user->id,
+            'first_name' => 'Test',
+            'last_name' => 'Caregiver',
+            'slug' => 'test-caregiver-'.uniqid(),
+            'status' => 'active',
+        ]);
+        $payoutMethod = CaregiverPayoutMethod::factory()->create([
+            'caregiver_id' => $caregiver->id,
+        ]);
+
+        $payout = CaregiverPayout::factory()->create([
+            'caregiver_id' => $caregiver->id,
+            'caregiver_payout_method_id' => $payoutMethod->id,
+            'provider_transfer_id' => 'tr_'.uniqid(),
+            'status' => 'pending',
+        ]);
+
+        $transfer = (object) [
+            'id' => $payout->provider_transfer_id,
+            'amount' => 5000,
+            'destination' => 'acct_'.uniqid(),
+            'currency' => 'usd',
+            'description' => 'Test transfer',
+            'created' => time(),
+            'metadata' => ['source' => 'test'],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handleTransferCreated');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $transfer);
+
+        $payout->refresh();
+        expect($payout->status)->toBe('processing');
+    });
+
     test('transfer.reversed marks CaregiverPayout as reversed', function () {
         $user = User::factory()->create(['role' => 'caregiver']);
         $caregiver = Caregiver::create([

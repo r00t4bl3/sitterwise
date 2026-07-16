@@ -79,6 +79,10 @@ class StripeWebhookHandler
                     $this->handlePaymentMethodDetached($event->data->object);
                     break;
 
+                case 'transfer.created':
+                    $this->handleTransferCreated($event->data->object);
+                    break;
+
                 case 'transfer.reversed':
                     $this->handleTransferReversed($event->data->object);
                     break;
@@ -418,6 +422,37 @@ class StripeWebhookHandler
             Log::info('Stripe webhook: payment_method.detached processed', [
                 'client_id' => $method->client_id,
                 'provider_method_id' => $providerMethodId,
+            ]);
+        }
+    }
+
+    protected function handleTransferCreated($transfer): void
+    {
+        $payout = CaregiverPayout::where('provider_transfer_id', $transfer->id)->first();
+
+        Log::info('Stripe webhook: transfer.created', [
+            'transfer_id' => $transfer->id,
+            'amount' => ($transfer->amount ?? 0) / 100,
+            'destination' => $transfer->destination ?? null,
+        ]);
+
+        if ($payout) {
+            $payout->update(['status' => 'processing']);
+
+            Log::info('Stripe webhook: caregiver payout marked as processing', [
+                'payout_id' => $payout->id,
+                'transfer_id' => $transfer->id,
+                'caregiver_id' => $payout->caregiver_id,
+            ]);
+        } else {
+            Log::info('Stripe webhook: transfer.created no matching payout found', [
+                'transfer_id' => $transfer->id,
+                'amount' => ($transfer->amount ?? 0) / 100,
+                'currency' => $transfer->currency ?? null,
+                'destination' => $transfer->destination ?? null,
+                'description' => $transfer->description ?? null,
+                'created' => $transfer->created ?? null,
+                'metadata' => $transfer->metadata ?? [],
             ]);
         }
     }
