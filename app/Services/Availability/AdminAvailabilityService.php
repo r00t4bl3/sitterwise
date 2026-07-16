@@ -8,6 +8,7 @@ use App\Models\Caregiver;
 use App\Services\Availability\Contracts\AvailabilityServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AdminAvailabilityService implements AvailabilityServiceInterface
@@ -66,6 +67,10 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
 
     public function destroy(Availability $availability)
     {
+        if ($availability->usedSlots()->exists()) {
+            return back()->with('error', "This day has a booking reserved and can't be removed.");
+        }
+
         $availability->delete();
 
         return back()->with('success', 'Availability deleted successfully.');
@@ -113,30 +118,46 @@ class AdminAvailabilityService implements AvailabilityServiceInterface
             'days.*.time_slots.*' => ['in:morning,afternoon,evening'],
         ]);
 
-        foreach ($validated['days'] as $day) {
-            $timeSlots = $day['time_slots'];
+        $keptBookedDays = false;
 
-            if (empty($timeSlots)) {
-                $caregiver->availabilities()
-                    ->whereDate('date', $day['date'])
-                    ->delete();
+        DB::transaction(function () use ($validated, $caregiver, &$keptBookedDays) {
+            foreach ($validated['days'] as $day) {
+                $timeSlots = $day['time_slots'];
 
-                continue;
+                if (empty($timeSlots)) {
+                    $dateQuery = $caregiver->availabilities()
+                        ->whereDate('date', $day['date']);
+
+                    if ((clone $dateQuery)->whereHas('usedSlots')->exists()) {
+                        // A booking has reserved this day — preserve it instead of
+                        // deleting (the FK would reject it, and the caregiver is booked).
+                        $keptBookedDays = true;
+                    }
+
+                    (clone $dateQuery)->whereDoesntHave('usedSlots')->delete();
+
+                    continue;
+                }
+
+                Availability::updateOrCreate(
+                    [
+                        'caregiver_id' => $caregiver->id,
+                        'date' => $day['date'],
+                    ],
+                    [
+                        'time_slots' => $timeSlots,
+                        'specific_time' => null,
+                    ]
+                );
             }
+        });
 
-            Availability::updateOrCreate(
-                [
-                    'caregiver_id' => $caregiver->id,
-                    'date' => $day['date'],
-                ],
-                [
-                    'time_slots' => $timeSlots,
-                    'specific_time' => null,
-                ]
-            );
-        }
-
-        return back()->with('success', 'Availability saved successfully.');
+        return back()->with(
+            'success',
+            $keptBookedDays
+                ? 'Availability saved. Day(s) with an existing booking were kept.'
+                : 'Availability saved successfully.',
+        );
     }
 
     public function getMonth(int $year, int $month, string $caregiverId)
