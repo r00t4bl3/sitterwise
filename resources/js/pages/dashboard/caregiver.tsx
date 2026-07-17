@@ -20,8 +20,9 @@ import {
     HelpCircle,
     Home,
     Link as LucideLink,
+    X,
 } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import AttentionStrip from '@/components/attention-strip';
 import AvailabilityWeekGrid from '@/components/availability-week-grid';
 import Medallion from '@/components/medallion';
@@ -128,6 +129,12 @@ interface CaregiverDashboardProps {
         criteria: string;
         progress: string | null;
     }>;
+    newlyEarnedBadges?: Array<{
+        slug: string;
+        name: string;
+        tier: 'teal' | 'coral' | 'navy';
+        variant: string;
+    }>;
 }
 
 export default function CaregiverDashboard({
@@ -137,12 +144,17 @@ export default function CaregiverDashboard({
     trustline,
     attention,
     badges,
+    newlyEarnedBadges,
 }: CaregiverDashboardProps) {
     const fetchMonthUrl = useCallback(
         (y: number, m: number) =>
             `/availabilities/${caregiver.id}?year=${y}&month=${m}`,
         [caregiver.id],
     );
+
+    const [badgeMomentDismissed, setBadgeMomentDismissed] = useState(false);
+    const showBadgeMoment =
+        !badgeMomentDismissed && (newlyEarnedBadges?.length ?? 0) > 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -165,6 +177,54 @@ export default function CaregiverDashboard({
                         </p>
                     </div>
                 </div>
+
+                {showBadgeMoment && (
+                    <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 p-5 shadow-sm">
+                        <button
+                            type="button"
+                            aria-label="Dismiss"
+                            onClick={() => setBadgeMomentDismissed(true)}
+                            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                        <div className="flex items-center gap-4">
+                            <div className="flex shrink-0 gap-1">
+                                {newlyEarnedBadges
+                                    ?.slice(0, 3)
+                                    .map((badge) => (
+                                        <Medallion
+                                            key={badge.slug}
+                                            tier={badge.tier}
+                                            variant={badge.variant}
+                                            earned
+                                            size="md"
+                                        />
+                                    ))}
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold tracking-wider text-primary uppercase">
+                                    New badge
+                                    {(newlyEarnedBadges?.length ?? 0) > 1
+                                        ? 's'
+                                        : ''}{' '}
+                                    earned!
+                                </p>
+                                <p className="mt-0.5 text-lg font-semibold text-foreground">
+                                    {newlyEarnedBadges
+                                        ?.map((b) => b.name)
+                                        .join(', ')}
+                                </p>
+                                <Link
+                                    href="/milestones"
+                                    className="mt-1 inline-block text-sm text-primary hover:underline"
+                                >
+                                    View your trophy case →
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     {/* Primary Focus: Next Appointment */}
@@ -458,8 +518,8 @@ export default function CaregiverDashboard({
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="px-6 pb-4">
                                     <p className="text-sm text-muted-foreground">
-                                        Milestones you&apos;ve earned. They
-                                        never expire.
+                                        Milestones you&apos;ve earned. They never
+                                        expire.
                                     </p>
                                     <div className="mt-3 flex flex-wrap gap-3">
                                         {badges
@@ -485,8 +545,8 @@ export default function CaregiverDashboard({
                                                     )}
                                                 </div>
                                             ))}
-                                        {badges.filter((b) => !b.earned)
-                                            .length > 0 && (
+                                        {badges.filter((b) => !b.earned).length >
+                                            0 && (
                                             <div className="flex flex-col items-center gap-0.5">
                                                 <Medallion
                                                     tier="navy"

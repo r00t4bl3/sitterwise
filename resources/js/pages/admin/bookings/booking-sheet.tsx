@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Calendar, Split } from 'lucide-react';
+import { Calendar, Copy, Split, User } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { StatusBadge } from '@/components/status-badge';
@@ -36,11 +36,15 @@ export function BookingSheet({
     isLoading,
     editingBooking,
     sheetMode,
+    openDuplicateSheet,
     showDeleteDialog,
     setShowDeleteDialog,
     showPastBookingDialog,
     handleConfirmPastBooking,
     handleCancelPastBooking,
+    showNoPaymentDialog,
+    setShowNoPaymentDialog,
+    confirmSubmitWithoutPayment,
     form,
     clientSuggestions,
     clientAddresses,
@@ -96,6 +100,7 @@ export function BookingSheet({
     loadingMoreCaregivers,
     onAgeFilterChange,
     onSearchChange,
+    onSpanishOnlyChange,
 }: BookingSheetProps) {
     const [splitDialogOpen, setSplitDialogOpen] = useState(false);
 
@@ -157,6 +162,36 @@ export function BookingSheet({
                             {sheetMode === 'create' &&
                                 'Fill in the details to create a new booking.'}
                         </SheetDescription>
+                        {sheetMode === 'edit' && editingBooking && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        openDuplicateSheet(editingBooking)
+                                    }
+                                >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicate
+                                </Button>
+                                {editingBooking.booking_group?.client_id && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        asChild
+                                    >
+                                        <Link
+                                            href={`/clients/${editingBooking.booking_group.client_id}`}
+                                        >
+                                            <User className="mr-2 h-4 w-4" />
+                                            Go to client
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </SheetHeader>
 
                     {isLoading ? (
@@ -498,6 +533,7 @@ export function BookingSheet({
                                     onLoadMoreCaregivers={loadMoreCaregivers}
                                     onAgeFilterChange={onAgeFilterChange}
                                     onSearchChange={onSearchChange}
+                                    onSpanishOnlyChange={onSpanishOnlyChange}
                                     sheetMode={sheetMode}
                                 />
 
@@ -570,6 +606,34 @@ export function BookingSheet({
                         </Button>
                         <Button onClick={handleConfirmPastBooking}>
                             Continue Editing
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog
+                open={showNoPaymentDialog}
+                onOpenChange={setShowNoPaymentDialog}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>No payment method on file</DialogTitle>
+                        <DialogDescription>
+                            {selectedClientName
+                                ? `${selectedClientName} has no payment method on file. `
+                                : 'This client has no payment method on file. '}
+                            You can still save this booking, but it cannot be
+                            charged until a card is added. Save anyway?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowNoPaymentDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={confirmSubmitWithoutPayment}>
+                            Save Anyway
                         </Button>
                     </DialogFooter>
                 </DialogContent>

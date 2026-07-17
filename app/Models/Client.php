@@ -199,4 +199,10 @@ class Client extends Model
     {
         return $this->paymentMethods()->where('status', 'active')->exists();
     }
+
+    public function hasPaymentCapability(): bool
+    {
+        return ! empty($this->stripe_customer_id)
+            && $this->paymentMethods()->where('status', 'active')->exists();
+    }
 }

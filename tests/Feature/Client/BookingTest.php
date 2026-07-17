@@ -120,6 +120,58 @@ describe('Booking - Client', function () {
             ->and($booking->hotel_id)->toBeNull();
     });
 
+    test('client can create a hotel booking whose name contains an apostrophe', function () {
+        $child = ClientChild::factory()->for($this->client)->create();
+
+        $start = now()->addDays(2)->setHour(9)->setMinute(0);
+        $end = now()->addDays(2)->setHour(15)->setMinute(0);
+
+        $hotelName = "Humphrey's Half Moon Bay";
+
+        $response = $this->post(route('bookings.store'), [
+            'client_id' => $this->client->id,
+            'service_type' => 'babysitter',
+            'location_type' => 'hotel',
+            'start_datetime' => $start,
+            'end_datetime' => $end,
+            'hotel_id' => null,
+            'hotel_name' => $hotelName,
+            'address_line1' => '2303 Shelter Island Dr',
+            'address_line2' => '',
+            'address_city' => 'San Diego',
+            'address_state' => 'CA',
+            'address_zip' => '92106',
+            'new_children' => [
+                [
+                    'name' => $child->name,
+                    'gender' => $child->gender,
+                    'birth_month' => $child->birth_month,
+                    'birth_year' => $child->birth_year,
+                ],
+            ],
+            'save_children_pets_to_profile' => false,
+            'status' => 'received',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('booking_groups', [
+            'client_id' => $this->client->id,
+            'location_type' => 'hotel',
+            'hotel_id' => null,
+            'hotel_name' => $hotelName,
+        ]);
+
+        $booking = Booking::whereHas(
+            'bookingGroup',
+            fn ($q) => $q->where('client_id', $this->client->id),
+        )->first();
+
+        expect($booking->hotel_name)->toBe($hotelName);
+    });
+
     test('the admin edit fetch exposes the unlisted hotel name', function () {
         $child = ClientChild::factory()->for($this->client)->create();
         $start = now()->addDays(2)->setHour(9)->setMinute(0);

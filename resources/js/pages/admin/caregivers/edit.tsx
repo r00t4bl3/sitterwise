@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, ChevronDown, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Trash2, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import type { SubmitEventHandler } from 'react';
 import { RatingInput } from '@/components/rating-input';
@@ -179,6 +179,9 @@ export default function CaregiverEdit() {
         caregiver.certifications,
     );
     const [certFiles, setCertFiles] = useState<Record<number, File | null>>({});
+    const certFileInputRefs = useRef<Record<number, HTMLInputElement | null>>(
+        {},
+    );
     const [educations, setEducations] = useState<Education[]>(
         caregiver.educations,
     );
@@ -963,22 +966,72 @@ export default function CaregiverEdit() {
                                                 >
                                                     Certification File
                                                 </Label>
-                                                <Input
-                                                    id={`cert-file-${cert.id}`}
-                                                    type="file"
-                                                    accept="image/*,.pdf"
-                                                    onChange={(e) => {
-                                                        const file =
-                                                            e.target
-                                                                .files?.[0] ||
-                                                            null;
-                                                        updateCertification(
-                                                            cert.certification_type_id,
-                                                            'cert_file',
-                                                            file,
-                                                        );
-                                                    }}
-                                                />
+                                                <div className="relative">
+                                                    <Input
+                                                        id={`cert-file-${cert.id}`}
+                                                        ref={(el) => {
+                                                            certFileInputRefs.current[
+                                                                cert.id
+                                                            ] = el;
+                                                        }}
+                                                        type="file"
+                                                        accept="image/*,.pdf"
+                                                        className={
+                                                            certFiles[
+                                                                cert
+                                                                    .certification_type_id
+                                                            ] || cert.file_path
+                                                                ? 'pr-9'
+                                                                : undefined
+                                                        }
+                                                        onChange={(e) => {
+                                                            const file =
+                                                                e.target
+                                                                    .files?.[0] ||
+                                                                null;
+                                                            updateCertification(
+                                                                cert.certification_type_id,
+                                                                'cert_file',
+                                                                file,
+                                                            );
+                                                        }}
+                                                    />
+                                                    {(certFiles[
+                                                        cert
+                                                            .certification_type_id
+                                                    ] ||
+                                                        cert.file_path) && (
+                                                        <button
+                                                            type="button"
+                                                            aria-label="Clear certification file"
+                                                            onClick={() => {
+                                                                updateCertification(
+                                                                    cert.certification_type_id,
+                                                                    'cert_file',
+                                                                    null,
+                                                                );
+                                                                updateCertification(
+                                                                    cert.id,
+                                                                    'file_path',
+                                                                    null,
+                                                                );
+                                                                const input =
+                                                                    certFileInputRefs
+                                                                        .current[
+                                                                        cert.id
+                                                                    ];
+
+                                                                if (input) {
+                                                                    input.value =
+                                                                        '';
+                                                                }
+                                                            }}
+                                                            className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex flex-col space-y-2 lg:col-span-2">
                                                 <Label

@@ -2,6 +2,7 @@
 
 use App\Enums\CaregiverStatus;
 use App\Models\Caregiver;
+use App\Models\CertificationType;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
@@ -10,6 +11,7 @@ use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -252,6 +254,93 @@ describe('Caregiver - Admin', function () {
             'school_name' => 'San Diego High School',
             'graduation_year' => 2020,
         ]);
+    });
+
+    test('admin clearing a saved certification file nulls the pivot and deletes the stored file', function () {
+        Storage::fake('public');
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create();
+        $certType = CertificationType::query()->firstOrFail();
+
+        $path = 'certifications/existing-cert.pdf';
+        Storage::disk('public')->put($path, 'dummy-contents');
+        $caregiver->certifications()->detach();
+        $caregiver->certifications()->attach($certType->id, [
+            'file_path' => $path,
+            'expiration_date' => null,
+            'verified_at' => null,
+            'notes' => null,
+        ]);
+        Storage::disk('public')->assertExists($path);
+
+        $response = $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'certifications' => [
+                [
+                    'certification_type_id' => $certType->id,
+                    'expiration_date' => null,
+                    'verified_at' => null,
+                    'file_path' => null, // cleared via the X control
+                    'notes' => null,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('caregiver_certifications', [
+            'caregiver_id' => $caregiver->id,
+            'certification_type_id' => $certType->id,
+            'file_path' => null,
+        ]);
+        Storage::disk('public')->assertMissing($path);
+    });
+
+    test('updating a caregiver without clearing keeps the saved certification file', function () {
+        Storage::fake('public');
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create();
+        $certType = CertificationType::query()->firstOrFail();
+
+        $path = 'certifications/keep-cert.pdf';
+        Storage::disk('public')->put($path, 'dummy-contents');
+        $caregiver->certifications()->detach();
+        $caregiver->certifications()->attach($certType->id, [
+            'file_path' => $path,
+            'expiration_date' => null,
+            'verified_at' => null,
+            'notes' => null,
+        ]);
+
+        $response = $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'certifications' => [
+                [
+                    'certification_type_id' => $certType->id,
+                    'expiration_date' => null,
+                    'verified_at' => null,
+                    'file_path' => $path, // unchanged
+                    'notes' => null,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('caregiver_certifications', [
+            'caregiver_id' => $caregiver->id,
+            'certification_type_id' => $certType->id,
+            'file_path' => $path,
+        ]);
+        Storage::disk('public')->assertExists($path);
     });
 
     test('admin users can search caregivers', function () {

@@ -10,6 +10,7 @@ import {
     Heart,
     HeartHandshake,
     History,
+    Languages,
     MapPin,
     MapPinCheckInside,
     Palette,
@@ -37,6 +38,7 @@ interface CaregiverSuggestion {
     age?: number | null;
     matchIcons?: string[];
     hasBeenNotified?: boolean;
+    speaksSpanish?: boolean;
 }
 
 interface ReplaceCaregiverSheetProps {
@@ -53,6 +55,7 @@ interface ReplaceCaregiverSheetProps {
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
     onSearchChange?: (query: string, filter: string) => void;
+    onSpanishOnlyChange?: (value: boolean, filter: string) => void;
 }
 
 export function ReplaceCaregiverSheet({
@@ -69,11 +72,13 @@ export function ReplaceCaregiverSheet({
     onLoadMoreCaregivers,
     onAgeFilterChange,
     onSearchChange,
+    onSpanishOnlyChange,
 }: ReplaceCaregiverSheetProps) {
     const replaceForm = useForm({ caregiver_id: 0 });
     const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>(
         'all',
     );
+    const [spanishOnly, setSpanishOnly] = useState(false);
     const [searchInput, setSearchInput] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -208,6 +213,23 @@ export function ReplaceCaregiverSheet({
                                     </button>
                                 ),
                             )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const next = !spanishOnly;
+                                    setSpanishOnly(next);
+                                    onSpanishOnlyChange?.(next, ageFilter);
+                                }}
+                                aria-pressed={spanishOnly}
+                                className={`flex items-center gap-1 rounded-[3px] px-2 py-1 text-xs font-medium transition-colors ${
+                                    spanishOnly
+                                        ? 'bg-amber-600 text-white'
+                                        : 'bg-accent text-muted-foreground hover:bg-accent/80'
+                                }`}
+                            >
+                                <Languages className="h-3.5 w-3.5" />
+                                Spanish
+                            </button>
                         </div>
                     </div>
                 )}
@@ -323,6 +345,18 @@ export function ReplaceCaregiverSheet({
                                                     )}
                                                 </div>
                                             )}
+                                        {caregiver.speaksSpanish && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="flex cursor-default items-center">
+                                                        <Languages className="h-4 w-4 text-amber-600" />
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Speaks Spanish
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
                                         {caregiver.age && (
                                             <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
                                                 {caregiver.age}y

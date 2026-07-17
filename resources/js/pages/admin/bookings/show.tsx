@@ -256,6 +256,7 @@ export default function BookingDetail({
     ] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
     const [caregiverSearchQuery, setCaregiverSearchQuery] = useState('');
+    const [caregiverSpanishOnly, setCaregiverSpanishOnly] = useState(false);
 
     const cancelForm = useForm({ reason: '', cancel_group: false });
     const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
@@ -390,7 +391,12 @@ export default function BookingDetail({
         { label: 'Bonus', value: booking.bonus },
     ].filter((f) => f.value !== null && f.value !== undefined);
 
-    const fetchCaregivers = async (page = 1, filter = 'all', search = '') => {
+    const fetchCaregivers = async (
+        page = 1,
+        filter = 'all',
+        search = '',
+        spanishOnly = caregiverSpanishOnly,
+    ) => {
         if (page === 1) {
             setLoadingCaregiverRecommendations(true);
         }
@@ -405,6 +411,10 @@ export default function BookingDetail({
 
             if (search) {
                 params.append('search', search);
+            }
+
+            if (spanishOnly) {
+                params.append('spanish_only', '1');
             }
 
             if (booking.id) {
@@ -474,10 +484,18 @@ export default function BookingDetail({
         fetchCaregivers(1, filter, query);
     };
 
+    const handleSpanishOnlyChange = (value: boolean, filter: string) => {
+        setCaregiverSpanishOnly(value);
+        setCaregiverCurrentPage(1);
+        setCaregiverLastPage(1);
+        fetchCaregivers(1, filter, caregiverSearchQuery, value);
+    };
+
     useEffect(() => {
         if (notifySheetOpen || replaceSheetOpen) {
             setCaregiverSearchQuery('');
-            fetchCaregivers(1, 'all');
+            setCaregiverSpanishOnly(false);
+            fetchCaregivers(1, 'all', '', false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [notifySheetOpen, replaceSheetOpen]);
@@ -1299,6 +1317,7 @@ export default function BookingDetail({
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}
                 onSearchChange={handleSearchChange}
+                onSpanishOnlyChange={handleSpanishOnlyChange}
             />
 
             <NotifyCaregiversSheet
@@ -1317,6 +1336,7 @@ export default function BookingDetail({
                 onLoadMoreCaregivers={handleLoadMore}
                 onAgeFilterChange={handleAgeFilterChange}
                 onSearchChange={handleSearchChange}
+                onSpanishOnlyChange={handleSpanishOnlyChange}
             />
 
             <BookingSheet {...sheet} />

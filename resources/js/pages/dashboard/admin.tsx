@@ -203,6 +203,20 @@ export default function AdminDashboard({
                     </p>
                 </div>
 
+                {/* Quick Actions */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button onClick={() => sheet.openCreateSheet()}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Booking
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <Link href="/caregivers">
+                            <Users className="mr-2 h-4 w-4" />
+                            Manage Caregivers
+                        </Link>
+                    </Button>
+                </div>
+
                 {/* Summary Panels - 3 columns */}
                 <div className="grid gap-4 sm:grid-cols-3">
                     <Link
@@ -760,38 +774,6 @@ export default function AdminDashboard({
                                             </p>
                                         </div>
                                     )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="flex flex-col gap-4">
-                            <h3 className="text-lg leading-none font-semibold tracking-tight">
-                                Quick Actions
-                            </h3>
-                            <div className="rounded-xl border border-border bg-card text-card-foreground shadow">
-                                <div className="p-6">
-                                    <div className="space-y-2">
-                                        <Button
-                                            className="w-full justify-start"
-                                            onClick={() =>
-                                                sheet.openCreateSheet()
-                                            }
-                                        >
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Create Booking
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            asChild
-                                            className="w-full justify-start"
-                                        >
-                                            <Link href="/caregivers">
-                                                <Users className="mr-2 h-4 w-4" />
-                                                Manage Caregivers
-                                            </Link>
-                                        </Button>
-                                    </div>
                                 </div>
                             </div>
                         </div>

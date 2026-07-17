@@ -1,9 +1,23 @@
 import { Head } from '@inertiajs/react';
 import { Briefcase, Star, TrendingUp, Zap, Gift } from 'lucide-react';
+import Medallion from '@/components/medallion';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
+interface Badge {
+    slug: string;
+    name: string;
+    group: string;
+    tier: 'teal' | 'coral' | 'navy';
+    variant: string;
+    earned: boolean;
+    earned_date: string | null;
+    criteria: string;
+    progress?: string | null;
+}
+
 interface MilestonesProps {
+    badges: Badge[];
     milestones: {
         completedJobs: number;
         sinceJoined: string;
@@ -132,6 +146,7 @@ function ProgressBar({
 export default function Milestones({
     milestones,
     engagement,
+    badges,
 }: MilestonesProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -345,6 +360,81 @@ export default function Milestones({
                         </div>
                     </div>
                 </div>
+
+                {badges.length > 0 && (
+                    <div className="rounded-xl border border-border bg-card shadow-sm">
+                        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                            <h2 className="text-lg font-semibold">
+                                Trophy Case
+                            </h2>
+                            <span className="text-sm text-muted-foreground">
+                                {badges.filter((b) => b.earned).length} of{' '}
+                                {badges.length} earned
+                            </span>
+                        </div>
+                        <div className="space-y-6 p-6">
+                            {Array.from(new Set(badges.map((b) => b.group))).map(
+                                (group) => (
+                                    <div key={group}>
+                                        <h3 className="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                            {group}
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                                            {badges
+                                                .filter(
+                                                    (b) => b.group === group,
+                                                )
+                                                .map((badge) => (
+                                                    <div
+                                                        key={badge.slug}
+                                                        title={badge.criteria}
+                                                        className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center ${
+                                                            badge.earned
+                                                                ? 'border-border bg-background'
+                                                                : 'border-dashed border-border'
+                                                        }`}
+                                                    >
+                                                        <Medallion
+                                                            tier={badge.tier}
+                                                            variant={
+                                                                badge.variant
+                                                            }
+                                                            earned={
+                                                                badge.earned
+                                                            }
+                                                            size="md"
+                                                        />
+                                                        <p
+                                                            className={`text-xs font-medium ${
+                                                                badge.earned
+                                                                    ? 'text-foreground'
+                                                                    : 'text-muted-foreground'
+                                                            }`}
+                                                        >
+                                                            {badge.name}
+                                                        </p>
+                                                        {badge.earned &&
+                                                        badge.earned_date ? (
+                                                            <p className="text-[10px] text-primary">
+                                                                {
+                                                                    badge.earned_date
+                                                                }
+                                                            </p>
+                                                        ) : !badge.earned ? (
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                {badge.progress ||
+                                                                    badge.criteria}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

@@ -21,6 +21,7 @@ class CaregiverBookingInvitationMail extends SendGridDynamicMail
     protected function templateData(): array
     {
         $group = $this->booking->bookingGroup;
+        $emailData = $group->toEmailData();
         $start = $this->booking->start_datetime->copy()->setTimezone('America/Los_Angeles');
         $end = $this->booking->end_datetime->copy()->setTimezone('America/Los_Angeles');
 
@@ -31,6 +32,7 @@ class CaregiverBookingInvitationMail extends SendGridDynamicMail
             'start_datetime' => $start->format('M j, Y g:i A'),
             'end_datetime' => $end->format('M j, Y g:i A'),
             'job_url' => route('jobs.short', $this->booking),
+            'bookings' => $emailData['dates'],
         ];
 
         $clientPhone = $this->booking->client?->phone ?? $group?->client_phone;

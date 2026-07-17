@@ -2,6 +2,7 @@
 
 use App\Models\Caregiver;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\User;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
@@ -266,6 +267,28 @@ describe('Client - Admin', function () {
         $response = $this->get(route('clients.getClientData', $this->client));
         $response->assertSuccessful();
         $response->assertHeader('content-type', 'application/json');
+    });
+
+    test('a client is chargeable only with both a Stripe customer and an active card', function () {
+        $ready = Client::factory()->create(['stripe_customer_id' => 'cus_ready']);
+        ClientPaymentMethod::factory()->create([
+            'client_id' => $ready->id,
+            'status' => 'active',
+        ]);
+        expect($ready->fresh()->hasPaymentCapability())->toBeTrue();
+
+        // Active card but no Stripe customer -> has a card, but not chargeable.
+        $noCustomer = Client::factory()->create(['stripe_customer_id' => null]);
+        ClientPaymentMethod::factory()->create([
+            'client_id' => $noCustomer->id,
+            'status' => 'active',
+        ]);
+        expect($noCustomer->fresh()->hasPaymentMethod())->toBeTrue();
+        expect($noCustomer->fresh()->hasPaymentCapability())->toBeFalse();
+
+        // Stripe customer but no active card -> not chargeable.
+        $noCard = Client::factory()->create(['stripe_customer_id' => 'cus_nocard']);
+        expect($noCard->fresh()->hasPaymentCapability())->toBeFalse();
     });
 
     test('client index shows client list with pagination', function () {

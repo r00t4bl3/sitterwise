@@ -24,6 +24,7 @@ use Database\Seeders\LocationSeeder;
 use Database\Seeders\PricingRulesTableSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
@@ -42,6 +43,22 @@ beforeEach(function () {
 });
 
 describe('Booking - Admin', function () {
+    test('booking form service types are flagged with whether they need a payment method', function () {
+        $this->seed(PricingRulesTableSeeder::class);
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('bookings.index'));
+        $response->assertSuccessful();
+
+        $serviceTypes = collect(
+            $response->viewData('page')['props']['service_types'],
+        );
+
+        expect($serviceTypes->firstWhere('value', 'babysitter')['requires_payment_method'])
+            ->toBeTrue();
+        expect($serviceTypes->firstWhere('value', 'corporate_invoiced')['requires_payment_method'])
+            ->toBeFalse();
+    });
     test('guests cannot view bookings index', function () {
         $response = $this->get(route('bookings.index'));
         $response->assertRedirect(route('login'));
@@ -2398,5 +2415,56 @@ describe('Booking - Admin', function () {
             expect($saved)->not->toBeNull();
             expect($saved->birth_date)->toBeNull();
         });
+    });
+});
+
+describe('Recommended caregivers - Spanish filter', function () {
+    test('spanish_only returns only Spanish-speaking caregivers', function () {
+        Cache::flush();
+        $this->actingAs($this->user);
+
+        $spanish = Caregiver::factory()->create([
+            'status' => CaregiverStatus::Active->value,
+            'languages' => ['spanish', 'english'],
+        ]);
+        $english = Caregiver::factory()->create([
+            'status' => CaregiverStatus::Active->value,
+            'languages' => ['english'],
+        ]);
+
+        $response = $this->getJson('/bookings/recommended-caregivers?'.http_build_query([
+            'client_id' => $this->client->id,
+            'spanish_only' => 1,
+        ]));
+
+        $response->assertOk();
+        $ids = $response->json('all_ids');
+
+        expect($ids)->toContain($spanish->id)
+            ->and($ids)->not->toContain($english->id);
+    });
+
+    test('without spanish_only every active caregiver is returned', function () {
+        Cache::flush();
+        $this->actingAs($this->user);
+
+        $spanish = Caregiver::factory()->create([
+            'status' => CaregiverStatus::Active->value,
+            'languages' => ['spanish'],
+        ]);
+        $english = Caregiver::factory()->create([
+            'status' => CaregiverStatus::Active->value,
+            'languages' => ['english'],
+        ]);
+
+        $response = $this->getJson('/bookings/recommended-caregivers?'.http_build_query([
+            'client_id' => $this->client->id,
+        ]));
+
+        $response->assertOk();
+        $ids = $response->json('all_ids');
+
+        expect($ids)->toContain($spanish->id)
+            ->and($ids)->toContain($english->id);
     });
 });

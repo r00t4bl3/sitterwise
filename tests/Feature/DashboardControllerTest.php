@@ -8,6 +8,7 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\PricingRule;
 use App\Models\User;
+use App\Services\CaregiverBadgeService;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
@@ -152,6 +153,80 @@ test('caregiver sees dashboard with caregiver data', function () {
         ->has('caregiver.nextJob')
         ->has('caregiver.newInvites')
     );
+});
+
+test('the first caregiver dashboard load records a badge baseline without celebrating pre-existing badges', function () {
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = new Caregiver([
+        'user_id' => $user->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Smith',
+        'phone' => '+11234567890',
+        'address_city' => 'San Diego',
+        'address_state' => 'CA',
+    ]);
+    $caregiver->save();
+
+    expect($caregiver->seen_badge_slugs)->toBeNull();
+
+    $response = $this->actingAs($user)->get('/dashboard');
+    $response->assertOk();
+
+    $props = $response->viewData('page')['props'];
+    expect($props['caregiver']['newlyEarnedBadges'])->toBeEmpty();
+    // Baseline recorded, so already-held badges are never celebrated retroactively.
+    expect($caregiver->fresh()->seen_badge_slugs)->not->toBeNull();
+});
+
+test('a caregiver dashboard load surfaces newly-earned badges and records them as seen', function () {
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = new Caregiver([
+        'user_id' => $user->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Smith',
+        'phone' => '+11234567890',
+        'address_city' => 'San Diego',
+        'address_state' => 'CA',
+    ]);
+    // Seen nothing yet, but an active caregiver already qualifies for a badge.
+    $caregiver->seen_badge_slugs = [];
+    $caregiver->save();
+
+    $response = $this->actingAs($user)->get('/dashboard');
+    $response->assertOk();
+
+    expect($response->viewData('page')['props']['caregiver']['newlyEarnedBadges'])->not->toBeEmpty();
+    // The snapshot is now recorded, so the same badges won't be celebrated again.
+    expect($caregiver->fresh()->seen_badge_slugs)->not->toBeEmpty();
+});
+
+test('already-seen badges are not celebrated again on a caregiver dashboard load', function () {
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = new Caregiver([
+        'user_id' => $user->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Smith',
+        'phone' => '+11234567890',
+        'address_city' => 'San Diego',
+        'address_state' => 'CA',
+    ]);
+    $caregiver->save();
+
+    // Pre-seed the snapshot with every badge the caregiver currently qualifies for.
+    $caregiver->update([
+        'seen_badge_slugs' => collect(app(CaregiverBadgeService::class)->badgesFor($caregiver))
+            ->where('earned', true)
+            ->pluck('slug')
+            ->all(),
+    ]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+    $response->assertOk();
+
+    expect($response->viewData('page')['props']['caregiver']['newlyEarnedBadges'])->toBeEmpty();
 });
 
 test('client sees dashboard with stats and bookings', function () {

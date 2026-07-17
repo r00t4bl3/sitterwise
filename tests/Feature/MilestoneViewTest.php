@@ -311,3 +311,19 @@ it('hides trustline when caregiver lacks certification', function () {
             ->has('milestones', fn ($m) => $m->where('trustlineCertified', false)->etc())
         );
 });
+
+it('exposes the full badge collection on the milestones page', function () {
+    $caregiver = milestoneCaregiver(['status' => CaregiverStatus::Active]);
+
+    $response = actingAs($caregiver->user)->get(route('milestones'));
+
+    $response->assertInertia(fn ($page) => $page
+        ->component('caregiver/milestones')
+        ->has('badges')
+    );
+
+    $badges = $response->viewData('page')['props']['badges'];
+    expect($badges)->not->toBeEmpty();
+    // An active caregiver has completed onboarding, so at least one badge is earned.
+    expect(collect($badges)->where('earned', true)->count())->toBeGreaterThan(0);
+});

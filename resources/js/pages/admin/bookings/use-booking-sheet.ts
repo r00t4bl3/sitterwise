@@ -15,7 +15,11 @@ export interface UseBookingSheetProps {
         zip: string | null;
     }>;
     caregivers: Array<{ id: number; name: string; [key: string]: unknown }>;
-    service_types: Array<{ value: string; label: string }>;
+    service_types: Array<{
+        value: string;
+        label: string;
+        requires_payment_method?: boolean;
+    }>;
     location_types: Array<{ value: string; label: string }>;
     booking_statuses: Array<{
         value: string;
@@ -121,6 +125,12 @@ export function useBookingSheet({
     const [sheetMode, setSheetMode] = useState<SheetMode>('create');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showPastBookingDialog, setShowPastBookingDialog] = useState(false);
+    const [showNoPaymentDialog, setShowNoPaymentDialog] = useState(false);
+    const [pendingNotifyAfter, setPendingNotifyAfter] = useState(false);
+    const [
+        selectedClientHasPaymentCapability,
+        setSelectedClientHasPaymentCapability,
+    ] = useState(true);
 
     const [clientSuggestions, setClientSuggestions] = useState<
         Array<{ id: number; name: string; [key: string]: unknown }>
@@ -148,6 +158,7 @@ export function useBookingSheet({
     ] = useState(false);
     const [loadingMoreCaregivers, setLoadingMoreCaregivers] = useState(false);
     const [caregiverSearch, setCaregiverSearch] = useState('');
+    const [caregiverSpanishOnly, setCaregiverSpanishOnly] = useState(false);
     const [clientAddresses, setClientAddresses] = useState<ClientAddress[]>([]);
     const [bookingChildren, setBookingChildren] = useState<
         Array<{
@@ -230,6 +241,7 @@ export function useBookingSheet({
         page = 1,
         ageFilter = 'all',
         search = '',
+        spanishOnly = caregiverSpanishOnly,
     ) => {
         const clientId =
             editingBooking?.booking_group?.client_id ?? form.data.client_id;
@@ -250,6 +262,10 @@ export function useBookingSheet({
                 age_filter: ageFilter,
             });
             params.append('search', search);
+
+            if (spanishOnly) {
+                params.append('spanish_only', '1');
+            }
 
             if (editingBooking?.id) {
                 params.append('booking_id', editingBooking.id.toString());
@@ -518,6 +534,9 @@ export function useBookingSheet({
             const data = await response.json();
             setClientAddresses(data.client.addresses || []);
             setSelectedClientType(data.client.client_type || null);
+            setSelectedClientHasPaymentCapability(
+                !!data.client.has_payment_capability,
+            );
 
             if (!skipCaregiverFetch) {
                 fetchRecommendedCaregivers(clientId);
@@ -537,6 +556,7 @@ export function useBookingSheet({
         // Require explicit confirmation and never auto-sync the (new) family
         // data back to a profile as part of the same edit.
         const originalClientId = editingBooking?.booking_group?.client_id ?? null;
+
         if (
             sheetMode === 'edit' &&
             clientId !== null &&
@@ -548,9 +568,11 @@ export function useBookingSheet({
             const confirmed = window.confirm(
                 `Change this booking's client?\n\nThis will move ${groupCount > 1 ? `ALL ${groupCount} bookings in this group` : 'this booking'} to the selected client, and the children/pets/address fields below will be replaced with the new client's profile data.`,
             );
+
             if (!confirmed) {
                 return;
             }
+
             form.setData('save_children_pets_to_profile', false);
         }
 
@@ -636,6 +658,8 @@ export function useBookingSheet({
         form.clearErrors();
         setEditingBooking(null);
         setSheetMode('create');
+        setSelectedClientHasPaymentCapability(true);
+        setShowNoPaymentDialog(false);
 
         // Build the default start/end as PT wall-clock (9:00 AM - 1:00 PM) so it
         // matches the DateTimePicker/backend UTC convention. formatUtcStringFromPt
@@ -1125,28 +1149,7 @@ export function useBookingSheet({
         }
     };
 
-    const handleSubmit = (notifyAfter = false) => {
-        const start = form.data.start_datetime;
-        const end = form.data.end_datetime;
-
-        if (!start || !end) {
-            return;
-        }
-
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-
-        if (endDate <= startDate) {
-            return;
-        }
-
-        const diffMs = endDate.getTime() - startDate.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-
-        if (diffHours < 4) {
-            return;
-        }
-
+    const performSubmit = (notifyAfter = false) => {
         form.transform((data) => ({
             ...data,
             new_children: bookingChildren.map((c) => ({
@@ -1178,6 +1181,54 @@ export function useBookingSheet({
                 },
             });
         }
+    };
+
+    const handleSubmit = (notifyAfter = false) => {
+        const start = form.data.start_datetime;
+        const end = form.data.end_datetime;
+
+        if (!start || !end) {
+            return;
+        }
+
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        if (endDate <= startDate) {
+            return;
+        }
+
+        const diffMs = endDate.getTime() - startDate.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours < 4) {
+            return;
+        }
+
+        // Creating (or duplicating) a booking for a client with no payment
+        // method on file: warn before saving, but only for service types that
+        // are actually charged via Stripe (invoiced/comped jobs never need one).
+        if (sheetMode !== 'edit') {
+            const serviceOption = service_types.find(
+                (s) => s.value === form.data.service_type,
+            );
+            const needsPaymentMethod =
+                serviceOption?.requires_payment_method ?? false;
+
+            if (needsPaymentMethod && !selectedClientHasPaymentCapability) {
+                setPendingNotifyAfter(notifyAfter);
+                setShowNoPaymentDialog(true);
+
+                return;
+            }
+        }
+
+        performSubmit(notifyAfter);
+    };
+
+    const confirmSubmitWithoutPayment = () => {
+        setShowNoPaymentDialog(false);
+        performSubmit(pendingNotifyAfter);
     };
 
     const handleDelete = () => {
@@ -1268,6 +1319,9 @@ export function useBookingSheet({
         showDeleteDialog,
         setShowDeleteDialog,
         showPastBookingDialog,
+        showNoPaymentDialog,
+        setShowNoPaymentDialog,
+        confirmSubmitWithoutPayment,
         form,
         clientSuggestions,
         setClientSuggestions,
@@ -1329,6 +1383,10 @@ export function useBookingSheet({
         onSearchChange: (query: string, filter: string) => {
             setCaregiverSearch(query);
             populateCaregiverSuggestions(1, filter, query);
+        },
+        onSpanishOnlyChange: (value: boolean, filter: string) => {
+            setCaregiverSpanishOnly(value);
+            populateCaregiverSuggestions(1, filter, caregiverSearch, value);
         },
         caregiverAllIds,
         caregiverTotal,

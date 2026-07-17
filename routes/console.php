@@ -46,3 +46,6 @@ Schedule::command('app:clean-push-subscriptions')->daily();
 
 // Notify the team when a caregiver earns their Trustline reimbursement
 Schedule::command('caregivers:notify-trustline-reimbursement')->dailyAt('09:00');
+
+// Email active caregivers a Happy Birthday card on their birthday
+Schedule::command('caregivers:send-birthday-greetings')->dailyAt('08:00');

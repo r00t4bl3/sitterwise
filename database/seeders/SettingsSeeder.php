@@ -34,7 +34,7 @@ class SettingsSeeder extends Seeder
                 'type' => 'float',
                 'group' => 'lifesaver',
                 'label' => 'Lifesaver bonus ($)',
-                'description' => 'Bonus paid (in US dollars) to a caregiver who takes a Lifesaver job. (Payout wiring not yet implemented — value stored for future use.)',
+                'description' => 'Bonus (in US dollars) added to the caregiver payout for a Lifesaver rescue job, and billed to the client. Applies to auto-detected rescues and admin-flagged Lifesaver bookings.',
                 'sort_order' => 3,
             ],
 

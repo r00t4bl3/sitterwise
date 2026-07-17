@@ -491,54 +491,68 @@ export default function JobHistory() {
                                                 : '—'}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            {booking.assignment_id && (
-                                                <div className="flex flex-col gap-1">
-                                                    {(!booking.assignment_resolution ||
-                                                        booking.assignment_resolution ===
-                                                            'backed_out') && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-7 text-[11px]"
-                                                            onClick={() =>
-                                                                openExcuseDialog(
-                                                                    booking,
-                                                                )
-                                                            }
-                                                        >
-                                                            Excuse
-                                                        </Button>
-                                                    )}
-                                                    {(!booking.assignment_resolution ||
-                                                        booking.assignment_resolution ===
-                                                            'backed_out') && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-7 text-[11px]"
-                                                            onClick={() =>
-                                                                openNoShowDialog(
-                                                                    booking,
-                                                                )
-                                                            }
-                                                        >
-                                                            No-Show
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="h-7 text-[11px]"
-                                                        onClick={() =>
-                                                            openLateArrivalDialog(
-                                                                booking,
-                                                            )
-                                                        }
+                                            <div className="flex flex-col gap-1">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    asChild
+                                                    className="h-7 text-[11px]"
+                                                >
+                                                    <Link
+                                                        href={`/bookings/${booking.ulid}`}
                                                     >
-                                                        Late
-                                                    </Button>
-                                                </div>
-                                            )}
+                                                        View
+                                                    </Link>
+                                                </Button>
+                                                {booking.assignment_id && (
+                                                    <>
+                                                        {(!booking.assignment_resolution ||
+                                                            booking.assignment_resolution ===
+                                                                'backed_out') && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-7 text-[11px]"
+                                                                onClick={() =>
+                                                                    openExcuseDialog(
+                                                                        booking,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Excuse
+                                                            </Button>
+                                                        )}
+                                                        {(!booking.assignment_resolution ||
+                                                            booking.assignment_resolution ===
+                                                                'backed_out') && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-7 text-[11px]"
+                                                                onClick={() =>
+                                                                    openNoShowDialog(
+                                                                        booking,
+                                                                    )
+                                                                }
+                                                            >
+                                                                No-Show
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-7 text-[11px]"
+                                                            onClick={() =>
+                                                                openLateArrivalDialog(
+                                                                    booking,
+                                                                )
+                                                            }
+                                                        >
+                                                            Late
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

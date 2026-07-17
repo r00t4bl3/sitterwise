@@ -39,7 +39,15 @@ const LOCKED_COLORS = {
     dash: '#C3CDD2',
 };
 
-function Icon({ variant, fill }: { variant: string; fill: string }) {
+function Icon({
+    variant,
+    fill,
+    label,
+}: {
+    variant: string;
+    fill: string;
+    label?: string;
+}) {
     const commonProps = {
         fill: 'none',
         stroke: fill,
@@ -87,8 +95,21 @@ function Icon({ variant, fill }: { variant: string; fill: string }) {
                     <path
                         d="M70 34 L76.6 47.8 L91.8 49.8 L80.8 60.4 L83.5 75.4 L70 68.2 L56.5 75.4 L59.2 60.4 L48.2 49.8 L63.4 47.8 Z"
                         fill={fill}
+                        transform="translate(70 66) scale(1.6) translate(-70 -55)"
                     />
-                    {/* 5 or 10 text is shown from parent via the number variant */}
+                    {label && (
+                        <text
+                            x="70"
+                            y="75"
+                            textAnchor="middle"
+                            fontFamily="'Playfair Display', Georgia, serif"
+                            fontWeight={700}
+                            fontSize={26}
+                            fill={fill === '#FFFFFF' ? '#1B3A5C' : '#FFFFFF'}
+                        >
+                            {label}
+                        </text>
+                    )}
                 </>
             );
         case 'shield':
@@ -249,7 +270,7 @@ function Icon({ variant, fill }: { variant: string; fill: string }) {
                         fontSize={36}
                         fill={fill}
                     >
-                        1
+                        {label ?? '1'}
                     </text>
                     <text
                         x="70"
@@ -261,7 +282,7 @@ function Icon({ variant, fill }: { variant: string; fill: string }) {
                         letterSpacing={2}
                         fill={fill}
                     >
-                        YEAR
+                        {label && label !== '1' ? 'YEARS' : 'YEAR'}
                     </text>
                     <path
                         d="M40 62 Q44 48 56 42 M40 62 l6 -2 M40 62 l1 -7"
@@ -310,6 +331,8 @@ export default function Medallion({
     const colors = earned ? TIER_COLORS[tier] : LOCKED_COLORS;
     const dotFill = earned ? colors.dot : LOCKED_COLORS.dot;
     const iconColor = earned ? '#FFFFFF' : LOCKED_COLORS.icon;
+    // Variants may carry a display number, e.g. "number:50" or "cake:3".
+    const [baseVariant, variantParam] = variant.split(':');
 
     return (
         <svg
@@ -359,20 +382,24 @@ export default function Medallion({
             <circle cx={70} cy={66} r={45} fill={colors.inner} />
 
             {/* Icon */}
-            {variant === 'number' ? (
+            {baseVariant === 'number' ? (
                 <text
                     x={70}
                     y={76}
                     textAnchor="middle"
                     fontFamily="'Playfair Display', Georgia, serif"
                     fontWeight={700}
-                    fontSize={38}
+                    fontSize={(variantParam?.length ?? 2) >= 3 ? 30 : 38}
                     fill={earned ? '#1B3A5C' : LOCKED_COLORS.icon}
                 >
-                    25
+                    {variantParam ?? '25'}
                 </text>
             ) : (
-                <Icon variant={variant} fill={iconColor} />
+                <Icon
+                    variant={baseVariant}
+                    label={variantParam}
+                    fill={iconColor}
+                />
             )}
         </svg>
     );

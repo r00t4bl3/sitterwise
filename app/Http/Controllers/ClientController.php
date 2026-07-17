@@ -329,6 +329,7 @@ class ClientController extends Controller
                     ] : null,
                 ]),
                 'has_payment_method' => $client->hasPaymentMethod(),
+                'has_payment_capability' => $client->hasPaymentCapability(),
                 'payment_methods' => $this->paymentService->setClient($client)->showPaymentMethods(),
             ],
         ]);

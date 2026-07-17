@@ -137,6 +137,7 @@ class DashboardController extends Controller
                 fn ($case) => [
                     'value' => $case->value,
                     'label' => $case->label(),
+                    'requires_payment_method' => PricingRule::isStripeChargedServiceType($case->value),
                 ],
                 ServiceType::cases()
             );
@@ -418,6 +419,31 @@ class DashboardController extends Controller
 
                 $badges = app(CaregiverBadgeService::class)->badgesFor($caregiver);
 
+                // Detect newly-earned badges by diffing the live earned set against
+                // the snapshot of badges the caregiver has already been shown. On the
+                // first-ever load (null snapshot) we baseline silently so pre-existing
+                // badges are not celebrated retroactively.
+                $earnedSlugs = collect($badges)
+                    ->where('earned', true)
+                    ->pluck('slug')
+                    ->all();
+                $seenBadgeSlugs = $caregiver->seen_badge_slugs;
+
+                if ($seenBadgeSlugs === null) {
+                    $caregiver->update(['seen_badge_slugs' => $earnedSlugs]);
+                    $newlyEarnedBadges = [];
+                } else {
+                    $newlyEarnedBadges = collect($badges)
+                        ->where('earned', true)
+                        ->whereNotIn('slug', $seenBadgeSlugs)
+                        ->values()
+                        ->all();
+
+                    if (! empty($newlyEarnedBadges)) {
+                        $caregiver->update(['seen_badge_slugs' => $earnedSlugs]);
+                    }
+                }
+
                 $trustlineCert = $caregiver->certifications()
                     ->where('certification_type_id', 3)
                     ->wherePivot('verified_at', '!=', null)
@@ -476,6 +502,7 @@ class DashboardController extends Controller
                         TimeSlot::cases()
                     ),
                     'badges' => $badges,
+                    'newlyEarnedBadges' => $newlyEarnedBadges,
                     'trustline' => [
                         'certified' => $trustlineCert !== null,
                         'cleared_at' => $trustlineClearedAt

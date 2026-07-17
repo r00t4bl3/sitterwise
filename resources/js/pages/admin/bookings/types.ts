@@ -228,7 +228,11 @@ export interface Props {
     hotels: Hotel[];
     caregivers: Caregiver[];
     clients_with_payment_capability: number[];
-    service_types: Array<{ value: string; label: string }>;
+    service_types: Array<{
+        value: string;
+        label: string;
+        requires_payment_method?: boolean;
+    }>;
     location_types: Array<{ value: string; label: string }>;
     booking_statuses: Array<{
         value: string;

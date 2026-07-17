@@ -124,6 +124,7 @@ interface PersonalInfoSectionProps {
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
     onSearchChange?: (query: string, filter: string) => void;
+    onSpanishOnlyChange?: (value: boolean, filter: string) => void;
     sheetMode?: string;
 }
 
@@ -176,6 +177,7 @@ export function PersonalInfoSection({
     onLoadMoreCaregivers,
     onAgeFilterChange,
     onSearchChange,
+    onSpanishOnlyChange,
     sheetMode,
 }: PersonalInfoSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
@@ -314,6 +316,7 @@ export function PersonalInfoSection({
                     onLoadMoreCaregivers={onLoadMoreCaregivers}
                     onAgeFilterChange={onAgeFilterChange}
                     onSearchChange={onSearchChange}
+                    onSpanishOnlyChange={onSpanishOnlyChange}
                 />
             )}
 

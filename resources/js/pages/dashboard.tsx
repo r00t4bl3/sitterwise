@@ -74,6 +74,12 @@ interface Props {
             criteria: string;
             progress: string | null;
         }>;
+        newlyEarnedBadges?: Array<{
+            slug: string;
+            name: string;
+            tier: 'coral' | 'navy' | 'teal';
+            variant: string;
+        }>;
         trustline?: {
             certified: boolean;
             cleared_at?: string;
@@ -124,6 +130,7 @@ export default function Dashboard() {
     const { user, stats, caregiver, client, admin, quickLinks } =
         usePage<Props>().props;
     const badges = caregiver?.badges;
+    const newlyEarnedBadges = caregiver?.newlyEarnedBadges;
     const trustline = caregiver?.trustline;
     const attention = caregiver?.attention;
 
@@ -150,6 +157,7 @@ export default function Dashboard() {
                     }}
                     quickLinks={quickLinks}
                     badges={badges}
+                    newlyEarnedBadges={newlyEarnedBadges}
                     trustline={trustline}
                     attention={attention}
                 />

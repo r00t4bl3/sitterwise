@@ -85,6 +85,24 @@ class AdminBookingService implements BookingServiceInterface
         return PricingRule::requiresPaymentFor($serviceType);
     }
 
+    /**
+     * Service-type options for the booking form, flagged with whether the type
+     * is charged via Stripe (and therefore needs a payment method on file).
+     *
+     * @return array<int, array{value: string, label: string, requires_payment_method: bool}>
+     */
+    private function serviceTypeOptions(): array
+    {
+        return array_map(
+            fn ($case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'requires_payment_method' => PricingRule::isStripeChargedServiceType($case->value),
+            ],
+            ServiceType::cases()
+        );
+    }
+
     public function index(Request $request)
     {
         $month = (int) $request->input('month', BusinessTime::now()->month);
@@ -147,10 +165,7 @@ class AdminBookingService implements BookingServiceInterface
             ));
         }
 
-        $serviceTypes = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            ServiceType::cases()
-        );
+        $serviceTypes = $this->serviceTypeOptions();
 
         $locationTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -548,10 +563,7 @@ class AdminBookingService implements BookingServiceInterface
         $caregiverAllIds = $recommended->pluck('id')->toArray();
         $caregiverTotal = $recommended->count();
 
-        $serviceTypes = array_map(
-            fn ($case) => ['value' => $case->value, 'label' => $case->label()],
-            ServiceType::cases()
-        );
+        $serviceTypes = $this->serviceTypeOptions();
 
         $locationTypes = array_map(
             fn ($case) => ['value' => $case->value, 'label' => $case->label()],
@@ -1324,6 +1336,7 @@ class AdminBookingService implements BookingServiceInterface
             'per_page' => 'nullable|integer|min:1|max:100',
             'age_filter' => 'nullable|in:all,younger,seasoned',
             'search' => 'nullable|string|max:255',
+            'spanish_only' => 'nullable|boolean',
         ]);
 
         $client = Client::with('favoriteCaregivers')->find($validated['client_id']);
@@ -1364,7 +1377,8 @@ class AdminBookingService implements BookingServiceInterface
 
         $page = (int) ($validated['page'] ?? 1);
         $hasSearch = ! empty($validated['search']);
-        $isDefaultQuery = $page === 1 && ($validated['age_filter'] ?? 'all') === 'all' && ! $hasSearch;
+        $spanishOnly = $request->boolean('spanish_only');
+        $isDefaultQuery = $page === 1 && ($validated['age_filter'] ?? 'all') === 'all' && ! $hasSearch && ! $spanishOnly;
 
         if ($isDefaultQuery) {
             $recommended = $this->recommendationService->getRecommendedCaregivers(
@@ -1396,6 +1410,10 @@ class AdminBookingService implements BookingServiceInterface
             $recommended = $recommended->filter(
                 fn ($cg) => str_contains(strtolower($cg['name']), strtolower($validated['search']))
             );
+        }
+
+        if ($spanishOnly) {
+            $recommended = $recommended->filter(fn ($cg) => ! empty($cg['speaksSpanish']))->values();
         }
 
         $perPage = (int) ($validated['per_page'] ?? 20);

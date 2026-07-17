@@ -9,6 +9,7 @@ use App\Enums\SpecialConsideration;
 use App\Models\Traits\HasGroupFields;
 use App\Models\Traits\Phone;
 use App\Services\CaregiverRecommendation\AvailabilityReservationService;
+use App\Services\LifesaverService;
 use App\Support\BusinessTime;
 use App\Support\Settings;
 use Carbon\Carbon;
@@ -141,9 +142,16 @@ class Booking extends Model
         $bonus = (float) ($this->getAttribute('bonus') ?? 0);
         $tip = (float) ($this->getAttribute('tip') ?? 0);
 
-        $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus, 2);
+        // Lifesaver rescue bonus: paid to the caregiver AND billed to the client,
+        // leaving Sitterwise's cut unchanged. Applies to any booking classified a
+        // Lifesaver rescue, including an admin's manual lifesaver_override.
+        $lifesaverBonus = app(LifesaverService::class)->wasLifesaverRescue($this)
+            ? (float) Settings::get('lifesaver.bonus', 0)
+            : 0.0;
+
+        $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus + $lifesaverBonus, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
-        $this->paid_to_caregiver_total = round($this->paid_to_caregiver + $reimbursement + $bonus + $tip, 2);
+        $this->paid_to_caregiver_total = round($this->paid_to_caregiver + $reimbursement + $bonus + $lifesaverBonus + $tip, 2);
     }
 
     public function resolveRouteBinding($value, $field = null)

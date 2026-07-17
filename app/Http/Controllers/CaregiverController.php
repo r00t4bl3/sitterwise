@@ -386,6 +386,12 @@ class CaregiverController extends Controller
             if (isset($validated['certifications'])) {
                 $certSync = [];
                 $certFiles = $request->file('cert_files') ?? [];
+                $existingCertFiles = $caregiver->certifications()
+                    ->withPivot('file_path')
+                    ->get()
+                    ->pluck('pivot.file_path', 'id')
+                    ->filter()
+                    ->toArray();
 
                 foreach ($validated['certifications'] as $cert) {
                     $certTypeId = $cert['certification_type_id'];
@@ -395,6 +401,11 @@ class CaregiverController extends Controller
                         $file = $certFiles[$certTypeId];
                         $filename = time().'_'.$file->getClientOriginalName();
                         $filePath = $file->storeAs('certifications', $filename, 'public');
+                    }
+
+                    $oldPath = $existingCertFiles[$certTypeId] ?? null;
+                    if ($oldPath && $oldPath !== $filePath) {
+                        Storage::disk('public')->delete($oldPath);
                     }
 
                     $certSync[$certTypeId] = [

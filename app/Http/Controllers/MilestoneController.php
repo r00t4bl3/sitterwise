@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CaregiverInternalRating;
+use App\Services\CaregiverBadgeService;
 use App\Support\Settings;
 use Inertia\Inertia;
 
@@ -116,6 +117,7 @@ class MilestoneController extends Controller
                 'lastJobDate' => $lastJob?->end_datetime?->format('M j, Y'),
                 'memberSince' => $memberSince->format('M j, Y'),
             ],
+            'badges' => app(CaregiverBadgeService::class)->badgesFor($caregiver),
         ]);
     }
 }

@@ -57,6 +57,7 @@ interface NotifyCaregiversSheetProps {
     onLoadMoreCaregivers?: (ageFilter?: string) => void;
     onAgeFilterChange?: (filter: string) => void;
     onSearchChange?: (query: string, filter: string) => void;
+    onSpanishOnlyChange?: (value: boolean, filter: string) => void;
 }
 
 export function NotifyCaregiversSheet({
@@ -74,10 +75,12 @@ export function NotifyCaregiversSheet({
     onLoadMoreCaregivers,
     onAgeFilterChange,
     onSearchChange,
+    onSpanishOnlyChange,
 }: NotifyCaregiversSheetProps) {
     const [ageFilter, setAgeFilter] = useState<'all' | 'younger' | 'seasoned'>(
         'all',
     );
+    const [spanishOnly, setSpanishOnly] = useState(false);
     const [searchInput, setSearchInput] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -194,6 +197,23 @@ export function NotifyCaregiversSheet({
                             }`}
                         >
                             Seasoned (35+)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const next = !spanishOnly;
+                                setSpanishOnly(next);
+                                onSpanishOnlyChange?.(next, ageFilter);
+                            }}
+                            aria-pressed={spanishOnly}
+                            className={`flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                spanishOnly
+                                    ? 'bg-amber-600 text-white'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                        >
+                            <Languages className="h-3.5 w-3.5" />
+                            Spanish only
                         </button>
                         <div className="ml-auto">
                             <Button

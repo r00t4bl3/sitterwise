@@ -102,6 +102,7 @@ class Caregiver extends Model
         'address_state',
         'address_zip',
         'date_of_birth',
+        'last_birthday_greeted_year',
         'rating',
         'admin_rating',
         'biography',
@@ -111,16 +112,19 @@ class Caregiver extends Model
         'education_level',
         'languages',
         'metadata',
+        'seen_badge_slugs',
         'sms_opted_out',
         'status_token',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
+        'last_birthday_greeted_year' => 'integer',
         'rating' => 'decimal:2',
         'admin_rating' => 'decimal:2',
         'languages' => 'array',
         'metadata' => 'array',
+        'seen_badge_slugs' => 'array',
         'sms_opted_out' => 'boolean',
         'status' => CaregiverStatus::class,
     ];
