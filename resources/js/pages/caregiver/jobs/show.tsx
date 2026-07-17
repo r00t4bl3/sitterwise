@@ -73,6 +73,7 @@ interface Booking {
     reimbursement: number;
     reimbursement_description: string | null;
     bonus: number;
+    lifesaver_bonus: number;
     tip: number;
     paid_to_caregiver_total: number;
 }
@@ -122,6 +123,7 @@ export default function JobDetail({ booking }: PageProps) {
             computedBase +
             Number(booking.reimbursement) +
             Number(booking.bonus) +
+            Number(booking.lifesaver_bonus || 0) +
             Number(booking.tip)
         ).toFixed(2),
     );
@@ -452,6 +454,19 @@ export default function JobDetail({ booking }: PageProps) {
                                                     +$
                                                     {Number(
                                                         booking.bonus,
+                                                    ).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {Number(booking.lifesaver_bonus) > 0 && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">
+                                                    Lifesaver Bonus
+                                                </span>
+                                                <span className="font-medium text-green-600">
+                                                    +$
+                                                    {Number(
+                                                        booking.lifesaver_bonus,
                                                     ).toFixed(2)}
                                                 </span>
                                             </div>

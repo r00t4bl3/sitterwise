@@ -680,6 +680,7 @@ class AdminBookingService implements BookingServiceInterface
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
                 'bonus' => $booking->bonus,
+                'lifesaver_bonus' => $booking->lifesaver_bonus,
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,

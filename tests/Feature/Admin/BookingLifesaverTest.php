@@ -69,4 +69,15 @@ describe('Admin Lifesaver toggle', function () {
                 ->where('booking.lifesaver_override', true)
             );
     });
+
+    test('the booking detail page itemizes the lifesaver bonus', function () {
+        $this->booking->update(['lifesaver_override' => true]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('bookings.show', $this->booking));
+        $response->assertSuccessful();
+
+        $props = $response->viewData('page')['props'];
+        expect((float) $props['booking']['lifesaver_bonus'])->toBe(15.0);
+    });
 });

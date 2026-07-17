@@ -58,3 +58,19 @@ test('a non-Lifesaver booking gets no bonus added to caregiver pay', function ()
     expect((float) $booking->paid_to_caregiver_total)
         ->toBe((float) $booking->paid_to_caregiver);
 });
+
+test('the lifesaver_bonus accessor reports the applied bonus for display', function () {
+    $rescue = Booking::factory()->forClient($this->client)->completed()->create([
+        'total_working_hour' => 4,
+        'lifesaver_override' => true,
+    ]);
+    $rescue->calculateTotalAmount();
+    expect($rescue->lifesaver_bonus)->toBe(15.0);
+
+    $normal = Booking::factory()->forClient($this->client)->completed()->create([
+        'total_working_hour' => 4,
+        'lifesaver_override' => false,
+    ]);
+    $normal->calculateTotalAmount();
+    expect($normal->lifesaver_bonus)->toBe(0.0);
+});

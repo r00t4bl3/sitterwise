@@ -75,6 +75,7 @@ interface Booking {
     tip: number | null;
     reimbursement: number | null;
     bonus: number | null;
+    lifesaver_bonus: number | null;
     special_considerations: string[] | null;
     caregiver_notes: string | null;
     children: Array<{
@@ -389,6 +390,9 @@ export default function BookingDetail({
         { label: 'Tip', value: booking.tip },
         { label: 'Reimbursement', value: booking.reimbursement },
         { label: 'Bonus', value: booking.bonus },
+        ...((booking.lifesaver_bonus ?? 0) > 0
+            ? [{ label: 'Lifesaver Bonus', value: booking.lifesaver_bonus }]
+            : []),
     ].filter((f) => f.value !== null && f.value !== undefined);
 
     const fetchCaregivers = async (

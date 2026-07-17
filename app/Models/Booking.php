@@ -512,6 +512,22 @@ class Booking extends Model
         return ServiceType::tryFrom($serviceType)?->label() ?? $serviceType;
     }
 
+    /**
+     * The Lifesaver rescue bonus already baked into the totals by
+     * calculateTotalAmount(), recovered from the stored columns for display
+     * (total_service_amount = charge_to_client + reimbursement + bonus + lifesaver).
+     */
+    public function getLifesaverBonusAttribute(): float
+    {
+        return round(
+            (float) $this->total_service_amount
+            - (float) $this->charge_to_client
+            - (float) ($this->reimbursement ?? 0)
+            - (float) ($this->bonus ?? 0),
+            2,
+        );
+    }
+
     public function toEmailData(): array
     {
         $group = $this->bookingGroup;

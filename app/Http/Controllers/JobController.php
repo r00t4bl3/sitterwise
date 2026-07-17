@@ -184,6 +184,7 @@ class JobController extends Controller
                 'bonus' => (float) ($booking->bonus ?? 0),
                 'tip' => (float) ($booking->tip ?? 0),
                 'paid_to_caregiver_total' => (float) ($booking->paid_to_caregiver_total ?? 0),
+                'lifesaver_bonus' => (float) $booking->lifesaver_bonus,
             ],
         ]);
     }
