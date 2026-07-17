@@ -120,6 +120,22 @@ describe('Client Booking History', function () {
         );
     });
 
+    test('booking history can be filtered by location type', function () {
+        Booking::factory()->forClient($this->client)->create();
+        Booking::factory()->forClient($this->client)->withBookingGroup(
+            fn ($group) => $group->hotel()
+        )->create();
+
+        $this->actingAs($this->admin);
+
+        $response = $this->get(route('clients.bookingHistory', [$this->client, 'search' => 'private_home']));
+
+        $response->assertSuccessful();
+        $response->assertInertia(fn ($page) => $page
+            ->has('bookings.data', 1)
+        );
+    });
+
     test('booking history paginates results', function () {
         Booking::factory()->count(25)->forClient($this->client)->create();
 
