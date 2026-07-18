@@ -9,6 +9,7 @@ use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
 use App\Models\PricingRule;
 use Illuminate\Support\Facades\DB;
+use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\StripeClient;
@@ -158,6 +159,8 @@ class JobBillingService
             ];
         } catch (CardException $e) {
             return $this->handleFailure($booking, $clientPayment, $e);
+        } catch (ApiConnectionException $e) {
+            return $this->handleFailure($booking, $clientPayment, $e, incrementAttempts: false);
         } catch (ApiErrorException $e) {
             return $this->handleFailure($booking, $clientPayment, $e);
         }
@@ -208,9 +211,19 @@ class JobBillingService
         });
     }
 
-    protected function handleFailure(Booking $booking, ClientPayment $clientPayment, \Exception $e): array
+    /**
+     * On connection errors Stripe may have processed the charge even though we
+     * never received the response, so the attempt count is left untouched: the
+     * retry then reuses the same idempotency key and Stripe deduplicates it
+     * instead of creating a second charge. Declines and other API errors still
+     * advance the attempt so a legitimate retry gets a fresh key.
+     */
+    protected function handleFailure(Booking $booking, ClientPayment $clientPayment, \Exception $e, bool $incrementAttempts = true): array
     {
-        $booking->increment('charge_attempt_count');
+        if ($incrementAttempts) {
+            $booking->increment('charge_attempt_count');
+        }
+
         $booking->update([
             'payment_status' => 'failed',
             'last_charge_attempt_at' => now(),

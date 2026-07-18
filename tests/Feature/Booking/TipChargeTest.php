@@ -13,8 +13,13 @@ use App\Models\User;
 use App\Services\Billing\TipChargeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Stripe\StripeClient;
+use Tests\Support\FakeStripeHttpClient;
 
 uses(RefreshDatabase::class);
+
+afterEach(function () {
+    FakeStripeHttpClient::reset();
+});
 
 function tipBooking(): Booking
 {
@@ -98,6 +103,7 @@ describe('Tip Charge Service', function () {
     });
 
     test('returns error when client has no payment method', function () {
+        FakeStripeHttpClient::install();
         $booking = tipBooking();
 
         ClientPaymentMethod::where('client_id', $booking->client_id)->delete();
@@ -111,6 +117,7 @@ describe('Tip Charge Service', function () {
     });
 
     test('uses provided payment method id when available', function () {
+        $stripe = FakeStripeHttpClient::install();
         $booking = tipBooking();
 
         ClientPaymentMethod::create([
@@ -128,7 +135,10 @@ describe('Tip Charge Service', function () {
         $tipService = new TipChargeService;
         $result = $tipService->charge($booking, 5, 'pm_provided_method');
 
-        expect($result)->toHaveKey('success');
+        expect($result['success'])->toBeTrue();
+        expect((float) $booking->refresh()->tip)->toBe(5.0);
+        expect($stripe->requests)->toHaveCount(1);
+        expect($stripe->requests[0]['params']['payment_method'] ?? null)->toBe('pm_provided_method');
     });
 
     test('tip description names the caregiver, not the job number', function () {
@@ -156,6 +166,7 @@ describe('Tip Charge Service', function () {
     });
 
     test('falls back to default payment method when no provided id', function () {
+        $stripe = FakeStripeHttpClient::install();
         $booking = tipBooking();
 
         ClientPaymentMethod::create([
@@ -173,7 +184,10 @@ describe('Tip Charge Service', function () {
         $tipService = new TipChargeService;
         $result = $tipService->charge($booking, 25);
 
-        expect($result)->toHaveKey('success');
+        expect($result['success'])->toBeTrue();
+        expect((float) $booking->refresh()->tip)->toBe(25.0);
+        expect($stripe->requests)->toHaveCount(1);
+        expect($stripe->requests[0]['params']['payment_method'] ?? null)->toBe('pm_default_method');
     });
 
     test('does not charge again when a tip already succeeded (idempotent)', function () {

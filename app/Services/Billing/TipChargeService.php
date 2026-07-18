@@ -150,6 +150,11 @@ class TipChargeService
                     'caregiver_name' => $booking->caregiver?->full_name,
                     'type' => 'tip',
                 ],
+            ], [
+                // Defense-in-depth alongside the pending/succeeded guards
+                // above: if a request is retried after a network failure,
+                // Stripe collapses it into the original charge.
+                'idempotency_key' => "booking_{$booking->id}_tip_{$amountInCents}",
             ]);
 
             $booking->update(['tip' => $tipAmount]);
@@ -171,7 +176,8 @@ class TipChargeService
                 try {
                     app(CaregiverPayoutService::class)->transferFunds(
                         $booking->caregiver,
-                        $amountInCents
+                        $amountInCents,
+                        idempotencyKey: "booking_{$booking->id}_tip_payout_{$amountInCents}"
                     );
                 } catch (\Exception $e) {
                     Log::warning('Tip charged but caregiver transfer failed', [

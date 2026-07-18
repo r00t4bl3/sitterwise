@@ -1677,7 +1677,8 @@ class AdminBookingService implements BookingServiceInterface
 
                 $payoutResult = $this->payoutService->transferFunds(
                     $booking->caregiver,
-                    $transferAmount
+                    $transferAmount,
+                    idempotencyKey: "booking_{$booking->id}_payout_{$transferAmount}"
                 );
 
                 if (! $payoutResult['success']) {

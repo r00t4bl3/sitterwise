@@ -78,7 +78,8 @@ class ChargingController extends Controller
 
             $payoutResult = $this->payoutService->transferFunds(
                 $caregiver,
-                $transferAmount
+                $transferAmount,
+                idempotencyKey: "booking_{$booking->id}_payout_{$transferAmount}"
             );
 
             if (! $payoutResult['success']) {

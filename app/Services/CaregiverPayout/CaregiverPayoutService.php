@@ -155,7 +155,7 @@ class CaregiverPayoutService
             ->paginate(10);
     }
 
-    public function transferFunds(Caregiver $caregiver, int $amount, ?int $payoutMethodId = null): array
+    public function transferFunds(Caregiver $caregiver, int $amount, ?int $payoutMethodId = null, ?string $idempotencyKey = null): array
     {
         $payoutMethod = $payoutMethodId
             ? CaregiverPayoutMethod::where('id', $payoutMethodId)
@@ -192,7 +192,7 @@ class CaregiverPayoutService
                     'caregiver_id' => $caregiver->id,
                     'payout_method_id' => $payoutMethod->id,
                 ],
-            ]);
+            ], $idempotencyKey ? ['idempotency_key' => $idempotencyKey] : []);
 
             $payout = CaregiverPayout::create([
                 'caregiver_id' => $caregiver->id,
