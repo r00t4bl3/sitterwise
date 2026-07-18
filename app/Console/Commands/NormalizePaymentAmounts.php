@@ -18,7 +18,9 @@ class NormalizePaymentAmounts extends Command
     {
         $apply = $this->option('apply');
 
-        $this->initStagingDatabase();
+        if (! $this->initStagingDatabase()) {
+            return Command::SUCCESS;
+        }
 
         $payments = ClientPayment::whereNotNull('bubble_id')
             ->orderBy('bubble_id')
@@ -105,15 +107,23 @@ class NormalizePaymentAmounts extends Command
         return is_numeric($value) ? ($value + 0) : null;
     }
 
-    protected function initStagingDatabase(): void
+    /**
+     * A missing staging database is reported as a graceful no-op rather than
+     * via exit(): calling exit() from a command terminates the whole PHP
+     * process, which kills the test runner (and any queue worker or scheduler
+     * invoking the command in-process) mid-run.
+     */
+    protected function initStagingDatabase(): bool
     {
         $dbPath = storage_path('app/bubble_staging.sqlite');
         if (! file_exists($dbPath)) {
-            $this->error("Staging database not found at {$dbPath}.");
+            $this->warn("Staging database not found at {$dbPath}; nothing to normalize.");
 
-            exit(Command::FAILURE);
+            return false;
         }
         $this->sqlite = new \PDO("sqlite:{$dbPath}");
         $this->sqlite->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        return true;
     }
 }
