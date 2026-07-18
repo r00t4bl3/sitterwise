@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Database\Seeders\PricingRulesTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 
 use function Pest\Laravel\mock;
 
@@ -274,8 +275,9 @@ describe('Guest Booking Workflow', function () {
         expect($ptEnd->format('H:i'))->toBe('13:00');
 
         // ── 4. Inertia response (what the frontend receives) ──
-        // Hit the confirmation endpoint and verify the serialized datetime values.
-        $response = $this->get(route('guest.bookings.confirmation', $booking->ulid));
+        // Hit the confirmation endpoint (signed, as the booking flow issues it)
+        // and verify the serialized datetime values.
+        $response = $this->get(URL::signedRoute('guest.bookings.confirmation', ['booking' => $booking->ulid]));
         $response->assertInertia(fn ($page) => $page
             ->where('booking.start_datetime', $booking->start_datetime->toISOString())
             ->where('booking.end_datetime', $booking->end_datetime->toISOString())

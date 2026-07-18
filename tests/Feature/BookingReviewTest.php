@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\BookingStatus;
+use App\Enums\ServiceType;
 use App\Models\AttributeDefinition;
 use App\Models\Booking;
 use App\Models\BookingRating;
@@ -10,10 +11,12 @@ use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
 use App\Models\Location;
+use App\Models\PricingRule;
 use App\Models\SpecialtyType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
+use Tests\Support\FakeStripeHttpClient;
 
 uses(RefreshDatabase::class);
 
@@ -356,4 +359,65 @@ test('guest can review paid booking via signed url', function () {
         ->has('booking')
         ->where('booking.caregiver_name', $this->caregiver->first_name.' '.$this->caregiver->last_name)
     );
+});
+
+// ========== TIP CAP (signed link charges the stored card) ==========
+
+test('a tip above the booking amount is rejected on the signed link', function () {
+    $booking = Booking::factory()->forClient($this->client)->create([
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Completed->value,
+        'start_datetime' => now()->subDay()->setTime(8, 0),
+        'end_datetime' => now()->subDay()->setTime(18, 0),
+        'reimbursement' => 0,
+        'bonus' => 0,
+        'tip' => 0,
+    ]);
+
+    $signedUrl = URL::signedRoute('review.store', ['booking' => $booking->ulid]);
+
+    $response = $this->post($signedUrl, [
+        'rating' => 5,
+        'comment' => 'Great!',
+        'tip' => 5000,
+    ]);
+
+    $response->assertSessionHasErrors('tip');
+    expect(ClientPayment::where('booking_id', $booking->id)->count())->toBe(0);
+});
+
+test('a reasonable tip within the cap passes validation', function () {
+    $stripe = FakeStripeHttpClient::install();
+
+    PricingRule::create([
+        'service_type' => ServiceType::Babysitter->value,
+        'number_of_children' => 0,
+        'is_for_pets' => false,
+        'charge_to_client' => 20,
+        'paid_to_caregiver' => 15,
+        'sitterwise_cut' => 5,
+        'payment_form' => 'Stripe',
+    ]);
+
+    $booking = Booking::factory()->forClient($this->client)->create([
+        'caregiver_id' => $this->caregiver->id,
+        'status' => BookingStatus::Completed->value,
+        'start_datetime' => now()->subDay()->setTime(8, 0),
+        'end_datetime' => now()->subDay()->setTime(18, 0),
+        'reimbursement' => 0,
+        'bonus' => 0,
+        'tip' => 0,
+    ]);
+
+    $signedUrl = URL::signedRoute('review.store', ['booking' => $booking->ulid]);
+
+    $response = $this->post($signedUrl, [
+        'rating' => 5,
+        'comment' => 'Great!',
+        'tip' => 120,
+    ]);
+
+    $response->assertSessionDoesntHaveErrors('tip');
+
+    FakeStripeHttpClient::reset();
 });

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Booking\GuestBookingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class GuestBookingController extends Controller
@@ -63,7 +64,7 @@ class GuestBookingController extends Controller
                         $request->session()->forget('guest_booking_pending');
                         $request->session()->forget('guest_booking_payment_token');
 
-                        return redirect()->route('guest.bookings.confirmation', $booking->ulid);
+                        return redirect(URL::signedRoute('guest.bookings.confirmation', ['booking' => $booking->ulid]));
                     } catch (\Exception $e) {
                         Log::error('Guest booking payment failed: '.$e->getMessage());
                     }
@@ -153,7 +154,7 @@ class GuestBookingController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect_url' => route('guest.bookings.confirmation', $booking->ulid),
+                'redirect_url' => URL::signedRoute('guest.bookings.confirmation', ['booking' => $booking->ulid]),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -201,7 +202,7 @@ class GuestBookingController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect_url' => route('guest.bookings.confirmation', $booking->ulid),
+                'redirect_url' => URL::signedRoute('guest.bookings.confirmation', ['booking' => $booking->ulid]),
             ]);
         } catch (\Exception $e) {
             return response()->json([

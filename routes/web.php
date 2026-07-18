@@ -64,7 +64,9 @@ Route::get('/book/payment/{token}', [GuestBookingController::class, 'payment'])-
 Route::get('/book/payment/{token}/setup-intent', [GuestBookingController::class, 'getSetupIntent'])->name('guest.bookings.setupIntent');
 Route::post('/book/payment/{token}/status', [GuestBookingController::class, 'checkPaymentStatus'])->name('guest.bookings.status')->middleware('throttle:guest-booking');
 Route::post('/book/payment/{token}/verify', [GuestBookingController::class, 'verifyPayment'])->name('guest.bookings.verify')->middleware('throttle:guest-booking');
-Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation');
+// Signed: the confirmation page exposes the client's name and address, so the
+// URL must be unguessable. Only the booking flow hands out signed links.
+Route::get('/book/confirmation/{booking}', [GuestBookingController::class, 'confirmation'])->name('guest.bookings.confirmation')->middleware('signed');
 
 // Guest review routes (signed URL from email for non-logged-in clients) - outside auth group
 Route::middleware('signed')->group(function () {
@@ -237,29 +239,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('app-settings', [SettingsController::class, 'update'])->name('app-settings.update');
     });
 
-    // Route::middleware('super_admin')->group(function () {
-    //     Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
-    //     Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
-    //     Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
-    //     Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
-    //     Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
-    // });
-
-    Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
-    Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
-    Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
-    Route::post('zip-codes', [ZipCodeController::class, 'store'])->name('zip-codes.store');
-    Route::patch('zip-codes/{zipCode}', [ZipCodeController::class, 'update'])->name('zip-codes.update');
-    Route::delete('zip-codes/{zipCode}', [ZipCodeController::class, 'destroy'])->name('zip-codes.destroy');
-    Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
-
+    // Hotel search stays open to all authenticated roles: caregivers use it
+    // when viewing hotel jobs (see "caregivers can search hotels" test).
     Route::get('hotels/search', [HotelController::class, 'search'])->name('hotels.search');
-    Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
-    Route::resource('pricing-rules', PricingRuleController::class)->except(['show', 'create', 'edit'])->name('index', 'pricing-rules.index');
-    Route::get('pricing-rules/simulator', [PricingSimulatorController::class, 'index'])->name('pricing-rules.simulator');
-    Route::post('pricing-rules/simulator/calculate', [PricingSimulatorController::class, 'simulate'])->name('pricing-rules.simulator.calculate');
-    Route::get('quick-links/search', [QuickLinkController::class, 'search'])->name('quick-links.search');
-    Route::resource('quick-links', QuickLinkController::class)->except(['show', 'create', 'edit']);
+
+    // Platform configuration (pricing, hotels, certification/specialty/location/
+    // attribute definitions, quick links). These drive billing math and payout
+    // rates, so they are staff-only: a client or caregiver must never be able
+    // to edit the pricing rules behind their own charges. The 'admin'
+    // middleware admits both admin and super_admin, matching the expectations
+    // codified in the Superadmin feature tests.
+    Route::middleware('admin')->group(function () {
+        Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
+        Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
+        Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');
+        Route::post('zip-codes', [ZipCodeController::class, 'store'])->name('zip-codes.store');
+        Route::patch('zip-codes/{zipCode}', [ZipCodeController::class, 'update'])->name('zip-codes.update');
+        Route::delete('zip-codes/{zipCode}', [ZipCodeController::class, 'destroy'])->name('zip-codes.destroy');
+        Route::resource('attributes', AttributeDefinitionController::class)->except(['show', 'create', 'edit'])->name('index', 'attributes.index');
+
+        Route::resource('hotels', HotelController::class)->except(['show', 'create', 'edit'])->name('index', 'hotels.index');
+        Route::resource('pricing-rules', PricingRuleController::class)->except(['show', 'create', 'edit'])->name('index', 'pricing-rules.index');
+        Route::get('pricing-rules/simulator', [PricingSimulatorController::class, 'index'])->name('pricing-rules.simulator');
+        Route::post('pricing-rules/simulator/calculate', [PricingSimulatorController::class, 'simulate'])->name('pricing-rules.simulator.calculate');
+        Route::get('quick-links/search', [QuickLinkController::class, 'search'])->name('quick-links.search');
+        Route::resource('quick-links', QuickLinkController::class)->except(['show', 'create', 'edit']);
+    });
 
 });
 

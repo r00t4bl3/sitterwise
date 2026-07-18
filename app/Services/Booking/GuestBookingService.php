@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Stripe\StripeClient;
@@ -189,7 +190,7 @@ class GuestBookingService
             $request->session()->forget(self::PENDING_KEY);
             $request->session()->forget(self::PAYMENT_TOKEN_KEY);
 
-            return redirect()->route('guest.bookings.confirmation', $booking->ulid);
+            return redirect(URL::signedRoute('guest.bookings.confirmation', ['booking' => $booking->ulid]));
         } catch (\Exception $e) {
             Log::error('Guest booking payment failed: '.$e->getMessage());
 
