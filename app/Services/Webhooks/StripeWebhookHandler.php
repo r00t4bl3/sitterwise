@@ -8,7 +8,9 @@ use App\Models\CaregiverPayout;
 use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
+use App\Models\StripeWebhookEvent;
 use App\Services\Billing\PaymentFailureHandler;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\StripeClient;
@@ -30,6 +32,7 @@ class StripeWebhookHandler
             return [
                 'success' => false,
                 'message' => 'Invalid signature',
+                'status' => 400,
             ];
         } catch (\UnexpectedValueException $e) {
             Log::warning('Stripe webhook: invalid payload');
@@ -37,6 +40,7 @@ class StripeWebhookHandler
             return [
                 'success' => false,
                 'message' => 'Invalid payload',
+                'status' => 400,
             ];
         }
 
@@ -44,6 +48,26 @@ class StripeWebhookHandler
             'type' => $event->type,
             'id' => $event->id,
         ]);
+
+        // Claim the event id before processing so a redelivered or
+        // concurrently-delivered event is handled exactly once. The unique
+        // constraint closes the race between two workers.
+        try {
+            $claim = StripeWebhookEvent::create([
+                'event_id' => $event->id,
+                'type' => $event->type,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            Log::info('Stripe webhook: duplicate event skipped', [
+                'type' => $event->type,
+                'id' => $event->id,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Event already processed',
+            ];
+        }
 
         try {
             switch ($event->type) {
@@ -104,6 +128,16 @@ class StripeWebhookHandler
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            // Release the claim and signal failure so Stripe retries the
+            // delivery instead of treating the event as processed.
+            $claim->delete();
+
+            return [
+                'success' => false,
+                'message' => 'Handler error',
+                'status' => 500,
+            ];
         }
 
         return [

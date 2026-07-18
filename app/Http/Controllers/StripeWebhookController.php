@@ -15,6 +15,9 @@ class StripeWebhookController extends Controller
 
         $result = $handler->handle($payload, $signature);
 
-        return response()->json($result);
+        $status = $result['status'] ?? 200;
+        unset($result['status']);
+
+        return response()->json($result, $status);
     }
 }

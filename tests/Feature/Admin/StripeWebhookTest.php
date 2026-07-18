@@ -11,6 +11,7 @@ use App\Models\Client;
 use App\Models\ClientPayment;
 use App\Models\ClientPaymentMethod;
 use App\Models\PricingRule;
+use App\Models\StripeWebhookEvent;
 use App\Models\User;
 use App\Services\Webhooks\StripeWebhookHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -241,8 +242,44 @@ describe('Stripe Webhook', function () {
             'Stripe-Signature' => 't='.time().',v1=garbage_signature',
         ]);
 
-        $response->assertOk();
+        $response->assertStatus(400);
         $response->assertJson(['success' => false]);
+    });
+
+    test('a redelivered event is acknowledged but not processed twice', function () {
+        Config::set('services.stripe.webhook_secret', 'whsec_test');
+
+        $booking = completedBooking();
+        $payload = [
+            'id' => 'evt_redelivered',
+            'type' => 'payment_intent.succeeded',
+            'data' => [
+                'object' => [
+                    'id' => 'pi_'.uniqid(),
+                    'amount' => 10000,
+                    'metadata' => [
+                        'booking_id' => $booking->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $jsonPayload = json_encode($payload);
+        $timestamp = time();
+        $signature = hash_hmac('sha256', "{$timestamp}.{$jsonPayload}", 'whsec_test');
+        $headers = ['Stripe-Signature' => "t={$timestamp},v1={$signature}"];
+
+        $this->postJson('/webhooks/stripe', $payload, $headers)->assertOk();
+        expect($booking->refresh()->payment_status)->toBe('charged');
+
+        $booking->update(['payment_status' => 'pending']);
+
+        $this->postJson('/webhooks/stripe', $payload, $headers)
+            ->assertOk()
+            ->assertJson(['success' => true, 'message' => 'Event already processed']);
+
+        expect($booking->refresh()->payment_status)->toBe('pending');
+        expect(StripeWebhookEvent::count())->toBe(1);
     });
 
     test('checkout.session.completed skips non-setup mode sessions', function () {
@@ -559,7 +596,7 @@ describe('Stripe Webhook', function () {
         expect($booking->payment_status)->toBe('refunded');
     });
 
-    test('handler exception returns success true', function () {
+    test('handler exception releases the event claim and signals failure', function () {
         $booking = completedBooking();
         $paymentIntentId = 'pi_'.uniqid();
 
@@ -588,6 +625,11 @@ describe('Stripe Webhook', function () {
 
         $result = $mock->handle($jsonPayload, "t={$timestamp},v1={$signature}");
 
-        expect($result['success'])->toBeTrue();
+        // A processing failure must not be acknowledged as delivered: Stripe
+        // only retries on a non-2xx response, and the event claim is released
+        // so the retry is not skipped as a duplicate.
+        expect($result['success'])->toBeFalse();
+        expect($result['status'])->toBe(500);
+        expect(StripeWebhookEvent::count())->toBe(0);
     });
 });
