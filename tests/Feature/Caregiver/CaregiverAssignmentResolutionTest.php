@@ -30,10 +30,10 @@ beforeEach(function () {
         'status' => BookingStatus::Confirmed,
         'pricing_rule_id' => PricingRule::first()?->id,
     ]);
-    $this->assignment = $this->booking->assignments()->firstOrCreate([
-        'caregiver_id' => $this->caregiver->id,
-        'assigned_at' => now(),
-    ]);
+    $this->assignment = $this->booking->assignments()->firstOrCreate(
+        ['caregiver_id' => $this->caregiver->id],
+        ['assigned_at' => now()],
+    );
 });
 
 describe('checkout resolves assignment as completed', function () {
@@ -115,10 +115,10 @@ describe('checkout calculates paid_to_caregiver_total', function () {
         $this->hourlyRate = (float) $this->booking->paid_to_caregiver_hourly;
         $this->chargeRate = (float) $this->booking->charge_to_client_hourly;
 
-        $this->booking->assignments()->firstOrCreate([
-            'caregiver_id' => $this->caregiver->id,
-            'assigned_at' => now(),
-        ]);
+        $this->booking->assignments()->firstOrCreate(
+            ['caregiver_id' => $this->caregiver->id],
+            ['assigned_at' => now()],
+        );
     });
 
     it('computes paid_to_caregiver_total from hours and reimbursements', function () {
