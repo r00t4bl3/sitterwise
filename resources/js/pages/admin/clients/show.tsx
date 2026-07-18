@@ -1,6 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    CalendarPlus,
     Check,
     CreditCard,
     Eye,
@@ -419,6 +420,13 @@ export default function ClientShow() {
                     </div>
                     <div className="hidden gap-2 xl:flex">
                         <Link
+                            href={`/bookings?client=${client.id}`}
+                            className="btn-secondary flex items-center gap-2"
+                        >
+                            <CalendarPlus className="h-4 w-4" />
+                            Create Booking
+                        </Link>
+                        <Link
                             href={`/clients/${client.id}/bookings`}
                             className="btn-secondary"
                         >
@@ -455,6 +463,13 @@ export default function ClientShow() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={`/bookings?client=${client.id}`}
+                                    >
+                                        Create Booking
+                                    </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link
                                         href={`/clients/${client.id}/bookings`}

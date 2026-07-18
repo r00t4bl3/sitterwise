@@ -8,7 +8,9 @@ import {
     DollarSign,
 } from 'lucide-react';
 import { useState } from 'react';
+import { FeesBreakdown } from '@/components/fees-breakdown';
 import { StatusBadge } from '@/components/status-badge';
+import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
@@ -29,7 +31,6 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
-import { ToasterMessage } from '@/components/toaster-message';
 import AppLayout from '@/layouts/app-layout';
 import { formatDisplayDateTimeInPT } from '@/lib/datetime';
 import type { BreadcrumbItem } from '@/types';
@@ -84,6 +85,7 @@ interface Booking {
     bonus: number | null;
     paid_to_caregiver: number | null;
     sitterwise_cut: number | null;
+    lifesaver_bonus: number | null;
     charge_to_client: number | null;
     charge_to_client_hourly: number | null;
     paid_to_caregiver_hourly: number | null;
@@ -129,6 +131,9 @@ export default function TransactionsIndex() {
     );
     const [showPaymentSheet, setShowPaymentSheet] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [breakdownBooking, setBreakdownBooking] = useState<Booking | null>(
+        null,
+    );
 
     const [localValues, setLocalValues] = useState({
         checkout_at: '',
@@ -480,7 +485,19 @@ export default function TransactionsIndex() {
                                                 />
                                             </td>
                                             <td className="flex flex-col items-end justify-center gap-y-1 px-4 py-3">
-                                                {booking.status === 'completed' &&
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        setBreakdownBooking(
+                                                            booking,
+                                                        )
+                                                    }
+                                                >
+                                                    View Breakdown
+                                                </Button>
+                                                {booking.status ===
+                                                    'completed' &&
                                                     booking.requires_payment &&
                                                     booking.payment_form ===
                                                         'Stripe' && (
@@ -936,6 +953,44 @@ export default function TransactionsIndex() {
                                 <Spinner className="mr-2 h-4 w-4" />
                             )}
                             Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Read-only cost breakdown */}
+            <Dialog
+                open={breakdownBooking !== null}
+                onOpenChange={(open) => !open && setBreakdownBooking(null)}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Cost Breakdown</DialogTitle>
+                        <DialogDescription>
+                            {breakdownBooking &&
+                                `Booking #${breakdownBooking.id} — ${breakdownBooking.client.first_name} ${breakdownBooking.client.last_name}`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {breakdownBooking && (
+                        <FeesBreakdown
+                            charge_to_client={breakdownBooking.charge_to_client}
+                            paid_to_caregiver={
+                                breakdownBooking.paid_to_caregiver
+                            }
+                            sitterwise_cut={breakdownBooking.sitterwise_cut}
+                            tip={breakdownBooking.tip}
+                            reimbursement={breakdownBooking.reimbursement}
+                            bonus={breakdownBooking.bonus}
+                            lifesaver_bonus={breakdownBooking.lifesaver_bonus}
+                            emptyMessage="No fee details available for this booking."
+                        />
+                    )}
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setBreakdownBooking(null)}
+                        >
+                            Close
                         </Button>
                     </DialogFooter>
                 </DialogContent>

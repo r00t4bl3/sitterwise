@@ -638,9 +638,9 @@ export default function ClientEdit() {
                                     />
                                     <Label
                                         htmlFor={`pref-${pref.value}`}
-                                        className="capitalize"
+                                        className="text-sm"
                                     >
-                                        {pref.value.replace(/_/g, ' ')}
+                                        {pref.label}
                                     </Label>
                                 </div>
                             ))}

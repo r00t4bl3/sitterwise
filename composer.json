@@ -20,6 +20,7 @@
         "laravel/wayfinder": "^0.1.14",
         "openspout/openspout": "^5.7",
         "s-ichikawa/laravel-sendgrid-driver": "^4.0",
+        "spatie/icalendar-generator": "^3.3",
         "stripe/stripe-php": "^20.0",
         "twilio/sdk": "^8.11"
     },

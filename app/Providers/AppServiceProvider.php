@@ -209,5 +209,16 @@ class AppServiceProvider extends ServiceProvider
                 default => Limit::perMinute(5)->by($ip),
             };
         });
+
+        // The iCal feed is polled by external calendar clients (a couple of
+        // requests per device every ~15 min). A generous per-IP cap blocks token
+        // scanning without affecting legitimate subscribers.
+        RateLimiter::for('calendar-feed', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(60)->by($request->ip());
+        });
     }
 }

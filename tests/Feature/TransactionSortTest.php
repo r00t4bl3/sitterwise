@@ -36,3 +36,21 @@ test('transactions are ordered by start_datetime desc even when created_at ties'
             ->where('bookings.data.1.id', $older->id)
         );
 });
+
+test('transactions rows carry the lifesaver bonus field for the cost breakdown (#99)', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $client = Client::factory()->create();
+
+    $booking = Booking::factory()->forClient($client)->create([
+        'status' => BookingStatus::Completed->value,
+        'start_datetime' => Carbon::parse('2026-05-01 09:00:00'),
+        'end_datetime' => Carbon::parse('2026-05-01 13:00:00'),
+    ]);
+
+    $this->actingAs($admin)->get(route('transactions.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('bookings.data.0.id', $booking->id)
+            ->has('bookings.data.0.lifesaver_bonus')
+        );
+});

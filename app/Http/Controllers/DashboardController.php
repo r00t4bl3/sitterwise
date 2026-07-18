@@ -395,15 +395,43 @@ class DashboardController extends Controller
                     'rating' => $caregiver->rating,
                 ];
 
-                $allUpcoming = $caregiver->bookings()
+                $now = now();
+
+                // All Confirmed jobs the caregiver still has to act on (not yet
+                // checked out) — includes past-end jobs still awaiting checkout,
+                // which the old `end_datetime > now` filter dropped entirely.
+                $activeAndUpcoming = $caregiver->bookings()
                     ->with(['client.user', 'hotel', 'address'])
-                    ->where('end_datetime', '>', now())
                     ->where('status', BookingStatus::Confirmed->value)
+                    ->whereNull('checkout_at')
                     ->orderBy('start_datetime', 'asc')
                     ->get();
 
-                $nextJob = $allUpcoming->first();
-                $upcomingJobs = $allUpcoming->slice(1, 2)->values();
+                // Feature what needs attention now over what is merely next:
+                //   1. a job in progress (started, not yet ended),
+                //   2. a job whose time has passed and still needs checkout
+                //      (most recent first),
+                //   3. otherwise the soonest upcoming job.
+                $activeJob = $activeAndUpcoming->first(
+                    fn ($b) => $b->start_datetime <= $now && $b->end_datetime > $now,
+                );
+                $needsCheckout = $activeAndUpcoming
+                    ->filter(fn ($b) => $b->end_datetime <= $now)
+                    ->sortByDesc('end_datetime')
+                    ->values();
+                $upcoming = $activeAndUpcoming
+                    ->filter(fn ($b) => $b->start_datetime > $now)
+                    ->values();
+
+                $nextJob = $activeJob ?? $needsCheckout->first() ?? $upcoming->first();
+
+                // Secondary list: remaining needs-checkout jobs first (so none are
+                // missed), then the soonest upcoming, excluding what is featured.
+                $upcomingJobs = $needsCheckout
+                    ->merge($upcoming)
+                    ->reject(fn ($b) => $nextJob && $b->id === $nextJob->id)
+                    ->take(2)
+                    ->values();
 
                 $newInvites = BookingCaregiverNotification::with(['booking.client.user', 'booking.hotel', 'booking.address'])
                     ->where('caregiver_id', $caregiver->id)

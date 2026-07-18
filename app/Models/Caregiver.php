@@ -115,6 +115,7 @@ class Caregiver extends Model
         'seen_badge_slugs',
         'sms_opted_out',
         'status_token',
+        'calendar_feed_token',
     ];
 
     protected $casts = [

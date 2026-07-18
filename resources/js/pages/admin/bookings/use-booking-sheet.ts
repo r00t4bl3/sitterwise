@@ -555,7 +555,8 @@ export function useBookingSheet({
         // booking in its group and swaps the family details in the form.
         // Require explicit confirmation and never auto-sync the (new) family
         // data back to a profile as part of the same edit.
-        const originalClientId = editingBooking?.booking_group?.client_id ?? null;
+        const originalClientId =
+            editingBooking?.booking_group?.client_id ?? null;
 
         if (
             sheetMode === 'edit' &&
@@ -588,6 +589,7 @@ export function useBookingSheet({
             const data = await fetchClientDataOnly(clientId);
 
             if (data) {
+                setSelectedClientName(data.client.name || '');
                 const clientType = data.client.client_type;
                 let locationType = form.data.location_type;
 
@@ -654,7 +656,7 @@ export function useBookingSheet({
         }
     };
 
-    const openCreateSheet = (date?: string) => {
+    const openCreateSheet = async (date?: string, clientId?: number) => {
         form.clearErrors();
         setEditingBooking(null);
         setSheetMode('create');
@@ -739,6 +741,15 @@ export function useBookingSheet({
         setHotelSuggestions([]);
         setCaregiverSuggestions([]);
         setIsSheetOpen(true);
+
+        // Pre-seed a client (e.g. "Create booking" from a client profile).
+        // Reuses the same fill path as picking a client in the sheet: sets
+        // client_id, loads the family/address/preference data, and refreshes the
+        // recommended-caregiver list and payment capability.
+        if (clientId) {
+            setClientMode('select');
+            await handleClientChange(clientId);
+        }
     };
 
     const proceedWithEditSheet = async (booking: Booking) => {

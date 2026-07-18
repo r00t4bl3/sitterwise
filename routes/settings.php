@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Settings\AvailabilityPreferencesController;
+use App\Http\Controllers\Settings\CalendarSyncController;
 use App\Http\Controllers\Settings\CaregiverPauseController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\PushTestController;
@@ -35,4 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/caregiver/pause', [CaregiverPauseController::class, 'show'])->name('settings.caregiver.pause');
     Route::post('settings/caregiver/pause', [CaregiverPauseController::class, 'pause'])->name('settings.caregiver.pause.store');
     Route::post('settings/caregiver/resume', [CaregiverPauseController::class, 'resume'])->name('settings.caregiver.resume');
+
+    Route::get('settings/caregiver/calendar-sync', [CalendarSyncController::class, 'show'])->name('settings.caregiver.calendar-sync');
+    Route::post('settings/caregiver/calendar-sync/regenerate', [CalendarSyncController::class, 'regenerate'])->name('settings.caregiver.calendar-sync.regenerate');
 });

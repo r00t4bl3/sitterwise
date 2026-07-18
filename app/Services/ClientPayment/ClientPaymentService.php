@@ -3,6 +3,7 @@
 namespace App\Services\ClientPayment;
 
 use App\Enums\BookingPaymentStatus;
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\BookingGroup;
 use App\Models\Client;
@@ -355,6 +356,9 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             ->where('requires_payment', true)
             ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE))
             ->where('payment_status', BookingPaymentStatus::Pending->value)
+            // Only bookings still awaiting a caregiver — skip ones a caregiver has
+            // already accepted (Confirmed) so we don't re-send the stale "received" email.
+            ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value])
             ->get();
 
         foreach ($pendingBookings as $booking) {
@@ -365,6 +369,9 @@ class ClientPaymentService implements ClientPaymentServiceInterface
             ->where('requires_payment', true)
             ->where('payment_form', PricingRule::PAYMENT_FORM_STRIPE)
             ->has('bookings', '>', 1)
+            // Only groups that still have at least one un-accepted booking.
+            ->whereHas('bookings', fn ($q) => $q
+                ->whereIn('status', [BookingStatus::Received->value, BookingStatus::Pending->value]))
             ->get();
 
         foreach ($pendingGroups as $group) {

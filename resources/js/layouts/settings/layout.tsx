@@ -33,6 +33,11 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Calendar Sync',
+        href: '/settings/caregiver/calendar-sync',
+        icon: null,
+    },
+    {
         title: 'Pause Account',
         href: pauseRoute(),
         icon: null,
@@ -48,7 +53,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const visibleItems = sidebarNavItems.filter((item) => {
         if (
             item.title === 'Pause Account' ||
-            item.title === 'Availability Preferences'
+            item.title === 'Availability Preferences' ||
+            item.title === 'Calendar Sync'
         ) {
             return auth.user?.role === 'caregiver';
         }

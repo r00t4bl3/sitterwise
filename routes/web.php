@@ -7,6 +7,7 @@ use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingReviewController;
 use App\Http\Controllers\BroadcastSmsController;
+use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\CaregiverApplicationController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\CaregiverInterviewTalkingPointController;
@@ -90,6 +91,13 @@ Route::post('/caregiver/apply/status/{token}/replace-reference/{referenceRequest
 
 Route::get('/references/{token}', [ReferenceController::class, 'show'])->name('references.show');
 Route::post('/references/{token}', [ReferenceController::class, 'store'])->name('references.store')->middleware('throttle:reference-submit');
+
+// Caregiver iCal calendar feed (public, no auth — external calendar clients poll a
+// secret tokenized URL). The literal .ics suffix is protected by the token constraint.
+Route::get('/calendar/feed/{token}.ics', CalendarFeedController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->middleware('throttle:calendar-feed')
+    ->name('calendar.feed');
 
 // Authenticated routes
 Route::middleware(['auth', 'verified'])->group(function () {

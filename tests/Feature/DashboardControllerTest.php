@@ -18,6 +18,111 @@ use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
+function makeActiveDashboardCaregiver(): array
+{
+    $user = User::factory()->create(['role' => 'caregiver']);
+    $caregiver = new Caregiver([
+        'user_id' => $user->id,
+        'status' => CaregiverStatus::Active->value,
+        'first_name' => 'Jane',
+        'last_name' => 'Smith',
+        'phone' => '+11234567890',
+        'address_city' => 'San Diego',
+        'address_state' => 'CA',
+    ]);
+    $caregiver->save();
+
+    return [$user, $caregiver];
+}
+
+test('caregiver dashboard features an in-progress job over an upcoming one (#93)', function () {
+    Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00', 'America/Los_Angeles'));
+    [$user, $caregiver] = makeActiveDashboardCaregiver();
+
+    $active = Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'checkout_at' => null,
+        'start_datetime' => now()->subHour(),
+        'end_datetime' => now()->addHour(),
+    ]);
+
+    Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'checkout_at' => null,
+        'start_datetime' => now()->addDays(2),
+        'end_datetime' => now()->addDays(2)->addHours(4),
+    ]);
+
+    $this->actingAs($user)->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('caregiver.nextJob.id', $active->id)
+        );
+
+    Carbon::setTestNow();
+});
+
+test('caregiver dashboard features a job awaiting checkout over an upcoming one (#93)', function () {
+    Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00', 'America/Los_Angeles'));
+    [$user, $caregiver] = makeActiveDashboardCaregiver();
+
+    $needsCheckout = Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'checkout_at' => null,
+        'start_datetime' => now()->subDay()->subHours(4),
+        'end_datetime' => now()->subDay(),
+    ]);
+
+    Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'checkout_at' => null,
+        'start_datetime' => now()->addDays(2),
+        'end_datetime' => now()->addDays(2)->addHours(4),
+    ]);
+
+    $this->actingAs($user)->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('caregiver.nextJob.id', $needsCheckout->id)
+        );
+
+    Carbon::setTestNow();
+});
+
+test('caregiver dashboard falls back to the soonest upcoming job and ignores checked-out jobs (#93)', function () {
+    Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00', 'America/Los_Angeles'));
+    [$user, $caregiver] = makeActiveDashboardCaregiver();
+
+    // Past job already checked out (Completed) → must be ignored.
+    Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Completed->value,
+        'checkout_at' => now()->subDay(),
+        'start_datetime' => now()->subDays(2),
+        'end_datetime' => now()->subDays(2)->addHours(4),
+    ]);
+
+    $upcoming = Booking::factory()->create([
+        'caregiver_id' => $caregiver->id,
+        'status' => BookingStatus::Confirmed->value,
+        'checkout_at' => null,
+        'start_datetime' => now()->addDays(1),
+        'end_datetime' => now()->addDays(1)->addHours(4),
+    ]);
+
+    $this->actingAs($user)->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('caregiver.nextJob.id', $upcoming->id)
+        );
+
+    Carbon::setTestNow();
+});
+
 test('admin sees dashboard with stats', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 

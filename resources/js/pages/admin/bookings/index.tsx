@@ -177,6 +177,35 @@ export default function Bookings() {
         discovery_sources,
     });
 
+    // "Create booking" from a client profile links here with ?client=<id>.
+    // Open the create sheet pre-seeded with that client once, then strip the
+    // param so a refresh doesn't re-open it.
+    const clientParamHandled = useRef(false);
+    useEffect(() => {
+        if (clientParamHandled.current) {
+            return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const clientId = params.get('client');
+
+        if (!clientId) {
+            return;
+        }
+
+        clientParamHandled.current = true;
+        sheet.openCreateSheet(undefined, Number(clientId));
+
+        params.delete('client');
+        const query = params.toString();
+        window.history.replaceState(
+            {},
+            '',
+            window.location.pathname + (query ? `?${query}` : ''),
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const [currentMonth] = useState(filters.month);
     const [currentYear] = useState(filters.year);
     const [selectedDay, setSelectedDay] = useState<{

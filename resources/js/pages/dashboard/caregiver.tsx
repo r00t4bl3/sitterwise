@@ -156,6 +156,43 @@ export default function CaregiverDashboard({
     const showBadgeMoment =
         !badgeMomentDismissed && (newlyEarnedBadges?.length ?? 0) > 0;
 
+    // Live time-based state for the featured job, mirroring the jobs list so the
+    // dashboard reflects a job that is in progress or awaiting checkout rather
+    // than a plain "Confirmed" badge.
+    const jobTimeState = (job: Booking): 'active' | 'needs_checkout' | null => {
+        if (
+            job.status?.toLowerCase() !== 'confirmed' ||
+            !job.start_datetime ||
+            !job.end_datetime
+        ) {
+            return null;
+        }
+
+        const now = new Date();
+        const start = new Date(job.start_datetime);
+        const end = new Date(job.end_datetime);
+
+        if (now >= end) {
+            return 'needs_checkout';
+        }
+
+        if (now >= start) {
+            return 'active';
+        }
+
+        return null;
+    };
+
+    const nextJobState = caregiver.nextJob
+        ? jobTimeState(caregiver.nextJob)
+        : null;
+    const nextJobHeading =
+        nextJobState === 'active'
+            ? 'Your Current Job'
+            : nextJobState === 'needs_checkout'
+              ? 'Ready for Checkout'
+              : 'Your Next Job';
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Caregiver Dashboard" />
@@ -190,17 +227,15 @@ export default function CaregiverDashboard({
                         </button>
                         <div className="flex items-center gap-4">
                             <div className="flex shrink-0 gap-1">
-                                {newlyEarnedBadges
-                                    ?.slice(0, 3)
-                                    .map((badge) => (
-                                        <Medallion
-                                            key={badge.slug}
-                                            tier={badge.tier}
-                                            variant={badge.variant}
-                                            earned
-                                            size="md"
-                                        />
-                                    ))}
+                                {newlyEarnedBadges?.slice(0, 3).map((badge) => (
+                                    <Medallion
+                                        key={badge.slug}
+                                        tier={badge.tier}
+                                        variant={badge.variant}
+                                        earned
+                                        size="md"
+                                    />
+                                ))}
                             </div>
                             <div>
                                 <p className="text-sm font-semibold tracking-wider text-primary uppercase">
@@ -234,16 +269,24 @@ export default function CaregiverDashboard({
                                 <div className="mb-4">
                                     <p className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                         <Calendar className="h-4 w-4 text-primary" />
-                                        Your Next Job
+                                        {nextJobHeading}
                                     </p>
                                 </div>
                                 <div className="absolute top-0 right-0 p-4">
-                                    <StatusBadge
-                                        status={caregiver.nextJob.status}
-                                        bookingStatuses={
-                                            caregiver.bookingStatuses
-                                        }
-                                    />
+                                    {nextJobState ? (
+                                        <div className="inline-flex items-center justify-center rounded-[3px] border border-green-300 bg-green-100 px-2 py-0.5 text-center text-[10px] font-semibold text-green-800">
+                                            {nextJobState === 'active'
+                                                ? 'Active'
+                                                : 'Ready for Checkout'}
+                                        </div>
+                                    ) : (
+                                        <StatusBadge
+                                            status={caregiver.nextJob.status}
+                                            bookingStatuses={
+                                                caregiver.bookingStatuses
+                                            }
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-3 pb-4">
@@ -518,8 +561,8 @@ export default function CaregiverDashboard({
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="px-6 pb-4">
                                     <p className="text-sm text-muted-foreground">
-                                        Milestones you&apos;ve earned. They never
-                                        expire.
+                                        Milestones you&apos;ve earned. They
+                                        never expire.
                                     </p>
                                     <div className="mt-3 flex flex-wrap gap-3">
                                         {badges
@@ -545,8 +588,8 @@ export default function CaregiverDashboard({
                                                     )}
                                                 </div>
                                             ))}
-                                        {badges.filter((b) => !b.earned).length >
-                                            0 && (
+                                        {badges.filter((b) => !b.earned)
+                                            .length > 0 && (
                                             <div className="flex flex-col items-center gap-0.5">
                                                 <Medallion
                                                     tier="navy"

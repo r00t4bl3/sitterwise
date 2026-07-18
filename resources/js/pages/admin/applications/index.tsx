@@ -6,6 +6,13 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -160,29 +167,24 @@ export default function ApplicationsIndex() {
                         )}
                     </div>
 
-                    <Button
-                        variant={!statusFilter ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleStatusChange(null)}
+                    <Select
+                        value={statusFilter ?? 'all'}
+                        onValueChange={(value) =>
+                            handleStatusChange(value === 'all' ? null : value)
+                        }
                     >
-                        All
-                    </Button>
-                    {caregiverStatuses.map((s) => (
-                        <Button
-                            key={s.value}
-                            variant={
-                                statusFilter === s.value ? 'default' : 'outline'
-                            }
-                            size="sm"
-                            onClick={() =>
-                                handleStatusChange(
-                                    statusFilter === s.value ? null : s.value,
-                                )
-                            }
-                        >
-                            {s.label}
-                        </Button>
-                    ))}
+                        <SelectTrigger size="sm" className="w-[200px]">
+                            <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All statuses</SelectItem>
+                            {caregiverStatuses.map((s) => (
+                                <SelectItem key={s.value} value={s.value}>
+                                    {s.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="overflow-x-auto border border-border bg-card">

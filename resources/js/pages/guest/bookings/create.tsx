@@ -199,14 +199,6 @@ function findDateOverlaps(dates: DateEntry[]): Record<string, string[]> {
     return overlaps;
 }
 
-function getPreferenceLabel(option: { value: string; label: string }): string {
-    if (option.value === 'child_is_sick') {
-        return 'Sick Day Care';
-    }
-
-    return option.label;
-}
-
 export default function GuestBookingCreate() {
     const {
         service_types,
@@ -1788,7 +1780,7 @@ export default function GuestBookingCreate() {
                                                     );
                                                 }}
                                             />
-                                            {getPreferenceLabel(option)}
+                                            {option.label}
                                         </label>
                                     ))}
                                 </div>

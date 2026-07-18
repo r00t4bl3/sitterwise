@@ -57,6 +57,7 @@ class TransactionController extends Controller
                     'bonus' => $booking->bonus,
                     'paid_to_caregiver' => $booking->paid_to_caregiver,
                     'sitterwise_cut' => $booking->sitterwise_cut,
+                    'lifesaver_bonus' => $booking->lifesaver_bonus,
                     'charge_to_client' => $booking->charge_to_client,
                     'charge_to_client_hourly' => $booking->charge_to_client_hourly,
                     'paid_to_caregiver_hourly' => $booking->paid_to_caregiver_hourly,

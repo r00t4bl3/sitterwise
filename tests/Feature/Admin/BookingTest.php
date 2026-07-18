@@ -63,6 +63,15 @@ describe('Booking - Admin', function () {
         $response = $this->get(route('bookings.index'));
         $response->assertRedirect(route('login'));
     });
+    test('bookings index tolerates a ?client param for create-from-client-profile (#95)', function () {
+        $this->actingAs($this->user);
+
+        $this->get(route('bookings.index', ['client' => $this->client->id]))
+            ->assertSuccessful()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('admin/bookings/index'),
+            );
+    });
 
     test('guests cannot create a booking', function () {
         $response = $this->post(route('bookings.store'), [

@@ -33,12 +33,13 @@ use Inertia\Inertia;
 class CaregiverController extends Controller
 {
     private const SORTABLE_COLUMNS = [
-        'id', 'first_name', 'last_name', 'rating', 'date_of_birth',
+        'id', 'first_name', 'last_name', 'rating', 'date_of_birth', 'blocked_clients_count',
     ];
 
     public function index(Request $request)
     {
-        $query = Caregiver::with(['user', 'specialtyTypes', 'locations', 'certifications']);
+        $query = Caregiver::with(['user', 'specialtyTypes', 'locations', 'certifications'])
+            ->withCount('blockedClients');
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -50,6 +51,11 @@ class CaregiverController extends Controller
 
         if ($request->has('status') && $request->status && $request->status !== 'all') {
             $query->where('status', $request->status);
+        }
+
+        $blockedOnly = $request->boolean('blocked');
+        if ($blockedOnly) {
+            $query->whereHas('blockedClients');
         }
 
         $sort = in_array($request->sort, self::SORTABLE_COLUMNS, true) ? $request->sort : 'id';
@@ -73,6 +79,7 @@ class CaregiverController extends Controller
                 'status' => $request->status ?? 'all',
                 'sort' => $sort,
                 'direction' => $direction,
+                'blocked' => $blockedOnly,
             ],
         ]);
     }

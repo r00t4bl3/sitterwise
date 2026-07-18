@@ -5,6 +5,13 @@ import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Rating } from '@/components/ui/rating';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { SpecialtyTag } from '@/components/ui/specialty-tag';
 import {
     Tooltip,
@@ -63,6 +70,7 @@ interface Caregiver {
     specialty_types: SpecialtyType[];
     locations: Location[];
     certifications: Array<{ id: number; certification_type_id: number }>;
+    blocked_clients_count?: number;
 }
 
 interface Props {
@@ -85,6 +93,7 @@ interface Props {
         status: string | null;
         sort: string;
         direction: 'asc' | 'desc';
+        blocked?: boolean;
     };
 }
 
@@ -103,9 +112,20 @@ export default function CaregiversIndex() {
     const sortDirRef = useRef<'asc' | 'desc'>(
         (filters.direction as 'asc' | 'desc') || 'asc',
     );
+    const blockedOnlyRef = useRef(filters.blocked === true);
 
     const sortField = filters.sort || 'id';
     const sortDir = (filters.direction as 'asc' | 'desc') || 'asc';
+    const blockedOnly = filters.blocked === true;
+
+    // The blocked-caregiver column/filter is opt-in and hidden by default. Keep
+    // the toggle sticky per admin; a deep link with ?blocked forces it visible.
+    const [showBlocked, setShowBlocked] = useState(
+        () =>
+            (typeof window !== 'undefined' &&
+                localStorage.getItem('caregivers_show_blocked') === '1') ||
+            filters.blocked === true,
+    );
 
     const applyFilters = (search: string, status: string | null) => {
         const params: Record<string, string> = {};
@@ -118,6 +138,10 @@ export default function CaregiversIndex() {
             params.status = status;
         }
 
+        if (blockedOnlyRef.current) {
+            params.blocked = '1';
+        }
+
         if (sortFieldRef.current !== 'id' || sortDirRef.current !== 'asc') {
             params.sort = sortFieldRef.current;
             params.direction = sortDirRef.current;
@@ -127,6 +151,27 @@ export default function CaregiversIndex() {
             preserveState: true,
             replace: true,
         });
+    };
+
+    const handleBlockedOnlyChange = (next: boolean) => {
+        blockedOnlyRef.current = next;
+        applyFilters(searchQuery, statusFilter);
+    };
+
+    const handleToggleShowBlocked = () => {
+        const next = !showBlocked;
+        setShowBlocked(next);
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('caregivers_show_blocked', next ? '1' : '0');
+        }
+
+        // Hiding the column also drops the blocked-only filter so we never leave
+        // the list filtered by something the admin can no longer see.
+        if (!next && blockedOnlyRef.current) {
+            blockedOnlyRef.current = false;
+            applyFilters(searchQuery, statusFilter);
+        }
     };
 
     const handleSort = (field: string) => {
@@ -157,7 +202,8 @@ export default function CaregiversIndex() {
     useEffect(() => {
         sortFieldRef.current = filters.sort || 'id';
         sortDirRef.current = (filters.direction as 'asc' | 'desc') || 'asc';
-    }, [filters.sort, filters.direction]);
+        blockedOnlyRef.current = filters.blocked === true;
+    }, [filters.sort, filters.direction, filters.blocked]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -214,33 +260,50 @@ export default function CaregiversIndex() {
                         )}
                     </div>
 
-                    <Button
-                        variant={!statusFilter ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleStatusChange(null)}
+                    <Select
+                        value={statusFilter ?? 'all'}
+                        onValueChange={(value) =>
+                            handleStatusChange(value === 'all' ? null : value)
+                        }
                     >
-                        All
-                    </Button>
-                    {statuses.map((status) => (
+                        <SelectTrigger size="sm" className="w-[200px]">
+                            <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All statuses</SelectItem>
+                            {statuses.map((status) => (
+                                <SelectItem
+                                    key={status.value}
+                                    value={status.value}
+                                >
+                                    {status.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="ml-auto flex items-center gap-2">
+                        {showBlocked && (
+                            <Button
+                                variant={blockedOnly ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() =>
+                                    handleBlockedOnlyChange(!blockedOnly)
+                                }
+                            >
+                                Blocked only
+                            </Button>
+                        )}
                         <Button
-                            key={status.value}
-                            variant={
-                                statusFilter === status.value
-                                    ? 'default'
-                                    : 'outline'
-                            }
+                            variant={showBlocked ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() =>
-                                handleStatusChange(
-                                    statusFilter === status.value
-                                        ? null
-                                        : status.value,
-                                )
-                            }
+                            onClick={handleToggleShowBlocked}
                         >
-                            {status.label}
+                            {showBlocked
+                                ? 'Hide blocked info'
+                                : 'Show blocked info'}
                         </Button>
-                    ))}
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto border border-border bg-card">
@@ -371,6 +434,44 @@ export default function CaregiversIndex() {
                                         </span>
                                     </button>
                                 </th>
+                                {showBlocked && (
+                                    <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                        <button
+                                            onClick={() =>
+                                                handleSort(
+                                                    'blocked_clients_count',
+                                                )
+                                            }
+                                            className="flex cursor-pointer items-center gap-1 uppercase hover:text-primary"
+                                        >
+                                            Blocked by
+                                            <span className="text-[9px] leading-none">
+                                                <span
+                                                    className={
+                                                        sortField ===
+                                                            'blocked_clients_count' &&
+                                                        sortDir === 'asc'
+                                                            ? ''
+                                                            : 'opacity-30'
+                                                    }
+                                                >
+                                                    ▲
+                                                </span>
+                                                <span
+                                                    className={
+                                                        sortField ===
+                                                            'blocked_clients_count' &&
+                                                        sortDir === 'desc'
+                                                            ? ''
+                                                            : 'opacity-30'
+                                                    }
+                                                >
+                                                    ▼
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                     Area
                                 </th>
@@ -448,6 +549,22 @@ export default function CaregiversIndex() {
                                               )
                                             : '—'}
                                     </td>
+                                    {showBlocked && (
+                                        <td className="px-4 py-3 text-sm text-foreground">
+                                            {(caregiver.blocked_clients_count ??
+                                                0) > 0 ? (
+                                                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
+                                                    {
+                                                        caregiver.blocked_clients_count
+                                                    }
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {caregiver.locations

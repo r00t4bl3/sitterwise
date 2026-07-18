@@ -18,6 +18,7 @@ import {
     UserPlus,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { FeesBreakdown } from '@/components/fees-breakdown';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -358,14 +359,6 @@ export default function BookingDetail({
         return `https://www.google.com/maps/search/${encodeURIComponent(parts.join(', '))}`;
     };
 
-    const formatCurrency = (amount: number | null): string | null => {
-        if (amount === null || amount === undefined) {
-            return null;
-        }
-
-        return `$${Number(amount).toFixed(2)}`;
-    };
-
     const getLocationIcon = (locationType: string) => {
         switch (locationType) {
             case 'hotel':
@@ -382,18 +375,6 @@ export default function BookingDetail({
     };
 
     const mapsUrl = buildGoogleMapsUrl();
-
-    const feeItems = [
-        { label: 'Charge to Client', value: booking.charge_to_client },
-        { label: 'Paid to Caregiver', value: booking.paid_to_caregiver },
-        { label: 'Sitterwise Cut', value: booking.sitterwise_cut },
-        { label: 'Tip', value: booking.tip },
-        { label: 'Reimbursement', value: booking.reimbursement },
-        { label: 'Bonus', value: booking.bonus },
-        ...((booking.lifesaver_bonus ?? 0) > 0
-            ? [{ label: 'Lifesaver Bonus', value: booking.lifesaver_bonus }]
-            : []),
-    ].filter((f) => f.value !== null && f.value !== undefined);
 
     const fetchCaregivers = async (
         page = 1,
@@ -1102,28 +1083,16 @@ export default function BookingDetail({
                                 </div>
                             </div>
 
-                            {feeItems.length > 0 && (
-                                <div>
-                                    <h2 className="text-md mb-2 font-semibold text-foreground">
-                                        Fees
-                                    </h2>
-                                    <div className="space-y-2">
-                                        {feeItems.map((item) => (
-                                            <div
-                                                key={item.label}
-                                                className="flex items-center justify-between"
-                                            >
-                                                <span className="text-sm text-muted-foreground">
-                                                    {item.label}
-                                                </span>
-                                                <span className="text-sm font-medium text-foreground">
-                                                    {formatCurrency(item.value)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <FeesBreakdown
+                                heading="Fees"
+                                charge_to_client={booking.charge_to_client}
+                                paid_to_caregiver={booking.paid_to_caregiver}
+                                sitterwise_cut={booking.sitterwise_cut}
+                                tip={booking.tip}
+                                reimbursement={booking.reimbursement}
+                                bonus={booking.bonus}
+                                lifesaver_bonus={booking.lifesaver_bonus}
+                            />
 
                             <div className="mt-6">
                                 <h2 className="mb-4 text-lg font-semibold text-foreground">

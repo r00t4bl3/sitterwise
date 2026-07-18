@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\BookingStatus;
 use App\Events\BookingInvitationSent;
 use App\Models\Booking;
 use App\Models\BookingCaregiverNotification;
@@ -39,14 +40,37 @@ class NotifyCaregiversJob implements ShouldQueue
             return;
         }
 
-        $bookingIds = ! empty($this->bookingIds) ? $this->bookingIds : [$this->booking->id];
+        $notifiableStatuses = [BookingStatus::Received->value, BookingStatus::Pending->value];
 
-        foreach ($bookingIds as $bookingId) {
+        // Re-check the booking's CURRENT status. The admin's guard runs at dispatch
+        // time, but this queued job (and its retries) can run after the booking was
+        // accepted or cancelled — don't invite caregivers to a job that is no longer
+        // open.
+        $booking = $this->booking->fresh();
+
+        if (! $booking || ! in_array($booking->status, $notifiableStatuses, true)) {
+            return;
+        }
+
+        $bookingIds = ! empty($this->bookingIds) ? $this->bookingIds : [$booking->id];
+
+        // In a multi-day group some dates may have been filled while others remain
+        // open — only record against the ones still notifiable.
+        $openBookingIds = Booking::whereIn('id', $bookingIds)
+            ->whereIn('status', $notifiableStatuses)
+            ->pluck('id')
+            ->all();
+
+        if (empty($openBookingIds)) {
+            return;
+        }
+
+        foreach ($openBookingIds as $bookingId) {
             $this->recordNotifications((int) $bookingId, $now);
         }
 
         Caregiver::whereIn('id', $this->caregiverIds)->get()
-            ->each(fn (Caregiver $caregiver) => event(new BookingInvitationSent($this->booking, $caregiver)));
+            ->each(fn (Caregiver $caregiver) => event(new BookingInvitationSent($booking, $caregiver)));
     }
 
     private function recordNotifications(int $bookingId, \DateTimeInterface $now): void

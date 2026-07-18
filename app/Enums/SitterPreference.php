@@ -15,7 +15,7 @@ enum SitterPreference: string
             self::BabySpecialist => 'Baby Specialist',
             self::SpecialNeedsCare => 'Special Needs Care',
             self::WillingToSwim => 'Willing to Swim',
-            self::ChildIsSick => 'Child is Sick',
+            self::ChildIsSick => 'Sick Day Care',
         };
     }
 
