@@ -75,7 +75,9 @@ class ApplicationController extends Controller
                 'expiration_date' => $cert->pivot->expiration_date ? Carbon::parse($cert->pivot->expiration_date)->format('Y-m-d') : null,
                 'verified_at' => $cert->pivot->verified_at ? Carbon::parse($cert->pivot->verified_at)->format('Y-m-d') : null,
                 'file_path' => $cert->pivot->file_path,
-                'file_url' => $cert->pivot->file_path ? Storage::url($cert->pivot->file_path) : null,
+                'file_url' => $cert->pivot->file_path
+                    ? route('caregivers.certifications.document', [$caregiver, $cert->id])
+                    : null,
                 'notes' => $cert->pivot->notes,
             ]);
 

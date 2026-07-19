@@ -47,6 +47,17 @@ return [
             'report' => false,
         ],
 
+        // Private, non-web-served store for sensitive uploads (CPR cards,
+        // TrustLine background checks, certification documents). Files here are
+        // only reachable through an authorized controller, never a public URL.
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

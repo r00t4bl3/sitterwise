@@ -155,13 +155,15 @@ class CaregiverApplicationController extends Controller
             }
 
             if ($cprCard = $request->file('cpr_card')) {
-                $validated['cpr_card'] = $cprCard->store('cpr-cards', 'public');
+                // Sensitive background-check document → private disk, reachable
+                // only via the authorized certification-document route.
+                $validated['cpr_card'] = $cprCard->store('cpr-cards', 'documents');
             } else {
                 unset($validated['cpr_card']);
             }
 
             if ($trustlineUpload = $request->file('trustline_upload')) {
-                $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'public');
+                $validated['trustline_upload'] = $trustlineUpload->store('trustline-uploads', 'documents');
             } else {
                 unset($validated['trustline_upload']);
             }

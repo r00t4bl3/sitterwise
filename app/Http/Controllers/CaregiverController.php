@@ -406,13 +406,15 @@ class CaregiverController extends Controller
 
                     if (isset($certFiles[$certTypeId])) {
                         $file = $certFiles[$certTypeId];
-                        $filename = time().'_'.$file->getClientOriginalName();
-                        $filePath = $file->storeAs('certifications', $filename, 'public');
+                        // Random hash name on the private disk: the previous
+                        // time()_originalname scheme on the public disk was both
+                        // web-reachable and brute-forceable.
+                        $filePath = $file->store('certifications', 'documents');
                     }
 
                     $oldPath = $existingCertFiles[$certTypeId] ?? null;
                     if ($oldPath && $oldPath !== $filePath) {
-                        Storage::disk('public')->delete($oldPath);
+                        Storage::disk('documents')->delete($oldPath);
                     }
 
                     $certSync[$certTypeId] = [

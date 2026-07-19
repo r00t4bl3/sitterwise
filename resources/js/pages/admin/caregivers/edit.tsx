@@ -90,6 +90,7 @@ interface Certification {
     expiration_date: string | null;
     verified_at: string | null;
     file_path: string | null;
+    file_url: string | null;
     notes: string | null;
 }
 
@@ -327,6 +328,7 @@ export default function CaregiverEdit() {
                     expiration_date: null,
                     verified_at: null,
                     file_path: null,
+                    file_url: null,
                     notes: null,
                 },
             ]);
@@ -916,15 +918,15 @@ export default function CaregiverEdit() {
                                             </Button>
                                         </div>
                                         <div>
-                                            {cert.file_path && (
+                                            {cert.file_path && cert.file_url && (
                                                 <a
-                                                    href={`/storage/${cert.file_path}`}
+                                                    href={cert.file_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-xs text-blue-600 hover:underline"
                                                 >
                                                     <img
-                                                        src={`/storage/${cert.file_path}`}
+                                                        src={cert.file_url}
                                                         alt="Certification File"
                                                         className="m-1 h-48 w-96 object-cover outline outline-offset-4 outline-primary"
                                                     />

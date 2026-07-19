@@ -76,6 +76,9 @@ class CaregiverResource extends JsonResource
                 'expiration_date' => $c->pivot->expiration_date,
                 'verified_at' => $c->pivot->verified_at,
                 'file_path' => $c->pivot->file_path,
+                'file_url' => $c->pivot->file_path
+                    ? route('caregivers.certifications.document', [$this->id, $c->id])
+                    : null,
                 'notes' => $c->pivot->notes,
             ]),
             'attributes' => $this->attributes->map(fn ($a) => [

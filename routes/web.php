@@ -18,6 +18,7 @@ use App\Http\Controllers\ChargingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GuestBookingController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\InterviewController;
@@ -175,6 +176,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('clients/{client}/payment-method/{paymentMethod}', [ClientController::class, 'deletePaymentMethod'])->name('clients.paymentMethod.destroy');
         Route::get('clients/{client}/bookings', [ClientController::class, 'bookingHistory'])->name('clients.bookingHistory');
         Route::resource('clients', ClientController::class)->except(['destroy']);
+
+        // Authorized download for private certification documents (CPR,
+        // TrustLine, certifications). Registered before the caregivers resource
+        // so it is not shadowed by caregivers/{caregiver}.
+        Route::get('caregivers/{caregiver}/certifications/{certificationType}/document', [DocumentController::class, 'certificationDocument'])->name('caregivers.certifications.document');
 
         Route::get('caregivers/{caregiver}/jobs', [CaregiverController::class, 'jobHistory'])->name('caregivers.jobHistory');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');

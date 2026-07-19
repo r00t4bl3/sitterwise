@@ -257,7 +257,7 @@ describe('Caregiver - Admin', function () {
     });
 
     test('admin clearing a saved certification file nulls the pivot and deletes the stored file', function () {
-        Storage::fake('public');
+        Storage::fake('documents');
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
 
@@ -265,7 +265,7 @@ describe('Caregiver - Admin', function () {
         $certType = CertificationType::query()->firstOrFail();
 
         $path = 'certifications/existing-cert.pdf';
-        Storage::disk('public')->put($path, 'dummy-contents');
+        Storage::disk('documents')->put($path, 'dummy-contents');
         $caregiver->certifications()->detach();
         $caregiver->certifications()->attach($certType->id, [
             'file_path' => $path,
@@ -273,7 +273,7 @@ describe('Caregiver - Admin', function () {
             'verified_at' => null,
             'notes' => null,
         ]);
-        Storage::disk('public')->assertExists($path);
+        Storage::disk('documents')->assertExists($path);
 
         $response = $this->patch(route('caregivers.update', $caregiver), [
             'first_name' => $caregiver->first_name,
@@ -297,11 +297,11 @@ describe('Caregiver - Admin', function () {
             'certification_type_id' => $certType->id,
             'file_path' => null,
         ]);
-        Storage::disk('public')->assertMissing($path);
+        Storage::disk('documents')->assertMissing($path);
     });
 
     test('updating a caregiver without clearing keeps the saved certification file', function () {
-        Storage::fake('public');
+        Storage::fake('documents');
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
 
@@ -309,7 +309,7 @@ describe('Caregiver - Admin', function () {
         $certType = CertificationType::query()->firstOrFail();
 
         $path = 'certifications/keep-cert.pdf';
-        Storage::disk('public')->put($path, 'dummy-contents');
+        Storage::disk('documents')->put($path, 'dummy-contents');
         $caregiver->certifications()->detach();
         $caregiver->certifications()->attach($certType->id, [
             'file_path' => $path,
@@ -340,7 +340,7 @@ describe('Caregiver - Admin', function () {
             'certification_type_id' => $certType->id,
             'file_path' => $path,
         ]);
-        Storage::disk('public')->assertExists($path);
+        Storage::disk('documents')->assertExists($path);
     });
 
     test('admin users can search caregivers', function () {

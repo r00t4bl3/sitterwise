@@ -1277,8 +1277,9 @@ describe('Caregiver Application - Submission Edge Cases', function () {
         $response->assertRedirect('/caregiver/apply/verify-email');
     });
 
-    it('stores uploaded cpr and trustline files', function () {
+    it('stores uploaded cpr and trustline files on the private disk', function () {
         Storage::fake('public');
+        Storage::fake('documents');
         Session::put('verified_email', 'file-cpr@example.com');
         Session::put('verified_at', now());
 
@@ -1295,8 +1296,11 @@ describe('Caregiver Application - Submission Edge Cases', function () {
         expect($application->data['cpr_card'])->toStartWith('cpr-cards/');
         expect($application->data['trustline_upload'])->toStartWith('trustline-uploads/');
 
-        Storage::disk('public')->assertExists($application->data['cpr_card']);
-        Storage::disk('public')->assertExists($application->data['trustline_upload']);
+        // Sensitive documents live on the private disk, never the web-served public one.
+        Storage::disk('documents')->assertExists($application->data['cpr_card']);
+        Storage::disk('documents')->assertExists($application->data['trustline_upload']);
+        Storage::disk('public')->assertMissing($application->data['cpr_card']);
+        Storage::disk('public')->assertMissing($application->data['trustline_upload']);
     });
 
 });
