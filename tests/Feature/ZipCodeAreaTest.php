@@ -87,3 +87,47 @@ describe('ZipCodeSeeder', function () {
             ->and(Location::where('name', ' South County')->exists())->toBeFalse();
     });
 });
+
+describe('ZipCode serviceability', function () {
+    it('treats a zip present in the table as serviceable', function () {
+        ZipCode::factory()->create(['zip_code' => '92069']); // San Marcos
+
+        expect(ZipCode::isServiceable('92069'))->toBeTrue();
+    });
+
+    it('treats a zip absent from the table as not serviceable', function () {
+        ZipCode::factory()->create(['zip_code' => '92069']);
+
+        expect(ZipCode::isServiceable('90001'))->toBeFalse(); // Los Angeles
+    });
+
+    it('normalizes ZIP+4 before checking serviceability', function () {
+        ZipCode::factory()->create(['zip_code' => '92069']);
+
+        expect(ZipCode::isServiceable('92069-1234'))->toBeTrue();
+    });
+
+    it('counts a serviced zip with no assigned region as serviceable', function () {
+        ZipCode::factory()->create(['zip_code' => '92055', 'location_id' => null]);
+
+        expect(ZipCode::isServiceable('92055'))->toBeTrue();
+    });
+
+    it('fails open (serviceable) when no coverage list is configured', function () {
+        expect(ZipCode::isServiceable('90001'))->toBeTrue();
+    });
+
+    it('rejects blank zips when a coverage list exists', function () {
+        ZipCode::factory()->create(['zip_code' => '92069']);
+
+        expect(ZipCode::isServiceable(null))->toBeFalse()
+            ->and(ZipCode::isServiceable(''))->toBeFalse();
+    });
+
+    it('exposes the serviced zips as a normalized list', function () {
+        ZipCode::factory()->create(['zip_code' => '92069']);
+        ZipCode::factory()->create(['zip_code' => '92101']);
+
+        expect(ZipCode::serviceableZips())->toContain('92069', '92101');
+    });
+});

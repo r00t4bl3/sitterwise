@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\CaregiverStatus;
+use App\Models\ZipCode;
 use App\Support\Settings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -41,6 +42,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'google_places_api_key' => config('services.google_places.api_key'),
+            'serviceable_zips' => ZipCode::serviceableZips(),
             'auth' => [
                 'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'profile_photo_path', 'profile_photo_url']),
             ],

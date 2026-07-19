@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\ServiceType;
 use App\Rules\MinimumBookingDuration;
+use App\Rules\ServiceableZip;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -128,7 +129,7 @@ class StoreBookingRequest extends FormRequest
             'address_line2' => ['nullable', 'string'],
             'address_city' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable'],
             'address_state' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable'],
-            'address_zip' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable'],
+            'address_zip' => ['required_if:location_type,private_home,vacation_rental,event_venue', 'string', 'nullable', new ServiceableZip],
             'caregiver_notes' => ['nullable', 'string'],
             'notes_to_sitterwise' => ['nullable', 'string'],
             'how_did_you_hear' => ['nullable', 'string'],

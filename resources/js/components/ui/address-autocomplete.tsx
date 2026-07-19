@@ -49,6 +49,7 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
     };
     const { props } = usePage();
     const googleApiKey = (props as any).google_places_api_key || '';
+    const serviceableZips: string[] = (props as any).serviceable_zips || [];
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [inputValue, setInputValue] = useState('');
@@ -187,20 +188,19 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
             const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
                 input: value,
                 includedPrimaryTypes: ['street_address'],
-                locationRestriction: {
-                    north: 33.12,
-                    south: 32.5,
-                    east: -116.9,
-                    west: -117.31,
+                // Bias (not restrict) toward San Diego County so local results
+                // rank first without excluding anything. Serviceability is
+                // decided by the zip check on selection.
+                locationBias: {
+                    north: 33.51,
+                    south: 32.53,
+                    east: -116.08,
+                    west: -117.61,
                 },
             });
 
             if (response.suggestions) {
-                const filtered = response.suggestions.filter((s: any) => {
-                    const text = s.placePrediction?.text?.text || '';
-                    return text.includes('CA') || text.includes(', California');
-                });
-                setPredictions(filtered as unknown as Suggestion[]);
+                setPredictions(response.suggestions as unknown as Suggestion[]);
                 setShowPredictions(true);
             }
         } catch (error) {
@@ -328,7 +328,11 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
                 place.formattedAddress ||
                 `${line1}${line2 ? `, ${line2}` : ''}, ${city}, ${state} ${zip}`;
 
-            const outsideArea = state !== 'CA';
+            const normalizedZip = (zip || '').replace(/\D/g, '').slice(0, 5);
+            const outsideArea =
+                serviceableZips.length > 0 &&
+                (normalizedZip.length < 5 ||
+                    !serviceableZips.includes(normalizedZip));
 
             setAddressValue(fullAddress);
             setIsLocked(true);

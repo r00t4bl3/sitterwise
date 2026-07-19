@@ -37,6 +37,7 @@ export function BookingAddressFields({
 }: Props) {
     const { props } = usePage();
     const googleApiKey = (props as any).google_places_api_key || '';
+    const serviceableZips: string[] = (props as any).serviceable_zips || [];
     const inputRef = useRef<HTMLInputElement>(null);
     const listboxId = `baf-listbox-${useId()}`;
     const [inputValue, setInputValue] = useState('');
@@ -126,11 +127,14 @@ export function BookingAddressFields({
                 await AutocompleteSuggestion.fetchAutocompleteSuggestions({
                     input: value,
                     includedPrimaryTypes: ['street_address'],
-                    locationRestriction: {
-                        north: 33.12,
-                        south: 32.5,
-                        east: -116.9,
-                        west: -117.31,
+                    // Bias (not restrict) toward San Diego County so local
+                    // results rank first without excluding anything. The actual
+                    // service-area gate is the zip check in handleSelectPrediction.
+                    locationBias: {
+                        north: 33.51,
+                        south: 32.53,
+                        east: -116.08,
+                        west: -117.61,
                     },
                 });
 
@@ -185,7 +189,14 @@ export function BookingAddressFields({
                 }
             });
 
-            const outsideArea = state !== 'CA';
+            // Serviceability is decided by whether the address's zip is in our
+            // serviced zip_codes list (the authoritative source), not by state
+            // or a geographic box.
+            const normalizedZip = (zip || '').replace(/\D/g, '').slice(0, 5);
+            const outsideArea =
+                serviceableZips.length > 0 &&
+                (normalizedZip.length < 5 ||
+                    !serviceableZips.includes(normalizedZip));
 
             form.setData('address_line1', line1);
             form.setData('address_line2', line2);
@@ -408,8 +419,8 @@ export function BookingAddressFields({
                     </ul>
                 )}
                 {noPredictions && !loading && inputValue.trim() && (
-                    <p className="mt-1 text-xs text-destructive">
-                        This address appears to be outside our service area.
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        No matches found. Keep typing your full street address.
                     </p>
                 )}
                 {outsideServiceArea && (

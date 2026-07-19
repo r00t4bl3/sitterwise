@@ -18,6 +18,7 @@ use App\Models\ClientChild;
 use App\Models\ClientPet;
 use App\Models\Hotel;
 use App\Models\User;
+use App\Rules\ServiceableZip;
 use App\Support\Settings;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -112,7 +113,7 @@ class GuestBookingService
             'address_line2' => 'nullable|string|max:500',
             'address_city' => 'required|string|max:255',
             'address_state' => 'required|string|max:100',
-            'address_zip' => 'required|string|max:20',
+            'address_zip' => ['required', 'string', 'max:20', new ServiceableZip],
             'hotel_id' => 'nullable|exists:hotels,id',
             'hotel_name' => 'nullable|string|max:255',
             'rental_platform' => 'nullable|string|max:255',
