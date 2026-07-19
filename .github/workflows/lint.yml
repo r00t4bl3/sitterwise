@@ -15,7 +15,7 @@ on:
       - workos
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -33,17 +33,51 @@ jobs:
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           npm install
 
-      - name: Run Pint
-        run: composer lint
+      # Check-only, replacing the previous auto-fix-and-discard steps that never
+      # surfaced violations. Pint is clean today and is enforced as a hard gate.
+      - name: Check PHP code style (Pint)
+        run: composer lint:check
 
-      - name: Format Frontend
-        run: npm run format
+      # The frontend checks below currently report pre-existing violations, so
+      # they run advisory (continue-on-error) to surface findings without
+      # blocking. To enforce: clean the codebase and drop continue-on-error.
+      #   Prettier: `npm run format`
+      #   ESLint:   `npm run lint` (+ 2 manual no-unused-vars fixes)
+      #   tsc:      blocked on the Wayfinder `.form()` typing (plugin upgrade)
+      - name: Check frontend formatting (Prettier)
+        continue-on-error: true
+        run: npm run format:check
 
-      - name: Lint Frontend
-        run: npm run lint
+      - name: Lint frontend (ESLint)
+        continue-on-error: true
+        run: npm run lint:check
 
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v7
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'
+      - name: Type-check frontend (tsc)
+        continue-on-error: true
+        run: npm run types:check
+
+  security-audit:
+    runs-on: ubuntu-latest
+    # Advisory for now: surfaces known-vulnerable dependencies without blocking
+    # the pipeline. Triage the findings (npm audit fix / composer update) and
+    # then flip continue-on-error to false to make it a hard gate.
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install Dependencies
+        run: |
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          npm install
+
+      - name: Composer audit
+        continue-on-error: true
+        run: composer audit
+
+      - name: npm audit (high and above)
+        continue-on-error: true
+        run: npm audit --audit-level=high
