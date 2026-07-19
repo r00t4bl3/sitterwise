@@ -188,10 +188,8 @@ export function AddressAutocomplete({ form, label = 'Address', prefix = 'address
             const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
                 input: value,
                 includedPrimaryTypes: ['street_address'],
-                // Bias (not restrict) toward San Diego County so local results
-                // rank first without excluding anything. Serviceability is
-                // decided by the zip check on selection.
-                locationBias: {
+                // Serviceability is decided by the zip check on selection.
+                locationRestriction: {
                     north: 33.51,
                     south: 32.53,
                     east: -116.08,
