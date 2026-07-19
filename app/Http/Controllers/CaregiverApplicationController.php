@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -457,19 +458,14 @@ class CaregiverApplicationController extends Controller
 
     protected function generateAgreements(Caregiver $caregiver, array $data): void
     {
-        $basePath = storage_path("app/agreements/{$caregiver->id}");
-
-        if (! file_exists($basePath)) {
-            mkdir($basePath, 0755, true);
-        }
-
-        // Generate Verification PDF
+        // Signed agreements are stored on the private documents disk with a
+        // relative path, reachable only through the authorized download route.
+        $verificationPath = "agreements/{$caregiver->id}/verification.pdf";
         $verificationPdf = Pdf::loadView('pdfs.caregiver-verification', [
             'caregiver' => $caregiver,
             'data' => $data,
         ]);
-        $verificationPath = "{$basePath}/verification.pdf";
-        file_put_contents($verificationPath, $verificationPdf->output());
+        Storage::disk('documents')->put($verificationPath, $verificationPdf->output());
 
         CaregiverAgreement::create([
             'caregiver_id' => $caregiver->id,
@@ -478,13 +474,12 @@ class CaregiverApplicationController extends Controller
             'signed_at' => now(),
         ]);
 
-        // Generate Agreement PDF
+        $agreementPath = "agreements/{$caregiver->id}/agreement.pdf";
         $agreementPdf = Pdf::loadView('pdfs.caregiver-agreement', [
             'caregiver' => $caregiver,
             'data' => $data,
         ]);
-        $agreementPath = "{$basePath}/agreement.pdf";
-        file_put_contents($agreementPath, $agreementPdf->output());
+        Storage::disk('documents')->put($agreementPath, $agreementPdf->output());
 
         CaregiverAgreement::create([
             'caregiver_id' => $caregiver->id,

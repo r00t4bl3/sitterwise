@@ -332,7 +332,8 @@ describe('Caregiver Application - Submission', function () {
         expect($width)->toBeLessThanOrEqual(1200);
     });
 
-    it('submit creates verification and agreement PDFs', function () {
+    it('submit creates verification and agreement PDFs on the private disk', function () {
+        Storage::fake('documents');
         Session::put('verified_email', 'pdfs@example.com');
         Session::put('verified_at', now());
 
@@ -344,12 +345,18 @@ describe('Caregiver Application - Submission', function () {
         $this->assertDatabaseHas('caregiver_agreements', [
             'caregiver_id' => $caregiver->id,
             'type' => 'verification',
+            'pdf_path' => "agreements/{$caregiver->id}/verification.pdf",
         ]);
         $this->assertDatabaseHas('caregiver_agreements', [
             'caregiver_id' => $caregiver->id,
             'type' => 'agreement',
+            'pdf_path' => "agreements/{$caregiver->id}/agreement.pdf",
         ]);
         $this->assertDatabaseCount('caregiver_agreements', 2);
+
+        // Signed agreements are on the private disk, never the public one.
+        Storage::disk('documents')->assertExists("agreements/{$caregiver->id}/verification.pdf");
+        Storage::disk('documents')->assertExists("agreements/{$caregiver->id}/agreement.pdf");
     });
 
     it('submit clears session after success', function () {

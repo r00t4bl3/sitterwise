@@ -108,7 +108,10 @@ class CaregiverResource extends JsonResource
                 return $this->agreements->map(fn ($agreement) => [
                     'id' => $agreement->id,
                     'type' => $agreement->type,
-                    'pdf_path' => $agreement->pdf_path,
+                    // Authorized download URL instead of the raw storage path,
+                    // which was an absolute server path (info disclosure) and
+                    // produced a broken /storage/ link.
+                    'download_url' => route('caregivers.agreements.download', [$this->id, $agreement->id]),
                     'signed_at' => $agreement->signed_at?->format('Y-m-d H:i:s'),
                 ]);
             }),

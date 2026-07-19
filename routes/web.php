@@ -181,6 +181,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // TrustLine, certifications). Registered before the caregivers resource
         // so it is not shadowed by caregivers/{caregiver}.
         Route::get('caregivers/{caregiver}/certifications/{certificationType}/document', [DocumentController::class, 'certificationDocument'])->name('caregivers.certifications.document');
+        Route::get('caregivers/{caregiver}/agreements/{agreement}/download', [DocumentController::class, 'caregiverAgreement'])->name('caregivers.agreements.download');
 
         Route::get('caregivers/{caregiver}/jobs', [CaregiverController::class, 'jobHistory'])->name('caregivers.jobHistory');
         Route::get('caregivers/search-suggestions', [CaregiverController::class, 'searchSuggestions'])->name('caregivers.searchSuggestions');

@@ -135,7 +135,7 @@ interface CaregiverApplication {
 
 interface Agreement {
     id: number;
-    pdf_path: string;
+    download_url: string;
     type: string;
 }
 
@@ -1064,7 +1064,7 @@ export default function CaregiverShow() {
                                                     (ag) => (
                                                         <a
                                                             key={ag.id}
-                                                            href={`/storage/${ag.pdf_path}`}
+                                                            href={ag.download_url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="rounded border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
