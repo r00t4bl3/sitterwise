@@ -59,7 +59,19 @@ class FakeStripeHttpClient implements ClientInterface
             return '{"id":"pm_fake","object":"payment_method","card":{"brand":"visa","last4":"4242","exp_month":12,"exp_year":2030}}';
         }
 
-        return '{"id":"pi_fake","object":"payment_intent","status":"succeeded"}';
+        // Checkout sessions and setup intents must be their own object types with
+        // a client_secret; falling through to the payment_intent body makes the
+        // SDK build a PaymentIntent and emit an "Undefined property: client_secret"
+        // notice when the caller reads $session->client_secret.
+        if (str_contains($absUrl, '/checkout/sessions')) {
+            return '{"id":"cs_fake","object":"checkout.session","client_secret":"cs_fake_secret","status":"open","setup_intent":"seti_fake"}';
+        }
+
+        if (str_contains($absUrl, '/setup_intents')) {
+            return '{"id":"seti_fake","object":"setup_intent","client_secret":"seti_fake_secret","status":"succeeded","payment_method":"pm_fake"}';
+        }
+
+        return '{"id":"pi_fake","object":"payment_intent","status":"succeeded","client_secret":"pi_fake_secret"}';
     }
 
     /** @return array<int, ?string> */
