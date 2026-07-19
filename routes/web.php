@@ -152,8 +152,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones')->middleware('caregiver');
 
-    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::middleware('admin')->group(function () {
+        // The transactions ledger exposes caregiver payout, sitterwise_cut and
+        // every client's contact details platform-wide — staff only.
+        Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
         Route::get('admin/bookings/charge', [ChargeBookingController::class, 'create'])->name('admin.bookings.charge.create');
         Route::post('admin/bookings/{booking}/charge', [ChargingController::class, 'charge'])->name('admin.bookings.charge');
         Route::get('admin/bookings/{booking}/calculate-total', [ChargingController::class, 'calculateTotal'])->name('admin.bookings.calculateTotal');

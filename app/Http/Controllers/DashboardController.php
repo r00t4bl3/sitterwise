@@ -582,11 +582,29 @@ class DashboardController extends Controller
                     ->limit(3)
                     ->get();
 
+                // Map to an explicit client-safe shape. Passing the raw Booking
+                // models would serialize every column (caregiver payout,
+                // sitterwise_cut) plus the appended admin_notes/notes_to_sitterwise,
+                // and the eager-loaded caregiver would leak the caregiver's PII,
+                // admin_rating, notes, Stripe id and secret feed tokens.
+                $mapClientBooking = fn ($booking) => [
+                    'id' => $booking->id,
+                    'ulid' => $booking->ulid,
+                    'start_datetime' => $booking->start_datetime,
+                    'end_datetime' => $booking->end_datetime,
+                    'status' => $booking->status,
+                    'service_type' => $booking->service_type,
+                    'caregiver' => $booking->caregiver ? [
+                        'first_name' => $booking->caregiver->first_name,
+                        'last_name' => $booking->caregiver->last_name,
+                    ] : null,
+                ];
+
                 $clientData = [
                     'firstName' => $client->first_name,
-                    'nextBooking' => $nextBooking,
-                    'upcomingBookings' => $upcomingBookings,
-                    'recentBookings' => $recentBookings,
+                    'nextBooking' => $nextBooking ? $mapClientBooking($nextBooking) : null,
+                    'upcomingBookings' => $upcomingBookings->map($mapClientBooking)->values(),
+                    'recentBookings' => $recentBookings->map($mapClientBooking)->values(),
                     'bookingStatuses' => $bookingStatuses,
                 ];
             }

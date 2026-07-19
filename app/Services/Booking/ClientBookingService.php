@@ -439,8 +439,9 @@ class ClientBookingService implements BookingServiceInterface, HasMiddleware
                 'charge_to_client_hourly' => $booking->charge_to_client_hourly,
                 'total_working_hour' => $booking->total_working_hour,
                 'charge_to_client' => $booking->charge_to_client,
-                'paid_to_caregiver' => $booking->paid_to_caregiver,
-                'sitterwise_cut' => $booking->sitterwise_cut,
+                // paid_to_caregiver and sitterwise_cut are internal payout/margin
+                // figures and must not reach the client; only what the client
+                // pays (charge_to_client, tip, reimbursement) is exposed.
                 'tip' => $booking->tip,
                 'reimbursement' => $booking->reimbursement,
                 'reimbursement_description' => $booking->reimbursement_description,

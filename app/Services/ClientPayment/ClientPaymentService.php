@@ -55,7 +55,20 @@ class ClientPaymentService implements ClientPaymentServiceInterface
         $payments = ClientPayment::where('client_id', $client->id)
             ->with(['booking', 'paymentMethod'])
             ->orderBy('paid_at', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->through(fn (ClientPayment $payment) => [
+                'id' => $payment->id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'status' => $payment->status,
+                'paid_at' => $payment->paid_at,
+                // Only the booking id is rendered; passing the full booking model
+                // would leak paid_to_caregiver, sitterwise_cut and admin_notes.
+                'booking' => $payment->booking ? ['id' => $payment->booking->id] : null,
+                'payment_method' => $payment->paymentMethod
+                    ? $this->formatMethods(collect([$payment->paymentMethod]))[0]
+                    : null,
+            ]);
 
         return inertia('client/payments/index', [
             'payments' => $payments,
