@@ -22,7 +22,8 @@ class ApplicationController extends Controller
 {
     public function index()
     {
-        $query = CaregiverApplication::with('caregiver.user', 'caregiver.referenceRequests');
+        $query = CaregiverApplication::with('caregiver.user', 'caregiver.referenceRequests')
+            ->whereHas('caregiver.user');
 
         if ($search = request('search')) {
             $query->where(function ($q) use ($search) {
@@ -138,7 +139,7 @@ class ApplicationController extends Controller
                     'id' => $caregiver->id,
                     'first_name' => $caregiver->first_name,
                     'last_name' => $caregiver->last_name,
-                    'email' => $caregiver->user->email,
+                    'email' => $caregiver->user?->email,
                     'status' => $caregiver->status->value,
                     'status_label' => $caregiver->status->label(),
                 ],

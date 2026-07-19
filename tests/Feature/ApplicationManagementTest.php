@@ -114,6 +114,19 @@ describe('Application Management - Index', function () {
         );
     });
 
+    it('excludes applications whose caregiver user has been deleted', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $data = applicationManagementCreateApplication();
+        $data['user']->delete();
+
+        $response = $this->get('/applications');
+        $response->assertInertia(fn ($page) => $page
+            ->has('applications.data', 0)
+        );
+    });
+
     it('shows reference progress in the list', function () {
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
@@ -156,6 +169,21 @@ describe('Application Management - Show', function () {
         $response = $this->get("/applications/{$data['application']->id}");
         $response->assertInertia(fn ($page) => $page
             ->where('application.data.sponsor.email', 'sponsor@example.com')
+        );
+    });
+
+    it('handles deleted caregiver user gracefully', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $data = applicationManagementCreateApplication();
+        $data['user']->delete();
+
+        $response = $this->get("/applications/{$data['application']->id}");
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('admin/applications/show')
+            ->where('application.caregiver.email', null)
         );
     });
 
