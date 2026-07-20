@@ -62,6 +62,16 @@ class Client extends Model
         'sms_opted_out' => 'boolean',
     ];
 
+    /**
+     * Defense in depth: staff-only notes and the Stripe customer id must never
+     * appear in a serialized client. Hidden from toArray()/toJson(); code that
+     * legitimately needs them reads via explicit property access.
+     */
+    protected $hidden = [
+        'notes',
+        'stripe_customer_id',
+    ];
+
     public function ratings(): MorphMany
     {
         return $this->morphMany(BookingRating::class, 'ratable');

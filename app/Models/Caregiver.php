@@ -130,6 +130,22 @@ class Caregiver extends Model
         'status' => CaregiverStatus::class,
     ];
 
+    /**
+     * Defense in depth: these never belong in a serialized model. Secret tokens
+     * (status/calendar feed) and staff-internal fields (admin_rating, notes,
+     * Stripe account id) are hidden from toArray()/toJson() so a stray
+     * full-model serialization can't leak them. Admin surfaces read these via
+     * explicit property access (CaregiverResource), which $hidden does not
+     * affect.
+     */
+    protected $hidden = [
+        'status_token',
+        'calendar_feed_token',
+        'stripe_account_id',
+        'admin_rating',
+        'notes',
+    ];
+
     public function ratings(): MorphMany
     {
         return $this->morphMany(BookingRating::class, 'ratable');
