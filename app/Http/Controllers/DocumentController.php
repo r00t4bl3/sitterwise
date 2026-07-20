@@ -41,13 +41,27 @@ class DocumentController extends Controller
 
         $path = $agreement->pdf_path;
 
-        // Legacy rows stored an absolute filesystem path via file_put_contents.
-        if ($path && str_starts_with($path, DIRECTORY_SEPARATOR) && is_file($path)) {
-            return response()->file($path);
+        abort_if(! $path, 404);
+
+        // New rows: relative path on the private documents disk.
+        if (Storage::disk('documents')->exists($path)) {
+            return Storage::disk('documents')->response($path);
         }
 
-        abort_if(! $path || ! Storage::disk('documents')->exists($path), 404);
+        // Legacy rows stored an absolute filesystem path via file_put_contents.
+        // The baked-in path may point at an old deployment directory (domain or
+        // path rename), so try this deployment's storage location first.
+        if (str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            $relative = "agreements/{$caregiver->id}/".basename($path);
+            $current = storage_path('app/'.$relative);
 
-        return Storage::disk('documents')->response($path);
+            foreach ([$current, $path] as $candidate) {
+                if (is_file($candidate)) {
+                    return response()->file($candidate);
+                }
+            }
+        }
+
+        abort(404);
     }
 }

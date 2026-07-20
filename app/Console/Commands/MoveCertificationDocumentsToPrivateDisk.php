@@ -102,16 +102,31 @@ class MoveCertificationDocumentsToPrivateDisk extends Command
 
             $relative = "agreements/{$agreement->caregiver_id}/".basename($path);
 
-            if (! is_file($path)) {
+            // The stored path is absolute and was baked in at generation time, so
+            // it can point at an old deployment directory (e.g. after a domain or
+            // path rename). Resolve the real file from this deployment's storage
+            // first, then fall back to the stored absolute path.
+            $source = collect([
+                storage_path('app/'.$relative),
+                $path,
+            ])->first(fn ($candidate) => is_file($candidate));
+
+            if (! $source) {
                 $missing++;
-                $this->warn("Agreement file missing: {$path}");
+                $this->warn("Agreement file missing (looked in storage/app/{$relative} and {$path})");
 
                 continue;
             }
 
             if ($apply) {
-                $documents->put($relative, file_get_contents($path));
-                @unlink($path);
+                $documents->put($relative, file_get_contents($source));
+
+                // Only delete the source if it is not already the documents-disk
+                // location we just wrote to.
+                if (realpath($source) !== realpath(storage_path('app/documents/'.$relative))) {
+                    @unlink($source);
+                }
+
                 DB::table('caregiver_agreements')
                     ->where('id', $agreement->id)
                     ->update(['pdf_path' => $relative]);

@@ -264,4 +264,40 @@ describe('documents:migrate-to-private command', function () {
         Storage::disk('documents')->assertExists($relative);
         expect(is_file($absolute))->toBeFalse();
     });
+
+    it('resolves a stale absolute path from a renamed deployment via the current storage location', function () {
+        $user = User::factory()->create(['role' => 'caregiver']);
+        $caregiver = Caregiver::create([
+            'user_id' => $user->id,
+            'status' => CaregiverStatus::Active->value,
+            'first_name' => 'Moved',
+            'last_name' => 'Deployment',
+            'slug' => 'moved-deploy-'.Str::random(4),
+            'phone' => '555-0005',
+            'date_of_birth' => '1990-01-01',
+        ]);
+
+        // The DB stores an absolute path from the OLD deployment directory that
+        // no longer exists on disk...
+        $stalePath = "/var/www/html/old-domain.example/storage/app/agreements/{$caregiver->id}/agreement.pdf";
+        // ...but the file actually lives under THIS deployment's storage.
+        $relative = "agreements/{$caregiver->id}/agreement.pdf";
+        $current = storage_path('app/'.$relative);
+        @mkdir(dirname($current), 0755, true);
+        file_put_contents($current, '%PDF-moved');
+
+        $agreement = CaregiverAgreement::create([
+            'caregiver_id' => $caregiver->id,
+            'type' => 'agreement',
+            'pdf_path' => $stalePath,
+            'signed_at' => now(),
+        ]);
+
+        $this->artisan('documents:migrate-to-private --apply')->assertSuccessful();
+
+        expect($agreement->fresh()->pdf_path)->toBe($relative);
+        Storage::disk('documents')->assertExists($relative);
+        expect(Storage::disk('documents')->get($relative))->toBe('%PDF-moved');
+        expect(is_file($current))->toBeFalse();
+    });
 });
