@@ -5,6 +5,7 @@ use App\Models\Caregiver;
 use App\Models\CaregiverAgreement;
 use App\Models\CaregiverApplication;
 use App\Models\User;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -107,6 +108,32 @@ describe('agreements:regenerate-missing', function () {
         // Path unchanged; nothing written.
         expect($agreement->fresh()->pdf_path)->toBe('/var/www/html/old/storage/app/agreements/1/agreement.pdf');
         Storage::disk('documents')->assertMissing("agreements/{$caregiver->id}/agreement.pdf");
+    });
+
+    it('does not stamp pdf_path when the write fails, and reports the failure', function () {
+        $caregiver = caregiverWithApplication();
+        $stalePath = '/var/www/html/old/storage/app/agreements/7/agreement.pdf';
+
+        $agreement = CaregiverAgreement::create([
+            'caregiver_id' => $caregiver->id,
+            'type' => 'agreement',
+            'pdf_path' => $stalePath,
+            'signed_at' => now(),
+        ]);
+
+        // Force the documents-disk write to report failure.
+        Storage::shouldReceive('disk')->with('documents')->andReturnUsing(function () {
+            $disk = Mockery::mock(Filesystem::class);
+            $disk->shouldReceive('exists')->andReturnFalse();
+            $disk->shouldReceive('put')->andReturnFalse();
+
+            return $disk;
+        });
+
+        $this->artisan('agreements:regenerate-missing --apply')->assertFailed();
+
+        // pdf_path untouched — no phantom "file exists" record.
+        expect($agreement->fresh()->pdf_path)->toBe($stalePath);
     });
 
     it('is a no-op dry run without --apply', function () {

@@ -25,6 +25,7 @@ class RegenerateMissingAgreements extends Command
         $regenerated = 0;
         $present = 0;
         $skipped = 0;
+        $failed = 0;
 
         foreach ($agreements as $agreement) {
             if ($this->fileExists($agreement, $documents)) {
@@ -55,19 +56,33 @@ class RegenerateMissingAgreements extends Command
             $relative = "agreements/{$caregiver->id}/{$agreement->type}.pdf";
 
             if ($apply) {
-                $pdf = Pdf::loadView($view, [
-                    'caregiver' => $caregiver,
-                    'data' => $application->data,
-                ]);
+                // One failure must not abort the whole run, and pdf_path must
+                // never be stamped unless the file actually landed on disk —
+                // otherwise the DB points at a document that isn't there.
+                try {
+                    $pdf = Pdf::loadView($view, [
+                        'caregiver' => $caregiver,
+                        'data' => $application->data,
+                    ]);
 
-                $documents->put($relative, $pdf->output());
+                    $written = $documents->put($relative, $pdf->output());
 
-                $agreement->update([
-                    'pdf_path' => $relative,
-                    // The signing date is taken from when the applicant submitted
-                    // their application, not the (later) regeneration time.
-                    'signed_at' => $application->submitted_at ?? $agreement->signed_at,
-                ]);
+                    if ($written === false || ! $documents->exists($relative)) {
+                        throw new \RuntimeException("write to documents disk failed for {$relative}");
+                    }
+
+                    $agreement->update([
+                        'pdf_path' => $relative,
+                        // The signing date is taken from when the applicant
+                        // submitted their application, not the regeneration time.
+                        'signed_at' => $application->submitted_at ?? $agreement->signed_at,
+                    ]);
+                } catch (\Throwable $e) {
+                    $failed++;
+                    $this->error("Agreement #{$agreement->id} (caregiver {$caregiver->id}, {$agreement->type}): {$e->getMessage()}");
+
+                    continue;
+                }
             }
 
             $regenerated++;
@@ -75,13 +90,14 @@ class RegenerateMissingAgreements extends Command
         }
 
         $verb = $apply ? 'Regenerated' : 'Would regenerate';
-        $this->info("{$verb}: {$regenerated}, already present: {$present}, skipped (no data): {$skipped}.");
+        $this->info("{$verb}: {$regenerated}, already present: {$present}, skipped (no data): {$skipped}, failed: {$failed}.");
 
         if (! $apply) {
             $this->comment('Dry run. Re-run with --apply to regenerate and store the PDFs.');
         }
 
-        return self::SUCCESS;
+        // Non-zero exit on failure so a deploy/automation step surfaces it.
+        return $failed > 0 ? self::FAILURE : self::SUCCESS;
     }
 
     /**
