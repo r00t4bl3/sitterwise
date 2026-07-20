@@ -109,6 +109,77 @@ describe('Stripe Webhook', function () {
         expect($booking->payment_status)->toBe('charged');
     });
 
+    test('payment_intent.succeeded for a TIP does not touch the booking service charge', function () {
+        $booking = completedBooking();
+        $originalPi = $booking->stripe_payment_intent_id;
+        $tipPiId = 'pi_tip_'.uniqid();
+
+        $tipPayment = ClientPayment::create([
+            'booking_id' => $booking->id,
+            'client_id' => $booking->client_id,
+            'amount' => 20,
+            'currency' => 'usd',
+            'status' => 'pending',
+            'provider' => 'stripe',
+            'provider_payment_id' => $tipPiId,
+            'metadata' => ['type' => 'tip', 'booking_id' => $booking->id],
+        ]);
+
+        $paymentIntent = (object) [
+            'id' => $tipPiId,
+            'amount' => 2000,
+            'metadata' => (object) ['booking_id' => $booking->id, 'type' => 'tip'],
+        ];
+
+        $handler = new StripeWebhookHandler;
+        $ref = new ReflectionMethod($handler, 'handlePaymentIntentSucceeded');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentIntent);
+
+        $booking->refresh();
+        // Service-charge fields must be untouched by a tip webhook.
+        expect($booking->payment_status)->toBe('pending');
+        expect($booking->status)->toBe('completed');
+        expect($booking->stripe_payment_intent_id)->toBe($originalPi);
+        // The tip's own record is still reconciled.
+        expect($tipPayment->fresh()->status)->toBe('succeeded');
+    });
+
+    test('payment_intent.payment_failed for a TIP does not fail the booking service charge', function () {
+        Notification::fake();
+        Mail::fake();
+
+        $booking = completedBooking();
+        $tipPiId = 'pi_tip_'.uniqid();
+
+        $tipPayment = ClientPayment::create([
+            'booking_id' => $booking->id,
+            'client_id' => $booking->client_id,
+            'amount' => 20,
+            'currency' => 'usd',
+            'status' => 'pending',
+            'provider' => 'stripe',
+            'provider_payment_id' => $tipPiId,
+            'metadata' => ['type' => 'tip', 'booking_id' => $booking->id],
+        ]);
+
+        $paymentIntent = (object) [
+            'id' => $tipPiId,
+            'metadata' => (object) ['booking_id' => $booking->id, 'type' => 'tip'],
+            'last_payment_error' => (object) ['code' => 'card_declined', 'message' => 'declined'],
+        ];
+
+        $handler = app(StripeWebhookHandler::class);
+        $ref = new ReflectionMethod($handler, 'handlePaymentIntentFailed');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentIntent);
+
+        $booking->refresh();
+        expect($booking->payment_status)->toBe('pending');      // NOT 'failed'
+        expect((int) $booking->charge_attempt_count)->toBe(0);  // not bumped
+        expect($tipPayment->fresh()->status)->toBe('failed');
+    });
+
     test('payment_intent.failed increments charge_attempt_count and sets failed status', function () {
         Notification::fake();
         Mail::fake();

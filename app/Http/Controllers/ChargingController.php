@@ -20,7 +20,7 @@ class ChargingController extends Controller
     {
         $validated = $request->validated();
 
-        if ($booking->payment_status === 'charged' || $booking->payment_status === 'succeeded') {
+        if ($booking->paymentSettled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'This booking has already been charged.',

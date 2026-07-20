@@ -533,6 +533,7 @@ class AdminBookingService implements BookingServiceInterface
             'assignments',
             'client.favoriteCaregivers',
             'client.blockedCaregivers',
+            'payments',
         ]);
 
         $assignmentResolution = null;
@@ -681,6 +682,20 @@ class AdminBookingService implements BookingServiceInterface
                 'reimbursement' => $booking->reimbursement,
                 'bonus' => $booking->bonus,
                 'lifesaver_bonus' => $booking->lifesaver_bonus,
+                'payment_status' => $booking->payment_status,
+                'payment_attempts' => $booking->payments
+                    ->sortByDesc('created_at')
+                    ->values()
+                    ->map(fn ($payment) => [
+                        'id' => $payment->id,
+                        'kind' => ($payment->metadata['type'] ?? null) === 'tip' ? 'tip' : 'service',
+                        'amount' => (float) $payment->amount,
+                        'status' => $payment->status,
+                        'error_message' => $payment->error_message,
+                        'created_at' => $payment->created_at?->toIso8601String(),
+                        'paid_at' => $payment->paid_at?->toIso8601String(),
+                    ])
+                    ->all(),
                 'children' => $booking->children,
                 'children_notes' => $booking->children_notes,
                 'pets' => $booking->pets,
@@ -1631,9 +1646,9 @@ class AdminBookingService implements BookingServiceInterface
             'bonus' => 'nullable|numeric|min:0',
         ]);
 
-        // Bail before mutating amounts if this booking is already paid — a stray
+        // Bail before mutating amounts if this booking is already settled — a stray
         // re-submit must not overwrite the figures that were actually charged.
-        if (in_array($booking->payment_status, ['charged', 'succeeded'], true)) {
+        if ($booking->paymentSettled()) {
             return redirect()->back()->with('error', 'This booking has already been charged.');
         }
 

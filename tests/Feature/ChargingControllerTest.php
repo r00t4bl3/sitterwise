@@ -71,6 +71,24 @@ describe('ChargingController', function () {
         ]);
     });
 
+    test('returns error when booking is marked paid (guard recognizes the paid enum)', function () {
+        $booking = makeBooking($this->client, $this->caregiver, [
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.bookings.charge', $booking), [
+                'reimbursement' => 0,
+                'tip' => 0,
+            ]);
+
+        $response->assertStatus(400);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'This booking has already been charged.',
+        ]);
+    });
+
     test('returns error when booking does not require payment', function () {
         $booking = Booking::factory()->forClient($this->client)->comped()->create([
             'caregiver_id' => $this->caregiver->id,

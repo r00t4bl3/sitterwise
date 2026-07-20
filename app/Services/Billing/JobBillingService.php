@@ -39,7 +39,7 @@ class JobBillingService
             ];
         }
 
-        if ($booking->payment_status === 'charged' || $booking->payment_status === 'succeeded') {
+        if ($booking->paymentSettled()) {
             return [
                 'success' => false,
                 'message' => 'This booking has already been charged',
@@ -183,7 +183,7 @@ class JobBillingService
                 return false;
             }
 
-            if (in_array($locked->payment_status, ['charged', 'succeeded'], true)) {
+            if ($locked->paymentSettled()) {
                 return false;
             }
 

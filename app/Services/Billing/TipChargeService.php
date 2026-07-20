@@ -22,13 +22,14 @@ class TipChargeService
     }
 
     /**
-     * The Stripe charge description for a tip. Names the caregiver (for easy
-     * payroll reconciliation) rather than exposing our internal job number.
+     * The Stripe charge description for a tip. Leads with the booking id (so a
+     * tip charge can be reconciled back to its booking/service, matching the
+     * service charge's "Booking #{id}" format) and names the caregiver.
      */
     public function tipDescription(Booking $booking): string
     {
         return $booking->caregiver
-            ? "Tip for {$booking->caregiver->full_name}"
+            ? "Booking #{$booking->id} - Tip for {$booking->caregiver->full_name}"
             : "Booking #{$booking->id} - Tip for Caregiver";
     }
 

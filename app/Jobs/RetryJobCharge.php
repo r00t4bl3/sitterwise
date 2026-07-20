@@ -26,8 +26,7 @@ class RetryJobCharge implements ShouldQueue
 
     public function handle(JobBillingService $billingService): void
     {
-        if ($this->booking->payment_status === 'charged' ||
-            $this->booking->payment_status === 'succeeded') {
+        if ($this->booking->paymentSettled()) {
             Log::info('Booking already charged, skipping retry', [
                 'booking_id' => $this->booking->id,
             ]);

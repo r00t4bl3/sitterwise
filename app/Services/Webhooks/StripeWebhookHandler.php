@@ -168,6 +168,24 @@ class StripeWebhookHandler
             return;
         }
 
+        // A tip is a separate PaymentIntent (metadata.type='tip'). Its webhook must
+        // NEVER mark the booking's service charge as paid — TipChargeService already
+        // records the tip's own ClientPayment. Reconcile that exact row idempotently,
+        // then stop before touching any booking service field.
+        if (($paymentIntent->metadata->type ?? null) === 'tip') {
+            ClientPayment::where('booking_id', $bookingId)
+                ->where('provider_payment_id', $paymentIntent->id)
+                ->first()
+                ?->update(['status' => 'succeeded', 'paid_at' => now()]);
+
+            Log::info('Stripe webhook: tip payment_intent.succeeded — booking service charge untouched', [
+                'payment_intent_id' => $paymentIntent->id,
+                'booking_id' => $booking->id,
+            ]);
+
+            return;
+        }
+
         Log::info('Stripe webhook: payment_intent.succeeded processing', [
             'payment_intent_id' => $paymentIntent->id,
             'booking_id' => $booking->id,
@@ -226,6 +244,23 @@ class StripeWebhookHandler
             Log::warning('Stripe webhook: payment_intent.payment_failed booking not found', [
                 'payment_intent_id' => $paymentIntent->id,
                 'booking_id' => $bookingId,
+            ]);
+
+            return;
+        }
+
+        // A failed tip must not mark the booking's SERVICE charge failed, bump its
+        // charge_attempt_count, or trigger a service-charge retry. Reconcile only the
+        // tip's own ClientPayment, then stop.
+        if (($paymentIntent->metadata->type ?? null) === 'tip') {
+            ClientPayment::where('booking_id', $bookingId)
+                ->where('provider_payment_id', $paymentIntent->id)
+                ->first()
+                ?->update(['status' => 'failed']);
+
+            Log::info('Stripe webhook: tip payment_intent.payment_failed — booking service charge untouched', [
+                'payment_intent_id' => $paymentIntent->id,
+                'booking_id' => $booking->id,
             ]);
 
             return;

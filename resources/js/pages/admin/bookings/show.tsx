@@ -77,6 +77,16 @@ interface Booking {
     reimbursement: number | null;
     bonus: number | null;
     lifesaver_bonus: number | null;
+    payment_status?: string | null;
+    payment_attempts?: Array<{
+        id: number;
+        kind: 'service' | 'tip';
+        amount: number;
+        status: string;
+        error_message: string | null;
+        created_at: string | null;
+        paid_at: string | null;
+    }>;
     special_considerations: string[] | null;
     caregiver_notes: string | null;
     children: Array<{
@@ -1093,6 +1103,65 @@ export default function BookingDetail({
                                 bonus={booking.bonus}
                                 lifesaver_bonus={booking.lifesaver_bonus}
                             />
+
+                            {booking.payment_attempts &&
+                                booking.payment_attempts.length > 0 && (
+                                    <div className="mt-6">
+                                        <h2 className="text-md mb-2 font-semibold text-foreground">
+                                            Payment attempts
+                                        </h2>
+                                        <div className="space-y-2">
+                                            {booking.payment_attempts.map(
+                                                (attempt) => (
+                                                    <div
+                                                        key={attempt.id}
+                                                        className="flex items-start justify-between gap-2 rounded border border-border bg-card px-3 py-2"
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium text-foreground">
+                                                                {attempt.kind ===
+                                                                'tip'
+                                                                    ? 'Tip'
+                                                                    : 'Service charge'}{' '}
+                                                                · $
+                                                                {Number(
+                                                                    attempt.amount,
+                                                                ).toFixed(2)}
+                                                            </span>
+                                                            {attempt.error_message && (
+                                                                <span className="text-xs text-destructive">
+                                                                    {
+                                                                        attempt.error_message
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                            {attempt.created_at && (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {new Date(
+                                                                        attempt.created_at,
+                                                                    ).toLocaleDateString()}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span
+                                                            className={`inline-flex shrink-0 items-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${
+                                                                attempt.status ===
+                                                                'succeeded'
+                                                                    ? 'border-green-300 bg-green-100 text-green-800'
+                                                                    : attempt.status ===
+                                                                        'failed'
+                                                                      ? 'border-red-300 bg-red-100 text-red-800'
+                                                                      : 'border-slate-300 bg-slate-100 text-slate-700'
+                                                            }`}
+                                                        >
+                                                            {attempt.status}
+                                                        </span>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                             <div className="mt-6">
                                 <h2 className="mb-4 text-lg font-semibold text-foreground">

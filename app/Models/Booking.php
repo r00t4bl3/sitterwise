@@ -436,6 +436,24 @@ class Booking extends Model
         return $this->hasMany(ClientPayment::class);
     }
 
+    /**
+     * Runtime payment_status values that mean "already settled — do not (re)charge".
+     * The charge flow writes 'charged'/'succeeded'; 'paid' is the enum value an admin
+     * can set manually or that imports use. All three must block a charge.
+     *
+     * @var list<string>
+     */
+    public const SETTLED_PAYMENT_STATUSES = ['charged', 'succeeded', 'paid'];
+
+    /**
+     * Whether this booking's payment is already settled (charged or marked paid),
+     * so it must not be charged again.
+     */
+    public function paymentSettled(): bool
+    {
+        return in_array($this->payment_status, self::SETTLED_PAYMENT_STATUSES, true);
+    }
+
     public function attributeDefinitions()
     {
         return $this->belongsToMany(

@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Client;
 use App\Models\User;
 use App\Notifications\PaymentFailedNotification;
+use App\Support\Settings;
 use Illuminate\Support\Facades\Log;
 
 class PaymentFailureHandler
@@ -15,7 +16,10 @@ class PaymentFailureHandler
     {
         $client = $booking->client;
         $attemptCount = $booking->charge_attempt_count;
-        $maxAttempts = 4;
+        // Single source of truth for the retry cap, shared with RetryJobCharge
+        // so the two never disagree (raise this setting to keep retrying longer
+        // for chronic-failure clients).
+        $maxAttempts = (int) Settings::get('billing.max_charge_attempts', 4);
 
         $this->notifyClient($client, $booking, $attemptCount, $errorMessage);
         $this->notifyAdmins($booking, $attemptCount, $errorMessage);

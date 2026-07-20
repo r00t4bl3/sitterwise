@@ -141,7 +141,7 @@ describe('Tip Charge Service', function () {
         expect($stripe->requests[0]['params']['payment_method'] ?? null)->toBe('pm_provided_method');
     });
 
-    test('tip description names the caregiver, not the job number', function () {
+    test('tip description leads with the booking id and names the caregiver', function () {
         $booking = tipBooking();
         $user = User::factory()->create(['role' => 'caregiver']);
         $caregiver = Caregiver::create([
@@ -154,7 +154,7 @@ describe('Tip Charge Service', function () {
         $booking->update(['caregiver_id' => $caregiver->id]);
 
         expect((new TipChargeService)->tipDescription($booking->fresh()))
-            ->toBe('Tip for Carla Sitter');
+            ->toBe("Booking #{$booking->id} - Tip for Carla Sitter");
     });
 
     test('tip description falls back to the job number when no caregiver assigned', function () {

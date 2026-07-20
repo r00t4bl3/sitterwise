@@ -125,6 +125,25 @@ export function BookingDetailsSection({
         bookingMinimumHours,
     );
 
+    // The charge flow writes runtime payment_status values (e.g. "charged") that
+    // aren't in the enum-derived options. Surface the booking's current value so
+    // an already-charged booking shows "Charged" instead of a blank required
+    // field — which would otherwise nudge an admin into clobbering it with "Paid".
+    const currentPaymentStatus = form.data.payment_status;
+    const paymentStatusOptions =
+        currentPaymentStatus &&
+        !payment_statuses.some((s) => s.value === currentPaymentStatus)
+            ? [
+                  ...payment_statuses,
+                  {
+                      value: currentPaymentStatus,
+                      label:
+                          currentPaymentStatus.charAt(0).toUpperCase() +
+                          currentPaymentStatus.slice(1),
+                  },
+              ]
+            : payment_statuses;
+
     // Build a Date whose local components represent PT wall-clock tomorrow at
     // 9:00 AM. formatUtcStringFromPt reads those local components as PT, so the
     // default matches the DateTimePicker/backend UTC convention regardless of
@@ -246,8 +265,7 @@ export function BookingDetailsSection({
                 const newStart = new Date(value);
                 const currentEnd = new Date(d.end_datetime);
                 const minEnd = new Date(
-                    newStart.getTime() +
-                        bookingMinimumHours * 60 * 60 * 1000,
+                    newStart.getTime() + bookingMinimumHours * 60 * 60 * 1000,
                 );
 
                 if (isNaN(currentEnd.getTime()) || currentEnd <= minEnd) {
@@ -458,7 +476,9 @@ export function BookingDetailsSection({
                                         <DateTimePicker
                                             value={dateEntry.end_datetime}
                                             startTime={dateEntry.start_datetime}
-                                            minDurationHours={bookingMinimumHours}
+                                            minDurationHours={
+                                                bookingMinimumHours
+                                            }
                                             onChange={(datetime) => {
                                                 if (datetime) {
                                                     handleUpdateDate(
@@ -509,6 +529,7 @@ export function BookingDetailsSection({
                                             'start_datetime',
                                             datetime,
                                         );
+
                                         return;
                                     }
 
@@ -790,7 +811,7 @@ export function BookingDetailsSection({
                                     <SelectValue placeholder="Select payment status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {payment_statuses.map((status) => (
+                                    {paymentStatusOptions.map((status) => (
                                         <SelectItem
                                             key={status.value}
                                             value={status.value}

@@ -20,7 +20,7 @@ class TransactionController extends Controller
                 $query->withExists(['paymentMethods as has_active_payment_method' => function ($query) {
                     $query->where('status', 'active');
                 }]);
-            }, 'client.user', 'caregiver'])
+            }, 'client.user', 'caregiver', 'payments'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('id', 'like', "%{$search}%")
@@ -43,6 +43,8 @@ class TransactionController extends Controller
                     'end_datetime' => $booking->end_datetime,
                     'total_price' => $booking->total_amount,
                     'status' => $booking->status,
+                    'payment_status' => $booking->payment_status,
+                    'charge' => $this->chargeSummary($booking),
                     'payment_form' => $booking->payment_form,
                     'requires_payment' => $booking->requires_payment,
                     'checkout_at' => $booking->checkout_at,
@@ -92,5 +94,51 @@ class TransactionController extends Controller
                 BookingStatus::cases()
             ),
         ]);
+    }
+
+    /**
+     * Summarize the booking's charge outcome, keeping the service charge and the
+     * (separately-charged) tip distinct so a failed service charge is never
+     * masked by a succeeded tip.
+     *
+     * @return array{service_state: string, service_error: ?string, attempt_count: int, last_attempt_at: mixed, tip_state: ?string, tip_amount: ?float}
+     */
+    private function chargeSummary(Booking $booking): array
+    {
+        $isTip = fn ($payment): bool => ($payment->metadata['type'] ?? null) === 'tip';
+
+        $latestService = $booking->payments->reject($isTip)->sortByDesc('created_at')->first();
+        $latestTip = $booking->payments->filter($isTip)->sortByDesc('created_at')->first();
+
+        $serviceState = $this->serviceChargeState($booking);
+
+        return [
+            'service_state' => $serviceState,
+            'service_error' => $serviceState === 'failed' ? $latestService?->error_message : null,
+            'attempt_count' => (int) ($booking->charge_attempt_count ?? 0),
+            'last_attempt_at' => $booking->last_charge_attempt_at,
+            'tip_state' => $latestTip?->status,
+            'tip_amount' => $latestTip ? (float) $latestTip->amount : null,
+        ];
+    }
+
+    /**
+     * Normalize the service charge's runtime payment_status vocabulary
+     * (charged/charging/failed/...) into a display state.
+     */
+    private function serviceChargeState(Booking $booking): string
+    {
+        if ($booking->paymentSettled()
+            || $booking->status === BookingStatus::Paid->value) {
+            return 'succeeded';
+        }
+
+        return match ($booking->payment_status) {
+            'failed' => 'failed',
+            'charging' => 'processing',
+            'refunded' => 'refunded',
+            'disputed' => 'disputed',
+            default => 'pending',
+        };
     }
 }

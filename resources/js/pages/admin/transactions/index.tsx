@@ -46,6 +46,24 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+const SERVICE_CHARGE_LABELS: Record<string, string> = {
+    succeeded: 'Charged',
+    failed: 'Charge failed',
+    processing: 'Processing',
+    refunded: 'Refunded',
+    disputed: 'Disputed',
+    pending: 'Not charged',
+};
+
+const SERVICE_CHARGE_CLASSES: Record<string, string> = {
+    succeeded: 'border-green-300 bg-green-100 text-green-800',
+    failed: 'border-red-300 bg-red-100 text-red-800',
+    processing: 'border-amber-300 bg-amber-100 text-amber-800',
+    refunded: 'border-slate-300 bg-slate-100 text-slate-700',
+    disputed: 'border-amber-300 bg-amber-100 text-amber-800',
+    pending: 'border-slate-300 bg-slate-100 text-slate-600',
+};
+
 interface Client {
     id: number;
     first_name: string;
@@ -71,6 +89,15 @@ interface Booking {
     end_datetime: string;
     total_price: number;
     status: string;
+    payment_status?: string;
+    charge?: {
+        service_state: string;
+        service_error: string | null;
+        attempt_count: number;
+        last_attempt_at: string | null;
+        tip_state: string | null;
+        tip_amount: number | null;
+    };
     payment_form: string | null;
     requires_payment: boolean;
     checkout_at: string | null;
@@ -401,6 +428,9 @@ export default function TransactionsIndex() {
                                         <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
                                             Status
                                         </th>
+                                        <th className="px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-white uppercase">
+                                            Charge
+                                        </th>
                                         <th className="px-4 py-3 text-right text-[11px] font-semibold tracking-wider text-white uppercase">
                                             Actions
                                         </th>
@@ -484,6 +514,90 @@ export default function TransactionsIndex() {
                                                     }
                                                 />
                                             </td>
+                                            <td className="px-4 py-3">
+                                                {booking.charge ? (
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <span
+                                                            className={`inline-flex items-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${SERVICE_CHARGE_CLASSES[booking.charge.service_state] ?? SERVICE_CHARGE_CLASSES.pending}`}
+                                                        >
+                                                            {SERVICE_CHARGE_LABELS[
+                                                                booking.charge
+                                                                    .service_state
+                                                            ] ?? 'Not charged'}
+                                                        </span>
+                                                        {booking.charge
+                                                            .service_state ===
+                                                            'failed' &&
+                                                            booking.charge
+                                                                .service_error && (
+                                                                <span className="max-w-[180px] text-[10px] text-destructive">
+                                                                    {
+                                                                        booking
+                                                                            .charge
+                                                                            .service_error
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        {booking.charge
+                                                            .attempt_count >
+                                                            0 && (
+                                                            <span className="text-[10px] text-muted-foreground">
+                                                                {
+                                                                    booking
+                                                                        .charge
+                                                                        .attempt_count
+                                                                }{' '}
+                                                                attempt
+                                                                {booking.charge
+                                                                    .attempt_count ===
+                                                                1
+                                                                    ? ''
+                                                                    : 's'}
+                                                            </span>
+                                                        )}
+                                                        {booking.charge
+                                                            .tip_state && (
+                                                            <span
+                                                                className={`inline-flex items-center rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold ${
+                                                                    booking
+                                                                        .charge
+                                                                        .tip_state ===
+                                                                    'succeeded'
+                                                                        ? 'border-green-300 bg-green-100 text-green-800'
+                                                                        : booking
+                                                                                .charge
+                                                                                .tip_state ===
+                                                                            'failed'
+                                                                          ? 'border-red-300 bg-red-100 text-red-800'
+                                                                          : 'border-slate-300 bg-slate-100 text-slate-600'
+                                                                }`}
+                                                            >
+                                                                {booking.charge
+                                                                    .tip_state ===
+                                                                'succeeded'
+                                                                    ? '✓ '
+                                                                    : ''}
+                                                                Tip $
+                                                                {Number(
+                                                                    booking
+                                                                        .charge
+                                                                        .tip_amount ??
+                                                                        0,
+                                                                ).toFixed(2)}
+                                                                {booking.charge
+                                                                    .tip_state ===
+                                                                'failed'
+                                                                    ? ' failed'
+                                                                    : ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="flex flex-col items-end justify-center gap-y-1 px-4 py-3">
                                                 <Button
                                                     size="sm"
@@ -515,7 +629,11 @@ export default function TransactionsIndex() {
                                                                     )
                                                                 }
                                                             >
-                                                                Payment Approval
+                                                                {booking.charge
+                                                                    ?.service_state ===
+                                                                'failed'
+                                                                    ? 'Retry Charge'
+                                                                    : 'Payment Approval'}
                                                             </Button>
                                                             {!booking.client
                                                                 .has_active_payment_method && (
