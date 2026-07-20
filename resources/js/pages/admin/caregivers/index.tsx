@@ -64,7 +64,7 @@ interface Caregiver {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
     status: Status;
     phone: string | null;
     specialty_types: SpecialtyType[];
@@ -508,11 +508,13 @@ export default function CaregiversIndex() {
                                             <UserAvatar
                                                 profile_photo_url={
                                                     caregiver.user
-                                                        .profile_photo_url
+                                                        ?.profile_photo_url ??
+                                                    null
                                                 }
                                                 profile_photo_path={
                                                     caregiver.user
-                                                        .profile_photo_path
+                                                        ?.profile_photo_path ??
+                                                    null
                                                 }
                                                 name={`${caregiver.first_name} ${caregiver.last_name}`}
                                                 size="sm"

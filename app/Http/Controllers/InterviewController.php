@@ -55,7 +55,7 @@ class InterviewController extends Controller
                 'first_name' => $caregiver->first_name,
                 'last_name' => $caregiver->last_name,
                 'initials' => strtoupper(substr($caregiver->first_name, 0, 1).substr($caregiver->last_name, 0, 1)),
-                'email' => $caregiver->user->email,
+                'email' => $caregiver->user?->email,
             ],
             'sponsor' => $sponsor ? [
                 'name' => $sponsor->first_name.' '.$sponsor->last_name,

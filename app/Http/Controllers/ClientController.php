@@ -82,7 +82,7 @@ class ClientController extends Controller
 
         $clients->getCollection()->transform(fn ($client) => [
             ...$client->toArray(),
-            'email' => $client->user->email,
+            'email' => $client->user?->email,
         ]);
 
         return Inertia::render('admin/clients/index', [
@@ -244,7 +244,7 @@ class ClientController extends Controller
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
                 'biography' => $client->biography,
-                'email' => $client->user->email,
+                'email' => $client->user?->email,
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
@@ -258,7 +258,7 @@ class ClientController extends Controller
                 'special_needs_notes' => $client->special_needs_notes,
                 'notes' => $client->notes,
                 'user' => [
-                    'profile_photo_path' => $client->user->profile_photo_path,
+                    'profile_photo_path' => $client->user?->profile_photo_path,
                 ],
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,
@@ -299,7 +299,7 @@ class ClientController extends Controller
                     'first_name' => $c->first_name,
                     'last_name' => $c->last_name,
                     'user' => [
-                        'profile_photo_path' => $c->user->profile_photo_path,
+                        'profile_photo_path' => $c->user?->profile_photo_path,
                     ],
                 ]),
                 'blocked_caregivers' => $client->blockedCaregivers->map(fn ($c) => [
@@ -307,7 +307,7 @@ class ClientController extends Controller
                     'first_name' => $c->first_name,
                     'last_name' => $c->last_name,
                     'user' => [
-                        'profile_photo_path' => $c->user->profile_photo_path,
+                        'profile_photo_path' => $c->user?->profile_photo_path,
                     ],
                 ]),
                 'previous_caregivers' => $previousCaregivers->map(fn ($c) => [
@@ -315,7 +315,7 @@ class ClientController extends Controller
                     'first_name' => $c->first_name,
                     'last_name' => $c->last_name,
                     'user' => [
-                        'profile_photo_path' => $c->user->profile_photo_path,
+                        'profile_photo_path' => $c->user?->profile_photo_path,
                     ],
                 ]),
                 'type_changes' => $client->typeChanges->map(fn ($tc) => [
@@ -469,7 +469,7 @@ class ClientController extends Controller
                 'first_name' => $client->first_name,
                 'last_name' => $client->last_name,
                 'biography' => $client->biography,
-                'email' => $client->user->email,
+                'email' => $client->user?->email,
                 'phone' => $client->phone,
                 'client_type' => $client->client_type,
                 'how_did_you_hear' => $client->how_did_you_hear,
@@ -479,7 +479,7 @@ class ClientController extends Controller
                 'special_needs_notes' => $client->special_needs_notes,
                 'notes' => $client->notes,
                 'user' => [
-                    'profile_photo_path' => $client->user->profile_photo_path,
+                    'profile_photo_path' => $client->user?->profile_photo_path,
                 ],
                 'addresses' => $client->addresses->map(fn ($a) => [
                     'id' => $a->id,

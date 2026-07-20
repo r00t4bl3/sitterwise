@@ -49,6 +49,15 @@ beforeEach(function () {
     $this->talkingPointUrl = fn () => "/applications/{$this->application->id}/interview/talking-points";
 });
 
+it('renders the interview evaluate page when the caregiver has no user record', function () {
+    // Reproduce the orphan: a caregiver referencing a user that no longer exists.
+    $this->caregiver->user()->delete();
+
+    $this->actingAs($this->admin)
+        ->get(route('applications.interview', $this->application))
+        ->assertSuccessful();
+});
+
 it('can list talking points for an interview', function () {
     $this->interview->talkingPoints()->create([
         'talking_point_id' => null,

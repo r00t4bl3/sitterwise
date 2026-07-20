@@ -101,6 +101,26 @@ describe('Application Management - Index', function () {
         );
     });
 
+    it('excludes an application whose caregiver has no user record and still renders', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $valid = applicationManagementCreateApplication(['applicant_email' => 'valid@example.com']);
+
+        // Orphan: a caregiver referencing a user that no longer exists.
+        $orphan = applicationManagementCreateApplication(['applicant_email' => 'orphan@example.com']);
+        $orphan['caregiver']->user()->delete();
+
+        $response = $this->get('/applications');
+        $response->assertStatus(200);
+        // Only the valid application is listed; the orphaned one is filtered out.
+        $response->assertInertia(fn ($page) => $page
+            ->component('admin/applications/index')
+            ->has('applications.data', 1)
+            ->where('applications.data.0.caregiver_id', $valid['caregiver']->id)
+        );
+    });
+
     it('lists applications for super admin users', function () {
         $superAdmin = User::factory()->create(['role' => 'super_admin']);
         $this->actingAs($superAdmin);

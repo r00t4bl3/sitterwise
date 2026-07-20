@@ -156,6 +156,32 @@ describe('Caregiver - Admin', function () {
         $response->assertSuccessful();
     });
 
+    test('the index renders a caregiver whose user record is missing', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        // Reproduce the orphan: a caregiver referencing a user that no longer exists.
+        $caregiver = Caregiver::factory()->create();
+        $caregiver->user()->delete();
+
+        $this->get(route('caregivers.index', ['sort' => 'id', 'direction' => 'desc']))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page
+                ->where('caregivers.data.0.id', $caregiver->id)
+                ->where('caregivers.data.0.user', null)
+            );
+    });
+
+    test('the show page renders a caregiver whose user record is missing', function () {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $caregiver = Caregiver::factory()->create();
+        $caregiver->user()->delete();
+
+        $this->get(route('caregivers.show', $caregiver))->assertSuccessful();
+    });
+
     test('admin users can view caregiver show page', function () {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
@@ -224,6 +250,54 @@ describe('Caregiver - Admin', function () {
 
         $caregiver->refresh();
         expect($caregiver->first_name)->toBe('UpdatedFirstName');
+    });
+
+    test('admin can set the languages a caregiver speaks', function () {
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create();
+
+        $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'languages' => ['spanish', 'mandarin_chinese'],
+        ])->assertRedirect();
+
+        expect($caregiver->fresh()->languages)->toBe(['spanish', 'mandarin_chinese']);
+    });
+
+    test('admin can clear the languages a caregiver speaks', function () {
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create(['languages' => ['spanish']]);
+
+        $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'languages' => [],
+        ])->assertRedirect();
+
+        expect($caregiver->fresh()->languages)->toBe([]);
+    });
+
+    test('an invalid language value is rejected', function () {
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user);
+
+        $caregiver = Caregiver::factory()->create(['languages' => ['spanish']]);
+
+        $this->patch(route('caregivers.update', $caregiver), [
+            'first_name' => $caregiver->first_name,
+            'last_name' => $caregiver->last_name,
+            'status' => $caregiver->status->value,
+            'languages' => ['klingon'],
+        ])->assertSessionHasErrors('languages.0');
+
+        expect($caregiver->fresh()->languages)->toBe(['spanish']);
     });
 
     test('admin users can update caregiver educations', function () {

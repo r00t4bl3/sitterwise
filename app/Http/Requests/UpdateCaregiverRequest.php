@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Enums\CaregiverStatus;
+use App\Enums\ForeignLanguage;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class UpdateCaregiverRequest extends FormRequest
@@ -46,6 +48,8 @@ class UpdateCaregiverRequest extends FormRequest
             'preferred_location_id' => 'nullable|exists:locations,id',
             'attribute_values' => 'nullable|array',
             'attribute_values.*' => 'nullable|string',
+            'languages' => 'nullable|array',
+            'languages.*' => ['string', Rule::enum(ForeignLanguage::class)],
             'certifications' => 'nullable|array',
             'certifications.*.certification_type_id' => 'required|exists:certification_types,id',
             'certifications.*.expiration_date' => 'nullable|date',

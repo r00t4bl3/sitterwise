@@ -32,4 +32,23 @@ enum ForeignLanguage: string
             self::AmericanSignLanguage => 'American Sign Language',
         };
     }
+
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_map(fn (self $case) => $case->value, self::cases());
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function toArray(): array
+    {
+        return array_map(fn (self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+        ], self::cases());
+    }
 }

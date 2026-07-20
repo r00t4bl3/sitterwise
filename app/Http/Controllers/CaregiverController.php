@@ -6,6 +6,7 @@ use App\Console\Commands\RecalculateReliability;
 use App\Enums\AssignmentResolution;
 use App\Enums\BookingStatus;
 use App\Enums\CaregiverStatus;
+use App\Enums\ForeignLanguage;
 use App\Enums\LocationType;
 use App\Enums\ServiceType;
 use App\Http\Requests\ResetCaregiverPasswordRequest;
@@ -390,6 +391,12 @@ class CaregiverController extends Controller
                 $caregiver->attributes()->syncWithoutDetaching($attributeSync);
             }
 
+            // Full replace on the JSON column so languages can be added and removed
+            // (this is what the "Spanish only" caregiver filter reads).
+            if ($request->has('languages')) {
+                $caregiver->update(['languages' => $validated['languages'] ?? []]);
+            }
+
             if (isset($validated['certifications'])) {
                 $certSync = [];
                 $certFiles = $request->file('cert_files') ?? [];
@@ -476,6 +483,7 @@ class CaregiverController extends Controller
             'locations' => $locations,
             'attribute_definitions' => $attributeDefinitions,
             'certification_types' => $certificationTypes,
+            'language_options' => ForeignLanguage::toArray(),
             'csrf_token' => csrf_token(),
         ]);
     }

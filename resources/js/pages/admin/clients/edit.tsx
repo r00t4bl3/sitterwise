@@ -83,7 +83,7 @@ interface Client {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
     addresses: Address[];
     children: Child[];
     pets: Pet[];
@@ -112,7 +112,7 @@ interface CaregiverSelect {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
 }
 
 interface Props {
@@ -151,7 +151,7 @@ export default function ClientEdit() {
     const [searchBlock, setSearchBlock] = useState('');
 
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
-        client.user.profile_photo_path,
+        client.user?.profile_photo_path ?? null,
     );
 
     const [attributeValues, setAttributeValues] = useState<
@@ -359,7 +359,7 @@ export default function ClientEdit() {
                             <div className="group relative">
                                 <UserAvatar
                                     profile_photo_url={
-                                        client.user.profile_photo_url
+                                        client.user?.profile_photo_url ?? null
                                     }
                                     profile_photo_path={currentProfilePhoto}
                                     name={`${client.first_name} ${client.last_name}`}

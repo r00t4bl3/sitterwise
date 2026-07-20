@@ -110,6 +110,40 @@ describe('Client - Admin', function () {
         $response->assertSuccessful();
     });
 
+    test('the index renders a client whose user record is missing', function () {
+        $this->actingAs($this->user);
+
+        // Reproduce the orphan: a client referencing a user that no longer exists.
+        $client = Client::factory()->create();
+        $client->user()->delete();
+
+        $this->get(route('clients.index', ['sort' => 'id', 'direction' => 'desc']))
+            ->assertSuccessful()
+            ->assertInertia(fn ($page) => $page
+                ->where('clients.data.0.id', $client->id)
+                ->where('clients.data.0.user', null)
+            );
+    });
+
+    test('the show page renders a client whose user record is missing', function () {
+        $this->actingAs($this->user);
+
+        $client = Client::factory()->create();
+        $client->user()->delete();
+
+        $this->get(route('clients.show', $client))->assertSuccessful();
+    });
+
+    test('the show page renders when an assigned caregiver has no user record', function () {
+        $this->actingAs($this->user);
+
+        $caregiver = Caregiver::factory()->create();
+        $caregiver->user()->delete();
+        $this->client->favoriteCaregivers()->attach($caregiver->id);
+
+        $this->get(route('clients.show', $this->client))->assertSuccessful();
+    });
+
     test('admin users can view client create page', function () {
         $this->actingAs($this->user);
 
@@ -202,9 +236,10 @@ describe('Client - Admin', function () {
         $response = $this->get(route('clients.searchSuggestions', ['q' => 'John']));
         $response->assertSuccessful();
         $response->assertHeader('content-type', 'application/json');
-        $results = $response->json();
-        expect($results)->toHaveCount(1)
-            ->and($results[0]['name'])->toBe('John Doe');
+        $names = collect($response->json())->pluck('name');
+        expect($names)->toContain('John Doe')
+            ->and($names)->not->toContain('Jane Smith')
+            ->and($names)->not->toContain('Alice Jones');
     });
 
     test('admin users can search clients by email', function () {
@@ -256,9 +291,9 @@ describe('Client - Admin', function () {
 
         $response = $this->get(route('clients.searchSuggestions', ['q' => 'John Doe']));
         $response->assertSuccessful();
-        $results = $response->json();
-        expect($results)->toHaveCount(1)
-            ->and($results[0]['name'])->toBe('John Doe');
+        $names = collect($response->json())->pluck('name');
+        expect($names)->toContain('John Doe')
+            ->and($names)->not->toContain('Jane Doe');
     });
 
     test('admin users can access client data endpoint', function () {

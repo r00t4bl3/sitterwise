@@ -208,7 +208,7 @@ interface Caregiver {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
     rating: number | null;
     admin_rating: number | null;
     biography: string | null;
@@ -221,6 +221,7 @@ interface Caregiver {
     certifications: Certification[];
     attributes: Attribute[];
     educations: Education[];
+    languages: string[];
     application: CaregiverApplication | null;
     agreements: Agreement[];
     reference_requests: ReferenceRequest[];
@@ -317,6 +318,13 @@ function AttributeBadge({
             </span>
         </div>
     );
+}
+
+function formatLanguage(value: string): string {
+    return value
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }
 
 function StripeBadge({ isConnected }: { isConnected: boolean | null }) {
@@ -453,9 +461,11 @@ export default function CaregiverShow() {
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <UserAvatar
-                            profile_photo_url={caregiver.user.profile_photo_url}
+                            profile_photo_url={
+                                caregiver.user?.profile_photo_url ?? null
+                            }
                             profile_photo_path={
-                                caregiver.user.profile_photo_path
+                                caregiver.user?.profile_photo_path ?? null
                             }
                             name={`${caregiver.first_name} ${caregiver.last_name}`}
                             size="md"
@@ -962,6 +972,27 @@ export default function CaregiverShow() {
                                                         value={attr.value}
                                                     />
                                                 ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {caregiver.languages.length > 0 && (
+                                    <div className="mt-3 border-t border-border pt-3">
+                                        <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">
+                                            Languages
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {caregiver.languages.map(
+                                                (language) => (
+                                                    <span
+                                                        key={language}
+                                                        className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground"
+                                                    >
+                                                        {formatLanguage(
+                                                            language,
+                                                        )}
+                                                    </span>
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 )}

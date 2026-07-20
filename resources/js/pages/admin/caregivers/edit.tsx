@@ -67,6 +67,11 @@ interface AttributeDefinition {
     slug: string;
 }
 
+interface LanguageOption {
+    value: string;
+    label: string;
+}
+
 interface CaregiverAttribute {
     id: number;
     attribute_definition_id: number;
@@ -117,7 +122,7 @@ interface Caregiver {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
     rating: number | null;
     biography: string | null;
     notes: string | null;
@@ -132,6 +137,7 @@ interface Caregiver {
     attributes: CaregiverAttribute[];
     certifications: Certification[];
     educations: Education[];
+    languages: string[];
 }
 
 interface Props {
@@ -141,6 +147,7 @@ interface Props {
     specialty_types: SpecialtyType[];
     locations: Location[];
     attribute_definitions: AttributeDefinition[];
+    language_options: LanguageOption[];
     certification_types: CertificationType[];
 }
 
@@ -151,6 +158,7 @@ export default function CaregiverEdit() {
         specialty_types,
         locations,
         attribute_definitions,
+        language_options,
         certification_types,
     } = usePage<Props>().props;
 
@@ -176,6 +184,9 @@ export default function CaregiverEdit() {
 
         return initial;
     });
+    const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
+        caregiver.languages ?? [],
+    );
     const [certifications, setCertifications] = useState<Certification[]>(
         caregiver.certifications,
     );
@@ -192,8 +203,9 @@ export default function CaregiverEdit() {
     const [attributesOpen, setAttributesOpen] = useState(false);
     const [certificationsOpen, setCertificationsOpen] = useState(false);
     const [educationsOpen, setEducationsOpen] = useState(false);
+    const [languagesOpen, setLanguagesOpen] = useState(false);
     const [currentProfilePhoto, setCurrentProfilePhoto] = useState(
-        caregiver.user.profile_photo_path,
+        caregiver.user?.profile_photo_path ?? null,
     );
 
     const photoForm = useForm<{ profile_photo: File | null }>({
@@ -285,6 +297,7 @@ export default function CaregiverEdit() {
         certifications: caregiver.certifications,
         cert_files: {} as Record<number, File | null>,
         educations: caregiver.educations,
+        languages: caregiver.languages ?? [],
     });
 
     const addEducation = () => {
@@ -369,6 +382,7 @@ export default function CaregiverEdit() {
             location_ids: selectedLocationIds,
             preferred_location_id: preferredLocationId,
             attribute_values: attributeValues,
+            languages: selectedLanguages,
             certifications: certifications,
             educations: educations,
             cert_files: certFiles,
@@ -401,7 +415,7 @@ export default function CaregiverEdit() {
                             <div className="group relative">
                                 <UserAvatar
                                     profile_photo_url={
-                                        caregiver.user.profile_photo_url
+                                        caregiver.user?.profile_photo_url ?? null
                                     }
                                     profile_photo_path={currentProfilePhoto}
                                     name={`${caregiver.first_name} ${caregiver.last_name}`}
@@ -849,6 +863,66 @@ export default function CaregiverEdit() {
                                 {form.errors.attribute_values && (
                                     <p className="col-span-full text-sm text-destructive">
                                         {form.errors.attribute_values}
+                                    </p>
+                                )}
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+
+                    <div className="mt-4 border border-border bg-card p-6">
+                        <Collapsible
+                            open={languagesOpen}
+                            onOpenChange={setLanguagesOpen}
+                        >
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between">
+                                <h2 className="font-serif text-lg font-semibold text-foreground">
+                                    Languages spoken
+                                </h2>
+                                <ChevronDown
+                                    className={`h-5 w-5 text-muted-foreground transition-transform ${
+                                        languagesOpen ? 'rotate-180' : ''
+                                    }`}
+                                />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-4 gap-4 sm:grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
+                                {language_options.map((language) => (
+                                    <div
+                                        key={language.value}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Checkbox
+                                            id={`language-${language.value}`}
+                                            checked={selectedLanguages.includes(
+                                                language.value,
+                                            )}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedLanguages([
+                                                        ...selectedLanguages,
+                                                        language.value,
+                                                    ]);
+                                                } else {
+                                                    setSelectedLanguages(
+                                                        selectedLanguages.filter(
+                                                            (value) =>
+                                                                value !==
+                                                                language.value,
+                                                        ),
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                        <Label
+                                            htmlFor={`language-${language.value}`}
+                                            className="font-normal"
+                                        >
+                                            {language.label}
+                                        </Label>
+                                    </div>
+                                ))}
+                                {form.errors.languages && (
+                                    <p className="col-span-full text-sm text-destructive">
+                                        {form.errors.languages}
                                     </p>
                                 )}
                             </CollapsibleContent>

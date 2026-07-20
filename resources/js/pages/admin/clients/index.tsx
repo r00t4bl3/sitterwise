@@ -57,7 +57,7 @@ interface Client {
     user: {
         profile_photo_path: string | null;
         profile_photo_url: string | null;
-    };
+    } | null;
     children_count?: number;
     pets_count?: number;
 }
@@ -372,11 +372,13 @@ export default function ClientsIndex() {
                                             <UserAvatar
                                                 profile_photo_url={
                                                     client.user
-                                                        .profile_photo_url
+                                                        ?.profile_photo_url ??
+                                                    null
                                                 }
                                                 profile_photo_path={
                                                     client.user
-                                                        .profile_photo_path
+                                                        ?.profile_photo_path ??
+                                                    null
                                                 }
                                                 name={`${client.first_name} ${client.last_name}`}
                                                 size="sm"

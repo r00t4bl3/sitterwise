@@ -36,8 +36,8 @@ class CaregiverResource extends JsonResource
                     : null),
             'date_of_birth_raw' => $this->date_of_birth,
             'user' => [
-                'profile_photo_path' => $this->user->profile_photo_path ?? null,
-                'profile_photo_url' => $this->user->profile_photo_url ?? null,
+                'profile_photo_path' => $this->user?->profile_photo_path,
+                'profile_photo_url' => $this->user?->profile_photo_url,
             ],
             'rating' => $this->rating !== null ? (float) $this->rating : null,
             'admin_rating' => $this->admin_rating ? (float) $this->admin_rating : null,
@@ -97,6 +97,7 @@ class CaregiverResource extends JsonResource
                 'graduation_year' => $e->graduation_year,
                 'degree' => $e->degree,
             ]),
+            'languages' => $this->languages ?? [],
             'stripe_account_id' => $this->stripe_account_id,
             'stripe_charges_enabled' => $this->stripe_charges_enabled,
             'application' => $this->whenLoaded('application', fn () => $this->application ? [

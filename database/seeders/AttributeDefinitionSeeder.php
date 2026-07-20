@@ -13,9 +13,11 @@ class AttributeDefinitionSeeder extends Seeder
     public function run(): void
     {
         // Caregiver attributes
+        // Note: "Spanish" is intentionally NOT an attribute — a caregiver's languages
+        // (incl. Spanish) live on caregivers.languages and are set via the Languages
+        // control; the matcher's "Spanish only" filter reads that column.
         $caregiverAttributes = [
             ['name' => 'Pet Sitting', 'slug' => 'pet_sitting', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 1],
-            ['name' => 'Spanish', 'slug' => 'spanish', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 2],
             ['name' => 'Has Vehicle', 'slug' => 'has_vehicle', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 3],
             ['name' => 'Non-Smoker', 'slug' => 'non_smoker', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 4],
             ['name' => 'COVID-19 Vaccinated', 'slug' => 'covid19_vaccinated', 'type' => 'boolean', 'entity_type' => 'caregiver', 'sort_order' => 5],
