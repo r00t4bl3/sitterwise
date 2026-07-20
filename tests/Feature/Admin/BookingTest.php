@@ -532,6 +532,54 @@ describe('Booking - Admin', function () {
         expect($booking->status)->toBe('confirmed');
     });
 
+    test('admin can override the hotel fee and it is billed into the service total', function () {
+        $this->actingAs($this->user);
+
+        $booking = Booking::factory()
+            ->forClient($this->client)
+            ->withBookingGroup(fn ($group) => $group->state([
+                'service_type' => 'babysitter',
+                'location_type' => 'hotel',
+                'hotel_id' => $this->hotel->id,
+            ]))
+            ->create([
+                'status' => 'confirmed',
+                'start_datetime' => now()->addDays(5)->setHour(9)->setMinute(0),
+                'end_datetime' => now()->addDays(5)->setHour(13)->setMinute(0),
+            ]);
+
+        $child = ClientChild::factory()->create(['client_id' => $this->client->id]);
+
+        $response = $this->patch(route('bookings.update', $booking), [
+            'client_id' => $booking->client_id,
+            'service_type' => $booking->service_type,
+            'location_type' => 'hotel',
+            'start_datetime' => $booking->start_datetime->toISOString(),
+            'end_datetime' => $booking->end_datetime->toISOString(),
+            'hotel_id' => $this->hotel->id,
+            'hotel_fee' => 42.50,
+            'new_children' => [
+                ['name' => $child->name, 'gender' => $child->gender, 'birth_month' => $child->birth_month, 'birth_year' => $child->birth_year],
+            ],
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $booking->refresh();
+
+        // The override persisted and flowed into the client-facing service total
+        // (charge + reimbursement + bonus + hotel fee; no lifesaver on this booking).
+        expect((float) $booking->hotel_fee)->toBe(42.50)
+            ->and((float) $booking->total_service_amount)->toBe(round(
+                (float) $booking->charge_to_client
+                + (float) $booking->reimbursement
+                + (float) $booking->bonus
+                + 42.50,
+                2
+            ));
+    });
+
     test('unassigning caregiver from confirmed booking reverts status to received', function () {
         $this->actingAs($this->user);
 

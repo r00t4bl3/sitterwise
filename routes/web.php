@@ -226,9 +226,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware('super_admin')->group(function () {
-        Route::get('broadcast-sms', [BroadcastSmsController::class, 'index'])->name('broadcast-sms.index');
-        Route::post('broadcast-sms', [BroadcastSmsController::class, 'store'])->name('broadcast-sms.store');
-
         // Talking points master template CRUD
         Route::get('talking-points', [InterviewTalkingPointController::class, 'index'])->name('talking-points.index');
         Route::post('talking-points', [InterviewTalkingPointController::class, 'store'])->name('talking-points.store');
@@ -259,6 +256,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // middleware admits both admin and super_admin, matching the expectations
     // codified in the Superadmin feature tests.
     Route::middleware('admin')->group(function () {
+        // Broadcast SMS — available to admin and super_admin (the 'admin'
+        // middleware admits both). Recipient eligibility is enforced in the
+        // controller via Caregiver::activeForSms(), not by the sender's role.
+        Route::get('broadcast-sms', [BroadcastSmsController::class, 'index'])->name('broadcast-sms.index');
+        Route::post('broadcast-sms', [BroadcastSmsController::class, 'store'])->name('broadcast-sms.store');
+
         Route::resource('certifications', CertificationTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'certifications.index');
         Route::resource('specialties', SpecialtyTypeController::class)->except(['show', 'create', 'edit'])->name('index', 'specialties.index');
         Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit'])->name('index', 'locations.index');

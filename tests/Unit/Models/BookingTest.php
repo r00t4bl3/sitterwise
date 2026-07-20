@@ -519,3 +519,134 @@ test('calculate total amount does not modify financials for past-dated confirmed
     $this->assertEquals(100.00, $booking->total_service_amount);
     $this->assertEquals(110.00, $booking->total_amount);
 });
+
+/**
+ * @return array{0: BookingGroup, 1: Hotel}
+ */
+function hotelBookingGroup(?float $resortFee, string $locationType = 'hotel'): array
+{
+    $client = Client::factory()->create();
+    $hotel = Hotel::factory()->create(['resort_fee' => $resortFee]);
+
+    PricingRule::factory()->create([
+        'service_type' => 'babysitter',
+        'number_of_children' => 0,
+        'charge_to_client' => 30.00,
+        'paid_to_caregiver' => 20.00,
+        'sitterwise_cut' => 10.00,
+    ]);
+
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+        'location_type' => $locationType,
+        'hotel_id' => $locationType === 'hotel' ? $hotel->id : null,
+        'children' => [],
+    ]);
+
+    return [$group, $hotel];
+}
+
+function makeHotelBooking(int $groupId, array $overrides = []): Booking
+{
+    return Booking::factory()->create(array_merge([
+        'booking_group_id' => $groupId,
+        'status' => 'confirmed',
+        'start_datetime' => now()->addDay()->setHour(9)->setMinute(0),
+        'end_datetime' => now()->addDay()->setHour(13)->setMinute(0),
+        'total_working_hour' => 4,
+        'reimbursement' => 0,
+        'bonus' => 0,
+        'tip' => 0,
+    ], $overrides));
+}
+
+test('auto-populates hotel_fee from the hotel resort fee on create and bills only the client', function () {
+    [$group] = hotelBookingGroup(25.00);
+
+    $booking = makeHotelBooking($group->id);
+
+    // charge_to_client = 30 * 4 = 120; total_service_amount = 120 + 25 (hotel fee)
+    expect((float) $booking->hotel_fee)->toBe(25.00)
+        ->and((float) $booking->charge_to_client)->toBe(120.00)
+        ->and((float) $booking->total_service_amount)->toBe(145.00)
+        ->and((float) $booking->total_amount)->toBe(145.00)
+        // The hotel fee is NOT paid to the caregiver and does not change the cut.
+        ->and((float) $booking->paid_to_caregiver_total)->toBe(80.00)
+        ->and((float) $booking->sitterwise_cut)->toBe(40.00);
+});
+
+test('does not populate hotel_fee for a non-hotel booking', function () {
+    [$group] = hotelBookingGroup(25.00, 'private_home');
+
+    $booking = makeHotelBooking($group->id);
+
+    expect($booking->hotel_fee)->toBeNull()
+        ->and((float) $booking->total_service_amount)->toBe(120.00);
+});
+
+test('does not populate hotel_fee when the hotel resort fee is zero or null', function (?float $resortFee) {
+    [$group] = hotelBookingGroup($resortFee);
+
+    $booking = makeHotelBooking($group->id);
+
+    expect($booking->hotel_fee)->toBeNull()
+        ->and((float) $booking->total_service_amount)->toBe(120.00);
+})->with([0.0, null]);
+
+test('does not overwrite a hotel_fee that was already set on create', function () {
+    [$group] = hotelBookingGroup(25.00);
+
+    $booking = makeHotelBooking($group->id, ['hotel_fee' => 99.00]);
+
+    expect((float) $booking->hotel_fee)->toBe(99.00)
+        ->and((float) $booking->total_service_amount)->toBe(219.00);
+});
+
+test('includes hotel_fee in total_service_amount via calculateTotalAmount', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'completed',
+        'start_datetime' => now()->subHours(9),
+        'end_datetime' => now()->subHours(5),
+        'reimbursement' => 10.00,
+        'bonus' => 5.00,
+        'tip' => 3.00,
+        'hotel_fee' => 15.00,
+    ]);
+
+    $booking->paid_to_caregiver_hourly = 20.00;
+    $booking->charge_to_client_hourly = 30.00;
+    $booking->sitterwise_cut_hourly = 10.00;
+    $booking->calculateTotalAmount();
+
+    // service = 30*4 + 10 + 5 + 15 (hotel) = 150; total = 153 with tip.
+    expect((float) $booking->total_service_amount)->toBe(150.00)
+        ->and((float) $booking->total_amount)->toBe(153.00)
+        // Caregiver payout unchanged by the hotel fee: 80 + 10 + 5 + 3 = 98.
+        ->and((float) $booking->paid_to_caregiver_total)->toBe(98.00);
+});
+
+test('zeros hotel_fee for a cancelled booking', function () {
+    $client = Client::factory()->create();
+    $group = BookingGroup::factory()->create([
+        'client_id' => $client->id,
+        'service_type' => 'babysitter',
+    ]);
+    $booking = Booking::factory()->create([
+        'booking_group_id' => $group->id,
+        'status' => 'cancelled',
+        'hotel_fee' => 25.00,
+        'total_service_amount' => 100.00,
+    ]);
+
+    $booking->calculateTotalAmount();
+
+    expect((float) $booking->hotel_fee)->toBe(0.0)
+        ->and((float) $booking->total_service_amount)->toBe(0.0);
+});

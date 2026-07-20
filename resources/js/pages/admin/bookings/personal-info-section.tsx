@@ -857,6 +857,46 @@ export function PersonalInfoSection({
                         </div>
                     )}
 
+                    {form.data.location_type === 'hotel' && (
+                        <div>
+                            <Label
+                                htmlFor="hotel_fee"
+                                className={`text-sm font-medium ${form.errors.hotel_fee ? 'text-destructive' : 'text-foreground'}`}
+                            >
+                                Hotel Fee
+                            </Label>
+                            <div className="relative mt-1">
+                                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
+                                    $
+                                </span>
+                                <Input
+                                    id="hotel_fee"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="pl-7"
+                                    placeholder="0.00"
+                                    value={form.data.hotel_fee ?? ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'hotel_fee',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Auto-filled from the hotel's resort fee; billed
+                                to the client. Override if needed.
+                            </p>
+                            {form.errors.hotel_fee && (
+                                <p className="mt-1 text-sm text-destructive">
+                                    {form.errors.hotel_fee}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {(form.data.location_type !== 'private_home' ||
                         clientAddresses.length === 0 ||
                         showManualAddressInput ||

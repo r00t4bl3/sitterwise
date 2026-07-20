@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { FeesBreakdown } from '@/components/fees-breakdown';
+import { HotelInfoDialog } from '@/components/hotel-info-dialog';
+import type { HotelInfo } from '@/components/hotel-info-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { ToasterMessage } from '@/components/toaster-message';
 import { Button } from '@/components/ui/button';
@@ -117,6 +119,9 @@ interface Booking {
     charge_to_client_hourly: number | null;
     paid_to_caregiver_hourly: number | null;
     sitterwise_cut_hourly: number | null;
+    hotel_fee: number | null;
+    location_type: string | null;
+    hotel: HotelInfo | null;
     client: Client;
     caregiver?: Caregiver;
 }
@@ -169,6 +174,7 @@ export default function TransactionsIndex() {
         reimbursement_description: '',
         tip: '',
         bonus: '',
+        hotel_fee: '',
     });
 
     const [recalculatedValues, setRecalculatedValues] = useState({
@@ -184,6 +190,7 @@ export default function TransactionsIndex() {
         reimbursement_description: '',
         tip: 0,
         bonus: 0,
+        hotel_fee: 0,
     });
 
     const formatDateTime = (dateStr: string) => {
@@ -204,6 +211,7 @@ export default function TransactionsIndex() {
             reimbursement_description: booking.reimbursement_description ?? '',
             tip: String(booking.tip ?? ''),
             bonus: String(booking.bonus ?? ''),
+            hotel_fee: String(booking.hotel_fee ?? ''),
         });
         paymentForm.setData({
             checkout_at: booking.checkout_at || booking.end_datetime || '',
@@ -212,6 +220,7 @@ export default function TransactionsIndex() {
             reimbursement_description: booking.reimbursement_description ?? '',
             tip: booking.tip ?? 0,
             bonus: booking.bonus ?? 0,
+            hotel_fee: Number(booking.hotel_fee ?? 0),
         });
         setRecalculatedValues({
             charge_to_client: hourlyRate * hours,
@@ -350,13 +359,19 @@ export default function TransactionsIndex() {
         }
     };
 
-    // The backend charges total_service_amount (service + reimbursement + bonus;
-    // tips are charged separately). A $0 charge — e.g. a booking with no matched
-    // pricing rule — is rejected server-side, so block Confirm and explain why.
+    // The backend charges total_service_amount (service + reimbursement + bonus +
+    // hotel fee; tips are charged separately). A $0 charge — e.g. a booking with
+    // no matched pricing rule — is rejected server-side, so block Confirm and
+    // explain why. The hotel fee is editable here for hotel bookings.
+    const isHotelBooking = selectedBooking?.location_type === 'hotel';
+    const hotelFeeAmount = isHotelBooking
+        ? parseFloat(localValues.hotel_fee) || 0
+        : 0;
     const serviceChargeAmount =
         recalculatedValues.charge_to_client +
         (parseFloat(localValues.reimbursement) || 0) +
-        (parseFloat(localValues.bonus) || 0);
+        (parseFloat(localValues.bonus) || 0) +
+        hotelFeeAmount;
     const isChargeInvalid = serviceChargeAmount <= 0;
 
     return (
@@ -929,6 +944,46 @@ export default function TransactionsIndex() {
                             </div>
                         </div>
 
+                        {isHotelBooking && (
+                            <div>
+                                <label className="text-sm font-medium text-foreground">
+                                    Hotel Fee
+                                </label>
+                                <div className="relative mt-1">
+                                    <DollarSign className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        type="text"
+                                        placeholder="0.00"
+                                        value={localValues.hotel_fee}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(
+                                                /[^0-9.]/g,
+                                                '',
+                                            );
+                                            setLocalValues({
+                                                ...localValues,
+                                                hotel_fee: val,
+                                            });
+                                        }}
+                                        onBlur={() =>
+                                            paymentForm.setData({
+                                                ...paymentForm.data,
+                                                hotel_fee:
+                                                    parseFloat(
+                                                        localValues.hotel_fee,
+                                                    ) || 0,
+                                            })
+                                        }
+                                        className="pl-8"
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Auto-filled from the hotel's resort fee;
+                                    billed to the client.
+                                </p>
+                            </div>
+                        )}
+
                         <div className="rounded-md border border-border bg-muted p-4">
                             <h4 className="mb-3 text-sm font-semibold text-foreground">
                                 Payment Summary
@@ -980,6 +1035,16 @@ export default function TransactionsIndex() {
                                         ).toFixed(2)}
                                     </span>
                                 </div>
+                                {isHotelBooking && (
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Hotel Fee
+                                        </span>
+                                        <span className="font-medium">
+                                            ${hotelFeeAmount.toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">
                                         Tip
@@ -1004,6 +1069,7 @@ export default function TransactionsIndex() {
                                             ) || 0) +
                                             (parseFloat(localValues.bonus) ||
                                                 0) +
+                                            hotelFeeAmount +
                                             (parseFloat(localValues.tip) || 0)
                                         ).toFixed(2)}
                                     </span>
@@ -1090,18 +1156,32 @@ export default function TransactionsIndex() {
                         </DialogDescription>
                     </DialogHeader>
                     {breakdownBooking && (
-                        <FeesBreakdown
-                            charge_to_client={breakdownBooking.charge_to_client}
-                            paid_to_caregiver={
-                                breakdownBooking.paid_to_caregiver
-                            }
-                            sitterwise_cut={breakdownBooking.sitterwise_cut}
-                            tip={breakdownBooking.tip}
-                            reimbursement={breakdownBooking.reimbursement}
-                            bonus={breakdownBooking.bonus}
-                            lifesaver_bonus={breakdownBooking.lifesaver_bonus}
-                            emptyMessage="No fee details available for this booking."
-                        />
+                        <>
+                            <FeesBreakdown
+                                charge_to_client={
+                                    breakdownBooking.charge_to_client
+                                }
+                                paid_to_caregiver={
+                                    breakdownBooking.paid_to_caregiver
+                                }
+                                sitterwise_cut={breakdownBooking.sitterwise_cut}
+                                tip={breakdownBooking.tip}
+                                reimbursement={breakdownBooking.reimbursement}
+                                bonus={breakdownBooking.bonus}
+                                lifesaver_bonus={
+                                    breakdownBooking.lifesaver_bonus
+                                }
+                                hotel_fee={breakdownBooking.hotel_fee}
+                                emptyMessage="No fee details available for this booking."
+                            />
+                            {breakdownBooking.hotel && (
+                                <div className="mt-3">
+                                    <HotelInfoDialog
+                                        hotel={breakdownBooking.hotel}
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                     <DialogFooter>
                         <Button

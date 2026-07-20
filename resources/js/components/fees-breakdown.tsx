@@ -8,6 +8,7 @@ interface FeesBreakdownProps {
     reimbursement?: number | null;
     bonus?: number | null;
     lifesaver_bonus?: number | null;
+    hotel_fee?: number | null;
     /** Optional section heading (e.g. "Fees"). Omit when the container already labels it. */
     heading?: string;
     /** Shown when there are no fee values. Omit to render nothing in that case. */
@@ -31,6 +32,7 @@ export function FeesBreakdown({
     reimbursement,
     bonus,
     lifesaver_bonus,
+    hotel_fee,
     heading,
     emptyMessage,
     className,
@@ -44,6 +46,9 @@ export function FeesBreakdown({
         { label: 'Bonus', value: bonus },
         ...((lifesaver_bonus ?? 0) > 0
             ? [{ label: 'Lifesaver Bonus', value: lifesaver_bonus }]
+            : []),
+        ...((hotel_fee ?? 0) > 0
+            ? [{ label: 'Hotel Fee', value: hotel_fee }]
             : []),
     ].filter((f) => f.value !== null && f.value !== undefined);
 

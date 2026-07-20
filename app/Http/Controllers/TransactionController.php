@@ -20,7 +20,7 @@ class TransactionController extends Controller
                 $query->withExists(['paymentMethods as has_active_payment_method' => function ($query) {
                     $query->where('status', 'active');
                 }]);
-            }, 'client.user', 'caregiver', 'payments'])
+            }, 'client.user', 'caregiver', 'payments', 'hotel'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('id', 'like', "%{$search}%")
@@ -64,6 +64,21 @@ class TransactionController extends Controller
                     'charge_to_client_hourly' => $booking->charge_to_client_hourly,
                     'paid_to_caregiver_hourly' => $booking->paid_to_caregiver_hourly,
                     'sitterwise_cut_hourly' => $booking->sitterwise_cut_hourly,
+                    'hotel_fee' => $booking->hotel_fee,
+                    'location_type' => $booking->location_type,
+                    'hotel' => $booking->hotel ? [
+                        'id' => $booking->hotel->id,
+                        'name' => $booking->hotel->name,
+                        'line1' => $booking->hotel->line1,
+                        'line2' => $booking->hotel->line2,
+                        'city' => $booking->hotel->city,
+                        'state' => $booking->hotel->state,
+                        'zip' => $booking->hotel->zip,
+                        'parking_instructions' => $booking->hotel->parking_instructions,
+                        'resort_fee' => $booking->hotel->resort_fee,
+                        'contact_name' => $booking->hotel->contact_name,
+                        'contact_phone' => $booking->hotel->contact_phone,
+                    ] : null,
                     'client' => $booking->client ? [
                         'id' => $booking->client->id,
                         'first_name' => $booking->client->first_name,

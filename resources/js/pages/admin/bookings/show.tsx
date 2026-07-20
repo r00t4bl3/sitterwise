@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { FeesBreakdown } from '@/components/fees-breakdown';
+import { HotelInfoDialog } from '@/components/hotel-info-dialog';
+import type { HotelInfo } from '@/components/hotel-info-dialog';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,6 +59,7 @@ interface Booking {
     assignment_resolution: string | null;
     hotel_id: number | null;
     hotel_name: string | null;
+    hotel: HotelInfo | null;
     location_type: string;
     address_line1: string | null;
     address_line2: string | null;
@@ -77,6 +80,7 @@ interface Booking {
     reimbursement: number | null;
     bonus: number | null;
     lifesaver_bonus: number | null;
+    hotel_fee: number | null;
     payment_status?: string | null;
     payment_attempts?: Array<{
         id: number;
@@ -1102,7 +1106,13 @@ export default function BookingDetail({
                                 reimbursement={booking.reimbursement}
                                 bonus={booking.bonus}
                                 lifesaver_bonus={booking.lifesaver_bonus}
+                                hotel_fee={booking.hotel_fee}
                             />
+                            {booking.hotel && (
+                                <div className="mt-3">
+                                    <HotelInfoDialog hotel={booking.hotel} />
+                                </div>
+                            )}
 
                             {booking.payment_attempts &&
                                 booking.payment_attempts.length > 0 && (

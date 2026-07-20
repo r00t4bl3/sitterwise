@@ -32,13 +32,24 @@ function superAdmin(): User
     return User::factory()->create(['role' => 'super_admin']);
 }
 
-it('denies access for non-super-admin users', function (string $role) {
+it('denies access for non-admin users', function (string $role) {
     $user = User::factory()->create(['role' => $role]);
 
     $this->actingAs($user)
         ->get(route('broadcast-sms.index'))
         ->assertForbidden();
-})->with(['admin', 'caregiver', 'client']);
+})->with(['caregiver', 'client']);
+
+it('allows access for admin users', function () {
+    $user = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($user)
+        ->get(route('broadcast-sms.index'))
+        ->assertSuccessful()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/broadcast-sms/index')
+        );
+});
 
 it('denies access for unauthenticated users', function () {
     $this->get(route('broadcast-sms.index'))
@@ -54,7 +65,7 @@ it('shows the broadcast page with recipient count for super admin', function () 
         ->get(route('broadcast-sms.index'))
         ->assertSuccessful()
         ->assertInertia(fn ($page) => $page
-            ->component('superadmin/broadcast-sms/index')
+            ->component('admin/broadcast-sms/index')
             ->where('recipientCount', 3)
             ->where('complianceFooter', BroadcastSmsController::COMPLIANCE_FOOTER)
         );
@@ -131,6 +142,35 @@ it('creates broadcast and dispatches jobs on send', function () {
 
     Queue::assertPushed(SendBroadcastMessage::class, 3);
 });
+
+it('admin can send broadcast message', function () {
+    Queue::fake();
+    broadcastSmsTestCaregiver();
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->post(route('broadcast-sms.store'), [
+            'message_body' => 'Admin broadcast test',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    Queue::assertPushed(SendBroadcastMessage::class, 1);
+});
+
+it('denies post access for non-admin users', function (string $role) {
+    Queue::fake();
+    $user = User::factory()->create(['role' => $role]);
+
+    $this->actingAs($user)
+        ->post(route('broadcast-sms.store'), [
+            'message_body' => 'Test',
+        ])
+        ->assertForbidden();
+
+    Queue::assertNothingPushed();
+})->with(['caregiver', 'client']);
 
 it('validates message body is required', function () {
     $this->actingAs(superAdmin())

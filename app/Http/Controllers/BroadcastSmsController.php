@@ -29,7 +29,7 @@ class BroadcastSmsController extends Controller
     {
         $recipientCount = Caregiver::activeForSms()->count();
 
-        return Inertia::render('superadmin/broadcast-sms/index', [
+        return Inertia::render('admin/broadcast-sms/index', [
             'recipientCount' => $recipientCount,
             'complianceFooter' => self::COMPLIANCE_FOOTER,
         ]);

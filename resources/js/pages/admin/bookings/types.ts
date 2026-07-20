@@ -140,6 +140,7 @@ export interface Booking {
     caregiver_id: number | null;
     hotel_id: number | null;
     hotel_name: string | null;
+    hotel_fee: number | null;
     service_type_label?: string;
     attributeDefinitions?: Array<{
         pivot: {
@@ -259,6 +260,7 @@ export interface BookingFormData {
     start_datetime: string;
     end_datetime: string;
     hotel_id: number | null;
+    hotel_fee: number | null;
     address_id: number | null;
     caregiver_id: number | null;
     special_considerations: string[];

@@ -108,6 +108,11 @@ const adminNavItems: NavItem[] = [
         href: '/transactions',
         icon: CircleDollarSign,
     },
+    {
+        title: 'SMS Broadcast',
+        href: '/broadcast-sms',
+        icon: MessageCircle,
+    },
 ];
 
 const superAdminNavItems: NavItem[] = [

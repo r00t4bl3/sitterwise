@@ -40,6 +40,20 @@ class Booking extends Model
             if (empty($booking->ulid)) {
                 $booking->ulid = Str::ulid();
             }
+
+            // Auto-populate the hotel resort fee for hotel bookings (per booking
+            // date). Only on create and only when not already set, so an admin
+            // override or a legacy-import value is never overwritten.
+            if (empty($booking->hotel_fee)
+                && $booking->bookingGroup?->location_type === 'hotel'
+                && $booking->bookingGroup?->hotel_id) {
+                $hotel = $booking->bookingGroup->hotel;
+
+                if ($hotel && $hotel->resort_fee > 0) {
+                    $booking->hotel_fee = $hotel->resort_fee;
+                }
+            }
+
             $booking->calculateTotalWorkingHours();
             $booking->calculateHourlyRate();
             $booking->calculateTotalAmount();
@@ -117,6 +131,7 @@ class Booking extends Model
             $this->total_service_amount = 0;
             $this->total_amount = 0;
             $this->paid_to_caregiver_total = 0;
+            $this->hotel_fee = 0;
 
             return;
         }
@@ -142,6 +157,11 @@ class Booking extends Model
         $bonus = (float) ($this->getAttribute('bonus') ?? 0);
         $tip = (float) ($this->getAttribute('tip') ?? 0);
 
+        // Hotel resort fee: billed to the client (part of the service charge) but
+        // NOT paid to the caregiver — it stays with Sitterwise. Null-safe for
+        // non-hotel bookings.
+        $hotelFee = (float) ($this->getAttribute('hotel_fee') ?? 0);
+
         // Lifesaver rescue bonus: paid to the caregiver AND billed to the client,
         // leaving Sitterwise's cut unchanged. Applies to any booking classified a
         // Lifesaver rescue, including an admin's manual lifesaver_override.
@@ -149,7 +169,7 @@ class Booking extends Model
             ? (float) Settings::get('lifesaver.bonus', 0)
             : 0.0;
 
-        $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus + $lifesaverBonus, 2);
+        $this->total_service_amount = round($this->charge_to_client + $reimbursement + $bonus + $lifesaverBonus + $hotelFee, 2);
         $this->total_amount = round($this->total_service_amount + $tip, 2);
         $this->paid_to_caregiver_total = round($this->paid_to_caregiver + $reimbursement + $bonus + $lifesaverBonus + $tip, 2);
     }
@@ -263,6 +283,7 @@ class Booking extends Model
             'paid_to_caregiver_hourly' => 'decimal:2',
             'sitterwise_cut_hourly' => 'decimal:2',
             'total_service_amount' => 'decimal:2',
+            'hotel_fee' => 'decimal:2',
         ];
     }
 

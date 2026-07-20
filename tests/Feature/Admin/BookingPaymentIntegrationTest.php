@@ -6,6 +6,7 @@ use App\Enums\ServiceType;
 use App\Models\Booking;
 use App\Models\Client;
 use App\Models\ClientPaymentMethod;
+use App\Models\Hotel;
 use App\Models\PricingRule;
 use App\Models\User;
 use App\Services\Billing\JobBillingService;
@@ -33,6 +34,51 @@ beforeEach(function () {
         'sitterwise_cut' => 5,
         'payment_form' => 'Stripe',
     ]);
+});
+
+it('includes an edited hotel fee in the charged service total', function () {
+    $hotel = Hotel::factory()->create(['resort_fee' => 15]);
+    $start = Carbon::parse('2026-05-01 10:00:00');
+    $end = Carbon::parse('2026-05-01 15:00:00'); // 5 hours
+
+    $booking = Booking::factory()
+        ->forClient($this->client)
+        ->withBookingGroup(fn ($group) => $group->state([
+            'service_type' => ServiceType::Babysitter->value,
+            'location_type' => 'hotel',
+            'hotel_id' => $hotel->id,
+        ]))
+        ->create([
+            'status' => BookingStatus::Completed->value,
+            'charge_to_client_hourly' => 20,
+            'start_datetime' => $start,
+            'end_datetime' => $end,
+            'total_working_hour' => 5,
+            'payment_status' => BookingPaymentStatus::Pending->value,
+        ]);
+
+    $mockBillingService = Mockery::mock(JobBillingService::class);
+    $mockBillingService->shouldReceive('charge')
+        ->once()
+        ->andReturn(['success' => true, 'message' => 'Payment successful']);
+
+    $this->app->instance(JobBillingService::class, $mockBillingService);
+    $this->app->instance(Booking::class, $booking);
+
+    $this->actingAs($this->admin)
+        ->withoutMiddleware()
+        ->post(route('bookings.processPayment', $booking), [
+            'total_working_hour' => 5,
+            'reimbursement' => 0,
+            'bonus' => 0,
+            'tip' => 0,
+            'hotel_fee' => 30, // admin overrides the auto-filled 15
+        ])->assertRedirect();
+
+    $booking->refresh();
+    expect((float) $booking->hotel_fee)->toBe(30.0);
+    // (20 * 5) + 30 hotel fee = 130 — the fee is part of the client charge.
+    expect((float) $booking->total_service_amount)->toBe(130.0);
 });
 
 it('processes manual payment and calls billing service', function () {

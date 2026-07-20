@@ -60,6 +60,7 @@ interface FormData {
     dates: Array<{ start_datetime: string; end_datetime: string }>;
     hotel_id: number | null;
     hotel_name: string | null;
+    hotel_fee: number | string | null;
     address_id: number | null;
     caregiver_id: number | null;
     caregiver_notes: string;
@@ -204,6 +205,7 @@ export function useBookingSheet({
         dates: [],
         hotel_id: null,
         hotel_name: '',
+        hotel_fee: '',
         address_id: null,
         caregiver_id: null,
         caregiver_notes: '',
@@ -694,6 +696,7 @@ export function useBookingSheet({
             ],
             hotel_id: null,
             hotel_name: '',
+            hotel_fee: '',
             address_id: null,
             caregiver_id: null,
             caregiver_notes: '',
@@ -868,6 +871,7 @@ export function useBookingSheet({
                 ],
                 hotel_id: fullBooking.hotel_id,
                 hotel_name: fullBooking.hotel_name || '',
+                hotel_fee: fullBooking.hotel_fee ?? '',
                 address_id: fullBooking.address_id,
                 caregiver_id: fullBooking.caregiver_id,
                 caregiver_notes: fullBooking.caregiver_notes || '',
@@ -1054,6 +1058,7 @@ export function useBookingSheet({
                 ],
                 hotel_id: fullBooking.hotel_id,
                 hotel_name: fullBooking.hotel_name || '',
+                hotel_fee: fullBooking.hotel_fee ?? '',
                 address_id: fullBooking.address_id,
                 caregiver_id: null,
                 caregiver_notes: '',

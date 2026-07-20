@@ -674,6 +674,19 @@ class AdminBookingService implements BookingServiceInterface
                 'reservation_expires_at' => $booking->reservation_expires_at,
                 'hotel_id' => $booking->hotel_id,
                 'hotel_name' => $booking->bookingGroup->hotel_name ?? $booking->hotel?->name,
+                'hotel' => $booking->hotel ? [
+                    'id' => $booking->hotel->id,
+                    'name' => $booking->hotel->name,
+                    'line1' => $booking->hotel->line1,
+                    'line2' => $booking->hotel->line2,
+                    'city' => $booking->hotel->city,
+                    'state' => $booking->hotel->state,
+                    'zip' => $booking->hotel->zip,
+                    'parking_instructions' => $booking->hotel->parking_instructions,
+                    'resort_fee' => $booking->hotel->resort_fee,
+                    'contact_name' => $booking->hotel->contact_name,
+                    'contact_phone' => $booking->hotel->contact_phone,
+                ] : null,
                 'location_type' => $booking->location_type,
                 'charge_to_client' => $booking->charge_to_client,
                 'paid_to_caregiver' => $booking->paid_to_caregiver,
@@ -682,6 +695,7 @@ class AdminBookingService implements BookingServiceInterface
                 'reimbursement' => $booking->reimbursement,
                 'bonus' => $booking->bonus,
                 'lifesaver_bonus' => $booking->lifesaver_bonus,
+                'hotel_fee' => $booking->hotel_fee,
                 'payment_status' => $booking->payment_status,
                 'payment_attempts' => $booking->payments
                     ->sortByDesc('created_at')
@@ -1155,6 +1169,7 @@ class AdminBookingService implements BookingServiceInterface
                     'sitterwise_cut' => 0,
                     'total_service_amount' => 0,
                     'total_amount' => 0,
+                    'hotel_fee' => 0,
                 ]);
 
                 $assignment = $target->assignments()->unresolved()->first();
@@ -1644,6 +1659,7 @@ class AdminBookingService implements BookingServiceInterface
             'reimbursement_description' => 'nullable|string',
             'tip' => 'nullable|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
+            'hotel_fee' => 'nullable|numeric|min:0',
         ]);
 
         // Bail before mutating amounts if this booking is already settled — a stray
@@ -1673,6 +1689,10 @@ class AdminBookingService implements BookingServiceInterface
             'reimbursement_description' => $validated['reimbursement_description'] ?? null,
             'tip' => $validated['tip'] ?? 0,
             'bonus' => $validated['bonus'] ?? 0,
+            // Only hotel bookings expose an editable fee; leave others untouched.
+            'hotel_fee' => $booking->location_type === 'hotel'
+                ? ($validated['hotel_fee'] ?? 0)
+                : $booking->hotel_fee,
         ]);
 
         Log::debug('Update result', [
