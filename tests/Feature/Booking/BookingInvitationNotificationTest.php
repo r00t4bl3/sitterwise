@@ -11,9 +11,11 @@ use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\PricingRule;
 use App\Notifications\BookingInvitationNotification;
+use App\Support\Settings;
 use Database\Seeders\AttributeDefinitionSeeder;
 use Database\Seeders\CertificationTypeSeeder;
 use Database\Seeders\LocationSeeder;
+use Database\Seeders\SettingsSeeder;
 use Database\Seeders\SpecialtyTypeSeeder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +30,7 @@ beforeEach(function () {
         CertificationTypeSeeder::class,
         LocationSeeder::class,
         SpecialtyTypeSeeder::class,
+        SettingsSeeder::class,
     ]);
 });
 
@@ -46,7 +49,10 @@ function invitedBooking(): array
         'payment_form' => 'Stripe',
     ]);
 
-    $booking = Booking::factory()->forClient($client)->create();
+    // Pin lifesaver_override=false so invite-text assertions are deterministic —
+    // the factory's default start_datetime can otherwise land inside the
+    // short-notice window and flip isLifesaver() on at random.
+    $booking = Booking::factory()->forClient($client)->create(['lifesaver_override' => false]);
 
     return [$booking, $caregiver, $client];
 }
@@ -271,6 +277,83 @@ describe('Booking Invitation Notifications', function () {
             $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
 
             expect($result->message)->toMatch('/^New job –.*, overnight/');
+        });
+    });
+
+    describe('lifesaver invites', function () {
+        test('sms leads with the lifesaver bonus badge, details follow', function () {
+            [$booking, $caregiver] = invitedBookingWithGroup();
+            $booking->update(['lifesaver_override' => true]);
+
+            $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
+
+            expect($result->message)->toStartWith('LIFESAVER JOB, $15 BONUS:')
+                ->and($result->message)->toContain('· 2 children (4 & 7)')
+                ->and($result->message)->toContain('View & claim:')
+                ->and($result->message)->not->toContain('New job –');
+        });
+
+        test('non-lifesaver sms is unchanged (New job label)', function () {
+            [$booking, $caregiver] = invitedBookingWithGroup();
+
+            $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
+
+            expect($result->message)->toStartWith('New job – ')
+                ->and($result->message)->not->toContain('LIFESAVER JOB');
+        });
+
+        test('multi-day lifesaver sms also leads with the badge', function () {
+            [$booking, $caregiver, , $group] = invitedBookingWithGroup(
+                children: [['birth_year' => now()->subYears(4)->year, 'name' => 'Alex']],
+            );
+
+            $tz = 'America/Los_Angeles';
+            $booking->updateQuietly([
+                'start_datetime' => now($tz)->setTime(9, 0),
+                'end_datetime' => now($tz)->setTime(17, 0),
+            ]);
+            Booking::factory()->forClient($booking->client)->create([
+                'booking_group_id' => $group->id,
+                'start_datetime' => now($tz)->addDays(1)->setTime(9, 0),
+                'end_datetime' => now($tz)->addDays(1)->setTime(17, 0),
+            ]);
+            $booking->update(['lifesaver_override' => true]);
+
+            $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
+
+            expect($result->message)->toStartWith('LIFESAVER JOB, $15 BONUS:');
+        });
+
+        test('web push title advertises the bonus', function () {
+            [$booking, $caregiver] = invitedBookingWithGroup();
+            $booking->update(['lifesaver_override' => true]);
+
+            $push = (new BookingInvitationNotification($booking))
+                ->toWebPush($caregiver->user, (object) [])
+                ->toArray();
+
+            expect($push['title'])->toContain('LIFESAVER JOB, $15 BONUS');
+        });
+
+        test('in-app payload title and message are prefixed with the badge', function () {
+            [$booking, $caregiver] = invitedBookingWithGroup();
+            $booking->update(['lifesaver_override' => true]);
+
+            $payload = (new BookingInvitationNotification($booking))->toArray($caregiver->user);
+
+            expect($payload['title'])->toBe('LIFESAVER JOB, $15 BONUS')
+                ->and($payload['message'])->toStartWith('LIFESAVER JOB, $15 BONUS: ');
+        });
+
+        test('bonus amount reflects the lifesaver.bonus setting', function () {
+            Settings::set('lifesaver.bonus', 20);
+
+            [$booking, $caregiver] = invitedBookingWithGroup();
+            $booking->update(['lifesaver_override' => true]);
+
+            $result = (new BookingInvitationNotification($booking))->toSms($caregiver->user);
+
+            expect($result->message)->toStartWith('LIFESAVER JOB, $20 BONUS:');
         });
     });
 });

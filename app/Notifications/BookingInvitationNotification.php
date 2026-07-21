@@ -6,6 +6,8 @@ use App\Channels\SmsChannel;
 use App\Enums\LocationType;
 use App\Mail\CaregiverBookingInvitationMail;
 use App\Models\Booking;
+use App\Services\LifesaverService;
+use App\Support\Settings;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,6 +33,25 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
         return (new CaregiverBookingInvitationMail($this->booking))->to($address);
     }
 
+    /**
+     * The lifesaver bonus badge for the invite (e.g. "LIFESAVER JOB, $15 BONUS"),
+     * or null when this job is not a lifesaver. The bonus amount is the
+     * admin-configurable lifesaver.bonus setting, not a hardcoded figure.
+     */
+    private function lifesaverBonusLabel(): ?string
+    {
+        if (! app(LifesaverService::class)->isLifesaver($this->booking)) {
+            return null;
+        }
+
+        $bonus = (float) Settings::get('lifesaver.bonus', 0);
+        $bonusText = '$'.($bonus == floor($bonus)
+            ? number_format($bonus, 0)
+            : number_format($bonus, 2));
+
+        return "LIFESAVER JOB, {$bonusText} BONUS";
+    }
+
     public function toSms(object $notifiable): object
     {
         $timezone = 'America/Los_Angeles';
@@ -46,11 +67,15 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
         $startTime = $start->format('g:ia');
         $endTime = $end->format('g:ia');
 
+        // Lifesaver jobs lead with the bonus badge; the usual details follow.
+        $lifesaverLabel = $this->lifesaverBonusLabel();
+        $leadLabel = $lifesaverLabel ? "{$lifesaverLabel}:" : 'New job –';
+
         $isMultiDay = $group && ($group->bookings_count ?? $group->bookings()->count()) > 1;
 
         $line1 = $isMultiDay
-            ? $this->buildMultiDayLine1($group, $start, $end, $day, $startTime, $endTime)
-            : "New job – {$day} {$start->format('n/j')}, {$startTime}–{$endTime}";
+            ? $this->buildMultiDayLine1($group, $start, $end, $day, $startTime, $endTime, $leadLabel)
+            : "{$leadLabel} {$day} {$start->format('n/j')}, {$startTime}–{$endTime}";
 
         $children = $group?->children ?? [];
         $kidsCount = count($children);
@@ -74,13 +99,13 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
         $message = "{$line1}\n{$line2}\n{$line3}";
 
         if (mb_strlen($message) > 160 && $isMultiDay) {
-            $message = "New job – {$start->format('n/j')}–{$end->format('n/j')} (multi-day) · {$location} · {$kidLabel} · tap for hours/ages: {$link}";
+            $message = "{$leadLabel} {$start->format('n/j')}–{$end->format('n/j')} (multi-day) · {$location} · {$kidLabel} · tap for hours/ages: {$link}";
         }
 
         return (object) ['message' => $message];
     }
 
-    private function buildMultiDayLine1($group, $start, $end, string $day, string $startTime, string $endTime): string
+    private function buildMultiDayLine1($group, $start, $end, string $day, string $startTime, string $endTime, string $leadLabel): string
     {
         $allBookings = $group->bookings()->orderBy('start_datetime')->get(['start_datetime', 'end_datetime']);
         $tz = 'America/Los_Angeles';
@@ -94,7 +119,7 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
         $crossesMidnight = (int) $start->format('Hi') > (int) $end->format('Hi');
         $timeDisplay = $crossesMidnight ? 'overnight' : "{$startTime}–{$endTime} daily";
 
-        return "New job – {$dateRange}, {$timeDisplay}";
+        return "{$leadLabel} {$dateRange}, {$timeDisplay}";
     }
 
     private function childAge(array $child): ?int
@@ -137,8 +162,13 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
             $body = "{$clientName}{$location}: {$start->format('n/j/y g:ia')}–{$end->format('g:ia')}";
         }
 
+        $lifesaverLabel = $this->lifesaverBonusLabel();
+        $title = $lifesaverLabel
+            ? "{$lifesaverLabel} — {$this->booking->service_type_label} job"
+            : "New {$this->booking->service_type_label} job available";
+
         return (new WebPushMessage)
-            ->title("New {$this->booking->service_type_label} job available")
+            ->title($title)
             ->body($body)
             ->icon('/icon-192.png')
             ->badge('/icon-72.png')
@@ -150,10 +180,13 @@ class BookingInvitationNotification extends Notification implements ShouldQueue
     {
         $clientName = ($this->booking->client?->first_name ?? $this->booking->client_first_name);
 
+        $lifesaverLabel = $this->lifesaverBonusLabel();
+        $prefix = $lifesaverLabel ? "{$lifesaverLabel}: " : '';
+
         return [
             'booking_id' => $this->booking->id,
-            'title' => 'New Job Invitation',
-            'message' => "You have a new job invitation for {$clientName}. Click to view and claim.",
+            'title' => $lifesaverLabel ?: 'New Job Invitation',
+            'message' => "{$prefix}You have a new job invitation for {$clientName}. Click to view and claim.",
             'type' => 'booking_invitation',
         ];
     }
