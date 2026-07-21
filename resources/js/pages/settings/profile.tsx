@@ -3,7 +3,6 @@ import { Form, Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { ChangeEvent } from 'react';
 import { useEffect } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,11 +71,15 @@ export default function Profile({
             <SettingsLayout>
                 {canUploadPhoto && (
                     <div className="mb-8 space-y-4">
-                        <Heading
-                            variant="small"
-                            title="Profile photo"
-                            description="Upload a photo — it appears next to your name across the app"
-                        />
+                        <div>
+                            <h2 className="text-xl font-bold text-foreground">
+                                Profile photo
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Upload a photo — it appears next to your name
+                                across the app
+                            </p>
+                        </div>
                         <div className="flex items-center gap-4">
                             <div className="group relative">
                                 <UserAvatar
@@ -114,11 +117,14 @@ export default function Profile({
                 )}
 
                 <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Profile information"
-                        description="Update your name and email address"
-                    />
+                    <div>
+                        <h2 className="text-xl font-bold text-foreground">
+                            Profile information
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Update your name and email address
+                        </p>
+                    </div>
 
                     <Form
                         {...ProfileController.update.form()}

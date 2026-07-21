@@ -12,19 +12,12 @@ interface Option {
     name: string;
 }
 
-interface LanguageOption {
-    value: string;
-    label: string;
-}
-
 interface Props {
     [key: string]: unknown;
     specialtyTypes: Option[];
     locations: Option[];
-    languageOptions: LanguageOption[];
     selectedSpecialtyIds: number[];
     selectedLocationIds: number[];
-    selectedLanguages: string[];
     preferredLocationId: number | null;
 }
 
@@ -40,22 +33,18 @@ export default function AvailabilityPreferences() {
     const {
         specialtyTypes,
         locations,
-        languageOptions,
         selectedSpecialtyIds,
         selectedLocationIds,
-        selectedLanguages,
         preferredLocationId,
     } = usePage<Props>().props;
 
     const form = useForm<{
         specialty_type_ids: number[];
         location_ids: number[];
-        languages: string[];
         preferred_location_id: number | null;
     }>({
         specialty_type_ids: selectedSpecialtyIds,
         location_ids: selectedLocationIds,
-        languages: selectedLanguages,
         preferred_location_id: preferredLocationId,
     });
 
@@ -65,15 +54,6 @@ export default function AvailabilityPreferences() {
             form.data.specialty_type_ids.includes(id)
                 ? form.data.specialty_type_ids.filter((x) => x !== id)
                 : [...form.data.specialty_type_ids, id],
-        );
-    };
-
-    const toggleLanguage = (value: string) => {
-        form.setData(
-            'languages',
-            form.data.languages.includes(value)
-                ? form.data.languages.filter((x) => x !== value)
-                : [...form.data.languages, value],
         );
     };
 
@@ -130,33 +110,6 @@ export default function AvailabilityPreferences() {
                                         onChange={() => toggleSpecialty(s.id)}
                                     />
                                     {s.name}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-3">
-                        <Label>Languages spoken</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Select every language you can speak with families.
-                        </p>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {languageOptions.map((language) => (
-                                <label
-                                    key={language.value}
-                                    className="flex items-center gap-2 text-sm text-foreground"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4"
-                                        checked={form.data.languages.includes(
-                                            language.value,
-                                        )}
-                                        onChange={() =>
-                                            toggleLanguage(language.value)
-                                        }
-                                    />
-                                    {language.label}
                                 </label>
                             ))}
                         </div>

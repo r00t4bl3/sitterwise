@@ -6,30 +6,26 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editPushNotifications } from '@/routes/push-notifications';
+import { edit as editProfile } from '@/routes/profile';
+// import { edit as editPushNotifications } from '@/routes/push-notifications';
 import { edit as editSecurity } from '@/routes/security';
 import { pause as pauseRoute } from '@/routes/settings/caregiver';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Security',
-        href: editSecurity(),
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: null,
-    },
-    {
-        title: 'Push Notifications',
-        href: editPushNotifications(),
+        title: 'Profile',
+        href: editProfile(),
         icon: null,
     },
     {
         title: 'Availability Preferences',
         href: '/settings/caregiver/availability',
+        icon: null,
+    },
+    {
+        title: 'Languages Spoken',
+        href: '/settings/caregiver/languages',
         icon: null,
     },
     {
@@ -42,6 +38,23 @@ const sidebarNavItems: NavItem[] = [
         href: pauseRoute(),
         icon: null,
     },
+    {
+        title: 'Appearance',
+        href: editAppearance(),
+        icon: null,
+    },
+    {
+        title: 'Security',
+        href: editSecurity(),
+        icon: null,
+    },
+    // Push Notifications temporarily hidden from the nav — feature still buggy.
+    // The route/page remain; re-add this item to restore it.
+    // {
+    //     title: 'Push Notifications',
+    //     href: editPushNotifications(),
+    //     icon: null,
+    // },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
@@ -54,6 +67,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         if (
             item.title === 'Pause Account' ||
             item.title === 'Availability Preferences' ||
+            item.title === 'Languages Spoken' ||
             item.title === 'Calendar Sync'
         ) {
             return auth.user?.role === 'caregiver';

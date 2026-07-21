@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\AvailabilityPreferencesController;
 use App\Http\Controllers\Settings\CalendarSyncController;
+use App\Http\Controllers\Settings\CaregiverLanguagesController;
 use App\Http\Controllers\Settings\CaregiverPauseController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\PushTestController;
@@ -33,6 +34,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/caregiver/availability', [AvailabilityPreferencesController::class, 'show'])->name('settings.caregiver.availability');
     Route::put('settings/caregiver/availability', [AvailabilityPreferencesController::class, 'update'])->name('settings.caregiver.availability.update');
+
+    Route::get('settings/caregiver/languages', [CaregiverLanguagesController::class, 'show'])->name('settings.caregiver.languages');
+    Route::put('settings/caregiver/languages', [CaregiverLanguagesController::class, 'update'])->name('settings.caregiver.languages.update');
 
     Route::get('settings/caregiver/pause', [CaregiverPauseController::class, 'show'])->name('settings.caregiver.pause');
     Route::post('settings/caregiver/pause', [CaregiverPauseController::class, 'pause'])->name('settings.caregiver.pause.store');

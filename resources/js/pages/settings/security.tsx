@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useRef, useState } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import PasswordRequirements from '@/components/password-requirements';
@@ -59,11 +58,15 @@ export default function Security({
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Update password"
-                        description="Ensure your account is using a long, random password to stay secure"
-                    />
+                    <div>
+                        <h2 className="text-xl font-bold text-foreground">
+                            Update password
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Ensure your account is using a long, random password
+                            to stay secure
+                        </p>
+                    </div>
 
                     <PasswordRequirements />
 
@@ -172,11 +175,14 @@ export default function Security({
 
                 {canManageTwoFactor && (
                     <div className="space-y-6">
-                        <Heading
-                            variant="small"
-                            title="Two-factor authentication"
-                            description="Manage your two-factor authentication settings"
-                        />
+                        <div>
+                            <h2 className="text-xl font-bold text-foreground">
+                                Two-factor authentication
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Manage your two-factor authentication settings
+                            </p>
+                        </div>
                         {twoFactorEnabled ? (
                             <div className="flex flex-col items-start justify-start space-y-4">
                                 <p className="text-sm text-muted-foreground">

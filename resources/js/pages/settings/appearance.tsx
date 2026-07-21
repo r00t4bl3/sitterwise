@@ -1,6 +1,5 @@
 import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
-import Heading from '@/components/heading';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { edit as editAppearance } from '@/routes/appearance';
@@ -22,11 +21,14 @@ export default function Appearance() {
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Appearance settings"
-                        description="Update your account's appearance settings"
-                    />
+                    <div>
+                        <h2 className="text-xl font-bold text-foreground">
+                            Appearance settings
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Update your account's appearance settings
+                        </p>
+                    </div>
                     <AppearanceTabs />
                 </div>
             </SettingsLayout>

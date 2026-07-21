@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\ForeignLanguage;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\SpecialtyType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,10 +25,8 @@ class AvailabilityPreferencesController extends Controller
         return Inertia::render('settings/availability-preferences', [
             'specialtyTypes' => SpecialtyType::active()->get(['id', 'name']),
             'locations' => Location::active()->get(['id', 'name']),
-            'languageOptions' => ForeignLanguage::toArray(),
             'selectedSpecialtyIds' => $caregiver->specialtyTypes->pluck('id')->all(),
             'selectedLocationIds' => $caregiver->locations->pluck('id')->all(),
-            'selectedLanguages' => $caregiver->languages ?? [],
             'preferredLocationId' => $caregiver->locations()
                 ->wherePivot('is_preferred', true)
                 ->first()?->id,
@@ -51,14 +47,11 @@ class AvailabilityPreferencesController extends Controller
             'location_ids' => 'nullable|array',
             'location_ids.*' => 'exists:locations,id',
             'preferred_location_id' => 'nullable|exists:locations,id',
-            'languages' => 'nullable|array',
-            'languages.*' => ['string', Rule::enum(ForeignLanguage::class)],
         ]);
 
         $caregiver = $user->caregiver;
 
         $caregiver->specialtyTypes()->sync($validated['specialty_type_ids'] ?? []);
-        $caregiver->update(['languages' => $validated['languages'] ?? []]);
 
         // Mirror the admin form: the one matching preferred_location_id is flagged
         // preferred; the rest are "willing". This is exactly what the recommendation
