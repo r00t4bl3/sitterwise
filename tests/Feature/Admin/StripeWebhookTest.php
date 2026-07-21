@@ -3,6 +3,7 @@
 use App\Enums\BookingPaymentStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ServiceType;
+use App\Jobs\RetryJobCharge;
 use App\Models\Booking;
 use App\Models\Caregiver;
 use App\Models\CaregiverPayout;
@@ -17,6 +18,7 @@ use App\Services\Webhooks\StripeWebhookHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
@@ -180,12 +182,24 @@ describe('Stripe Webhook', function () {
         expect($tipPayment->fresh()->status)->toBe('failed');
     });
 
-    test('payment_intent.failed increments charge_attempt_count and sets failed status', function () {
+    test('payment_intent.failed with a pending ClientPayment drives the failure (increments and sets failed status)', function () {
         Notification::fake();
         Mail::fake();
 
         $booking = completedBooking();
         $paymentIntentId = 'pi_'.uniqid();
+
+        // A still-pending ClientPayment means the synchronous charge path never
+        // recorded the outcome (e.g. the process died mid-charge), so the
+        // webhook must own the failure.
+        $pendingPayment = ClientPayment::create([
+            'booking_id' => $booking->id,
+            'client_id' => $booking->client_id,
+            'amount' => 100,
+            'currency' => 'usd',
+            'status' => 'pending',
+            'provider' => 'stripe',
+        ]);
 
         $paymentIntent = (object) [
             'id' => $paymentIntentId,
@@ -205,6 +219,57 @@ describe('Stripe Webhook', function () {
         $booking->refresh();
         expect($booking->charge_attempt_count)->toBe(1);
         expect($booking->payment_status)->toBe('failed');
+        expect($pendingPayment->fresh()->status)->toBe('failed');
+        expect($pendingPayment->fresh()->error_code)->toBe('card_declined');
+    });
+
+    test('payment_intent.failed already handled synchronously is not double-processed', function () {
+        Notification::fake();
+        Mail::fake();
+        Queue::fake();
+
+        $booking = completedBooking();
+
+        // Simulate the state right after JobBillingService::charge() caught the
+        // decline synchronously: the ClientPayment is already 'failed' (none
+        // pending) and the attempt count already bumped to 1.
+        ClientPayment::create([
+            'booking_id' => $booking->id,
+            'client_id' => $booking->client_id,
+            'amount' => 100,
+            'currency' => 'usd',
+            'status' => 'failed',
+            'provider' => 'stripe',
+            'error_code' => 'card_declined',
+            'error_message' => 'Your card was declined',
+        ]);
+        $booking->update([
+            'charge_attempt_count' => 1,
+            'payment_status' => 'failed',
+        ]);
+
+        $paymentIntent = (object) [
+            'id' => 'pi_'.uniqid(),
+            'metadata' => (object) ['booking_id' => $booking->id],
+            'last_payment_error' => (object) [
+                'code' => 'card_declined',
+                'message' => 'Your card was declined',
+            ],
+        ];
+
+        $handler = app(StripeWebhookHandler::class);
+
+        $ref = new ReflectionMethod($handler, 'handlePaymentIntentFailed');
+        $ref->setAccessible(true);
+        $ref->invoke($handler, $paymentIntent);
+
+        $booking->refresh();
+        // The count must NOT jump to 2 — before the fix every real decline was
+        // counted twice (sync + webhook), burning the retry budget in half the
+        // attempts and double-sending every notification.
+        expect($booking->charge_attempt_count)->toBe(1);
+        Notification::assertNothingSent();
+        Queue::assertNotPushed(RetryJobCharge::class);
     });
 
     test('missing booking does not throw exception on succeeded', function () {

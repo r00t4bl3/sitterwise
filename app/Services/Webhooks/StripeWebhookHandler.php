@@ -269,6 +269,35 @@ class StripeWebhookHandler
         $errorCode = $paymentIntent->last_payment_error?->code ?? 'unknown';
         $errorMessage = $paymentIntent->last_payment_error?->message ?? 'Payment failed';
 
+        /**
+         * Off-session charges decline synchronously: JobBillingService::charge()
+         * catches the CardException, marks the pending ClientPayment failed,
+         * bumps charge_attempt_count and runs PaymentFailureHandler — and then
+         * Stripe ALSO delivers this webhook for the same decline. Driving the
+         * failure again here double-counted every attempt (burning the 4-try
+         * budget in 2 real declines) and double-sent every notification.
+         *
+         * The pending ClientPayment row is the ownership signal: the sync path
+         * flips it to 'failed' before this webhook arrives, so no pending row
+         * means the failure is already fully handled — reconcile nothing and
+         * stop. A still-pending row means the sync path never got to record the
+         * outcome (process died mid-charge, or a genuinely async flow), so the
+         * webhook drives the failure exactly as the sync path would have.
+         */
+        $clientPayment = ClientPayment::where('booking_id', $bookingId)
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $clientPayment) {
+            Log::info('Stripe webhook: payment_intent.payment_failed already handled synchronously — skipping', [
+                'payment_intent_id' => $paymentIntent->id,
+                'booking_id' => $booking->id,
+                'error_code' => $errorCode,
+            ]);
+
+            return;
+        }
+
         Log::info('Stripe webhook: payment_intent.payment_failed processing', [
             'payment_intent_id' => $paymentIntent->id,
             'booking_id' => $booking->id,
@@ -276,33 +305,22 @@ class StripeWebhookHandler
             'error_message' => $errorMessage,
         ]);
 
+        $clientPayment->update([
+            'status' => 'failed',
+            'error_code' => $errorCode,
+            'error_message' => $errorMessage,
+        ]);
+
+        Log::info('Stripe webhook: client payment marked as failed', [
+            'payment_intent_id' => $paymentIntent->id,
+            'client_payment_id' => $clientPayment->id,
+        ]);
+
         $booking->increment('charge_attempt_count');
         $booking->update([
             'payment_status' => 'failed',
             'last_charge_attempt_at' => now(),
         ]);
-
-        $clientPayment = ClientPayment::where('booking_id', $bookingId)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($clientPayment) {
-            $clientPayment->update([
-                'status' => 'failed',
-                'error_code' => $errorCode,
-                'error_message' => $errorMessage,
-            ]);
-
-            Log::info('Stripe webhook: client payment marked as failed', [
-                'payment_intent_id' => $paymentIntent->id,
-                'client_payment_id' => $clientPayment->id,
-            ]);
-        } else {
-            Log::info('Stripe webhook: no pending client payment to mark as failed', [
-                'payment_intent_id' => $paymentIntent->id,
-                'booking_id' => $booking->id,
-            ]);
-        }
 
         app(PaymentFailureHandler::class)->handle($booking, $errorCode, $errorMessage);
     }
