@@ -62,7 +62,7 @@ describe('Payment Failure Notifications', function () {
         Notification::assertSentTo($client, PaymentFailedNotification::class);
     });
 
-    test('admin receives notification on payment failure', function () {
+    test('admin receives notification on the first payment failure', function () {
         Notification::fake();
 
         [$client, $user, $booking] = failedBooking();
@@ -71,6 +71,36 @@ describe('Payment Failure Notifications', function () {
         app(PaymentFailureHandler::class)->handle($booking, 'card_declined', 'Card declined');
 
         Notification::assertSentTo($admin, PaymentFailedNotification::class);
+    });
+
+    test('admin is not notified on intermediate retry failures, but the client still is', function () {
+        Notification::fake();
+
+        [$client, $user, $booking] = failedBooking();
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        foreach ([2, 3] as $intermediateAttempt) {
+            $booking->update(['charge_attempt_count' => $intermediateAttempt]);
+
+            app(PaymentFailureHandler::class)->handle($booking, 'card_declined', 'Card declined');
+        }
+
+        Notification::assertNotSentTo($admin, PaymentFailedNotification::class);
+        Notification::assertSentToTimes($client, PaymentFailedNotification::class, 2);
+    });
+
+    test('admin is notified on the final failure when max attempts is reached', function () {
+        Notification::fake();
+
+        [$client, $user, $booking] = failedBooking();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $booking->update(['charge_attempt_count' => 4]);
+
+        app(PaymentFailureHandler::class)->handle($booking, 'card_declined', 'Card declined');
+
+        Notification::assertSentTo($admin, PaymentFailedNotification::class, function ($notification) {
+            return $notification->attemptCount === 4;
+        });
     });
 
     test('client notification payload contains booking and attempt info', function () {

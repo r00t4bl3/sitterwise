@@ -22,7 +22,16 @@ class PaymentFailureHandler
         $maxAttempts = (int) Settings::get('billing.max_charge_attempts', 4);
 
         $this->notifyClient($client, $booking, $attemptCount, $errorMessage);
-        $this->notifyAdmins($booking, $attemptCount, $errorMessage);
+
+        /**
+         * Admins are notified on the first failure (heads-up) and the final
+         * give-up (action needed). The intermediate retries are automated and
+         * every admin account receives its own copy on two channels, so
+         * per-attempt notices turned one bad card into an inbox flood.
+         */
+        if ($attemptCount <= 1 || $attemptCount >= $maxAttempts) {
+            $this->notifyAdmins($booking, $attemptCount, $errorMessage);
+        }
 
         if ($attemptCount < $maxAttempts) {
             $delay = $this->getRetryDelay($attemptCount);
