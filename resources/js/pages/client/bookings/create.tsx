@@ -322,10 +322,7 @@ export default function ClientBookingCreate() {
 
     const handleRemovePet = (id: number | string) => {
         if (typeof id === 'number' && id > 0) {
-            form.setData('deleted_pet_ids', [
-                ...form.data.deleted_pet_ids,
-                id,
-            ]);
+            form.setData('deleted_pet_ids', [...form.data.deleted_pet_ids, id]);
         }
         form.setData(
             'new_pets',
@@ -412,7 +409,10 @@ export default function ClientBookingCreate() {
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime' && id === dates[0]?.id) {
-                next.end_datetime = autoSetEndDateTime(value, bookingMinimumHours);
+                next.end_datetime = autoSetEndDateTime(
+                    value,
+                    bookingMinimumHours,
+                );
             }
 
             return next;
@@ -463,9 +463,40 @@ export default function ClientBookingCreate() {
                                 </Label>
                                 <Select
                                     value={form.data.location_type}
-                                    onValueChange={(value) =>
-                                        form.setData('location_type', value)
-                                    }
+                                    onValueChange={(value) => {
+                                        form.setData('location_type', value);
+
+                                        if (value !== 'hotel') {
+                                            // The locked address (if any)
+                                            // belonged to the hotel — a
+                                            // non-hotel booking must not
+                                            // keep it.
+                                            if (form.data.hotel_id) {
+                                                form.setData(
+                                                    'address_line1',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_line2',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_city',
+                                                    '',
+                                                );
+                                                form.setData(
+                                                    'address_state',
+                                                    '',
+                                                );
+                                                form.setData('address_zip', '');
+                                                setAddressValue('');
+                                                setIsAddressLocked(false);
+                                            }
+
+                                            form.setData('hotel_id', null);
+                                            form.setData('hotel_name', '');
+                                        }
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select location type" />
@@ -800,6 +831,12 @@ export default function ClientBookingCreate() {
                                     form={form}
                                     isAddressLocked={isAddressLocked}
                                     addressValue={addressValue}
+                                    canEdit={
+                                        !(
+                                            form.data.location_type ===
+                                                'hotel' && !!form.data.hotel_id
+                                        )
+                                    }
                                     onAddressLock={(
                                         locked,
                                         newAddressValue,

@@ -8,6 +8,13 @@ interface Props {
     addressValue?: string;
     onAddressLock?: (locked: boolean, addressValue?: string) => void;
     errors?: Record<string, string>;
+    /**
+     * When false, the locked address is strictly read-only (no Edit button).
+     * Used when the address comes from a selected hotel: changing it would
+     * silently break the hotel/address pairing, so the user must change the
+     * hotel selection instead.
+     */
+    canEdit?: boolean;
 }
 
 interface Suggestion {
@@ -34,6 +41,7 @@ export function BookingAddressFields({
     addressValue = '',
     onAddressLock,
     errors = {},
+    canEdit = true,
 }: Props) {
     const { props } = usePage();
     const googleApiKey = (props as any).google_places_api_key || '';
@@ -301,24 +309,32 @@ export function BookingAddressFields({
                         <span className="flex-1 text-foreground">
                             {addressValue}
                         </span>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                form.setData('address_line1', '');
-                                form.setData('address_line2', '');
-                                form.setData('address_city', '');
-                                form.setData('address_state', '');
-                                form.setData('address_zip', '');
-                                setInputValue('');
-                                setIsVerified(false);
-                                setOutsideServiceArea(false);
-                                onAddressLock?.(false);
-                            }}
-                            className="text-xs text-ring hover:text-foreground"
-                        >
-                            Edit
-                        </button>
+                        {canEdit && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    form.setData('address_line1', '');
+                                    form.setData('address_line2', '');
+                                    form.setData('address_city', '');
+                                    form.setData('address_state', '');
+                                    form.setData('address_zip', '');
+                                    setInputValue('');
+                                    setIsVerified(false);
+                                    setOutsideServiceArea(false);
+                                    onAddressLock?.(false);
+                                }}
+                                className="text-xs text-ring hover:text-foreground"
+                            >
+                                Edit
+                            </button>
+                        )}
                     </div>
+                    {!canEdit && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            This address comes from the selected hotel. Change
+                            the hotel to change the address.
+                        </p>
+                    )}
                 </div>
                 <input type="hidden" value={form.data.address_line1 || ''} />
                 <input type="hidden" value={form.data.address_line2 || ''} />

@@ -389,7 +389,10 @@ export default function GuestBookingCreate() {
             const next = { ...d, [field]: value };
 
             if (field === 'start_datetime') {
-                next.end_datetime = autoSetEndDateTime(value, bookingMinimumHours);
+                next.end_datetime = autoSetEndDateTime(
+                    value,
+                    bookingMinimumHours,
+                );
             }
 
             return next;
@@ -979,9 +982,44 @@ export default function GuestBookingCreate() {
                                                 );
 
                                                 if (value !== 'hotel') {
+                                                    // The locked address (if
+                                                    // any) belonged to the
+                                                    // hotel — a non-hotel
+                                                    // booking must not keep it.
+                                                    if (form.data.hotel_id) {
+                                                        form.setData(
+                                                            'address_line1',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_line2',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_city',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_state',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_zip',
+                                                            '',
+                                                        );
+                                                        setAddressValue('');
+                                                        setIsAddressLocked(
+                                                            false,
+                                                        );
+                                                    }
+
                                                     form.setData(
                                                         'hotel_id',
                                                         null,
+                                                    );
+                                                    form.setData(
+                                                        'hotel_name',
+                                                        '',
                                                     );
                                                 }
 
@@ -1099,6 +1137,35 @@ export default function GuestBookingCreate() {
                                                             'hotel_name',
                                                             '',
                                                         );
+                                                        // A custom hotel has no
+                                                        // address on file — clear
+                                                        // the auto-filled one and
+                                                        // unlock the fields so the
+                                                        // guest can enter it.
+                                                        form.setData(
+                                                            'address_line1',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_line2',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_city',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_state',
+                                                            '',
+                                                        );
+                                                        form.setData(
+                                                            'address_zip',
+                                                            '',
+                                                        );
+                                                        setAddressValue('');
+                                                        setIsAddressLocked(
+                                                            false,
+                                                        );
                                                     }}
                                                     className="mt-1 cursor-pointer text-sm text-primary hover:underline"
                                                 >
@@ -1152,6 +1219,13 @@ export default function GuestBookingCreate() {
                                         form={form}
                                         isAddressLocked={isAddressLocked}
                                         addressValue={addressValue}
+                                        canEdit={
+                                            !(
+                                                form.data.location_type ===
+                                                    'hotel' &&
+                                                !!form.data.hotel_id
+                                            )
+                                        }
                                         errors={form.errors}
                                         onAddressLock={(
                                             locked,
