@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -787,8 +787,10 @@ export function PersonalInfoSection({
                                             placeholder="Search hotel..."
                                             displayValue={selectedHotelName}
                                         />
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => {
                                                 setShowUnlistedHotel(true);
                                                 form.setData('hotel_id', null);
@@ -817,10 +819,11 @@ export function PersonalInfoSection({
                                                 setAddressValue('');
                                                 setIsAddressLocked(false);
                                             }}
-                                            className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                            className="mt-2"
                                         >
+                                            <Plus />
                                             My hotel is not listed
-                                        </button>
+                                        </Button>
                                     </>
                                 ) : (
                                     <>
@@ -834,16 +837,19 @@ export function PersonalInfoSection({
                                             }
                                             placeholder="Enter hotel name"
                                         />
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => {
                                                 setShowUnlistedHotel(false);
                                                 form.setData('hotel_name', '');
                                             }}
-                                            className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                            className="mt-2"
                                         >
+                                            <ArrowLeft />
                                             Back to hotel list
-                                        </button>
+                                        </Button>
                                     </>
                                 )}
                             </div>

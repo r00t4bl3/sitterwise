@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import { ToasterMessage } from '@/components/toaster-message';
@@ -732,8 +732,10 @@ export default function ClientBookingCreate() {
                                                         selectedHotelName
                                                     }
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => {
                                                         setShowUnlistedHotel(
                                                             true,
@@ -776,10 +778,11 @@ export default function ClientBookingCreate() {
                                                             false,
                                                         );
                                                     }}
-                                                    className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                                    className="mt-2"
                                                 >
+                                                    <Plus />
                                                     My hotel is not listed
-                                                </button>
+                                                </Button>
                                             </>
                                         ) : (
                                             <>
@@ -796,8 +799,10 @@ export default function ClientBookingCreate() {
                                                     }
                                                     placeholder="Enter hotel name"
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => {
                                                         setShowUnlistedHotel(
                                                             false,
@@ -807,10 +812,11 @@ export default function ClientBookingCreate() {
                                                             '',
                                                         );
                                                     }}
-                                                    className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                                    className="mt-2"
                                                 >
+                                                    <ArrowLeft />
                                                     Back to hotel list
-                                                </button>
+                                                </Button>
                                             </>
                                         )}
                                     </div>

@@ -1,5 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertCircle, ChevronDown, Plus } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ChevronDown, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { BookingAddressFields } from '@/components/booking-address-fields';
 import BookingProgress from '@/components/booking-progress';
@@ -1123,8 +1123,10 @@ export default function GuestBookingCreate() {
                                                         selectedHotelName
                                                     }
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => {
                                                         setShowUnlistedHotel(
                                                             true,
@@ -1167,10 +1169,11 @@ export default function GuestBookingCreate() {
                                                             false,
                                                         );
                                                     }}
-                                                    className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                                    className="mt-2"
                                                 >
+                                                    <Plus />
                                                     My hotel is not listed
-                                                </button>
+                                                </Button>
                                             </>
                                         ) : (
                                             <>
@@ -1184,8 +1187,10 @@ export default function GuestBookingCreate() {
                                                     }
                                                     placeholder="Enter hotel name"
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => {
                                                         setShowUnlistedHotel(
                                                             false,
@@ -1195,10 +1200,11 @@ export default function GuestBookingCreate() {
                                                             '',
                                                         );
                                                     }}
-                                                    className="mt-1 cursor-pointer text-sm text-primary hover:underline"
+                                                    className="mt-2"
                                                 >
+                                                    <ArrowLeft />
                                                     Back to hotel list
-                                                </button>
+                                                </Button>
                                             </>
                                         )}
                                         {(validationErrors.hotel_name ||
